@@ -1,0 +1,42 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+package-repositories:
+  - components: [main]
+    key-id: 0DCFCA5547B19D2A6099506096B3EE5F29111145
+    key-server: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    suites: [stable]
+    type: apt
+    url: https://packages.wazuh.com/4.x/apt/
+
+name: wazuh-server
+summary: Wazuh server
+description:  Wazuh server OCI image
+version: "1.0"
+base: ubuntu@22.04
+build-base: ubuntu@22.04
+license: Apache-2.0
+platforms:
+  amd64:
+parts:
+  wazuh:
+    plugin: nil
+    build-packages:
+      - apt-transport-https
+      - filebeat
+      - gnupg
+    stage-packages:
+      - filebeat
+      - wazuh-manager
+  filebeat:
+    plugin: nil
+    override-prime: |
+      craftctl default
+      curl -o etc/filebeat/filebeat.yml https://packages.wazuh.com/4.8/tpl/wazuh/filebeat/filebeat.yml
+      curl https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C usr/share/filebeat/module
+      echo admin | filebeat keystore add username --stdin --force
+      echo admin | filebeat keystore add password --stdin --force
+      curl -o etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v4.8.1/extensions/elasticsearch/7.x/wazuh-template.json
+      chmod go+r etc/filebeat/wazuh-template.json
+      chmod 500 etc/filebeat/certs
+      chmod 400 /etc/filebeat/certs/*
+      chown -R root:root etc/filebeat/certs
