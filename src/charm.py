@@ -3,15 +3,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# Learn more at: https://juju.is/docs/sdk
-
-"""Charm the service.
-
-Refer to the following post for a quick-start guide that will help you
-develop a new k8s charm using the Operator Framework:
-
-https://discourse.charmhub.io/t/4208
-"""
+"""Wazhub server charm."""
 
 import logging
 import typing
@@ -19,13 +11,13 @@ import typing
 import ops
 from ops import pebble
 
-# Log messages can be retrieved using juju debug-log
+import wazuh
+from state import InvalidStateError, State
+
 logger = logging.getLogger(__name__)
 
-VALID_LOG_LEVELS = ["info", "debug", "warning", "error", "critical"]
 
-
-class IsCharmsTemplateCharm(ops.CharmBase):
+class WazhubServerCharm(ops.CharmBase):
     """Charm the service."""
 
     def __init__(self, *args: typing.Any):
@@ -35,83 +27,52 @@ class IsCharmsTemplateCharm(ops.CharmBase):
             args: Arguments passed to the CharmBase parent constructor.
         """
         super().__init__(*args)
-        self.framework.observe(self.on.httpbin_pebble_ready, self._on_httpbin_pebble_ready)
-        self.framework.observe(self.on.config_changed, self._on_config_changed)
+        try:
+            self.state = State.from_charm(self, self.model.get_relation("wazuh-indexer"))
+        except InvalidStateError as exc:
+            self.unit.status = ops.BlockedStatus(exc.msg)
+            return
+        self.framework.observe(
+            self.on.wazuh_indexer_relation_changed, self._on_wazuh_indexer_relation_changed
+        )
+        self.framework.observe(
+            self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
+        )
 
-    def _on_httpbin_pebble_ready(self, event: ops.PebbleReadyEvent) -> None:
-        """Define and start a workload using the Pebble API.
+    def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
+        """Peeble ready habndler for the wazuh-server container."""
+        self._reconcile()
 
-        Change this example to suit your needs. You'll need to specify the right entrypoint and
-        environment configuration for your specific workload.
+    def _on_wazuh_indexer_relation_changed(self, _: ops.RelationJoinedEvent) -> None:
+        """Peeble ready habndler for the wazuh-indexer relation changed event."""
+        self._reconcile()
 
-        Learn more about interacting with Pebble at at https://juju.is/docs/sdk/pebble.
+    def _reconcile(self) -> None:
+        """Reconcile Wazuh configuration with charm state.
 
-        Args:
-            event: event triggering the handler.
+        This is the main entry for changes that require a restart.
         """
-        # Get a reference the container attribute on the PebbleReadyEvent
-        container = event.workload
-        # Add initial Pebble config layer using the Pebble API
-        container.add_layer("httpbin", self._pebble_layer, combine=True)
-        # Make Pebble reevaluate its plan, ensuring any services are started if enabled.
+        container = self.unit.get_container("wazhub-server")
+        wazuh.update_configuration(container, self.state.indexer_ips)
+        container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
-        # Learn more about statuses in the SDK docs:
-        # https://juju.is/docs/sdk/constructs#heading--statuses
-        self.unit.status = ops.ActiveStatus()
-
-    def _on_config_changed(self, event: ops.ConfigChangedEvent) -> None:
-        """Handle changed configuration.
-
-        Change this example to suit your needs. If you don't need to handle config, you can remove
-        this method.
-
-        Learn more about config at https://juju.is/docs/sdk/config
-
-        Args:
-            event: event triggering the handler.
-        """
-        # Fetch the new config value
-        log_level = str(self.model.config["log-level"]).lower()
-
-        # Do some validation of the configuration option
-        if log_level in VALID_LOG_LEVELS:
-            # The config is good, so update the configuration of the workload
-            container = self.unit.get_container("httpbin")
-            # Verify that we can connect to the Pebble API in the workload container
-            if container.can_connect():
-                # Push an updated layer with the new config
-                container.add_layer("httpbin", self._pebble_layer, combine=True)
-                container.replan()
-
-                logger.debug("Log level for gunicorn changed to '%s'", log_level)
-                self.unit.status = ops.ActiveStatus()
-            else:
-                # We were unable to connect to the Pebble API, so we defer this event
-                event.defer()
-                self.unit.status = ops.WaitingStatus("waiting for Pebble API")
-        else:
-            # In this case, the config option is bad, so block the charm and notify the operator.
-            self.unit.status = ops.BlockedStatus("invalid log level: '{log_level}'")
 
     @property
     def _pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer."""
         return {
-            "summary": "httpbin layer",
-            "description": "pebble config layer for httpbin",
+            "summary": "wazuh manager layer",
+            "description": "pebble config layer for wazuh-manager",
             "services": {
                 "httpbin": {
                     "override": "replace",
-                    "summary": "httpbin",
-                    "command": "gunicorn -b 0.0.0.0:80 httpbin:app -k gevent",
+                    "summary": "wazuh manager",
+                    "command": "systemctl start wazuh-manager",
                     "startup": "enabled",
-                    "environment": {
-                        "GUNICORN_CMD_ARGS": f"--log-level {self.model.config['log-level']}"
-                    },
                 }
             },
         }
 
 
 if __name__ == "__main__":  # pragma: nocover
-    ops.main.main(IsCharmsTemplateCharm)
+    ops.main.main(WazhubServerCharm)

@@ -38,3 +38,7 @@ resources:
   resource:
     type: oci-image
     description: OCI image for the Wazuh server
+requires:
+  wazuh-indexer:
+    interface: juju-info
+    scope: container

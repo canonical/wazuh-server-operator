@@ -11,7 +11,7 @@ import unittest
 import ops
 import ops.testing
 
-from charm import IsCharmsTemplateCharm
+from charm import WazhubServerCharm
 
 
 class TestCharm(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestCharm(unittest.TestCase):
 
     def setUp(self):
         """Set up the testing environment."""
-        self.harness = ops.testing.Harness(IsCharmsTemplateCharm)
+        self.harness = ops.testing.Harness(WazhubServerCharm)
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
 

@@ -40,3 +40,18 @@ parts:
       chmod 500 etc/filebeat/certs
       chmod 400 /etc/filebeat/certs/*
       chown -R root:root etc/filebeat/certs
+      systemctl daemon-reload
+      systemctl enable wazuh-manager
+  indexer-config:
+    plugin: nil
+      override-prime: |
+        craftctl default
+        /var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
+        /var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
+  charm-packages:
+    plugin: nil
+    stage-packages:
+      - libssl-dev
+      - libxml2
+      - libxslt1-dev
+
