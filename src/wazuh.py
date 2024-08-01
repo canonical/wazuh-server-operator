@@ -48,7 +48,7 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         new_host.text = f"https://{ip_port}"
         hosts.append(new_host)
     container.push(
-        OSSEC_CONF_PATH, etree.to_string(ossec_config_tree, pretty_print=True), encoding="utf-8"
+        OSSEC_CONF_PATH, etree.tostring(ossec_config_tree, pretty_print=True), encoding="utf-8"
     )
 
     proc = container.exec(["systemctl", "daemon-reload"])
