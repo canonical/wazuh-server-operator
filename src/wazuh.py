@@ -8,6 +8,7 @@
 from pathlib import Path
 
 import ops
+import yaml
 from lxml import etree  # nosec
 
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
@@ -29,24 +30,20 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
     Raises:
         WazuhInstallationError: if an error occurs while installing.
     """
-    ip_ports = [f"{ip}:92000" for ip in indexer_ips]
+    ip_ports = [f"{ip}:9200" for ip in indexer_ips]
     filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
-    new_filebeat_config = ""
-    for line in filebeat_config:
-        new_line = line
-        if line.startswith("hosts:"):
-            new_line = f"hosts: [{', '.join(ip_ports)}]"
-        new_filebeat_config = new_filebeat_config + new_line
-    container.push(FILEBEAT_CONF_PATH, new_filebeat_config, encoding="utf-8")
+    filebeat_config_yaml = yaml.safe_load(filebeat_config)
+    filebeat_config_yaml["hosts"] = ip_ports
+    container.push(FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml), encoding="utf-8")
 
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     ossec_config_tree = etree.fromstring(ossec_config)  # nosec
     hosts = ossec_config_tree.xpath("/indexer/hosts")
-    hosts.clear()
+    hosts[0].clear()
     for ip_port in ip_ports:
         new_host = etree.Element("host")
         new_host.text = f"https://{ip_port}"
-        hosts.append(new_host)
+        hosts[0].append(new_host)
     container.push(
         OSSEC_CONF_PATH, etree.tostring(ossec_config_tree, pretty_print=True), encoding="utf-8"
     )
@@ -66,5 +63,5 @@ def install_certificates(container: ops.Container, public_key: str, private_key:
         public_key: the certificate's public key.
         private_key: the certificate's private key.
     """
-    container.push(OSSEC_CONF_PATH / "filebeat.pem", public_key)
-    container.push(OSSEC_CONF_PATH / "filebeat-key.pem", private_key)
+    container.push(CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True)
+    container.push(CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True)
