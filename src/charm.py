@@ -12,6 +12,7 @@ import ops
 from ops import pebble
 
 import wazuh
+from certificates_observer import CertificatesObserver
 from state import InvalidStateError, State
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,11 @@ class WazhubServerCharm(ops.CharmBase):
             args: Arguments passed to the CharmBase parent constructor.
         """
         super().__init__(*args)
+
+        self.wazuh_indexer = self.model.get_relation("wazuh-indexer")
+        self.certificates = CertificatesObserver(self)
         try:
-            self.state = State.from_charm(self, self.model.get_relation("wazuh-indexer"))
+            self.state = State.from_charm(self, self.wazuh_indexer)
         except InvalidStateError as exc:
             self.unit.status = ops.BlockedStatus(exc.msg)
             return
@@ -52,7 +56,7 @@ class WazhubServerCharm(ops.CharmBase):
 
         This is the main entry for changes that require a restart.
         """
-        container = self.unit.get_container("wazhub-server")
+        container = self.unit.get_container("wazuh-server")
         wazuh.update_configuration(container, self.state.indexer_ips)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()

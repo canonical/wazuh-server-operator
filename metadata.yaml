@@ -39,6 +39,10 @@ resources:
     type: oci-image
     description: OCI image for the Wazuh server
 requires:
+  certificates:
+    interface: tls-certificates
+    limit: 1
   wazuh-indexer:
     interface: juju-info
     scope: container
+    limit: 1

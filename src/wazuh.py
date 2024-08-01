@@ -8,8 +8,9 @@
 from pathlib import Path
 
 import ops
-from lxml import etree
+from lxml import etree  # nosec
 
+CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 
@@ -47,9 +48,7 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         new_host.text = f"https://{ip_port}"
         hosts.append(new_host)
     container.push(
-        OSSEC_CONF_PATH,
-        etree.to_string(ossec_config_tree, pretty_print=True),
-        encoding="utf-8",
+        OSSEC_CONF_PATH, etree.to_string(ossec_config_tree, pretty_print=True), encoding="utf-8"
     )
 
     proc = container.exec(["systemctl", "daemon-reload"])
@@ -57,3 +56,15 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         proc.wait_output()
     except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
         raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
+
+
+def install_certificates(container: ops.Container, public_key: str, private_key: str) -> None:
+    """Update Wazhub filebeat certificates.
+
+    Arguments:
+        container: the container for which to update the configuration.
+        public_key: the certificate's public key.
+        private_key: the certificate's private key.
+    """
+    container.push(OSSEC_CONF_PATH / "filebeat.pem", public_key)
+    container.push(OSSEC_CONF_PATH / "filebeat-key.pem", private_key)
