@@ -52,6 +52,7 @@ class CertificatesObserver(Object):
     def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:
         """Relation joined event handler."""
         self._request_certificate()
+        self._charm.unit.status = ops.ActiveStatus()
 
     def _on_certificate_available(self, event: certificates.CertificateAvailableEvent) -> None:
         """Certificate available event handler.
@@ -66,8 +67,7 @@ class CertificatesObserver(Object):
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
         """Certificate expired event handler."""
         self._request_certificate()
-        logger.debug("Certificate expired.")
-        self._charm.unit.status = ops.WaitingStatus("Waiting for a new certificate to be issued.")
+        logger.debug("Certificate expiring.")
 
     def _on_certificate_invalidated(self, _: certificates.CertificateInvalidatedEvent) -> None:
         """Certificate invalidated event handler."""
