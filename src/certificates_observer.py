@@ -4,15 +4,15 @@
 """The Certificates relation observer."""
 
 import logging
-import secrets
 
-import charms.tls_certificates_interface.v1.tls_certificates as certificates
+import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from ops.framework import Object
 
 import wazuh
 
 logger = logging.getLogger(__name__)
+RELATION_NAME = "certificates"
 
 
 class CertificatesObserver(Object):
@@ -24,10 +24,10 @@ class CertificatesObserver(Object):
         Args:
             charm: The parent charm to attach the observer to.
         """
-        super().__init__(charm, "certificates")
+        super().__init__(charm, RELATION_NAME)
         self._charm = charm
-        self.private_key = secrets.token_urlsafe(20)
-        self.certificates = certificates.TLSCertificatesRequiresV1(self._charm, "certificates")
+        self.private_key = certificates.generate_private_key().decode()
+        self.certificates = certificates.TLSCertificatesRequiresV3(self._charm, RELATION_NAME)
         self.framework.observe(
             self._charm.on.certificates_relation_joined, self._on_certificates_relation_joined
         )
@@ -38,7 +38,7 @@ class CertificatesObserver(Object):
             self.certificates.on.certificate_expiring, self._on_certificate_expiring
         )
         self.framework.observe(
-            self.certificates.on.certificate_revoked, self._on_certificate_revoked
+            self.certificates.on.certificate_invalidated, self._on_certificate_invalidated
         )
 
     def _request_certificate(self) -> None:
@@ -47,9 +47,7 @@ class CertificatesObserver(Object):
             private_key=self.private_key.encode(), subject=self._charm.unit.name
         )
 
-        self.certificates.request_certificate_creation(
-            certificate_signing_request=csr.decode().removesuffix("\n")
-        )
+        self.certificates.request_certificate_creation(certificate_signing_request=csr)
 
     def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:
         """Relation joined event handler."""
@@ -71,8 +69,8 @@ class CertificatesObserver(Object):
         logger.debug("Certificate expired.")
         self._charm.unit.status = ops.WaitingStatus("Waiting for a new certificate to be issued.")
 
-    def _on_certificate_revoked(self, _: certificates.CertificateRevokedEvent) -> None:
-        """Certificate revoked event handler."""
+    def _on_certificate_invalidated(self, _: certificates.CertificateInvalidatedEvent) -> None:
+        """Certificate invalidated event handler."""
         self._request_certificate()
-        logger.debug("Certificate revoked.")
+        logger.debug("Certificate invalidated.")
         self._charm.unit.status = ops.WaitingStatus("Waiting for a new certificate to be issued.")

@@ -29,6 +29,9 @@ description: |
   straightforward through Juju's clean interface. It will allow easy deployment
   into multiple environments for testing of changes, and supports scaling out for
   enterprise deployments.
+assumes:
+  - juju >= 3.1.0
+  - k8s-api
 containers:
   wazuh-server:
     resource: wazuh-server-image
