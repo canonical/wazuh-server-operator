@@ -15,6 +15,8 @@ import wazuh
 
 REQUIRER_METADATA = """
 name: observer-charm
+containers:
+  wazuh-server:
 requires:
   certificates:
     interface: tls-certificates
@@ -75,9 +77,8 @@ def test_on_certificate_available(monkeypatch: pytest.MonkeyPatch) -> None:
         chain=[],
     )
 
-    mock.assert_called_once_with(
-        unittest.mock.ANY, harness.charm.certificates.private_key, "certificate"
-    )
+    container = harness.charm.unit.get_container("wazuh-server")
+    mock.assert_called_once_with(container, harness.charm.certificates.private_key, "certificate")
 
 
 def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:

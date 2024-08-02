@@ -18,8 +18,7 @@ import wazuh
 CHARM_METADATA = """
 name: wazuh
 containers:
-  default:
-    resource: wazuh-server-image
+  wazuh-server:
 """
 
 
@@ -32,7 +31,7 @@ def test_update_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     indexer_ips = ["10.0.0.2", "10.0.0.3"]
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
-    container = harness.charm.unit.get_container("default")
+    container = harness.charm.unit.get_container("wazuh-server")
     exec_process = unittest.mock.MagicMock()
     exec_process.wait_output = unittest.mock.MagicMock(return_value=(0, 0))
     exec_mock = unittest.mock.MagicMock(return_value=exec_process)
@@ -66,7 +65,7 @@ def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch
     indexer_ips = ["92.0.0.1", "92.0.0.2"]
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
-    container = harness.charm.unit.get_container("default")
+    container = harness.charm.unit.get_container("wazuh-server")
     exec_process = unittest.mock.MagicMock()
     exec_error = ops.pebble.ExecError(
         command=["systemctl", "daemon-reload"], exit_code=1, stdout="", stderr=""
@@ -91,7 +90,7 @@ def test_install_certificates() -> None:
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
-    container = harness.charm.unit.get_container("default")
+    container = harness.charm.unit.get_container("wazuh-server")
     wazuh.install_certificates(container, private_key="private_key", public_key="public_key")
 
     assert (
