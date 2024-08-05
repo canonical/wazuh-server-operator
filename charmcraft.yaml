@@ -14,7 +14,11 @@ bases:
 parts:
   charm:
     build-packages:
+      - build-essential
+      - cargo
       - libffi-dev
       - libssl-dev
+      - libxml2
+      - libxslt1-dev
+      - pkg-config
       - rustc
-      - cargo
