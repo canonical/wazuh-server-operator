@@ -3,3 +3,4 @@ jsonschema==4.23.0
 lxml==4.9.4
 ops==2.15.0
 pydantic==1.10.17
+rpds-py==0.18.1
