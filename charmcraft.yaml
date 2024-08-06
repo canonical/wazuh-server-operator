@@ -13,11 +13,14 @@ bases:
       channel: "22.04"
 parts:
   charm:
+    build-snaps:
+      - rustup
+    override-build: |
+      rustup default stable
+      craftctl default
     build-packages:
-      - cargo
       - libffi-dev
       - libssl-dev
       - libxml2
       - libxslt1-dev
       - pkg-config
-      - rustc
