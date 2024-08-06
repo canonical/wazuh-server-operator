@@ -36,9 +36,9 @@ def test_update_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     exec_process.wait_output = unittest.mock.MagicMock(return_value=(0, 0))
     exec_mock = unittest.mock.MagicMock(return_value=exec_process)
     monkeypatch.setattr(container, "exec", exec_mock)
-    filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text()
+    filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text(encoding="utf-8")
     container.push(wazuh.FILEBEAT_CONF_PATH, filebeat_content, make_dirs=True)
-    ossec_content = Path("tests/unit/resources/ossec.xml").read_text()
+    ossec_content = Path("tests/unit/resources/ossec.xml").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     wazuh.update_configuration(container, indexer_ips)
@@ -73,9 +73,9 @@ def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch
     exec_process.wait_output = unittest.mock.MagicMock(side_effect=exec_error)
     exec_mock = unittest.mock.MagicMock(return_value=exec_process)
     monkeypatch.setattr(container, "exec", exec_mock)
-    filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text()
+    filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text(encoding="utf-8")
     container.push(wazuh.FILEBEAT_CONF_PATH, filebeat_content, make_dirs=True)
-    ossec_content = Path("tests/unit/resources/ossec.xml").read_text()
+    ossec_content = Path("tests/unit/resources/ossec.xml").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     with pytest.raises(wazuh.WazuhInstallationError):

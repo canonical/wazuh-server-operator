@@ -46,8 +46,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             InvalidStateError: if the state is invalid.
         """
         try:
-            #indexer_ips = [unit.public_address for unit in wazuh_indexer_relation.units]
-            logger.error("RELDATA" + wazuh_indexer_relation.data)
+            # indexer_ips = [unit.public_address for unit in wazuh_indexer_relation.units]
+            logger.error("RELDATA %s", str(wazuh_indexer_relation.data))
             return cls(indexer_ips=[])
         except ValidationError as exc:
             logger.error("Invalid juju model proxy configuration, %s", exc)

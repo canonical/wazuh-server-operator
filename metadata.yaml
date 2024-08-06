@@ -38,7 +38,7 @@ containers:
 resources:
   # An OCI image resource for each container listed above.
   # You may remove this if your charm will run without a workload sidecar container.
-  resource:
+  wazuh-server-image:
     type: oci-image
     description: OCI image for the Wazuh server
 requires:
