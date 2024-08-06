@@ -48,9 +48,3 @@ parts:
       craftctl default
       /var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
       /var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
-  # charm-packages:
-  #   plugin: nil
-  #   stage-packages:
-  #     - libxml2
-  #     - libxslt1-dev
-

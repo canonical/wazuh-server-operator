@@ -19,7 +19,7 @@ from state import InvalidStateError, State
 logger = logging.getLogger(__name__)
 
 
-class WazhubServerCharm(ops.CharmBase):
+class WazuhServerCharm(ops.CharmBase):
     """Charm the service."""
 
     def __init__(self, *args: typing.Any):
@@ -86,4 +86,4 @@ class WazhubServerCharm(ops.CharmBase):
 
 
 if __name__ == "__main__":  # pragma: nocover
-    ops.main.main(WazhubServerCharm)
+    ops.main.main(WazuhServerCharm)

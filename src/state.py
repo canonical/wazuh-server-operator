@@ -24,7 +24,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         indexer_ips: list of Wazhug indexer IPs.
     """
 
-    indexer_ips: list[IPvAnyAddress] = Field(min_length=1)
+    indexer_ips: list[IPvAnyAddress]
 
     # pylint: disable=unused-argument
     @classmethod
