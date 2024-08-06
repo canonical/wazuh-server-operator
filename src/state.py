@@ -37,7 +37,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             charm: the root charm.
-            wazuh_indexer_relation: the Wazhub indexer relation.
+            wazuh_indexer_relation: the Wazuh indexer relation.
 
         Returns:
             Current state of the charm.

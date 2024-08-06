@@ -25,7 +25,7 @@ description: |
   XDR and SIEM system whilst keeping operations simple, and gives them the
   freedom to deploy on the Kubernetes platform of their choice.
 
-  For DevOps or SRE teams this charm will make operating Wazhub simple and
+  For DevOps or SRE teams this charm will make operating Wazuh simple and
   straightforward through Juju's clean interface. It will allow easy deployment
   into multiple environments for testing of changes, and supports scaling out for
   enterprise deployments.

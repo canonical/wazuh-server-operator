@@ -1,7 +1,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Wazhub unit tests."""
+"""Wazuh unit tests."""
 
 import unittest
 import unittest.mock

@@ -5,7 +5,7 @@
 
 # pylint: disable=import-outside-toplevel
 
-"""Wazhub operational logic."""
+"""Wazuh operational logic."""
 
 from pathlib import Path
 
@@ -22,7 +22,7 @@ class WazuhInstallationError(Exception):
 
 
 def update_configuration(container: ops.Container, indexer_ips: list[str]) -> None:
-    """Update Wazhub configuration.
+    """Update Wazuh configuration.
 
     Arguments:
         container: the container for which to update the configuration.
@@ -62,7 +62,7 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
 
 
 def install_certificates(container: ops.Container, public_key: str, private_key: str) -> None:
-    """Update Wazhub filebeat certificates.
+    """Update Wazuh filebeat certificates.
 
     Arguments:
         container: the container for which to update the configuration.

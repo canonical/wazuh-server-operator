@@ -3,7 +3,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Wazhub server charm."""
+"""Wazuh server charm."""
 
 import logging
 import typing
