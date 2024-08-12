@@ -9,6 +9,7 @@ import logging
 import typing
 
 import ops
+from charms.data_platform_libs.v0.data_interfaces import OpenSearchRequires
 from charms.operator_libs_linux.v0 import apt
 from ops import pebble
 
@@ -30,10 +31,10 @@ class WazuhServerCharm(ops.CharmBase):
         """
         super().__init__(*args)
         self.framework.observe(self.on.install, self._on_install)
-        self.wazuh_indexer = self.model.get_relation("wazuh-indexer")
         self.certificates = CertificatesObserver(self)
+        self.opensearch = OpenSearchRequires(self, "opensearch-client", "dummy")
         try:
-            self.state = State.from_charm(self, self.wazuh_indexer)
+            self.state = State.from_charm(self, self.opensearch)
         except InvalidStateError:
             self.unit.status = ops.BlockedStatus()
             return

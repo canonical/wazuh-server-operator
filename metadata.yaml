@@ -45,7 +45,5 @@ requires:
   certificates:
     interface: tls-certificates
     limit: 1
-  wazuh-indexer:
-    interface: juju-info
-    scope: container
-    limit: 1
+  opensearch-client:
+    interface: opensearch_client
