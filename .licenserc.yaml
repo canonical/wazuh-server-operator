@@ -23,4 +23,5 @@ header:
     - 'pyproject.toml'
     - 'zap_rules.tsv'
     - 'lib/**'
+    - 'tests/unit/resources/**'
   comment: on-failure
