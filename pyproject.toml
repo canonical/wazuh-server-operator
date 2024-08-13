@@ -1,7 +1,7 @@
 [tool.bandit]
 exclude_dirs = ["/venv/"]
 [tool.bandit.assert_used]
-skips = ["*/*test.py", "*/test_*.py", "*tests/*.py", "tests/integration/provider_charm"]
+skips = ["*/*test.py", "*/test_*.py", "*tests/*.py", "tests/integration/tls_provider_charm"]
 
 # Testing tools configuration
 [tool.coverage.run]
@@ -20,7 +20,7 @@ show_missing = true
 max-line-length = 99
 max-doc-length = 99
 max-complexity = 10
-exclude = [".git", "__pycache__", ".tox", "build", "dist", "*.egg_info", "venv", "provider_charm"]
+exclude = [".git", "__pycache__", ".tox", "build", "dist", "*.egg_info", "venv", "tls_provider_charm"]
 select = ["E", "W", "F", "C", "N", "R", "D", "H"]
 # Ignore W503, E501 because using black creates errors with this
 # Ignore D107 Missing docstring in __init__
@@ -39,7 +39,7 @@ disallow_untyped_defs = true
 explicit_package_bases = true
 ignore_missing_imports = true
 namespace_packages = true
-exclude = 'tests/integration/provider_charm'
+exclude = 'tests/integration/tls_provider_charm'
 
 [[tool.mypy.overrides]]
 disallow_untyped_defs = false

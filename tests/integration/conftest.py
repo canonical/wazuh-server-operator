@@ -29,7 +29,7 @@ async def model_fixture(ops_test: OpsTest) -> Model:
 
 @pytest_asyncio.fixture(scope="module", name="model")
 async def tls_certificates_provider_fixture(
-        ops_test: OpsTest, model: Model
+    ops_test: OpsTest, model: Model
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the tls_certificates_provider charm."""
     provider_charm = await ops_test.build_charm(f"{PROVIDER_CHARM_DIR}/")
