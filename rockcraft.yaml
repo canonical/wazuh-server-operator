@@ -24,14 +24,15 @@ parts:
       - apt-transport-https
       - filebeat
       - gnupg
+      - wazuh-manager
     stage-packages:
       - filebeat
       - wazuh-manager
-  filebeat:
-    plugin: nil
-    override-prime: |
+    override-stage: |
       craftctl default
+      mkdir -p etc/filebeat/certs
       curl -o etc/filebeat/filebeat.yml https://packages.wazuh.com/4.8/tpl/wazuh/filebeat/filebeat.yml
+      mkdir -p usr/share/filebeat/module
       curl https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C usr/share/filebeat/module
       echo admin | filebeat keystore add username --stdin --force
       echo admin | filebeat keystore add password --stdin --force
@@ -40,11 +41,10 @@ parts:
       chmod 500 etc/filebeat/certs
       # chmod 400 etc/filebeat/certs/*
       chown -R root:root etc/filebeat/certs
-      systemctl daemon-reload
-      systemctl enable wazuh-manager
-  indexer-config:
-    plugin: nil
+      var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
+      var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
     override-prime: |
       craftctl default
-      /var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
-      /var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
+      systemctl daemon-reload
+      systemctl enable wazuh-manager
+      
