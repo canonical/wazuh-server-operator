@@ -35,7 +35,7 @@ class WazuhServerCharm(ops.CharmBase):
         super().__init__(*args)
         self.framework.observe(self.on.install, self._on_install)
         self.certificates = CertificatesObserver(self)
-        self.opensearch = OpenSearchRequires(self, OPENSEARCH_RELATION_NAME, "dummy")
+        self.opensearch = OpenSearchRequires(self, OPENSEARCH_RELATION_NAME, "placeholder")
         try:
             opensearch_relation = self.model.get_relation(OPENSEARCH_RELATION_NAME)
             opensearch_relation_data = (
