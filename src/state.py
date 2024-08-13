@@ -4,6 +4,7 @@
 """Wazuh server charm state."""
 
 import logging
+from typing import Annotated
 
 import ops
 from pydantic import BaseModel, Field, ValidationError
@@ -19,23 +20,23 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     """The Wazuh server charm state.
 
     Attributes:
-        indexer_ips: list of Wazhug indexer IPs.
+        indexer_ips: list of Wazuh indexer IPs.
     """
 
-    indexer_ips: list[str] = Field(min_length=1)
+    indexer_ips: Annotated[list[str], Field(min_length=1)]
 
     # pylint: disable=unused-argument
     @classmethod
     def from_charm(
         cls,
         charm: ops.CharmBase,
-        indexer_relation_data: ops.RelationData,
+        indexer_relation_data: dict[str, str],
     ) -> "State":
         """Initialize the state from charm.
 
         Args:
             charm: the root charm.
-            indexer_relation_data: the Wazuh indexer relation data.
+            indexer_relation_data: the Wazuh indexer app relation data.
 
         Returns:
             Current state of the charm.
@@ -44,7 +45,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             InvalidStateError: if the state is invalid.
         """
         try:
-            endpoint_data = indexer_relation_data[charm.app]["endpoints"]
+            endpoint_data = indexer_relation_data.get("endpoints")
             endpoints = list(endpoint_data.split(",")) if endpoint_data else []
             return cls(indexer_ips=endpoints)
         except ValidationError as exc:

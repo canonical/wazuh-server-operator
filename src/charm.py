@@ -20,6 +20,9 @@ from state import InvalidStateError, State
 logger = logging.getLogger(__name__)
 
 
+OPENSEARCH_RELATION_NAME = "opensearch-client"
+
+
 class WazuhServerCharm(ops.CharmBase):
     """Charm the service."""
 
@@ -32,14 +35,18 @@ class WazuhServerCharm(ops.CharmBase):
         super().__init__(*args)
         self.framework.observe(self.on.install, self._on_install)
         self.certificates = CertificatesObserver(self)
-        self.opensearch = OpenSearchRequires(self, "opensearch-client", "dummy")
+        self.opensearch = OpenSearchRequires(self, OPENSEARCH_RELATION_NAME, "dummy")
         try:
-            self.state = State.from_charm(self, self.opensearch)
+            opensearch_relation = self.model.get_relation(OPENSEARCH_RELATION_NAME)
+            opensearch_relation_data = (
+                opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
+            )
+            self.state = State.from_charm(self, opensearch_relation_data)
         except InvalidStateError:
             self.unit.status = ops.BlockedStatus()
             return
         self.framework.observe(
-            self.on.wazuh_indexer_relation_changed, self._on_wazuh_indexer_relation_changed
+            self.on.opensearch_client_relation_changed, self._on_opensearch_client_relation_changed
         )
         self.framework.observe(
             self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
@@ -49,13 +56,12 @@ class WazuhServerCharm(ops.CharmBase):
         """Install needed apt packages."""
         self.unit.status = ops.MaintenanceStatus("Installing packages")
         apt.add_package(["libssl-dev", "libxml2", "libxslt1-dev"], update_cache=True)
-        self.unit.status = ops.ActiveStatus()
 
     def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
         """Peeble ready habndler for the wazuh-server container."""
         self._reconcile()
 
-    def _on_wazuh_indexer_relation_changed(self, _: ops.RelationJoinedEvent) -> None:
+    def _on_opensearch_client_relation_changed(self, _: ops.RelationJoinedEvent) -> None:
         """Peeble ready habndler for the wazuh-indexer relation changed event."""
         self._reconcile()
 
@@ -68,6 +74,7 @@ class WazuhServerCharm(ops.CharmBase):
         wazuh.update_configuration(container, self.state.indexer_ips)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
+        self.unit.status = ops.ActiveStatus()
 
     @property
     def _pebble_layer(self) -> pebble.LayerDict:
