@@ -39,7 +39,7 @@ disallow_untyped_defs = true
 explicit_package_bases = true
 ignore_missing_imports = true
 namespace_packages = true
-exclude = 'tests/integration/tls_provider_charm'
+exclude = "tests/integration/tls_provider_charm"
 
 [[tool.mypy.overrides]]
 disallow_untyped_defs = false
@@ -47,6 +47,7 @@ module = "tests.*"
 
 [tool.pylint]
 disable = "wrong-import-order"
+extension-pkg-whitelist = "lxml,pydantic"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
