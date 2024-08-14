@@ -11,3 +11,4 @@ def pytest_addoption(parser):
         parser: Pytest parser.
     """
     parser.addoption("--charm-file", action="store")
+    parser.addoption("--wazuh-server-image", action="store")
