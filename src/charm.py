@@ -83,12 +83,19 @@ class WazuhServerCharm(ops.CharmBase):
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
             "services": {
-                "httpbin": {
+                "wazuh": {
                     "override": "replace",
                     "summary": "wazuh manager",
                     "command": "systemctl start wazuh-manager",
                     "startup": "enabled",
-                }
+                },
+            },
+            "checks": {
+                "wazuh-ready": {
+                    "override": "replace",
+                    "level": "ready",
+                    "http": {"url": "http://localhost:55000/"},
+                },
             },
         }
 
