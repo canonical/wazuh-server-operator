@@ -15,9 +15,7 @@ from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
 
-TEST_EXTERNAL_HOSTNAME_CONFIG = "gateway.internal"
-GATEWAY_CLASS_CONFIG = "cilium"
-PROVIDER_CHARM_DIR = "tests/integration/provider_charm"
+PROVIDER_CHARM_DIR = "tests/integration/tls_provider_charm"
 
 
 @pytest_asyncio.fixture(scope="module", name="model")
