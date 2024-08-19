@@ -5,12 +5,13 @@
 
 import logging
 import os.path
+import secrets
 import typing
 
 import pytest
 import pytest_asyncio
 from juju.application import Application
-from juju.model import Model
+from juju.model import Controller, Model
 from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,30 @@ async def model_fixture(ops_test: OpsTest) -> Model:
     """The current test model."""
     assert ops_test.model
     return ops_test.model
+
+
+@pytest_asyncio.fixture(scope="module", name="machine_controller")
+async def machine_controller_fixture() -> typing.AsyncGenerator[Controller, None]:
+    """The lxd controller."""
+    controller = Controller()
+    await controller.connect_controller("localhost")
+    yield controller
+    await controller.disconnect()
+
+
+@pytest_asyncio.fixture(scope="module", name="machine_model")
+async def machine_model_fixture(
+    machine_controller: Controller,
+) -> typing.AsyncGenerator[Model, None]:
+    """The machine model for jenkins agent machine charm."""
+    machine_model_name = f"jenkins-agent-machine-{secrets.token_hex(2)}"
+    model = await machine_controller.add_model(machine_model_name)
+    await model.connect(f"localhost:admin/{model.name}")
+    yield model
+    await machine_controller.destroy_models(
+        model.name, destroy_storage=True, force=True, max_wait=10 * 60
+    )
+    await model.disconnect()
 
 
 @pytest_asyncio.fixture(scope="module", name="model")
@@ -45,21 +70,24 @@ async def tls_certificates_provider_fixture(
 
 
 @pytest_asyncio.fixture(scope="module", name="model")
-async def opensearch_provider_fixture(model: Model) -> typing.AsyncGenerator[Application, None]:
+async def opensearch_provider_fixture(
+    machine_model: Model,
+) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
-    certificates_application = await model.deploy(
+    certificates_application = await machine_model.deploy(
         "self-signed-certificates",
         application_name="self-signed-certificates",
         channel="latest/stable",
         config={"ca-common-name": "Test CA"},
     )
-    application = await model.deploy(
+    application = await machine_model.deploy(
         "opensearch",
-        application_name="tls-certificates-provider",
+        application_name="opensearch",
         channel="2/beta",
     )
-    await model.add_relation(certificates_application.name, application.name)
-    await model.wait_for_idle(
+    await machine_model.add_relation(certificates_application.name, application.name)
+    await machine_model.create_offer(f"{application.name}:opensearch_client", application.name)
+    await machine_model.wait_for_idle(
         apps=[certificates_application.name, application.name],
         status="blocked",
         timeout=1000,
@@ -88,7 +116,10 @@ async def application_fixture(
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
     application = await model.deploy(f"./{charm}", trust=True)
-    await model.add_relation(opensearch_provider.name, application.name)
+    await model.add_relation(
+        f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
+        application.name,
+    )
     await model.add_relation(tls_certificates_provider.name, application.name)
     await model.wait_for_idle(
         apps=[application.name],
