@@ -21,13 +21,26 @@ parts:
   wazuh:
     plugin: nil
     build-packages:
-      - apt-transport-https
-      - filebeat
-      - gnupg
-      - wazuh-manager
+      - autoconf
+      - automake
+      - curl
+      - gcc
+      - g++
+      - libc6-dev
+      - libtool
+      - libssl-dev
+      - make
+      - policycoreutils
     stage-packages:
       - filebeat
       - wazuh-manager
+    override-build: |
+      craftctl default
+      curl -OL https://packages.wazuh.com/utils/cmake/cmake-3.18.3.tar.gz
+      tar -zxf cmake-3.18.3.tar.gz
+      cd cmake-3.18.3 && ./bootstrap --no-system-curl && make -j$(nproc)
+      make install
+      cd .. && rm -rf cmake-*
     override-stage: |
       craftctl default
       mkdir -p etc/filebeat/certs
