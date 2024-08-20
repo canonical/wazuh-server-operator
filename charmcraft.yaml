@@ -13,14 +13,29 @@ bases:
       channel: "22.04"
 parts:
   charm:
+    build-packages:
+      - libffi-dev
+      - libssl-dev
+      - libxml2-dev
+      - libxslt-dev
+      - pkg-config
+      - python3-dev
     build-snaps:
       - rustup
     override-build: |
       rustup default stable
       craftctl default
-    build-packages:
-      - libffi-dev
-      - libssl-dev
-      - libxml2
-      - libxslt1-dev
-      - pkg-config
+      # charmcraft filters all environment variables, build statically linked variant of lxml here
+      ls -lah $CRAFT_PART_INSTALL/venv
+      CFLAGS="-O3 -g1 -pipe -fPIC -flto" \
+        LDFLAGS="-fPIC -flto" \
+        STATIC_DEPS="true" \
+        $CRAFT_PART_BUILD/staging-venv/bin/pip \
+        install --target $CRAFT_PART_INSTALL/venv -v \
+        --no-binary :all: \
+        $(grep lxml requirements-lxml.txt)
+      # install all remaining packages depends on lxml
+      $CRAFT_PART_BUILD/staging-venv/bin/pip \
+        install --target $CRAFT_PART_INSTALL/venv -v \
+        --no-binary :all: \
+        -r requirements-lxml.txt

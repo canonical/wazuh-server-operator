@@ -10,7 +10,6 @@ import typing
 
 import ops
 from charms.data_platform_libs.v0.data_interfaces import OpenSearchRequires
-from charms.operator_libs_linux.v0 import apt
 from ops import pebble
 
 import wazuh
@@ -33,7 +32,6 @@ class WazuhServerCharm(ops.CharmBase):
             args: Arguments passed to the CharmBase parent constructor.
         """
         super().__init__(*args)
-        self.framework.observe(self.on.install, self._on_install)
         self.certificates = CertificatesObserver(self)
         self.opensearch = OpenSearchRequires(self, OPENSEARCH_RELATION_NAME, "placeholder")
         try:
@@ -51,11 +49,6 @@ class WazuhServerCharm(ops.CharmBase):
         self.framework.observe(
             self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
         )
-
-    def _on_install(self, _: ops.InstallEvent) -> None:
-        """Install needed apt packages."""
-        self.unit.status = ops.MaintenanceStatus("Installing packages")
-        apt.add_package(["libssl-dev", "libxml2", "libxslt1-dev"], update_cache=True)
 
     def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
         """Peeble ready habndler for the wazuh-server container."""

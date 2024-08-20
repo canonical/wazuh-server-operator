@@ -17,7 +17,7 @@ jobs:
         --kube-config=${GITHUB_WORKSPACE}/kube-config
       juju-channel: 3.5/stable
       load-test-enabled: false
-        pre-run-script: |
+      pre-run-script: |
         -c "sudo microk8s config > ${GITHUB_WORKSPACE}/kube-config
         chmod +x tests/integration/pre_run_script.sh
         ./tests/integration/pre_run_script.sh"
