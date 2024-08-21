@@ -13,8 +13,6 @@ jobs:
     secrets: inherit
     with:
       channel: 1.28-strict/stable
-      extra-arguments: |
-        --kube-config=${GITHUB_WORKSPACE}/kube-config
       juju-channel: 3.5/stable
       load-test-enabled: false
       pre-run-script: |
