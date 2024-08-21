@@ -24,5 +24,5 @@ jobs:
       zap-enabled: false
       trivy-fs-enabled: true
       trivy-image-config: "trivy.yaml"
-      self-hosted-runner: true
-      self-hosted-runner-label: "xlarge"
+      self-hosted-runner: false
+      self-hosted-runner-label: "edge"
