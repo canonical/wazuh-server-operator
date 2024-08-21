@@ -86,7 +86,7 @@ async def opensearch_provider_fixture(
         channel="2/beta",
     )
     await machine_model.add_relation(certificates_application.name, application.name)
-    await machine_model.create_offer(f"{application.name}:opensearch_client", application.name)
+    await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     await machine_model.wait_for_idle(
         apps=[certificates_application.name, application.name],
         status="blocked",
