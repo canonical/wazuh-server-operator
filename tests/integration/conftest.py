@@ -18,6 +18,16 @@ logger = logging.getLogger(__name__)
 
 PROVIDER_CHARM_DIR = "tests/integration/tls_provider_charm"
 
+MACHINE_MODEL_CONFIG = {
+    "logging-config": "<root>=INFO;unit=DEBUG",
+    "update-status-hook-interval": "5m",
+    "cloudinit-userdata": """postruncmd:
+        - [ 'sysctl', '-w', 'vm.max_map_count=262144' ]
+        - [ 'sysctl', '-w', 'fs.file-max=1048576' ]
+        - [ 'sysctl', '-w', 'vm.swappiness=0' ]
+        - [ 'sysctl', '-w', 'net.ipv4.tcp_retries2=5' ]
+    """,
+}
 
 @pytest_asyncio.fixture(scope="module", name="model")
 async def model_fixture(ops_test: OpsTest) -> Model:
@@ -43,6 +53,7 @@ async def machine_model_fixture(
     machine_model_name = f"jenkins-agent-machine-{secrets.token_hex(2)}"
     model = await machine_controller.add_model(machine_model_name)
     await model.connect(f"localhost:admin/{model.name}")
+    await model.set_config(MACHINE_MODEL_CONFIG)
     yield model
     await machine_controller.destroy_models(
         model.name, destroy_storage=True, force=True, max_wait=10 * 60
