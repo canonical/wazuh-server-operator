@@ -51,7 +51,7 @@ async def machine_model_fixture(
     machine_controller: Controller,
 ) -> typing.AsyncGenerator[Model, None]:
     """The machine model for jenkins agent machine charm."""
-    machine_model_name = f"jenkins-agent-machine-{secrets.token_hex(2)}"
+    machine_model_name = f"machine-{secrets.token_hex(2)}"
     model = await machine_controller.add_model(machine_model_name)
     await model.connect(f"localhost:admin/{model.name}")
     await model.set_config(MACHINE_MODEL_CONFIG)
@@ -97,7 +97,7 @@ async def opensearch_provider_fixture(
         application_name="opensearch",
         channel="2/edge",
     )
-    await machine_model.add_relation(certificates_application.name, application.name)
+    await machine_model.integrate(certificates_application.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     await machine_model.wait_for_idle(
         apps=[certificates_application.name, application.name],
@@ -128,11 +128,11 @@ async def application_fixture(
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
     application = await model.deploy(f"./{charm}", trust=True)
-    await model.add_relation(
+    await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
     )
-    await model.add_relation(tls_certificates_provider.name, application.name)
+    await model.integrate(tls_certificates_provider.name, application.name)
     await model.wait_for_idle(
         apps=[application.name],
         status="active",
