@@ -29,6 +29,7 @@ MACHINE_MODEL_CONFIG = {
     """,
 }
 
+
 @pytest_asyncio.fixture(scope="module", name="model")
 async def model_fixture(ops_test: OpsTest) -> Model:
     """The current test model."""
