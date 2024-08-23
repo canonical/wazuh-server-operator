@@ -18,3 +18,13 @@ sg snap_microk8s -c "juju bootstrap localhost localhost"
 
 echo "Switching to testing model"
 sg snap_microk8s -c "juju switch $TESTING_MODEL"
+
+# https://charmhub.io/opensearch/docs/t-set-up#set-parameters-on-the-host-machine
+sudo tee -a /etc/sysctl.conf > /dev/null <<EOT
+vm.max_map_count=262144
+vm.swappiness=0
+net.ipv4.tcp_retries2=5
+fs.file-max=1048576
+EOT
+
+sudo sysctl -p
