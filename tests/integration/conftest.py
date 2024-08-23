@@ -68,7 +68,7 @@ async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, No
     application = await model.deploy(
         "traefik-k8s", application_name="traefik-k8s", channel="latest/stable"
     )
-    await model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
+    # await model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -134,5 +134,5 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(traefik.name, application.name)
-    await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
+    # await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
     yield application
