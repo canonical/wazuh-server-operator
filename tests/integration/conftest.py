@@ -62,7 +62,7 @@ async def machine_model_fixture(
     await model.disconnect()
 
 
-@pytest_asyncio.fixture(scope="module", name="model")
+@pytest_asyncio.fixture(scope="module", name="traefik")
 async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, None]:
     """Deploy the traefik charm."""
     application = await model.deploy(
@@ -72,7 +72,7 @@ async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, No
     yield application
 
 
-@pytest_asyncio.fixture(scope="module", name="model")
+@pytest_asyncio.fixture(scope="module", name="self_signed_certificates")
 async def self_signed_certificates_fixture(
     machine_model: Model,
 ) -> typing.AsyncGenerator[Application, None]:
@@ -88,7 +88,7 @@ async def self_signed_certificates_fixture(
     yield application
 
 
-@pytest_asyncio.fixture(scope="module", name="model")
+@pytest_asyncio.fixture(scope="module", name="opensearch_provider")
 async def opensearch_provider_fixture(
     machine_model: Model,
     self_signed_certificates: Application,
