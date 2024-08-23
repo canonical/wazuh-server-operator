@@ -63,19 +63,6 @@ async def machine_model_fixture(
 
 
 @pytest_asyncio.fixture(scope="module", name="model")
-async def tls_certificates_provider_fixture(
-    ops_test: OpsTest, model: Model
-) -> typing.AsyncGenerator[Application, None]:
-    """Deploy the tls_certificates_provider charm."""
-    provider_charm = await ops_test.build_charm(f"{PROVIDER_CHARM_DIR}/")
-    application = await model.deploy(
-        provider_charm, application_name="tls-certificates-provider", series="jammy"
-    )
-    await model.wait_for_idle(apps=[application.name], status="blocked", timeout=1000)
-    yield application
-
-
-@pytest_asyncio.fixture(scope="module", name="model")
 async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, None]:
     """Deploy the traefik charm."""
     application = await model.deploy(
@@ -86,24 +73,33 @@ async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, No
 
 
 @pytest_asyncio.fixture(scope="module", name="model")
-async def opensearch_provider_fixture(
+async def self_signed_certificates_fixture(
     machine_model: Model,
 ) -> typing.AsyncGenerator[Application, None]:
-    """Deploy the opensearch charm."""
-    certificates_application = await machine_model.deploy(
+    """Deploy the self signed certificates charm."""
+    application = await machine_model.deploy(
         "self-signed-certificates",
         application_name="self-signed-certificates",
         channel="latest/stable",
         config={"ca-common-name": "Test CA"},
     )
+    await machine_model.create_offer(f"{application.name}:certificates", application.name)
+    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
+    yield application
+
+
+@pytest_asyncio.fixture(scope="module", name="model")
+async def opensearch_provider_fixture(
+    machine_model: Model,
+    self_signed_certificates: Application,
+) -> typing.AsyncGenerator[Application, None]:
+    """Deploy the opensearch charm."""
     application = await machine_model.deploy(
         "opensearch", application_name="opensearch", channel="2/edge"
     )
-    await machine_model.integrate(certificates_application.name, application.name)
+    await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
-    await machine_model.wait_for_idle(
-        apps=[certificates_application.name, application.name], status="active", timeout=1000
-    )
+    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -122,8 +118,8 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
 async def application_fixture(
     charm: str,
     model: Model,
+    self_signed_certificates: Application,
     opensearch_provider: Application,
-    tls_certificates_provider: Application,
     traefik: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
@@ -133,7 +129,10 @@ async def application_fixture(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
     )
-    await model.integrate(tls_certificates_provider.name, application.name)
+    await model.integrate(
+        f"localhost:admin/{self_signed_certificates.model.name}.{self_signed_certificates.name}",
+        application.name,
+    )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
     yield application
