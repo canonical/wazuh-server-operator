@@ -39,7 +39,7 @@ class ObservedCharm(ops.CharmBase):
 def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
-    act: integrate the charm leveraging the certicicates integration.
+    act: integrate the charm leveraging the certificates integration.
     assert: a new certificate unit is requested and the charms reaches active status
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)

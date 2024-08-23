@@ -47,3 +47,7 @@ requires:
     limit: 1
   opensearch-client:
     interface: opensearch_client
+    limit: 1
+  traefik-route:
+    interface: traefik_route
+    limit: 1

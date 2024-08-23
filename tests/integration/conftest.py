@@ -69,15 +69,19 @@ async def tls_certificates_provider_fixture(
     """Deploy the tls_certificates_provider charm."""
     provider_charm = await ops_test.build_charm(f"{PROVIDER_CHARM_DIR}/")
     application = await model.deploy(
-        provider_charm,
-        application_name="tls-certificates-provider",
-        series="jammy",
+        provider_charm, application_name="tls-certificates-provider", series="jammy"
     )
-    await model.wait_for_idle(
-        apps=[application.name],
-        status="blocked",
-        timeout=1000,
+    await model.wait_for_idle(apps=[application.name], status="blocked", timeout=1000)
+    yield application
+
+
+@pytest_asyncio.fixture(scope="module", name="model")
+async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, None]:
+    """Deploy the traefik charm."""
+    application = await model.deploy(
+        "traefik-k8s", application_name="traefik-k8s", channel="latest/stable"
     )
+    await model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -93,16 +97,12 @@ async def opensearch_provider_fixture(
         config={"ca-common-name": "Test CA"},
     )
     application = await machine_model.deploy(
-        "opensearch",
-        application_name="opensearch",
-        channel="2/edge",
+        "opensearch", application_name="opensearch", channel="2/edge"
     )
     await machine_model.integrate(certificates_application.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     await machine_model.wait_for_idle(
-        apps=[certificates_application.name, application.name],
-        status="active",
-        timeout=1000,
+        apps=[certificates_application.name, application.name], status="active", timeout=1000
     )
     yield application
 
@@ -124,6 +124,7 @@ async def application_fixture(
     model: Model,
     opensearch_provider: Application,
     tls_certificates_provider: Application,
+    traefik: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
@@ -133,9 +134,6 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(tls_certificates_provider.name, application.name)
-    await model.wait_for_idle(
-        apps=[application.name],
-        status="active",
-        raise_on_error=True,
-    )
+    await model.integrate(traefik.name, application.name)
+    await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
     yield application

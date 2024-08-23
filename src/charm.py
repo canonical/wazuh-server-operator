@@ -15,6 +15,7 @@ from ops import pebble
 import wazuh
 from certificates_observer import CertificatesObserver
 from state import InvalidStateError, State
+from traefik_route_observer import TraefikRouteObserver
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class WazuhServerCharm(ops.CharmBase):
         """
         super().__init__(*args)
         self.certificates = CertificatesObserver(self)
+        self.traefik_route = TraefikRouteObserver(self)
         self.opensearch = OpenSearchRequires(self, OPENSEARCH_RELATION_NAME, "placeholder")
         try:
             opensearch_relation = self.model.get_relation(OPENSEARCH_RELATION_NAME)
@@ -51,11 +53,11 @@ class WazuhServerCharm(ops.CharmBase):
         )
 
     def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
-        """Peeble ready habndler for the wazuh-server container."""
+        """Peeble ready handler for the wazuh-server container."""
         self._reconcile()
 
     def _on_opensearch_client_relation_changed(self, _: ops.RelationJoinedEvent) -> None:
-        """Peeble ready habndler for the wazuh-indexer relation changed event."""
+        """Peeble ready handler for the wazuh-indexer relation changed event."""
         self._reconcile()
 
     def _reconcile(self) -> None:
