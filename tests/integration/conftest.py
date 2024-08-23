@@ -134,5 +134,5 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(traefik.name, application.name)
-    # await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
+    await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
     yield application
