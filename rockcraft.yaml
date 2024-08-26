@@ -1,5 +1,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
+
+# TODO: build from sources
 package-repositories:
   - components: [main]
     key-id: 0DCFCA5547B19D2A6099506096B3EE5F29111145
