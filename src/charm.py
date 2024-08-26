@@ -53,11 +53,11 @@ class WazuhServerCharm(ops.CharmBase):
         )
 
     def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
-        """Peeble ready handler for the wazuh-server container."""
+        """Pebble ready handler for the wazuh-server container."""
         self._reconcile()
 
     def _on_opensearch_client_relation_changed(self, _: ops.RelationJoinedEvent) -> None:
-        """Peeble ready handler for the wazuh-indexer relation changed event."""
+        """Pebble ready handler for the wazuh-indexer relation changed event."""
         self._reconcile()
 
     def _reconcile(self) -> None:

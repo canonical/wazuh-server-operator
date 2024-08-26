@@ -60,7 +60,7 @@ Update Wazuh filebeat certificates.
 ---
 
 ## <kbd>class</kbd> `WazuhInstallationError`
-Base exception for Jenkins errors. 
+Base exception for Wazuh errors. 
 
 
 

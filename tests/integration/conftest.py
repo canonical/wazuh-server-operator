@@ -50,7 +50,7 @@ async def machine_controller_fixture() -> typing.AsyncGenerator[Controller, None
 async def machine_model_fixture(
     machine_controller: Controller,
 ) -> typing.AsyncGenerator[Model, None]:
-    """The machine model for jenkins agent machine charm."""
+    """The machine model for OpenSearch charm."""
     machine_model_name = f"machine-{secrets.token_hex(2)}"
     model = await machine_controller.add_model(machine_model_name)
     await model.connect(f"localhost:admin/{model.name}")

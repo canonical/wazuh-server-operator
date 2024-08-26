@@ -18,7 +18,7 @@ OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 
 
 class WazuhInstallationError(Exception):
-    """Base exception for Jenkins errors."""
+    """Base exception for Wazuh errors."""
 
 
 def update_configuration(container: ops.Container, indexer_ips: list[str]) -> None:
