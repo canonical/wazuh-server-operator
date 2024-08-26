@@ -65,9 +65,9 @@ class CertificatesObserver(Object):
         )
 
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
-        """Certificate expired event handler."""
+        """Certificate expiring event handler."""
         self._request_certificate()
-        logger.debug("Certificate expiring.")
+        logger.debug("Certificate expiring. Requested new certificate.")
 
     def _on_certificate_invalidated(self, _: certificates.CertificateInvalidatedEvent) -> None:
         """Certificate invalidated event handler."""
