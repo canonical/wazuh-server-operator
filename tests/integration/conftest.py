@@ -56,9 +56,6 @@ async def machine_model_fixture(
     await model.connect(f"localhost:admin/{model.name}")
     await model.set_config(MACHINE_MODEL_CONFIG)
     yield model
-    await machine_controller.destroy_models(
-        model.name, destroy_storage=True, force=True, max_wait=10 * 60
-    )
     await model.disconnect()
 
 
