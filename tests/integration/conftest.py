@@ -92,7 +92,7 @@ async def opensearch_provider_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     application = await machine_model.deploy(
-        "opensearch", application_name="opensearch", channel="2/edge", 
+        "opensearch", application_name="opensearch", channel="2/edge"
     )
     await application.scale(2)
     await machine_model.integrate(self_signed_certificates.name, application.name)
