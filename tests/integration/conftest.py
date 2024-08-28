@@ -111,17 +111,22 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
     return charm
 
 
+# pylint: disable=too-many-arguments
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
     charm: str,
     model: Model,
     self_signed_certificates: Application,
     opensearch_provider: Application,
+    pytestconfig: pytest.Config,
     traefik: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
-    application = await model.deploy(f"./{charm}", trust=True)
+    resources = {
+        "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
+    }
+    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
