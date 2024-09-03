@@ -66,6 +66,8 @@ class WazuhServerCharm(ops.CharmBase):
         This is the main entry for changes that require a restart.
         """
         container = self.unit.get_container("wazuh-server")
+        if not container.can_connect():
+            return
         wazuh.update_configuration(container, self.state.indexer_ips)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
