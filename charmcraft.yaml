@@ -22,6 +22,8 @@ parts:
       - python3-dev
     build-snaps:
       - rustup
+    charm-requirements:
+      - requirements-charmcraft.txt
     override-build: |
       rustup default stable
       craftctl default
