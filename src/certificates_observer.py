@@ -69,7 +69,7 @@ class CertificatesObserver(Object):
         except ops.pebble.ConnectionError:
             # We can't afford to miss this event, so defer it.
             logger.warning(
-                "We got a certificate available event, but unable to connect "
+                "Got a certificate available event, but unable to connect "
                 "to pebble, so deferring."
             )
             event.defer()
