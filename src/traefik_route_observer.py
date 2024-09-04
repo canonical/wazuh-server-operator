@@ -36,8 +36,8 @@ class TraefikRouteObserver(Object):
             return
         entry_points = {}
         # Ports for agent communication, agent enrollment and API, respectively
-        # XXX: This is overwriting each time, we need to fix to use the correct
-        #      format.
+        # XXX: This is overwriting each time, we need to fix to use the # pylint: disable=W0511
+        #      correct format.
         for port in [1514, 1515, 55000]:
             entry_points["tcp"] = {"address": f":{port}"}
         self.traefik_route.submit_to_traefik(config={"entryPoints": entry_points})
