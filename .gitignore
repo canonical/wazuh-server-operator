@@ -5,6 +5,7 @@ build/
 .coverage
 __pycache__/
 *.py[cod]
+*.swp
 .idea
 .vscode
 .mypy_cache

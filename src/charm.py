@@ -67,6 +67,10 @@ class WazuhServerCharm(ops.CharmBase):
         """
         container = self.unit.get_container("wazuh-server")
         if not container.can_connect():
+            logger.warning(
+                "Unable to connect to container during reconcile. "
+                "Waiting for future events which will trigger another reconcile."
+            )
             return
         wazuh.update_configuration(container, self.state.indexer_ips)
         container.add_layer("wazuh", self._pebble_layer, combine=True)

@@ -60,9 +60,19 @@ class CertificatesObserver(Object):
         Args:
             event: the event triggering the handler.
         """
-        wazuh.install_certificates(
-            self._charm.unit.containers.get("wazuh-server"), self.private_key, event.certificate
-        )
+        try:
+            wazuh.install_certificates(
+                self._charm.unit.containers.get("wazuh-server"),
+                self.private_key,
+                event.certificate,
+            )
+        except ops.pebble.ConnectionError:
+            # We can't afford to miss this event, so defer it.
+            logger.warning(
+                "We got a certificate available event, but unable to connect "
+                "to pebble, so deferring."
+            )
+            event.defer()
 
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
         """Certificate expiring event handler."""
