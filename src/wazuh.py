@@ -12,6 +12,10 @@ from pathlib import Path
 import ops
 import yaml
 
+# Bandit classifies this import as vulnerable. For more details, see
+# https://github.com/PyCQA/bandit/issues/767
+from lxml import etree  # nosec
+
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
@@ -31,11 +35,6 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
     Raises:
         WazuhInstallationError: if an error occurs while installing.
     """
-    # Lazy importing. Required deb packages won't be present on charm startup
-    # Bandit classifies this import as vulnerable. For more details, see
-    # https://github.com/PyCQA/bandit/issues/767
-    from lxml import etree  # nosec
-
     ip_ports = [f"{ip}:9200" for ip in indexer_ips]
     filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
