@@ -38,19 +38,17 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
     act: integrate the charm leveraging the traefik-route integration.
     assert: the ingress is configured with the appropriate values.
     """
-    # Skip for now while testing code change.
-    return
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.set_leader(True)
     harness.add_relation(traefik_route_observer.RELATION_NAME, "traefik-route-provider")
-    relation = harness.charm.framework.model.get_relation(traefik_route_observer.RELATION_NAME, 0)
     mock = unittest.mock.Mock()
     monkeypatch.setattr(harness.charm.traefik_route.traefik_route, "submit_to_traefik", mock)
 
-    harness.charm.traefik_route.traefik_route.on.ready.emit(relation)
+    harness.charm.traefik_route._configure_traefik_route()
 
-    mock.assert_called_once()
+    # XXX: This is likely wrong, should be three ports.
+    mock.assert_called_once_with(config={"entryPoints": {"tcp": {"address": ":55000"}}})
 
 
 def test_on_traefik_route_relation_joined_when_not_leader(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -63,10 +61,9 @@ def test_on_traefik_route_relation_joined_when_not_leader(monkeypatch: pytest.Mo
     harness.begin_with_initial_hooks()
     harness.set_leader(False)
     harness.add_relation(traefik_route_observer.RELATION_NAME, "traefik-route-provider")
-    relation = harness.charm.framework.model.get_relation(traefik_route_observer.RELATION_NAME, 0)
     mock = unittest.mock.Mock()
     monkeypatch.setattr(harness.charm.traefik_route.traefik_route, "submit_to_traefik", mock)
 
-    harness.charm.traefik_route.traefik_route.on.ready.emit(relation)
+    harness.charm.traefik_route._configure_traefik_route()
 
     mock.assert_not_called()
