@@ -6,10 +6,7 @@
 import logging
 
 import ops
-from charms.traefik_route_k8s.v0.traefik_route import (
-    TraefikRouteRequirer,
-    TraefikRouteRequirerReadyEvent,
-)
+from charms.traefik_route_k8s.v0.traefik_route import TraefikRouteRequirer
 from ops.framework import Object
 
 logger = logging.getLogger(__name__)
@@ -30,7 +27,8 @@ class TraefikRouteObserver(Object):
         self.traefik_route = TraefikRouteRequirer(
             charm, self.model.relations.get(RELATION_NAME), RELATION_NAME
         )
-        self.framework.observe(self.traefik_route.on.ready, self._on_traefik_route_requirer_ready)
+        if self.traefik_route.is_ready():
+            self._configure_traefik_route()
 
     def _configure_traefik_route(self) -> None:
         """Build a raw ingress configuration for Traefik."""
@@ -41,7 +39,3 @@ class TraefikRouteObserver(Object):
         for port in ["1514", "1515", "55000"]:
             entry_points["tcp"] = {"address": f":{port}"}
         self.traefik_route.submit_to_traefik(config={"entryPoints": entry_points})
-
-    def _on_traefik_route_requirer_ready(self, _: TraefikRouteRequirerReadyEvent) -> None:
-        """Relation joined handler for the traefik route requirer ready event."""
-        self._configure_traefik_route()
