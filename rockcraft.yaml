@@ -33,12 +33,12 @@ parts:
     override-stage: |
       craftctl default
       mkdir -p etc/filebeat/certs
-      curl -o etc/filebeat/filebeat.yml https://packages.wazuh.com/4.8/tpl/wazuh/filebeat/filebeat.yml
+      curl --max-time 60 -o etc/filebeat/filebeat.yml https://packages.wazuh.com/4.8/tpl/wazuh/filebeat/filebeat.yml
       mkdir -p usr/share/filebeat/module
-      curl https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C usr/share/filebeat/module
+      curl --max-time 60 https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C usr/share/filebeat/module
       echo admin | filebeat keystore add username --stdin --force
       echo admin | filebeat keystore add password --stdin --force
-      curl -o etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v4.8.1/extensions/elasticsearch/7.x/wazuh-template.json
+      curl --max-time 60 -o etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v4.8.1/extensions/elasticsearch/7.x/wazuh-template.json
       chmod go+r etc/filebeat/wazuh-template.json
       chmod 500 etc/filebeat/certs
       # chmod 400 etc/filebeat/certs/*
