@@ -10,6 +10,7 @@ import ops
 from ops.framework import Object
 
 import wazuh
+from state import CharmBaseWithState
 
 logger = logging.getLogger(__name__)
 RELATION_NAME = "certificates"
@@ -18,7 +19,7 @@ RELATION_NAME = "certificates"
 class CertificatesObserver(Object):
     """The Certificates relation observer."""
 
-    def __init__(self, charm: ops.CharmBase):
+    def __init__(self, charm: CharmBaseWithState):
         """Initialize the observer and register event handlers.
 
         Args:
@@ -60,19 +61,12 @@ class CertificatesObserver(Object):
         Args:
             event: the event triggering the handler.
         """
-        try:
-            wazuh.install_certificates(
-                self._charm.unit.containers.get("wazuh-server"),
-                self.private_key,
-                event.certificate,
-            )
-        except ops.pebble.ConnectionError:
-            # We can't afford to miss this event, so defer it.
-            logger.warning(
-                "Got a certificate available event, but unable to connect "
-                "to pebble, so deferring."
-            )
-            event.defer()
+        wazuh.install_certificates(
+            self._charm.unit.containers.get("wazuh-server"),
+            self.private_key,
+            event.certificate,
+        )
+        self._charm.reconcile()
 
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
         """Certificate expiring event handler."""

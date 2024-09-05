@@ -35,6 +35,9 @@ class ObservedCharm(ops.CharmBase):
         super().__init__(*args)
         self.certificates = certificates_observer.CertificatesObserver(self)
 
+    def reconcile(self) -> None:
+        """Reconcile the configuration with charm state."""
+
 
 def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> None:
     """

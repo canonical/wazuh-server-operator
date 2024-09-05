@@ -14,7 +14,7 @@ from ops import pebble
 
 import wazuh
 from certificates_observer import CertificatesObserver
-from state import InvalidStateError, State
+from state import CharmBaseWithState, InvalidStateError, State
 from traefik_route_observer import TraefikRouteObserver
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 OPENSEARCH_RELATION_NAME = "opensearch-client"
 
 
-class WazuhServerCharm(ops.CharmBase):
+class WazuhServerCharm(CharmBaseWithState):
     """Charm the service."""
 
     def __init__(self, *args: typing.Any):
@@ -54,13 +54,13 @@ class WazuhServerCharm(ops.CharmBase):
 
     def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
         """Pebble ready handler for the wazuh-server container."""
-        self._reconcile()
+        self.reconcile()
 
     def _on_opensearch_client_relation_changed(self, _: ops.RelationJoinedEvent) -> None:
         """Pebble ready handler for the wazuh-indexer relation changed event."""
-        self._reconcile()
+        self.reconcile()
 
-    def _reconcile(self) -> None:
+    def reconcile(self) -> None:
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.

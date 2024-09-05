@@ -4,12 +4,21 @@
 """Wazuh server charm state."""
 
 import logging
+from abc import ABC, abstractmethod
 from typing import Annotated
 
 import ops
 from pydantic import BaseModel, Field, ValidationError
 
 logger = logging.getLogger(__name__)
+
+
+class CharmBaseWithState(ops.CharmBase, ABC):
+    """CharmBase than can build a CharmState."""
+
+    @abstractmethod
+    def reconcile(self) -> None:
+        """Reconcile Synapse configuration."""
 
 
 class InvalidStateError(Exception):
