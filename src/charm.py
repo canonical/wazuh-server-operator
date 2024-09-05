@@ -43,7 +43,7 @@ class WazuhServerCharm(ops.CharmBase):
             )
             self.state = State.from_charm(self, opensearch_relation_data)
         except InvalidStateError:
-            self.unit.status = ops.BlockedStatus()
+            self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return
         self.framework.observe(
             self.on.opensearch_client_relation_changed, self._on_opensearch_client_relation_changed
