@@ -26,6 +26,7 @@ parts:
       - apt-transport-https
       - filebeat
       - gnupg
+      - wazuh-manager
     stage-packages:
       - filebeat
       - wazuh-manager
