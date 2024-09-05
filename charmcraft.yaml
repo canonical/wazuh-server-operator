@@ -2,7 +2,60 @@
 # See LICENSE file for licensing details.
 # This file configures Charmcraft.
 # See https://juju.is/docs/sdk/charmcraft-config for guidance.
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: wazuh-server
+title: Wazuh server
+summary: A charm deploying the Wazuh server.
+links:
+  contact: 
+  - https://launchpad.net/~canonical-is-devops
+  documentation: https://discourse.charmhub.io
+  issues: https://github.com/canonical/wazuh-server-operator/issues
+  source: https://github.com/canonical/wazuh-server-operator
+description: |
+  A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
+  deploying and managing [Wazuh server]
+  (https://documentation.wazuh.com/current/getting-started/components/wazuh-server.html)
+  on Kubernetes. [Wazuh](https://wazuh.com/) is an open-source XDR and SIEM
+  tool for endpoints and cloud workloads.
 
+  This charm simplifies initial deployment and "day N" operations of Wazuh
+  on Kubernetes, such as scaling the number of instances, TLS certificates
+  configuration and more. It allows for deployment on many different Kubernetes
+  platforms, from [MicroK8s](https://microk8s.io) to [Charmed Kubernetes]
+  (https://ubuntu.com/kubernetes) and public cloud Kubernetes offerings.
+
+  As such, the charm makes it easy for those looking to take control of their own
+  XDR and SIEM system whilst keeping operations simple, and gives them the
+  freedom to deploy on the Kubernetes platform of their choice.
+
+  For DevOps or SRE teams this charm will make operating Wazuh simple and
+  straightforward through Juju's clean interface. It will allow easy deployment
+  into multiple environments for testing of changes, and supports scaling out for
+  enterprise deployments.
+assumes:
+  - juju >= 3.1.0
+  - k8s-api
+containers:
+  wazuh-server:
+    resource: wazuh-server-image
+resources:
+  # An OCI image resource for each container listed above.
+  # You may remove this if your charm will run without a workload sidecar container.
+  wazuh-server-image:
+    type: oci-image
+    description: OCI image for the Wazuh server
+requires:
+  certificates:
+    interface: tls-certificates
+    limit: 1
+  opensearch-client:
+    interface: opensearch_client
+    limit: 1
+  traefik-route:
+    interface: traefik_route
+    limit: 1
 type: charm
 bases:
   - build-on:

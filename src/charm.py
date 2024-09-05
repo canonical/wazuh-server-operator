@@ -73,7 +73,7 @@ class WazuhServerCharm(ops.CharmBase):
             )
             return
         wazuh.update_configuration(container, self.state.indexer_ips)
-        container.add_layer("wazuh", self._pebble_layer, combine=True)
+        container.add_layer("wazuh-server", self._pebble_layer, combine=True)
         container.replan()
         self.unit.status = ops.ActiveStatus()
 
@@ -81,18 +81,18 @@ class WazuhServerCharm(ops.CharmBase):
     def _pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer."""
         return {
-            "summary": "wazuh manager layer",
+            "summary": "wazuh server layer",
             "description": "pebble config layer for wazuh-manager",
             "services": {
-                "wazuh": {
+                "wazuh-server": {
                     "override": "replace",
-                    "summary": "wazuh manager",
+                    "summary": "wazuh server",
                     "command": "systemctl start wazuh-manager",
                     "startup": "enabled",
                 },
             },
             "checks": {
-                "wazuh-ready": {
+                "wazuh-server-ready": {
                     "override": "replace",
                     "level": "ready",
                     "http": {"url": "http://localhost:55000/"},
