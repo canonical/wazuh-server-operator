@@ -71,6 +71,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "Unable to connect to container during reconcile. "
                 "Waiting for future events which will trigger another reconcile."
             )
+            self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
         wazuh.update_configuration(container, self.state.indexer_ips)
         container.add_layer("wazuh-server", self._pebble_layer, combine=True)
