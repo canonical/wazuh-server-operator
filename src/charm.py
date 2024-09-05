@@ -74,7 +74,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
         wazuh.update_configuration(container, self.state.indexer_ips)
-        container.add_layer("wazuh-server", self._pebble_layer, combine=True)
+        container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
         self.unit.status = ops.ActiveStatus()
 
@@ -82,18 +82,18 @@ class WazuhServerCharm(CharmBaseWithState):
     def _pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer."""
         return {
-            "summary": "wazuh server layer",
+            "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
             "services": {
-                "wazuh-server": {
+                "wazuh": {
                     "override": "replace",
-                    "summary": "wazuh server",
+                    "summary": "wazuh manager",
                     "command": "systemctl start wazuh-manager",
                     "startup": "enabled",
                 },
             },
             "checks": {
-                "wazuh-server-ready": {
+                "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
                     "http": {"url": "http://localhost:55000/"},
