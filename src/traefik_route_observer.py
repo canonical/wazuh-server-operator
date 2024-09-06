@@ -60,7 +60,7 @@ class TraefikRouteObserver(Object):
             }
             # TODO use the proper hostname  # pylint: disable=W0511
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.model.name}"}]}
+                "loadBalancer": {"servers": [{"address": f"{self.traefik_route.external_host}"}]}
             }
         return {
             "tcp": {
