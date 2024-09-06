@@ -32,7 +32,7 @@ class TraefikRouteObserver(Object):
         super().__init__(charm, RELATION_NAME)
         self._charm = charm
         self.traefik_route = TraefikRouteRequirer(
-            charm, self.model.relations.get(RELATION_NAME), RELATION_NAME
+            charm, self.model.get_relation(RELATION_NAME), RELATION_NAME
         )
         if self.traefik_route.is_ready():
             self._configure_traefik_route()
