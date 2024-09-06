@@ -30,9 +30,11 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         indexer_ips: list of Wazuh indexer IPs.
+        certificate: the TLs certificate.
     """
 
     indexer_ips: Annotated[list[str], Field(min_length=1)]
+    certificate: str = Field(..., min_length=1)
 
     # pylint: disable=unused-argument
     @classmethod
@@ -40,12 +42,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         cls,
         charm: ops.CharmBase,
         indexer_relation_data: dict[str, str],
+        certificates_relation_data: dict[str, str],
     ) -> "State":
         """Initialize the state from charm.
 
         Args:
             charm: the root charm.
             indexer_relation_data: the Wazuh indexer app relation data.
+            certificates_relation_data: the certificates relation data.
 
         Returns:
             Current state of the charm.
@@ -56,7 +60,10 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         try:
             endpoint_data = indexer_relation_data.get("endpoints")
             endpoints = list(endpoint_data.split(",")) if endpoint_data else []
-            return cls(indexer_ips=endpoints)
+            certificate = certificates_relation_data.get("certificate")
+            if certificate is not None:
+                return cls(indexer_ips=endpoints, certificate=certificate)
+            raise InvalidStateError("Certificate is empty.")
         except ValidationError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             raise InvalidStateError("Invalid charm configuration.") from exc

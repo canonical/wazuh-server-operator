@@ -11,12 +11,9 @@ import pytest
 from ops.testing import Harness
 
 import certificates_observer
-import wazuh
 
 REQUIRER_METADATA = """
 name: observer-charm
-containers:
-  wazuh-server:
 requires:
   certificates:
     interface: tls-certificates
@@ -34,16 +31,18 @@ class ObservedCharm(ops.CharmBase):
         """
         super().__init__(*args)
         self.certificates = certificates_observer.CertificatesObserver(self)
+        self.count = 0
 
     def reconcile(self) -> None:
         """Reconcile the configuration with charm state."""
+        self.count = self.count + 1
 
 
 def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
     act: integrate the charm leveraging the certificates integration.
-    assert: a new certificate unit is requested and the charms reaches active status
+    assert: assert: a new certificate unit is requested and the charms reaches active status.
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
@@ -60,18 +59,16 @@ def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> Non
     assert ops.ActiveStatus.name == harness.charm.unit.status.name
 
 
-def test_on_certificate_available(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_on_certificate_available() -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
-    act: integrate the charm leveraging the certicicates integration and trigger an available
+    act: integrate the charm leveraging the certificates integration and trigger an available
         certificate event.
-    assert: a new certificate is installed in the unit
+    assert: the reconcile method is called.
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.add_relation(certificates_observer.RELATION_NAME, "certificates-provider")
-    mock = unittest.mock.Mock()
-    monkeypatch.setattr(wazuh, "install_certificates", mock)
 
     harness.charm.certificates.certificates.on.certificate_available.emit(
         certificate_signing_request="csr",
@@ -80,8 +77,7 @@ def test_on_certificate_available(monkeypatch: pytest.MonkeyPatch) -> None:
         chain=[],
     )
 
-    container = harness.charm.unit.get_container("wazuh-server")
-    mock.assert_called_once_with(container, harness.charm.certificates.private_key, "certificate")
+    assert harness.charm.count == 1
 
 
 def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:

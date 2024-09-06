@@ -11,7 +11,11 @@ import pytest
 import state
 
 
-def test_state_invalid_relation_data():
+@pytest.mark.parametrize(
+    "opensearch_relation_data,certificates_relation_data",
+    [({}, {}), ({}, {"certificate": ""}), ({"endpoints": "10.0.0.1"}, {})],
+)
+def test_state_invalid_relation_data(opensearch_relation_data, certificates_relation_data):
     """
     arrange: given an empty relation data.
     act: when state is initialized through from_charm method.
@@ -20,7 +24,7 @@ def test_state_invalid_relation_data():
     mock_charm = MagicMock(spec=ops.CharmBase)
 
     with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(mock_charm, {})
+        state.State.from_charm(mock_charm, opensearch_relation_data, certificates_relation_data)
 
 
 def test_state():
@@ -31,7 +35,12 @@ def test_state():
     """
     mock_charm = MagicMock(spec=ops.CharmBase)
     endpoints = ["10.0.0.1", "10.0.0.2"]
-    relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    certificate = "somecert"
+    certificates_relation_data = {"certificate": certificate}
 
-    charm_state = state.State.from_charm(mock_charm, relation_data)
+    charm_state = state.State.from_charm(
+        mock_charm, opensearch_relation_data, certificates_relation_data
+    )
     assert charm_state.indexer_ips == endpoints
+    assert charm_state.certificate == certificate

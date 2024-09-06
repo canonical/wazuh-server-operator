@@ -9,7 +9,6 @@ import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from ops.framework import Object
 
-import wazuh
 from state import CharmBaseWithState
 
 logger = logging.getLogger(__name__)
@@ -55,17 +54,8 @@ class CertificatesObserver(Object):
         self._request_certificate()
         self._charm.unit.status = ops.ActiveStatus()
 
-    def _on_certificate_available(self, event: certificates.CertificateAvailableEvent) -> None:
-        """Certificate available event handler.
-
-        Args:
-            event: the event triggering the handler.
-        """
-        wazuh.install_certificates(
-            self._charm.unit.containers.get("wazuh-server"),
-            self.private_key,
-            event.certificate,
-        )
+    def _on_certificate_available(self, _: certificates.CertificateAvailableEvent) -> None:
+        """Certificate available event handler."""
         self._charm.reconcile()
 
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
