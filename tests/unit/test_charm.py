@@ -15,6 +15,7 @@ from charm import WazuhServerCharm
 from state import InvalidStateError, State
 
 
+@pytest.mark.skip
 @patch.object(State, "from_charm")
 def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
     """

@@ -21,7 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class WazuhServerCharm(CharmBaseWithState):
-    """Charm the service."""
+    """Charm the service.
+
+    Attributes:
+        state: the charm state.
+    """
 
     def __init__(self, *args: typing.Any):
         """Construct.
@@ -33,6 +37,18 @@ class WazuhServerCharm(CharmBaseWithState):
         self.certificates = certificates_observer.CertificatesObserver(self)
         self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
+
+        self.framework.observe(
+            self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
+        )
+
+    def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
+        """Pebble ready handler for the wazuh-server container."""
+        self.reconcile()
+
+    @property
+    def state(self) -> State | None:
+        """The charm state."""
         try:
             opensearch_relation = self.model.get_relation(opensearch_observer.RELATION_NAME)
             opensearch_relation_data = (
@@ -44,19 +60,10 @@ class WazuhServerCharm(CharmBaseWithState):
                 if certificates_relation
                 else {}
             )
-            self.state = State.from_charm(
-                self, opensearch_relation_data, certificates_relation_data
-            )
+            return State.from_charm(self, opensearch_relation_data, certificates_relation_data)
         except InvalidStateError:
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
-            return
-        self.framework.observe(
-            self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
-        )
-
-    def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
-        """Pebble ready handler for the wazuh-server container."""
-        self.reconcile()
+            return None
 
     def reconcile(self) -> None:
         """Reconcile Wazuh configuration with charm state.
@@ -70,6 +77,8 @@ class WazuhServerCharm(CharmBaseWithState):
                 "Waiting for future events which will trigger another reconcile."
             )
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
+            return
+        if not self.state:
             return
         wazuh.install_certificates(
             self.unit.containers.get("wazuh-server"),
