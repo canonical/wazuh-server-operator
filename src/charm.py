@@ -104,13 +104,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     "startup": "enabled",
                 },
             },
-            "checks": {
-                "wazuh-ready": {
-                    "override": "replace",
-                    "level": "ready",
-                    "http": {"url": "http://localhost:55000/"},
-                },
-            },
         }
 
 
