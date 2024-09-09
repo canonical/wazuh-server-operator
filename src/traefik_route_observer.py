@@ -11,7 +11,7 @@ from charms.traefik_route_k8s.v0.traefik_route import TraefikRouteRequirer
 from ops.framework import Object
 
 logger = logging.getLogger(__name__)
-RELATION_NAME = "traefik-route"
+RELATION_NAME = "ingress"
 
 
 PORTS: dict[str, int] = {

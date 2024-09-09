@@ -14,7 +14,7 @@ import traefik_route_observer
 REQUIRER_METADATA = """
 name: observer-charm
 requires:
-  traefik-route:
+  ingress:
     interface: traefik_route
 """
 
@@ -34,14 +34,14 @@ class ObservedCharm(ops.CharmBase):
 
 def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.MonkeyPatch) -> None:
     """
-    arrange: instantiate a charm with leadership implementing the traefik-route relation.
-    act: integrate the charm leveraging the traefik-route integration.
+    arrange: instantiate a charm with leadership implementing the ingress relation.
+    act: integrate the charm leveraging the ingress integration.
     assert: the ingress is configured with the appropriate values.
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.set_leader(True)
-    harness.add_relation(traefik_route_observer.RELATION_NAME, "traefik-route-provider")
+    harness.add_relation(traefik_route_observer.RELATION_NAME, "ingress-provider")
     mock = unittest.mock.Mock()
     monkeypatch.setattr(harness.charm.traefik_route.traefik_route, "submit_to_traefik", mock)
 
@@ -53,14 +53,14 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
 
 def test_on_traefik_route_relation_joined_when_not_leader(monkeypatch: pytest.MonkeyPatch) -> None:
     """
-    arrange: instantiate a charm without leadership implementing the traefik-route relation.
-    act: integrate the charm leveraging the traefik-route integration.
+    arrange: instantiate a charm without leadership implementing the ingress relation.
+    act: integrate the charm leveraging the ingress integration.
     assert: the ingress configuration is not changed.
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.set_leader(False)
-    harness.add_relation(traefik_route_observer.RELATION_NAME, "traefik-route-provider")
+    harness.add_relation(traefik_route_observer.RELATION_NAME, "ingress-provider")
     mock = unittest.mock.Mock()
     monkeypatch.setattr(harness.charm.traefik_route.traefik_route, "submit_to_traefik", mock)
 

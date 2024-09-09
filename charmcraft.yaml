@@ -89,7 +89,7 @@ requires:
   opensearch-client:
     interface: opensearch_client
     limit: 1
-  traefik-route:
+  ingress:
     interface: traefik_route
     limit: 1
 
