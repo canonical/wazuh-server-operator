@@ -43,7 +43,7 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
 
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     ossec_config_tree = etree.fromstring(ossec_config)  # nosec
-    hosts = ossec_config_tree.xpath("/indexer/hosts")
+    hosts = ossec_config_tree.xpath("/ossec_config/indexer/hosts")
     hosts[0].clear()
     for ip_port in ip_ports:
         new_host = etree.Element("host")
