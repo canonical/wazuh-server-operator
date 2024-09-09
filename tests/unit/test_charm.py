@@ -5,53 +5,101 @@
 from unittest.mock import ANY, patch
 
 import ops
-import pytest
 from ops.testing import Harness
 
-import certificates_observer
-import opensearch_observer
 import wazuh
 from charm import WazuhServerCharm
 from state import InvalidStateError, State
 
 
-@pytest.mark.skip
 @patch.object(State, "from_charm")
 def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
     """
     arrange: mock State.from_charm so that it raises and InvalidStateError.
-    act: set up a charm with a missing relation.
+    act: instantiate a charm.
+    assert: the charm reaches blocked status when the state is fetched.
+    """
+    state_from_charm_mock.side_effect = InvalidStateError()
+
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+
+    assert harness.charm.state is None
+    assert harness.model.unit.status.name == ops.BlockedStatus().name
+
+
+@patch.object(State, "from_charm")
+@patch.object(wazuh, "update_configuration")
+@patch.object(wazuh, "install_certificates")
+def test_reconcile_reaches_active_status(
+    wazuh_install_certificates_mock, wazuh_update_configuration_mock, state_from_charm_mock
+):
+    """
+    arrange: mock system calls and charm state.
+    act: call reconcile.
+    assert: the charm reaches active status and configs are applied.
+    """
+    state_from_charm_mock.return_value = State(certificate="somecert", indexer_ips=["10.0.0.1"])
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    harness.charm.reconcile()
+
+    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
+    wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
+    assert harness.model.unit.status.name == ops.ActiveStatus().name
+
+
+def test_reconcile_reaches_waiting_status_when_cant_connect():
+    """
+    arrange: do nothing.
+    act: call reconcile.
+    assert: the charm reaches waiting status.
+    """
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, False)
+
+    harness.charm.reconcile()
+
+    assert harness.model.unit.status.name == ops.WaitingStatus().name
+
+
+@patch.object(State, "from_charm")
+def test_reconcile_reaches_blocked_status_when_no_state(state_from_charm_mock):
+    """
+    arrange: mock the state to raise an exception.
+    act: call reconcile.
     assert: the charm reaches blocked status.
     """
     state_from_charm_mock.side_effect = InvalidStateError()
     harness = Harness(WazuhServerCharm)
     harness.begin()
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    harness.charm.reconcile()
 
     assert harness.model.unit.status.name == ops.BlockedStatus().name
 
 
-@pytest.mark.skip
-@patch.object(wazuh, "update_configuration")
-@patch.object(wazuh, "install_certificates")
-def test_pebble_ready_reaches_active_status(
-    wazuh_update_configuration_mock, wazuh_install_certificates_mock
-):
+@patch.object(WazuhServerCharm, "reconcile")
+def test_pebble_ready_reaches_blocked_status_when_no_state(reconcile_mock):
     """
-    arrange: mock system calls.
-    act: set up a charm with a missing relation.
-    assert: the charm reaches blocked status.
+    arrange: mock the reconcile method.
+    act: trigger a pebble ready event reconcile.
+    assert: reconcile is called.
     """
     harness = Harness(WazuhServerCharm)
     harness.begin()
-    harness.add_relation(
-        opensearch_observer.RELATION_NAME, "opensearch", app_data={"endpoints": "10.0.0.1"}
-    )
-    harness.add_relation(
-        certificates_observer.RELATION_NAME, "certificates", app_data={"certificates": "somecert"}
-    )
-
     harness.container_pebble_ready("wazuh-server")
-    container = harness.model.unit.containers.get("wazuh-server")
-    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
-    wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
-    assert harness.model.unit.status.name == ops.ActiveStatus().name
+
+    harness.charm.reconcile()
+
+    reconcile_mock.assert_called()
