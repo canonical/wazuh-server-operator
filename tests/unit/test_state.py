@@ -14,7 +14,7 @@ import state
 
 @pytest.mark.parametrize(
     "opensearch_relation_data,certificates_relation_data",
-    [({}, {}), ({}, {"certificates": "[]"}), ({"endpoints": "10.0.0.1"}, {})],
+    [({}, {}), ({}, {"certificates": '[{"certificate": ""}]'}), ({"endpoints": "10.0.0.1"}, {})],
 )
 def test_state_invalid_relation_data(opensearch_relation_data, certificates_relation_data):
     """
