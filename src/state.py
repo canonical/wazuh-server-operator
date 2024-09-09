@@ -3,6 +3,7 @@
 
 """Wazuh server charm state."""
 
+import json
 import logging
 from abc import ABC, abstractmethod
 from typing import Annotated
@@ -60,9 +61,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         try:
             endpoint_data = indexer_relation_data.get("endpoints")
             endpoints = list(endpoint_data.split(",")) if endpoint_data else []
-            certificate = certificates_relation_data.get("certificate")
-            if certificate is not None:
-                return cls(indexer_ips=endpoints, certificate=certificate)
+            certificates_json = (
+                certificates_relation_data.get("certificates", "[]")
+                if certificates_relation_data
+                else "[]"
+            )
+            certificates = json.loads(certificates_json)
+            if certificates:
+                return cls(indexer_ips=endpoints, certificate=certificates[0].get("certificate"))
             raise InvalidStateError("Certificate is empty.")
         except ValidationError as exc:
             logger.error("Invalid charm configuration, %s", exc)
