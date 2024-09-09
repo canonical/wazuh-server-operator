@@ -49,7 +49,7 @@ def test_update_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     assert filebeat_config_yaml["hosts"] == [f"{ip}:9200" for ip in indexer_ips]
     ossec_config = container.pull(wazuh.OSSEC_CONF_PATH, encoding="utf-8").read()
     tree = etree.fromstring(ossec_config)  # nosec
-    hosts = tree.xpath("/indexer/hosts//host")
+    hosts = tree.xpath("/ossec_config/indexer/hosts//host")
     assert len(hosts) == len(indexer_ips)
     for idx, host in enumerate(hosts):
         assert host.text == f"https://{indexer_ips[idx]}:9200"
