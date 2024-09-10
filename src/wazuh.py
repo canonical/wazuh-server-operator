@@ -53,7 +53,7 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         OSSEC_CONF_PATH, etree.tostring(ossec_config_tree, pretty_print=True), encoding="utf-8"
     )
 
-    proc = container.exec(["systemctl", "daemon-reload"])
+    proc = container.exec(["/usr/bin/systemctl", "daemon-reload"])
     try:
         proc.wait_output()
     except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
