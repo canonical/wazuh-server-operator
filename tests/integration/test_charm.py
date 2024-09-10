@@ -15,8 +15,8 @@ from juju.model import Model
 
 logger = logging.getLogger(__name__)
 
-METADATA = yaml.safe_load(Path("./metadata.yaml").read_text(encoding="utf-8"))
-APP_NAME = METADATA["name"]
+CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"))
+APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
