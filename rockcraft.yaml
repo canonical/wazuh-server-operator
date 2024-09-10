@@ -45,8 +45,3 @@ parts:
       chown -R root:root etc/filebeat/certs
       var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
       var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
-    override-prime: |
-      craftctl default
-      systemctl daemon-reload
-      systemctl enable wazuh-manager
-      

@@ -68,7 +68,7 @@ def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch
     container = harness.charm.unit.get_container("wazuh-server")
     exec_process = unittest.mock.MagicMock()
     exec_error = ops.pebble.ExecError(
-        command=["/usr/bin/systemctl", "daemon-reload"], exit_code=1, stdout="", stderr=""
+        command=["/var/ossec/bin/wazuh-control", "reload"], exit_code=1, stdout="", stderr=""
     )
     exec_process.wait_output = unittest.mock.MagicMock(side_effect=exec_error)
     exec_mock = unittest.mock.MagicMock(return_value=exec_process)

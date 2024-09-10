@@ -100,7 +100,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh": {
                     "override": "replace",
                     "summary": "wazuh manager",
-                    "command": "/usr/bin/systemctl start wazuh-manager",
+                    "command": "/var/ossec/bin/wazuh-control start",
                     "startup": "enabled",
                 },
             },
