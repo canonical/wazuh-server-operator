@@ -18,6 +18,10 @@ sg snap_microk8s -c "juju bootstrap localhost localhost"
 echo "Switching to testing model"
 sg snap_microk8s -c "juju switch $TESTING_MODEL"
 
+
+IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')
+sudo microk8s enable metallb:$IPADDR-$IPADDR
+
 # https://charmhub.io/opensearch/docs/t-set-up#set-parameters-on-the-host-machine
 sudo tee -a /etc/sysctl.conf > /dev/null <<EOT
 vm.max_map_count=262144

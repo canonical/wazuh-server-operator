@@ -26,4 +26,4 @@ jobs:
       trivy-image-config: "trivy.yaml"
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
-      microk8s-addons: "dns ingress rbac storage metallb:10.145.253.101-10.145.253.104 registry"
+      microk8s-addons: "dns ingress rbac storage registry"
