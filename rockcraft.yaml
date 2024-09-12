@@ -26,13 +26,25 @@ parts:
       - apt-transport-https
       - gnupg
       - filebeat
-      - wazuh-manager
     stage-packages:
       - filebeat
     overlay-script: |
-      apt-get update -y
-      apt-get install wazuh-manager
-      ls -Rla .
+      mount /etc/resolv.conf $CRAFT_OVERLAY/etc/resolv.conf --bind
+      mount proc $CRAFT_OVERLAY/proc -t proc
+      # mount sysfs $CRAFT_OVERLAY/sys -t sysfs
+      mount /dev $CRAFT_OVERLAY/dev --rbind --make-private
+      chroot $CRAFT_OVERLAY apt update
+      chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt install ca-certificates --yes"
+      curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:${CRAFT_OVERLAY}/usr/share/keyrings/wazuh.gpg --import && chmod 644 ${CRAFT_OVERLAY}/usr/share/keyrings/wazuh.gpg
+      chroot $CRAFT_OVERLAY bash -c 'echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list'
+      chroot $CRAFT_OVERLAY apt update
+      chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt install wazuh-manager filebeat --yes"
+      chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k username -v admin"
+      chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k password -v admin"
+      umount --recursive $CRAFT_OVERLAY/dev
+      # umount $CRAFT_OVERLAY/sys
+      umount $CRAFT_OVERLAY/proc
+      umount $CRAFT_OVERLAY/etc/resolv.conf
     override-stage: |
       craftctl default
       mkdir -p etc/filebeat/certs
@@ -46,10 +58,3 @@ parts:
       craftctl default
       echo admin | filebeat keystore add username --stdin --force
       echo admin | filebeat keystore add password --stdin --force
-      /var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
-      /var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
-services:
-  debug:
-    override: replace
-    command: ls -la /etc/ossec/; cat /etc/passwd; cat /etc/group; sleep 10000
-    startup: enabled
