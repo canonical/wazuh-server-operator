@@ -13,3 +13,6 @@
     </ssl>
   </indexer>
 </ossec_config>
+<ossec_config>
+  <placeholder/>
+</ossec_config>

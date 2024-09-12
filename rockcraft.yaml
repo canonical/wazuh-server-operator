@@ -45,6 +45,7 @@ parts:
       # umount $CRAFT_OVERLAY/sys
       umount $CRAFT_OVERLAY/proc
       umount $CRAFT_OVERLAY/etc/resolv.conf
+      cat $CRAFT_OVERLAY/var/ossec/etc/ossec.conf
     override-stage: |
       craftctl default
       mkdir -p etc/filebeat/certs

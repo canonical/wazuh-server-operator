@@ -42,16 +42,19 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
     container.push(FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml), encoding="utf-8")
 
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
-    ossec_config_tree = etree.fromstring(ossec_config)  # nosec
-    hosts = ossec_config_tree.xpath("/ossec_config/indexer/hosts")
+    # Enclose the config file in an element since it might have repeated roots
+    ossec_config_tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
+    hosts = ossec_config_tree.xpath("/root/ossec_config/indexer/hosts")
     hosts[0].clear()
     for ip_port in ip_ports:
         new_host = etree.Element("host")
         new_host.text = f"https://{ip_port}"
         hosts[0].append(new_host)
-    container.push(
-        OSSEC_CONF_PATH, etree.tostring(ossec_config_tree, pretty_print=True), encoding="utf-8"
-    )
+    elements = ossec_config_tree.xpath("//ossec_config")
+    content = b""
+    for element in elements:
+        content = content + etree.tostring(element, pretty_print=True)
+    container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
 
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
