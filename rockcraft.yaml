@@ -30,8 +30,9 @@ parts:
     stage-packages:
       - filebeat
     overlay-script: |
-      apt update -y
-      apt install wazuh-manager
+      apt-get update -y
+      apt-get install wazuh-manager
+      ls -Rla .
     override-stage: |
       craftctl default
       mkdir -p etc/filebeat/certs
@@ -47,3 +48,8 @@ parts:
       echo admin | filebeat keystore add password --stdin --force
       /var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
       /var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
+services:
+  debug:
+    override: replace
+    command: ls -la /etc/ossec/; cat /etc/passwd; cat /etc/group; sleep 10000
+    startup: enabled
