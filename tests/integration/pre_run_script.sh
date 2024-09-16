@@ -34,3 +34,16 @@ fs.file-max=1048576
 EOT
 
 sudo sysctl -p
+
+# Launch a wazuh agent
+MICROK8s_IP = $(ip route | grep default | cut -d ' ' -f3)
+sudo snap install multipass
+multipass launch --name wazuh-agent
+multipass exec wazuh-agent -- curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import && chmod 644 /usr/share/keyrings/wazuh.gpg
+multipass exec wazuh-agent -- echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list
+multipass exec wazuh-agent -- apt update
+multipass exec wazuh-agent -- apt install -y gnupg apt-transport-https
+multipass exec wazuh-agent -- curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | apt-key add -
+multipass exec wazuh-agent -- WAZUH_MANAGER="10.0.0.2" apt-get install wazuh-agentecho "deb https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list
+echo "$MICROK8s_IP wazuh-server.local" >> /etc/hosts
+WAZUH_MANAGER="wazuh-server.local" apt-get install wazuh-agent
