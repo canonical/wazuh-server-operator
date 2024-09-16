@@ -42,7 +42,6 @@ parts:
     overlay-script: |
       mount /etc/resolv.conf $CRAFT_OVERLAY/etc/resolv.conf --bind
       mount proc $CRAFT_OVERLAY/proc -t proc
-      # mount sysfs $CRAFT_OVERLAY/sys -t sysfs
       mount /dev $CRAFT_OVERLAY/dev --rbind --make-private
       chroot $CRAFT_OVERLAY apt-get update
       chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install ca-certificates --yes"
@@ -50,11 +49,11 @@ parts:
       chroot $CRAFT_OVERLAY bash -c 'echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list'
       chroot $CRAFT_OVERLAY apt-get update
       chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install wazuh-manager filebeat --yes"
-      chroot $CRAFT_OVERLAY bash -c "mkdir -p /etc/security"
-      chroot $CRAFT_OVERLAY bash -c "touch /etc/security/limits.conf"
-      chroot $CRAFT_OVERLAY bash -c "chmod 311 /etc/security/limits.conf"
-      chroot $CRAFT_OVERLAY bash -c "echo '* soft nofile 655360' >> /etc/security/limits.conf"
-      chroot $CRAFT_OVERLAY bash -c "echo '* hard nofile 655360' >> /etc/security/limits.conf"
+      # chroot $CRAFT_OVERLAY bash -c "mkdir -p /etc/security"
+      # chroot $CRAFT_OVERLAY bash -c "touch /etc/security/limits.conf"
+      # chroot $CRAFT_OVERLAY bash -c "chmod 311 /etc/security/limits.conf"
+      # chroot $CRAFT_OVERLAY bash -c "echo '* soft nofile 655360' >> /etc/security/limits.conf"
+      # chroot $CRAFT_OVERLAY bash -c "echo '* hard nofile 655360' >> /etc/security/limits.conf"
       chroot $CRAFT_OVERLAY bash -c "touch /etc/sysctl.conf"
       chroot $CRAFT_OVERLAY bash -c "chmod 311 /etc/sysctl.conf"
       chroot $CRAFT_OVERLAY bash -c "echo 'fs.file-max = 655360' >> /etc/sysctl.conf"
@@ -65,7 +64,6 @@ parts:
       chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k username -v admin"
       chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k password -v admin"
       umount --recursive $CRAFT_OVERLAY/dev
-      # umount $CRAFT_OVERLAY/sys
       umount $CRAFT_OVERLAY/proc
       umount $CRAFT_OVERLAY/etc/resolv.conf
     override-prime: |
