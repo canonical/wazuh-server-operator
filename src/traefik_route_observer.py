@@ -59,7 +59,7 @@ class TraefikRouteObserver(Object):
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.traefik_route.external_host}"}]}
+                "loadBalancer": {"servers": [{"address": f"{self.traefik_route.external_host}:{port}"}]}
             }
         return {
             "tcp": {
