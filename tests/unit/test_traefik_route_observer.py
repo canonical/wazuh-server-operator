@@ -39,16 +39,47 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
     assert: the ingress is configured with the appropriate values.
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
+    harness.set_model_name("testing")
     harness.begin_with_initial_hooks()
     harness.set_leader(True)
     harness.add_relation(traefik_route_observer.RELATION_NAME, "ingress-provider")
-    mock = unittest.mock.Mock()
-    monkeypatch.setattr(harness.charm.traefik_route.traefik_route, "submit_to_traefik", mock)
+
+    requirer_mock = unittest.mock.MagicMock()
+    requirer_mock.is_ready.return_value = True
+    requirer_mock.external_host = "wazuh-server.local"
+    monkeypatch.setattr(harness.charm.traefik_route, "traefik_route", requirer_mock)
 
     harness.charm.traefik_route._configure_traefik_route()  # pylint: disable=W0212
 
-    # XXX: This is likely wrong, should be three ports. # pylint: disable=W0511
-    # mock.assert_called_once_with(config={"entryPoints": {"tcp": {"address": ":55000"}}})
+    requirer_mock.submit_to_traefik.assert_called_once_with(
+        {
+            "tcp": {
+                "routers": {
+                    "juju-testing-observer-charm-conn-tcp": {
+                        "entryPoints": ["conn-tcp"],
+                        "service": "juju-testing-observer-charm-service-conn-tcp",
+                        "rule": "ClientIP(`0.0.0.0/0`)",
+                    },
+                    "juju-testing-observer-charm-enrole-tcp": {
+                        "entryPoints": ["enrole-tcp"],
+                        "service": "juju-testing-observer-charm-service-enrole-tcp",
+                        "rule": "ClientIP(`0.0.0.0/0`)",
+                    },
+                },
+                "services": {
+                    "juju-testing-observer-charm-service-conn-tcp": {
+                        "loadBalancer": {"servers": [{"address": "wazuh-server.local:1514"}]}
+                    },
+                    "juju-testing-observer-charm-service-enrole-tcp": {
+                        "loadBalancer": {"servers": [{"address": "wazuh-server.local:1515"}]}
+                    },
+                },
+            },
+        },
+        static={
+            "entryPoints": {"conn-tcp": {"address": ":1514"}, "enrole-tcp": {"address": ":1515"}}
+        },
+    )
 
 
 def test_on_traefik_route_relation_joined_when_not_leader(monkeypatch: pytest.MonkeyPatch) -> None:

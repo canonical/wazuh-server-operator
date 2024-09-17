@@ -34,8 +34,20 @@ class TraefikRouteObserver(Object):
         self.traefik_route = TraefikRouteRequirer(
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME
         )
-        if self.traefik_route.is_ready():
-            self._configure_traefik_route()
+        self._configure_traefik_route()
+
+    @property
+    def _static_ingress_config(self) -> dict[str, dict[str, dict[str, str]]]:
+        """Build a raw ingress static configuration for Traefik.
+
+        Returns:
+            the ingress static configuration for Traefik.
+        """
+        entry_points = {}
+        for protocol, port in PORTS.items():
+            sanitized_protocol = protocol.replace("_", "-")
+            entry_points[sanitized_protocol] = {"address": f":{port}"}
+        return {"entryPoints": entry_points}
 
     @property
     def _ingress_config(self) -> dict[str, dict[str, dict[str, typing.Any]]]:
@@ -46,10 +58,8 @@ class TraefikRouteObserver(Object):
         """
         routers = {}
         services = {}
-        entry_points = {}
         for protocol, port in PORTS.items():
             sanitized_protocol = protocol.replace("_", "-")
-            entry_points[sanitized_protocol] = {"address": f":{port}"}
             service_name = (
                 f"juju-{self.model.name}-{self.model.app.name}-service-{sanitized_protocol}"
             )
@@ -59,11 +69,12 @@ class TraefikRouteObserver(Object):
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.traefik_route.external_host}:{port}"}]}
+                "loadBalancer": {
+                    "servers": [{"address": f"{self.traefik_route.external_host}:{port}"}]
+                }
             }
         return {
             "tcp": {
-                "entryPoints": entry_points,
                 "routers": routers,
                 "services": services,
             },
@@ -73,4 +84,6 @@ class TraefikRouteObserver(Object):
         """Build a raw ingress configuration for Traefik."""
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
-        self.traefik_route.submit_to_traefik(self._ingress_config)
+        self.traefik_route.submit_to_traefik(
+            self._ingress_config, static=self._static_ingress_config
+        )
