@@ -3,6 +3,7 @@
 
 """Traefik route observer unit tests."""
 
+import socket
 import unittest
 
 import ops
@@ -46,8 +47,8 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
 
     requirer_mock = unittest.mock.MagicMock()
     requirer_mock.is_ready.return_value = True
-    requirer_mock.external_host = "wazuh-server.local"
     monkeypatch.setattr(harness.charm.traefik_route, "traefik_route", requirer_mock)
+    monkeypatch.setattr(socket, "getfqdn", lambda: "wazuh-server.local")
 
     harness.charm.traefik_route._configure_traefik_route()  # pylint: disable=W0212
 

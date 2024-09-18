@@ -1,8 +1,8 @@
 <!-- markdownlint-disable -->
 
-<a href="../src/certificates_observer.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/opensearch_observer.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-# <kbd>module</kbd> `certificates_observer.py`
+# <kbd>module</kbd> `opensearch_observer.py`
 The Certificates relation observer. 
 
 **Global Variables**
@@ -12,10 +12,10 @@ The Certificates relation observer.
 
 ---
 
-## <kbd>class</kbd> `CertificatesObserver`
-The Certificates relation observer. 
+## <kbd>class</kbd> `OpenSearchObserver`
+The Opensearch relation observer. 
 
-<a href="../src/certificates_observer.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/opensearch_observer.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 

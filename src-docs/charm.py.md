@@ -5,9 +5,6 @@
 # <kbd>module</kbd> `charm.py`
 Wazuh server charm. 
 
-**Global Variables**
----------------
-- **OPENSEARCH_RELATION_NAME**
 
 
 ---
@@ -15,7 +12,13 @@ Wazuh server charm.
 ## <kbd>class</kbd> `WazuhServerCharm`
 Charm the service. 
 
-<a href="../src/charm.py#L29"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+
+**Attributes:**
+ 
+ - <b>`state`</b>:  the charm state. 
+
+<a href="../src/charm.py#L30"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -64,10 +67,30 @@ Shortcut for more simple access the model.
 
 ---
 
+#### <kbd>property</kbd> state
+
+The charm state. 
+
+---
+
 #### <kbd>property</kbd> unit
 
 Unit that this execution is responsible for. 
 
 
+
+---
+
+<a href="../src/charm.py#L68"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `reconcile`
+
+```python
+reconcile() → None
+```
+
+Reconcile Wazuh configuration with charm state. 
+
+This is the main entry for changes that require a restart. 
 
 

@@ -4,6 +4,7 @@
 """The Traefik route relation observer."""
 
 import logging
+import socket
 import typing
 
 import ops
@@ -21,7 +22,11 @@ PORTS: dict[str, int] = {
 
 
 class TraefikRouteObserver(Object):
-    """The Traefik route relation observer."""
+    """The Traefik route relation observer.
+
+    Attributes:
+            hostname: The unit's hostname.
+    """
 
     def __init__(self, charm: ops.CharmBase):
         """Initialize the observer and register event handlers.
@@ -35,6 +40,15 @@ class TraefikRouteObserver(Object):
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME
         )
         self._configure_traefik_route()
+
+    @property
+    def hostname(self) -> str:
+        """Get the unit's hostname.
+
+        Returns:
+            the unit's FQDN.
+        """
+        return socket.getfqdn()
 
     @property
     def _static_ingress_config(self) -> dict[str, dict[str, dict[str, str]]]:
@@ -69,9 +83,7 @@ class TraefikRouteObserver(Object):
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
             services[service_name] = {
-                "loadBalancer": {
-                    "servers": [{"address": f"{self.traefik_route.external_host}:{port}"}]
-                }
+                "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
             }
         return {
             "tcp": {

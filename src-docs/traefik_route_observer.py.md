@@ -8,6 +8,7 @@ The Traefik route relation observer.
 **Global Variables**
 ---------------
 - **RELATION_NAME**
+- **PORTS**
 
 
 ---
@@ -15,7 +16,7 @@ The Traefik route relation observer.
 ## <kbd>class</kbd> `TraefikRouteObserver`
 The Traefik route relation observer. 
 
-<a href="../src/traefik_route_observer.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/traefik_route_observer.py#L27"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -31,6 +32,17 @@ Initialize the observer and register event handlers.
  
  - <b>`charm`</b>:  The parent charm to attach the observer to. 
 
+
+---
+
+#### <kbd>property</kbd> hostname
+
+Get the unit's hostname. 
+
+
+
+**Returns:**
+  the unit's FQDN. 
 
 ---
 
