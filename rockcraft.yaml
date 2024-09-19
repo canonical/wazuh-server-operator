@@ -50,7 +50,6 @@ parts:
       chroot $CRAFT_OVERLAY bash -c 'echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list'
       chroot $CRAFT_OVERLAY apt-get update
       chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install wazuh-manager filebeat --yes"
-      chroot $CRAFT_OVERLAY bash -c "sed -i 's/<remote>/<remote><allowed-ips>*<\/allowed-ips>/g' /var/ossec/etc/ossec.conf"
       chroot $CRAFT_OVERLAY bash -c "cat /var/ossec/etc/ossec.conf"
       chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k username -v admin"
       chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k password -v admin"
