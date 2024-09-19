@@ -24,6 +24,7 @@ parts:
     plugin: nil
     stage-packages:
       - filebeat
+      - net-tools
     override-stage: |
       mkdir -p $CRAFT_PART_INSTALL/etc/filebeat/certs
       chmod 500 $CRAFT_PART_INSTALL/etc/filebeat/certs
