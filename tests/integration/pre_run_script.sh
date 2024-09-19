@@ -44,7 +44,7 @@ multipass exec wazuh-agent -- sudo apt update
 multipass exec wazuh-agent -- sudo apt install -y gnupg apt-transport-https
 multipass exec wazuh-agent -- sudo bash -c "curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | apt-key add -"
 multipass exec wazuh-agent -- sudo bash -c "echo $IPADDR wazuh-server.local >> /etc/hosts"
-multipass exec wazuh-agent -- sudo bash -c "WAZUH_MANAGER='wazuh-server.local' apt-get install wazuh-agent"
+multipass exec wazuh-agent -- sudo bash -c "WAZUH_MANAGER=$IPADDR apt-get install wazuh-agent"
 multipass exec wazuh-agent -- sudo systemctl daemon-reload
 multipass exec wazuh-agent -- sudo systemctl enable wazuh-agent
 multipass exec wazuh-agent -- sudo systemctl start wazuh-agent

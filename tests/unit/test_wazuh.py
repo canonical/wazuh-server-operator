@@ -38,7 +38,7 @@ def test_update_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(container, "exec", exec_mock)
     filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text(encoding="utf-8")
     container.push(wazuh.FILEBEAT_CONF_PATH, filebeat_content, make_dirs=True)
-    ossec_content = Path("tests/unit/resources/ossec.xml").read_text(encoding="utf-8")
+    ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     wazuh.update_configuration(container, indexer_ips)
@@ -75,7 +75,7 @@ def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(container, "exec", exec_mock)
     filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text(encoding="utf-8")
     container.push(wazuh.FILEBEAT_CONF_PATH, filebeat_content, make_dirs=True)
-    ossec_content = Path("tests/unit/resources/ossec.xml").read_text(encoding="utf-8")
+    ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     with pytest.raises(wazuh.WazuhInstallationError):
