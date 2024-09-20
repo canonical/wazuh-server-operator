@@ -1,0 +1,8 @@
+rules:
+  # Ignore "whitelist" - pylint uses this terminology and it would be
+  # confusing to change in this charm while upstream continues to use it.
+  - name: whitelist
+ignore_files:
+  # Ignore apt charm library as it uses non compliant terminology:
+  # man-in-the-middle.
+  - lib/charms/operator_libs_linux/v0/apt.py

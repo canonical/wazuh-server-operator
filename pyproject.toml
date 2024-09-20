@@ -46,6 +46,7 @@ module = "tests.*"
 
 [tool.pylint]
 disable = "wrong-import-order"
+extension-pkg-whitelist = "lxml,pydantic"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

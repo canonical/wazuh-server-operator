@@ -15,9 +15,13 @@ header:
     - '.jujuignore'
     - '.gitignore'
     - '.licenserc.yaml'
+    - '.woke.yaml'
+    - '.woke.yml'
     - 'CODEOWNERS'
     - 'LICENSE'
     - 'trivy.yaml'
     - 'pyproject.toml'
     - 'zap_rules.tsv'
+    - 'lib/**'
+    - 'tests/unit/resources/**'
   comment: on-failure
