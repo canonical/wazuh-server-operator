@@ -50,7 +50,7 @@ def test_state_without_proxy():
     assert charm_state.proxy.no_proxy is None
 
 
-def test_state_proxy(monkeypatch: pytest.MonkeyPatch):
+def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: given valid relation data.
     act: when state is initialized through from_charm method.
@@ -79,7 +79,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: given a monkeypatched os.environ mapping that contains invalid proxy values.
     act: when charm state is initialized.
-    assert: CharmConfigInvalidError is raised.
+    assert: InvalidStateError is raised.
     """
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "INVALID_URL")
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
@@ -94,3 +94,31 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     )
     with pytest.raises(state.InvalidStateError):
         charm_state.proxy  # pylint: disable=pointless-statement
+
+
+def test_state_when_secret_not_found(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given a secret_id non matching a secret.
+    act: when charm state is initialized.
+    assert: InvalidStateError is raised.
+    """
+    monkeypatch.setattr(
+        "ops.model.Model.get_secret",
+        unittest.mock.MagicMock(side_effect=ops.SecretNotFoundError),
+    )
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    monkeypatch.setattr(
+        mock_charm,
+        "config",
+        {
+            "git-repository": "git+ssh://user1@git.server/repo_name@main",
+            "git-ssh-key": "secret:123213123123123123123",  # nosec
+        },
+    )
+
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    certificate = "somecert"
+    certificates_relation_data = {"certificates": json.dumps([{"certificate": certificate}])}
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(mock_charm, opensearch_relation_data, certificates_relation_data)

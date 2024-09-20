@@ -143,8 +143,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 else "[]"
             )
             certificates = json.loads(certificates_json)
-            # Incompatible with pydantic.AnyHttpUrl
-            valid_config = WazuhConfig(**dict(charm.config.items()))  # type: ignore
+            args = {key.replace("-", "_"): value for key, value in charm.config.items()}
+            valid_config = WazuhConfig(**args)  # type: ignore
             git_ssh_key_content = None
             if valid_config.git_ssh_key:
                 try:

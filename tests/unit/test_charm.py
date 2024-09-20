@@ -44,10 +44,11 @@ def test_reconcile_reaches_active_status_when_repository_configured(
     assert: the charm reaches active status and configs are applied.
     """
     git_repository = "git+ssh://user1@git.server/repo_name@main"
+    secret_id = "secret:123213123123123123123"  # nosec
     state_from_charm_mock.return_value = State(
         certificate="somecert",
         indexer_ips=["10.0.0.1"],
-        wazuh_config=WazuhConfig(git_repository=git_repository, git_ssh_key="secret_id"),
+        wazuh_config=WazuhConfig(git_repository=git_repository, git_ssh_key=secret_id),
         git_ssh_key="somekey",
     )
     harness = Harness(WazuhServerCharm)

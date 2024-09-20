@@ -92,7 +92,7 @@ requires:
     limit: 1
 config:
   options:
-    git-repo:
+    git-repository:
       type: string
       description: >
         The repository URL where the DNS records are stored. The username has to be provided as in 
