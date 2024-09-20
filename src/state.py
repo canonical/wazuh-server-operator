@@ -59,15 +59,21 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Returns:
             charm proxy configuration in the form of ProxyConfig.
+
+        Raises:
+            InvalidStateError: if the proxy configuration is invalid.
         """
         http_proxy = os.environ.get("JUJU_CHARM_HTTP_PROXY")
         https_proxy = os.environ.get("JUJU_CHARM_HTTPS_PROXY")
         no_proxy = os.environ.get("JUJU_CHARM_NO_PROXY")
-        return ProxyConfig(
-            http_proxy=parse_obj_as(AnyHttpUrl, http_proxy) if http_proxy else None,
-            https_proxy=parse_obj_as(AnyHttpUrl, https_proxy) if https_proxy else None,
-            no_proxy=no_proxy,
-        )
+        try:
+            return ProxyConfig(
+                http_proxy=parse_obj_as(AnyHttpUrl, http_proxy) if http_proxy else None,
+                https_proxy=parse_obj_as(AnyHttpUrl, https_proxy) if https_proxy else None,
+                no_proxy=no_proxy,
+            )
+        except ValidationError as exc:
+            raise InvalidStateError("Invalid proxy configuration.") from exc
 
     # pylint: disable=unused-argument
     @classmethod
