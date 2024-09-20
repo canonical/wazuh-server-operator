@@ -16,8 +16,6 @@ from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
 
-PROVIDER_CHARM_DIR = "tests/integration/tls_provider_charm"
-
 MACHINE_MODEL_CONFIG = {
     "logging-config": "<root>=INFO;unit=DEBUG",
     "update-status-hook-interval": "5m",
