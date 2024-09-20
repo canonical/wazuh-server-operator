@@ -45,6 +45,8 @@ def test_state_without_proxy():
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
+    assert charm_state.git_repository is None
+    assert charm_state.git_ssh_key is None
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
@@ -70,6 +72,8 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
+    assert charm_state.git_repository is None
+    assert charm_state.git_ssh_key is None
     assert str(charm_state.proxy.http_proxy) == "http://squid.proxy:3228/"
     assert str(charm_state.proxy.https_proxy) == "https://squid.proxy:3228/"
     assert charm_state.proxy.no_proxy == "localhost"
@@ -128,7 +132,7 @@ def test_state_when_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     assert: InvalidStateError is raised.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
-    mock_charm.model.get_secret.get_content.return_value = {}
+    mock_charm.model.get_secret.return_value.get_content.return_value = {}
     monkeypatch.setattr(
         mock_charm,
         "config",
@@ -144,3 +148,37 @@ def test_state_when_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     certificates_relation_data = {"certificates": json.dumps([{"certificate": certificate}])}
     with pytest.raises(state.InvalidStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, certificates_relation_data)
+
+
+def test_state_when_secret_valid(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given a secret with valid content.
+    act: when charm state is initialized.
+    assert: the state contains the secret value.
+    """
+    git_repository = "git+ssh://user1@git.server/repo_name@main"
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    mock_charm.model.get_secret.return_value.get_content.return_value = {"value": "ssh-key"}
+    monkeypatch.setattr(
+        mock_charm,
+        "config",
+        {
+            "git-repository": git_repository,
+            "git-ssh-key": "secret:123213123123123123123",  # nosec
+        },
+    )
+
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    certificate = "somecert"
+    certificates_relation_data = {"certificates": json.dumps([{"certificate": certificate}])}
+    charm_state = state.State.from_charm(
+        mock_charm, opensearch_relation_data, certificates_relation_data
+    )
+    assert charm_state.indexer_ips == endpoints
+    assert charm_state.certificate == certificate
+    assert str(charm_state.git_repository) == git_repository
+    assert charm_state.git_ssh_key == "ssh-key"
+    assert charm_state.proxy.http_proxy is None
+    assert charm_state.proxy.https_proxy is None
+    assert charm_state.proxy.no_proxy is None
