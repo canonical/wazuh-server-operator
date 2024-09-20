@@ -102,11 +102,33 @@ def test_state_when_secret_not_found(monkeypatch: pytest.MonkeyPatch):
     act: when charm state is initialized.
     assert: InvalidStateError is raised.
     """
-    monkeypatch.setattr(
-        "ops.model.Model.get_secret",
-        unittest.mock.MagicMock(side_effect=ops.SecretNotFoundError),
-    )
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    mock_charm.model.get_secret.side_effect = ops.SecretNotFoundError
+    monkeypatch.setattr(
+        mock_charm,
+        "config",
+        {
+            "git-repository": "git+ssh://user1@git.server/repo_name@main",
+            "git-ssh-key": "secret:123213123123123123123",  # nosec
+        },
+    )
+
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    certificate = "somecert"
+    certificates_relation_data = {"certificates": json.dumps([{"certificate": certificate}])}
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(mock_charm, opensearch_relation_data, certificates_relation_data)
+
+
+def test_state_when_secret_invalid(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given a secret with invalid content.
+    act: when charm state is initialized.
+    assert: InvalidStateError is raised.
+    """
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    mock_charm.model.get_secret.get_content.return_value = {}
     monkeypatch.setattr(
         mock_charm,
         "config",
