@@ -9,7 +9,7 @@ from ops.testing import Harness
 
 import wazuh
 from charm import WazuhServerCharm
-from state import InvalidStateError, State
+from state import InvalidStateError, State, WazuhConfig
 
 
 @patch.object(State, "from_charm")
@@ -29,17 +29,27 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 
 
 @patch.object(State, "from_charm")
+@patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "install_certificates")
-def test_reconcile_reaches_active_status(
-    wazuh_install_certificates_mock, wazuh_update_configuration_mock, state_from_charm_mock
+def test_reconcile_reaches_active_status_when_repository_configured(
+    wazuh_install_certificates_mock,
+    wazuh_update_configuration_mock,
+    configure_git_mock,
+    state_from_charm_mock,
 ):
     """
     arrange: mock system calls and charm state.
     act: call reconcile.
     assert: the charm reaches active status and configs are applied.
     """
-    state_from_charm_mock.return_value = State(certificate="somecert", indexer_ips=["10.0.0.1"])
+    git_repository = "git+ssh://user1@git.server/repo_name@main"
+    state_from_charm_mock.return_value = State(
+        certificate="somecert",
+        indexer_ips=["10.0.0.1"],
+        wazuh_config=WazuhConfig(git_repository=git_repository, git_ssh_key="secret_id"),
+        git_ssh_key="somekey",
+    )
     harness = Harness(WazuhServerCharm)
     harness.begin()
     container = harness.model.unit.containers.get("wazuh-server")
@@ -50,6 +60,42 @@ def test_reconcile_reaches_active_status(
 
     wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
+    configure_git_mock.assert_called_with(container, git_repository, "somekey")
+    assert harness.model.unit.status.name == ops.ActiveStatus().name
+
+
+@patch.object(State, "from_charm")
+@patch.object(wazuh, "configure_git")
+@patch.object(wazuh, "update_configuration")
+@patch.object(wazuh, "install_certificates")
+def test_reconcile_reaches_active_status_when_repository_not_configured(
+    wazuh_install_certificates_mock,
+    wazuh_update_configuration_mock,
+    configure_git_mock,
+    state_from_charm_mock,
+):
+    """
+    arrange: mock system calls and charm state.
+    act: call reconcile.
+    assert: the charm reaches active status and configs are applied.
+    """
+    state_from_charm_mock.return_value = State(
+        certificate="somecert",
+        indexer_ips=["10.0.0.1"],
+        wazuh_config=WazuhConfig(git_repository=None, git_ssh_key=None),
+        git_ssh_key=None,
+    )
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    harness.charm.reconcile()
+
+    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
+    wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
+    configure_git_mock.assert_not_called()
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 

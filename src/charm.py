@@ -86,6 +86,8 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.certificate,
         )
         wazuh.update_configuration(container, self.state.indexer_ips)
+        if self.state.git_repository:
+            wazuh.configure_git(container, str(self.state.git_repository), self.state.git_ssh_key)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
         self.unit.status = ops.ActiveStatus()

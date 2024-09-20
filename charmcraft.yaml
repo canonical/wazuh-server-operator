@@ -77,8 +77,6 @@ containers:
   wazuh-server:
     resource: wazuh-server-image
 resources:
-  # An OCI image resource for each container listed above.
-  # You may remove this if your charm will run without a workload sidecar container.
   wazuh-server-image:
     type: oci-image
     description: OCI image for the Wazuh server
@@ -92,4 +90,18 @@ requires:
   ingress:
     interface: traefik_route
     limit: 1
-
+config:
+  options:
+    git-repo:
+      type: string
+      description: >
+        The repository URL where the DNS records are stored. The username has to be provided as in 
+        git+ssh://username@repository@branch, where the branch is optional.
+    git-ssh-key:
+      type: secret
+      description: >
+        The Juju secret ID corresponding to the private key for SSH authentication.
+        The secret should contain a single key, "value", which maps to the actual SSH key. 
+        To create the secret, run the following command: 
+        `juju add-secret my-git-ssh-key value=<ssh-key> && juju grant-secret my-git-ssh-key wazuh-server`,
+        and use the outputted secret ID to configure this option.
