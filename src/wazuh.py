@@ -19,6 +19,10 @@ from lxml import etree  # nosec
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
+WAZUH_USER = "wazuh"
+WAZUH_GROUP = "wazuh"
+KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
+RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
 
 
 class WazuhInstallationError(Exception):
@@ -73,3 +77,34 @@ def install_certificates(container: ops.Container, public_key: str, private_key:
     """
     container.push(CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True)
     container.push(CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True)
+
+
+def configure_git(container: ops.Container, git_repository: str, git_ssh_key: str) -> None:
+    """Configure git.
+
+    Args:
+        container: the container to configure git for.
+        git_repository: the git repository to add to known hosts.
+        git_ssh_key: the SSH key for the git repository.
+    """
+    hostname = git_repository.split("@")[1].split("/")[0]
+    process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
+    output, _ = process.wait_output()
+    container.push(
+        KNOWN_HOSTS_PATH,
+        output,
+        encoding="utf-8",
+        make_dirs=True,
+        user=WAZUH_USER,
+        group=WAZUH_GROUP,
+        permissions=0o600,
+    )
+    container.push(
+        RSA_PATH,
+        git_ssh_key,
+        encoding="utf-8",
+        make_dirs=True,
+        user=WAZUH_USER,
+        group=WAZUH_GROUP,
+        permissions=0o600,
+    )
