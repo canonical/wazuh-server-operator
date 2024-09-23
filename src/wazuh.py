@@ -23,6 +23,7 @@ WAZUH_USER = "wazuh"
 WAZUH_GROUP = "wazuh"
 KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
+REPOSITORY_PATH = "/home/wazuh/repository"
 
 
 class WazuhInstallationError(Exception):
@@ -108,3 +109,17 @@ def configure_git(container: ops.Container, git_repository: str, git_ssh_key: st
         group=WAZUH_GROUP,
         permissions=0o600,
     )
+    process = container.exec(["git", "clone", git_repository, REPOSITORY_PATH])
+    process.wait_output()
+
+
+def pull_configuration_files(container: ops.Container) -> None:
+    """Pull configuration files from the repository.
+
+    Args:
+        container: the container to pull the files into.
+    """
+    process = container.exec(["git", "--git-dir" f"{REPOSITORY_PATH}/.git", "pull"])
+    process.wait_output()
+    process = container.exec(["rsync", f"{REPOSITORY_PATH}", "/"])
+    process.wait_output()

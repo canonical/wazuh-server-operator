@@ -30,11 +30,13 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
+@patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "install_certificates")
 def test_reconcile_reaches_active_status_when_repository_configured(
     wazuh_install_certificates_mock,
     wazuh_update_configuration_mock,
+    pull_configuration_files_mock,
     configure_git_mock,
     state_from_charm_mock,
 ):
@@ -62,6 +64,7 @@ def test_reconcile_reaches_active_status_when_repository_configured(
     wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     configure_git_mock.assert_called_with(container, git_repository, "somekey")
+    pull_configuration_files_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 

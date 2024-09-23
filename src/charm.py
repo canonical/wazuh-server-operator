@@ -85,6 +85,9 @@ class WazuhServerCharm(CharmBaseWithState):
             self.certificates.private_key,
             self.state.certificate,
         )
+        if self.state.git_repository:
+            wazuh.configure_git(container, str(self.state.git_repository), self.state.git_ssh_key)
+            wazuh.pull_configuration_files(container)
         wazuh.update_configuration(container, self.state.indexer_ips)
         if self.state.git_repository:
             wazuh.configure_git(container, str(self.state.git_repository), self.state.git_ssh_key)

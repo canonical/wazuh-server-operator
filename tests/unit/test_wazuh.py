@@ -113,9 +113,12 @@ def test_configure_git() -> None:
     harness.handle_exec(
         "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
     )
+    git_repository = "git+ssh://user1@git.server/repo_name@main"
+    harness.handle_exec(
+        "wazuh-server", ["git", "clone", git_repository, "/home/wazuh/repository"], result=""
+    )
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    git_repository = "git+ssh://user1@git.server/repo_name@main"
     git_ssh_key = "somekey"
     wazuh.configure_git(container, git_repository, git_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
