@@ -115,7 +115,7 @@ def test_configure_git() -> None:
     )
     git_repository = "git+ssh://user1@git.server/repo_name@main"
     harness.handle_exec(
-        "wazuh-server", ["git", "clone", git_repository, "/home/wazuh/repository"], result=""
+        "wazuh-server", ["git", "clone", git_repository, "/root/repository"], result=""
     )
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")

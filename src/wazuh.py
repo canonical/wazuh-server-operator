@@ -120,14 +120,14 @@ def pull_configuration_files(container: ops.Container) -> None:
     Args:
         container: the container to pull the files into.
     """
-    try :
+    try:
         process = container.exec(["git", "--git-dir" f"{REPOSITORY_PATH}/.git", "pull"])
         stdout, stderr = process.wait_output()
         logging.debug(stdout)
         logging.debug(stderr)
-        process = container.exec(["rsync", "--chown" "wazuh:wazuh", f"{REPOSITORY_PATH}", "/"])
+        process = container.exec(["rsync", "--chown", "wazuh:wazuh", f"{REPOSITORY_PATH}", "/"])
         stdout, stderr = process.wait_output()
         logging.debug(stdout)
         logging.debug(stderr)
-    except ops.ExecError as ex:
+    except ops.pebble.ExecError as ex:
         logging.debug(ex)
