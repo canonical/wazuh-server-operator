@@ -25,6 +25,7 @@ parts:
     stage-packages:
       - git-core
       - rsync
+      - ssh
   filebeat:
     plugin: nil
     stage-packages:
