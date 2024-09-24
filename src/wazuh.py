@@ -7,6 +7,7 @@
 
 """Wazuh operational logic."""
 
+import logging
 from pathlib import Path
 
 import ops
@@ -21,9 +22,9 @@ FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 WAZUH_USER = "wazuh"
 WAZUH_GROUP = "wazuh"
-KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
-RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
-REPOSITORY_PATH = "/home/wazuh/repository"
+KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
+RSA_PATH = "/root/.ssh/id_rsa"
+REPOSITORY_PATH = "/root/repository"
 
 
 class WazuhInstallationError(Exception):
@@ -119,7 +120,14 @@ def pull_configuration_files(container: ops.Container) -> None:
     Args:
         container: the container to pull the files into.
     """
-    process = container.exec(["git", "--git-dir" f"{REPOSITORY_PATH}/.git", "pull"])
-    process.wait_output()
-    process = container.exec(["rsync", f"{REPOSITORY_PATH}", "/"])
-    process.wait_output()
+    try :
+        process = container.exec(["git", "--git-dir" f"{REPOSITORY_PATH}/.git", "pull"])
+        stdout, stderr = process.wait_output()
+        logging.debug(stdout)
+        logging.debug(stderr)
+        process = container.exec(["rsync", "--chown" "wazuh:wazuh", f"{REPOSITORY_PATH}", "/"])
+        stdout, stderr = process.wait_output()
+        logging.debug(stdout)
+        logging.debug(stderr)
+    except ops.ExecError as ex:
+        logging.debug(ex)
