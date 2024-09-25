@@ -1,3 +1,0 @@
-ops==2.15.0
-jsonschema==4.23.0
-cryptography==43.0.0
