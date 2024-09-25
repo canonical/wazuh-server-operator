@@ -113,7 +113,7 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
     return charm
 
 
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
     charm: str,
