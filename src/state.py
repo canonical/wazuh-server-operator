@@ -10,7 +10,7 @@ import typing
 from abc import ABC, abstractmethod
 
 import ops
-from pydantic import AnyHttpUrl, BaseModel, Field, ValidationError, parse_obj_as
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
         git_ssh_key: the secret key corresponding to SSH key for the git repository.
     """
 
-    git_repository: typing.Optional[str] = None
+    git_repository: typing.Optional[AnyUrl] = None
     git_ssh_key: typing.Optional[str] = None
 
 
@@ -66,7 +66,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     certificate: str = Field(..., min_length=1)
-    git_repository: typing.Optional[str] = None
+    git_repository: typing.Optional[AnyUrl] = None
     git_ssh_key: typing.Optional[str] = None
 
     def __init__(
