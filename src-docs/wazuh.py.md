@@ -5,10 +5,17 @@
 # <kbd>module</kbd> `wazuh.py`
 Wazuh operational logic. 
 
+**Global Variables**
+---------------
+- **WAZUH_USER**
+- **WAZUH_GROUP**
+- **KNOWN_HOSTS_PATH**
+- **RSA_PATH**
+- **REPOSITORY_PATH**
 
 ---
 
-<a href="../src/wazuh.py#L28"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L34"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `update_configuration`
 
@@ -34,7 +41,7 @@ Update Wazuh configuration.
 
 ---
 
-<a href="../src/wazuh.py#L66"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L72"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `install_certificates`
 
@@ -55,6 +62,50 @@ Update Wazuh filebeat certificates.
  - <b>`container`</b>:  the container for which to update the configuration. 
  - <b>`public_key`</b>:  the certificate's public key. 
  - <b>`private_key`</b>:  the certificate's private key. 
+
+
+---
+
+<a href="../src/wazuh.py#L84"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `configure_git`
+
+```python
+configure_git(
+    container: Container,
+    git_repository: str,
+    git_ssh_key: str
+) → None
+```
+
+Configure git. 
+
+
+
+**Args:**
+ 
+ - <b>`container`</b>:  the container to configure git for. 
+ - <b>`git_repository`</b>:  the git repository to add to known hosts. 
+ - <b>`git_ssh_key`</b>:  the SSH key for the git repository. 
+
+
+---
+
+<a href="../src/wazuh.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `pull_configuration_files`
+
+```python
+pull_configuration_files(container: Container) → None
+```
+
+Pull configuration files from the repository. 
+
+
+
+**Args:**
+ 
+ - <b>`container`</b>:  the container to pull the files into. 
 
 
 ---
