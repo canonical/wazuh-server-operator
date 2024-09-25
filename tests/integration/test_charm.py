@@ -28,4 +28,3 @@ async def test_build_and_deploy(model: Model, application: Application):
     model.wait_for_idle(
         apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
-    assert False
