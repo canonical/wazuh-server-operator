@@ -97,7 +97,7 @@ config:
       description: >
         The repository URL where the Wazuh configuration is stored. The username has to be provided as in 
         git+ssh://username@repository@branch, where the branch is optional.
-        The charms expects the repository to contain a /var/ossec directory to be copied over /var/ossec on
+        The charms expects the repository to contain a var/ossec directory to be copied over /var/ossec on
         the running instance.
     custom-config-ssh-key:
       type: secret
