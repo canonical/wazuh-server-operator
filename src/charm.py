@@ -41,9 +41,14 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(
             self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
         )
+        self.framework.observe(self.on.config_changed, self._on_config_changed)
 
     def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
-        """Pebble ready handler for the wazuh-server container."""
+        """Pebble ready handler."""
+        self.reconcile()
+
+    def _on_config_changed(self, _: ops.ConfigChangedEvent) -> None:
+        """Config changed handler."""
         self.reconcile()
 
     @property
@@ -85,6 +90,11 @@ class WazuhServerCharm(CharmBaseWithState):
             self.certificates.private_key,
             self.state.certificate,
         )
+        if self.state.custom_config_repository:
+            wazuh.configure_git(
+                container, self.state.custom_config_repository, self.state.custom_config_ssh_key
+            )
+            wazuh.pull_configuration_files(container)
         wazuh.update_configuration(container, self.state.indexer_ips)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()

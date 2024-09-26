@@ -7,6 +7,7 @@
 
 """Wazuh operational logic."""
 
+import logging
 from pathlib import Path
 
 import ops
@@ -19,6 +20,11 @@ from lxml import etree  # nosec
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
+WAZUH_USER = "wazuh"
+WAZUH_GROUP = "wazuh"
+KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
+RSA_PATH = "/root/.ssh/id_rsa"
+REPOSITORY_PATH = "/root/repository"
 
 
 class WazuhInstallationError(Exception):
@@ -73,3 +79,55 @@ def install_certificates(container: ops.Container, public_key: str, private_key:
     """
     container.push(CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True)
     container.push(CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True)
+
+
+def configure_git(
+    container: ops.Container, custom_config_repository: str, custom_config_ssh_key: str
+) -> None:
+    """Configure git.
+
+    Args:
+        container: the container to configure git for.
+        custom_config_repository: the git repository to add to known hosts.
+        custom_config_ssh_key: the SSH key for the git repository.
+    """
+    hostname = custom_config_repository.split("@")[1].split("/")[0]
+    process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
+    output, _ = process.wait_output()
+    container.push(
+        KNOWN_HOSTS_PATH,
+        output,
+        encoding="utf-8",
+        make_dirs=True,
+        user=WAZUH_USER,
+        group=WAZUH_GROUP,
+        permissions=0o600,
+    )
+    container.push(
+        RSA_PATH,
+        custom_config_ssh_key,
+        encoding="utf-8",
+        make_dirs=True,
+        user=WAZUH_USER,
+        group=WAZUH_GROUP,
+        permissions=0o600,
+    )
+    process = container.exec(["git", "clone", custom_config_repository, REPOSITORY_PATH])
+    process.wait_output()
+
+
+def pull_configuration_files(container: ops.Container) -> None:
+    """Pull configuration files from the repository.
+
+    Args:
+        container: the container to pull the files into.
+    """
+    try:
+        process = container.exec(["git", "--git-dir" f"{REPOSITORY_PATH}/.git", "pull"])
+        process.wait_output()
+        process = container.exec(
+            ["rsync", "--chown", "wazuh:wazuh", f"{REPOSITORY_PATH}/var/ossec", "/var/ossec"]
+        )
+        process.wait_output()
+    except ops.pebble.ExecError as ex:
+        logging.debug(ex)
