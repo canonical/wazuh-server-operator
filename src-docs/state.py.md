@@ -123,8 +123,8 @@ The Wazuh server charm state.
  
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`certificate`</b>:  the TLS certificate. 
- - <b>`git_repository`</b>:  the git repository where the configuration is. 
- - <b>`git_ssh_key`</b>:  the SSH key for the git repository. 
+ - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
+ - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
 <a href="../src/state.py#L72"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
@@ -136,7 +136,7 @@ __init__(
     indexer_ips: list[str],
     certificate: str,
     wazuh_config: WazuhConfig,
-    git_ssh_key: Optional[str]
+    custom_config_ssh_key: Optional[str]
 )
 ```
 
@@ -149,7 +149,7 @@ Initialize a new instance of the CharmState class.
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`certificate`</b>:  the TLS certificate. 
  - <b>`wazuh_config`</b>:  Wazuh configuration. 
- - <b>`git_ssh_key`</b>:  the SSH key for the git repository. 
+ - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
 
 
 ---
@@ -238,8 +238,8 @@ The Wazuh server charm configuration.
 
 **Attributes:**
  
- - <b>`git_repository`</b>:  the git repository where the configuration is. 
- - <b>`git_ssh_key`</b>:  the secret key corresponding to SSH key for the git repository. 
+ - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
+ - <b>`custom_config_ssh_key`</b>:  the secret key corresponding to SSH key for the git repository. 
 
 
 ---

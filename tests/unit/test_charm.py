@@ -45,14 +45,16 @@ def test_reconcile_reaches_active_status_when_repository_configured(
     act: call reconcile.
     assert: the charm reaches active status and configs are applied.
     """
-    git_repository = "git+ssh://user1@git.server/repo_name@main"
+    custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     secret_id = "secret:123213123123123123123"  # nosec
-    wazuh_config = WazuhConfig(git_repository=git_repository, git_ssh_key=secret_id)
+    wazuh_config = WazuhConfig(
+        custom_config_repository=custom_config_repository, custom_config_ssh_key=secret_id
+    )
     state_from_charm_mock.return_value = State(
         certificate="somecert",
         indexer_ips=["10.0.0.1"],
         wazuh_config=wazuh_config,
-        git_ssh_key="somekey",
+        custom_config_ssh_key="somekey",
     )
     harness = Harness(WazuhServerCharm)
     harness.begin()
@@ -64,7 +66,9 @@ def test_reconcile_reaches_active_status_when_repository_configured(
 
     wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
-    configure_git_mock.assert_called_with(container, wazuh_config.git_repository, "somekey")
+    configure_git_mock.assert_called_with(
+        container, wazuh_config.custom_config_repository, "somekey"
+    )
     pull_configuration_files_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
@@ -87,8 +91,8 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
     state_from_charm_mock.return_value = State(
         certificate="somecert",
         indexer_ips=["10.0.0.1"],
-        wazuh_config=WazuhConfig(git_repository=None, git_ssh_key=None),
-        git_ssh_key=None,
+        wazuh_config=WazuhConfig(custom_config_repository=None, custom_config_ssh_key=None),
+        custom_config_ssh_key=None,
     )
     harness = Harness(WazuhServerCharm)
     harness.begin()

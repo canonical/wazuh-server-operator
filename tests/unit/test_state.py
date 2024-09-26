@@ -45,8 +45,8 @@ def test_state_without_proxy():
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
-    assert charm_state.git_repository is None
-    assert charm_state.git_ssh_key is None
+    assert charm_state.custom_config_repository is None
+    assert charm_state.custom_config_ssh_key is None
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
@@ -72,8 +72,8 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
-    assert charm_state.git_repository is None
-    assert charm_state.git_ssh_key is None
+    assert charm_state.custom_config_repository is None
+    assert charm_state.custom_config_ssh_key is None
     assert str(charm_state.proxy.http_proxy) == "http://squid.proxy:3228/"
     assert str(charm_state.proxy.https_proxy) == "https://squid.proxy:3228/"
     assert charm_state.proxy.no_proxy == "localhost"
@@ -112,8 +112,8 @@ def test_state_when_secret_not_found(monkeypatch: pytest.MonkeyPatch):
         mock_charm,
         "config",
         {
-            "git-repository": "git+ssh://user1@git.server/repo_name@main",
-            "git-ssh-key": "secret:123213123123123123123",  # nosec
+            "custom-config-repository": "git+ssh://user1@git.server/repo_name@main",
+            "custom-config-ssh-key": "secret:123213123123123123123",  # nosec
         },
     )
 
@@ -137,8 +137,8 @@ def test_state_when_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         mock_charm,
         "config",
         {
-            "git-repository": "git+ssh://user1@git.server/repo_name@main",
-            "git-ssh-key": "secret:123213123123123123123",  # nosec
+            "custom-config-repository": "git+ssh://user1@git.server/repo_name@main",
+            "custom-config-ssh-key": "secret:123213123123123123123",  # nosec
         },
     )
 
@@ -156,15 +156,15 @@ def test_state_when_secret_valid(monkeypatch: pytest.MonkeyPatch):
     act: when charm state is initialized.
     assert: the state contains the secret value.
     """
-    git_repository = "git+ssh://user1@git.server/repo_name@main"
+    custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     mock_charm.model.get_secret.return_value.get_content.return_value = {"value": "ssh-key"}
     monkeypatch.setattr(
         mock_charm,
         "config",
         {
-            "git-repository": git_repository,
-            "git-ssh-key": "secret:123213123123123123123",  # nosec
+            "custom-config-repository": custom_config_repository,
+            "custom-config-ssh-key": "secret:123213123123123123123",  # nosec
         },
     )
 
@@ -177,8 +177,8 @@ def test_state_when_secret_valid(monkeypatch: pytest.MonkeyPatch):
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
-    assert str(charm_state.git_repository) == git_repository
-    assert charm_state.git_ssh_key == "ssh-key"
+    assert str(charm_state.custom_config_repository) == custom_config_repository
+    assert charm_state.custom_config_ssh_key == "ssh-key"
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None

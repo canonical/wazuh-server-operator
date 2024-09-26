@@ -81,15 +81,17 @@ def install_certificates(container: ops.Container, public_key: str, private_key:
     container.push(CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True)
 
 
-def configure_git(container: ops.Container, git_repository: str, git_ssh_key: str) -> None:
+def configure_git(
+    container: ops.Container, custom_config_repository: str, custom_config_ssh_key: str
+) -> None:
     """Configure git.
 
     Args:
         container: the container to configure git for.
-        git_repository: the git repository to add to known hosts.
-        git_ssh_key: the SSH key for the git repository.
+        custom_config_repository: the git repository to add to known hosts.
+        custom_config_ssh_key: the SSH key for the git repository.
     """
-    hostname = git_repository.split("@")[1].split("/")[0]
+    hostname = custom_config_repository.split("@")[1].split("/")[0]
     process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
     output, _ = process.wait_output()
     container.push(
@@ -103,14 +105,14 @@ def configure_git(container: ops.Container, git_repository: str, git_ssh_key: st
     )
     container.push(
         RSA_PATH,
-        git_ssh_key,
+        custom_config_ssh_key,
         encoding="utf-8",
         make_dirs=True,
         user=WAZUH_USER,
         group=WAZUH_GROUP,
         permissions=0o600,
     )
-    process = container.exec(["git", "clone", git_repository, REPOSITORY_PATH])
+    process = container.exec(["git", "clone", custom_config_repository, REPOSITORY_PATH])
     process.wait_output()
 
 

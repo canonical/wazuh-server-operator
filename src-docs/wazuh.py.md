@@ -73,8 +73,8 @@ Update Wazuh filebeat certificates.
 ```python
 configure_git(
     container: Container,
-    git_repository: str,
-    git_ssh_key: str
+    custom_config_repository: str,
+    custom_config_ssh_key: str
 ) → None
 ```
 
@@ -85,8 +85,8 @@ Configure git.
 **Args:**
  
  - <b>`container`</b>:  the container to configure git for. 
- - <b>`git_repository`</b>:  the git repository to add to known hosts. 
- - <b>`git_ssh_key`</b>:  the SSH key for the git repository. 
+ - <b>`custom_config_repository`</b>:  the git repository to add to known hosts. 
+ - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
 
 
 ---

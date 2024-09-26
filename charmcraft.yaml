@@ -92,16 +92,16 @@ requires:
     limit: 1
 config:
   options:
-    git-repository:
+    custom-config-repository:
       type: string
       description: >
         The repository URL where the Wazuh configuration is stored. The username has to be provided as in 
         git+ssh://username@repository@branch, where the branch is optional.
-    git-ssh-key:
+    custom-config-ssh-key:
       type: secret
       description: >
         The Juju secret ID corresponding to the private key for SSH authentication.
         The secret should contain a single key, "value", which maps to the actual SSH key. 
         To create the secret, run the following command: 
-        `juju add-secret my-git-ssh-key value=<ssh-key> && juju grant-secret my-git-ssh-key wazuh-server`,
+        `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`,
         and use the outputted secret ID to configure this option.

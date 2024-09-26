@@ -45,12 +45,12 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
     """The Wazuh server charm configuration.
 
     Attributes:
-        git_repository: the git repository where the configuration is.
-        git_ssh_key: the secret key corresponding to SSH key for the git repository.
+        custom_config_repository: the git repository where the configuration is.
+        custom_config_ssh_key: the secret key corresponding to SSH key for the git repository.
     """
 
-    git_repository: typing.Optional[AnyUrl] = None
-    git_ssh_key: typing.Optional[str] = None
+    custom_config_repository: typing.Optional[AnyUrl] = None
+    custom_config_ssh_key: typing.Optional[str] = None
 
 
 class State(BaseModel):  # pylint: disable=too-few-public-methods
@@ -59,22 +59,22 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     Attributes:
         indexer_ips: list of Wazuh indexer IPs.
         certificate: the TLS certificate.
-        git_repository: the git repository where the configuration is.
-        git_ssh_key: the SSH key for the git repository.
+        custom_config_repository: the git repository where the configuration is.
+        custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
     """
 
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     certificate: str = Field(..., min_length=1)
-    git_repository: typing.Optional[AnyUrl] = None
-    git_ssh_key: typing.Optional[str] = None
+    custom_config_repository: typing.Optional[AnyUrl] = None
+    custom_config_ssh_key: typing.Optional[str] = None
 
     def __init__(
         self,
         indexer_ips: list[str],
         certificate: str,
         wazuh_config: WazuhConfig,
-        git_ssh_key: typing.Optional[str],
+        custom_config_ssh_key: typing.Optional[str],
     ):
         """Initialize a new instance of the CharmState class.
 
@@ -82,13 +82,13 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             indexer_ips: list of Wazuh indexer IPs.
             certificate: the TLS certificate.
             wazuh_config: Wazuh configuration.
-            git_ssh_key: the SSH key for the git repository.
+            custom_config_ssh_key: the SSH key for the git repository.
         """
         super().__init__(
             indexer_ips=indexer_ips,
             certificate=certificate,
-            git_repository=wazuh_config.git_repository,
-            git_ssh_key=git_ssh_key,
+            custom_config_repository=wazuh_config.custom_config_repository,
+            custom_config_ssh_key=custom_config_ssh_key,
         )
 
     @property
@@ -146,21 +146,25 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             args = {key.replace("-", "_"): value for key, value in charm.config.items()}
             # mypy doesn't like the str to Url casting
             valid_config = WazuhConfig(**args)  # type: ignore
-            git_ssh_key_content = None
-            if valid_config.git_ssh_key:
+            custom_config_ssh_key_content = None
+            if valid_config.custom_config_ssh_key:
                 try:
-                    git_ssh_key_secret = charm.model.get_secret(id=valid_config.git_ssh_key)
+                    custom_config_ssh_key_secret = charm.model.get_secret(
+                        id=valid_config.custom_config_ssh_key
+                    )
                 except ops.SecretNotFoundError as exc:
                     raise InvalidStateError("Secret not found.") from exc
-                git_ssh_key_content = git_ssh_key_secret.get_content(refresh=True).get("value")
-                if not git_ssh_key_content:
+                custom_config_ssh_key_content = custom_config_ssh_key_secret.get_content(
+                    refresh=True
+                ).get("value")
+                if not custom_config_ssh_key_content:
                     raise InvalidStateError("Secret does not contain the expected key 'value'.")
             if certificates:
                 return cls(
                     indexer_ips=endpoints,
                     certificate=certificates[0].get("certificate"),
                     wazuh_config=valid_config,
-                    git_ssh_key=git_ssh_key_content,
+                    custom_config_ssh_key=custom_config_ssh_key_content,
                 )
             raise InvalidStateError("Certificate is empty.")
         except ValidationError as exc:
