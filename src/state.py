@@ -20,7 +20,7 @@ class CharmBaseWithState(ops.CharmBase, ABC):
 
     @abstractmethod
     def reconcile(self) -> None:
-        """Reconcile Synapse configuration."""
+        """Reconcile configuration."""
 
 
 class InvalidStateError(Exception):
@@ -28,7 +28,7 @@ class InvalidStateError(Exception):
 
 
 class ProxyConfig(BaseModel):  # pylint: disable=too-few-public-methods
-    """Configuration for accessing Synapse through proxy.
+    """Proxy configuration.
 
     Attributes:
         http_proxy: The http proxy URL.

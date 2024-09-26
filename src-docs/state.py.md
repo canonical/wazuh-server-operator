@@ -61,7 +61,7 @@ Unit that this execution is responsible for.
 reconcile() → None
 ```
 
-Reconcile Synapse configuration. 
+Reconcile configuration. 
 
 
 ---
@@ -76,7 +76,7 @@ Exception raised when a charm configuration is found to be invalid.
 ---
 
 ## <kbd>class</kbd> `ProxyConfig`
-Configuration for accessing Synapse through proxy. 
+Proxy configuration. 
 
 
 
