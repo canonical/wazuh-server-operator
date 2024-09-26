@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 """Charm unit tests."""
+import secrets
 from unittest.mock import ANY, patch
 
 import ops
@@ -46,7 +47,7 @@ def test_reconcile_reaches_active_status_when_repository_configured(
     assert: the charm reaches active status and configs are applied.
     """
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
-    secret_id = "secret:123213123123123123123"  # nosec
+    secret_id = f"secret:{secrets.token_hex(21)}"
     wazuh_config = WazuhConfig(
         custom_config_repository=custom_config_repository, custom_config_ssh_key=secret_id
     )
