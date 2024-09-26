@@ -144,6 +144,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             )
             certificates = json.loads(certificates_json)
             args = {key.replace("-", "_"): value for key, value in charm.config.items()}
+            # mypy doesn't like the str to Url casting
             valid_config = WazuhConfig(**args)  # type: ignore
             git_ssh_key_content = None
             if valid_config.git_ssh_key:
