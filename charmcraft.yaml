@@ -95,7 +95,7 @@ config:
     git-repository:
       type: string
       description: >
-        The repository URL where the DNS records are stored. The username has to be provided as in 
+        The repository URL where the Wazuh configuration is stored. The username has to be provided as in 
         git+ssh://username@repository@branch, where the branch is optional.
     git-ssh-key:
       type: secret
