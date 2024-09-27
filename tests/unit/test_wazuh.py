@@ -101,3 +101,25 @@ def test_install_certificates() -> None:
         "public_key"
         == container.pull(wazuh.CERTIFICATES_PATH / "filebeat.pem", encoding="utf-8").read()
     )
+
+
+def test_configure_git() -> None:
+    """
+    arrange: do nothing.
+    act: configure git.
+    assert: the files have been saved with the appropriate content.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
+    )
+    custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
+    harness.handle_exec(
+        "wazuh-server", ["git", "clone", custom_config_repository, "/root/repository"], result=""
+    )
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    custom_config_ssh_key = "somekey"
+    wazuh.configure_git(container, custom_config_repository, custom_config_ssh_key)
+    assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
+    assert "somekey" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()

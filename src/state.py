@@ -5,11 +5,12 @@
 
 import json
 import logging
+import os
+import typing
 from abc import ABC, abstractmethod
-from typing import Annotated
 
 import ops
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +20,37 @@ class CharmBaseWithState(ops.CharmBase, ABC):
 
     @abstractmethod
     def reconcile(self) -> None:
-        """Reconcile Synapse configuration."""
+        """Reconcile configuration."""
 
 
 class InvalidStateError(Exception):
     """Exception raised when a charm configuration is found to be invalid."""
+
+
+class ProxyConfig(BaseModel):  # pylint: disable=too-few-public-methods
+    """Proxy configuration.
+
+    Attributes:
+        http_proxy: The http proxy URL.
+        https_proxy: The https proxy URL.
+        no_proxy: Comma separated list of hostnames to bypass proxy.
+    """
+
+    http_proxy: typing.Optional[AnyHttpUrl]
+    https_proxy: typing.Optional[AnyHttpUrl]
+    no_proxy: typing.Optional[str]
+
+
+class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
+    """The Wazuh server charm configuration.
+
+    Attributes:
+        custom_config_repository: the git repository where the configuration is.
+        custom_config_ssh_key: the secret key corresponding to SSH key for the git repository.
+    """
+
+    custom_config_repository: typing.Optional[AnyUrl] = None
+    custom_config_ssh_key: typing.Optional[str] = None
 
 
 class State(BaseModel):  # pylint: disable=too-few-public-methods
@@ -31,11 +58,60 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         indexer_ips: list of Wazuh indexer IPs.
-        certificate: the TLs certificate.
+        certificate: the TLS certificate.
+        custom_config_repository: the git repository where the configuration is.
+        custom_config_ssh_key: the SSH key for the git repository.
+        proxy: proxy configuration.
     """
 
-    indexer_ips: Annotated[list[str], Field(min_length=1)]
+    indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     certificate: str = Field(..., min_length=1)
+    custom_config_repository: typing.Optional[AnyUrl] = None
+    custom_config_ssh_key: typing.Optional[str] = None
+
+    def __init__(
+        self,
+        indexer_ips: list[str],
+        certificate: str,
+        wazuh_config: WazuhConfig,
+        custom_config_ssh_key: typing.Optional[str],
+    ):
+        """Initialize a new instance of the CharmState class.
+
+        Args:
+            indexer_ips: list of Wazuh indexer IPs.
+            certificate: the TLS certificate.
+            wazuh_config: Wazuh configuration.
+            custom_config_ssh_key: the SSH key for the git repository.
+        """
+        super().__init__(
+            indexer_ips=indexer_ips,
+            certificate=certificate,
+            custom_config_repository=wazuh_config.custom_config_repository,
+            custom_config_ssh_key=custom_config_ssh_key,
+        )
+
+    @property
+    def proxy(self) -> "ProxyConfig":
+        """Get charm proxy configuration from juju charm environment.
+
+        Returns:
+            charm proxy configuration in the form of ProxyConfig.
+
+        Raises:
+            InvalidStateError: if the proxy configuration is invalid.
+        """
+        http_proxy = os.environ.get("JUJU_CHARM_HTTP_PROXY")
+        https_proxy = os.environ.get("JUJU_CHARM_HTTPS_PROXY")
+        no_proxy = os.environ.get("JUJU_CHARM_NO_PROXY")
+        try:
+            return ProxyConfig(
+                http_proxy=parse_obj_as(AnyHttpUrl, http_proxy) if http_proxy else None,
+                https_proxy=parse_obj_as(AnyHttpUrl, https_proxy) if https_proxy else None,
+                no_proxy=no_proxy,
+            )
+        except ValidationError as exc:
+            raise InvalidStateError("Invalid proxy configuration.") from exc
 
     # pylint: disable=unused-argument
     @classmethod
@@ -67,8 +143,29 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 else "[]"
             )
             certificates = json.loads(certificates_json)
+            args = {key.replace("-", "_"): value for key, value in charm.config.items()}
+            # mypy doesn't like the str to Url casting
+            valid_config = WazuhConfig(**args)  # type: ignore
+            custom_config_ssh_key_content = None
+            if valid_config.custom_config_ssh_key:
+                try:
+                    custom_config_ssh_key_secret = charm.model.get_secret(
+                        id=valid_config.custom_config_ssh_key
+                    )
+                except ops.SecretNotFoundError as exc:
+                    raise InvalidStateError("Secret not found.") from exc
+                custom_config_ssh_key_content = custom_config_ssh_key_secret.get_content(
+                    refresh=True
+                ).get("value")
+                if not custom_config_ssh_key_content:
+                    raise InvalidStateError("Secret does not contain the expected key 'value'.")
             if certificates:
-                return cls(indexer_ips=endpoints, certificate=certificates[0].get("certificate"))
+                return cls(
+                    indexer_ips=endpoints,
+                    certificate=certificates[0].get("certificate"),
+                    wazuh_config=valid_config,
+                    custom_config_ssh_key=custom_config_ssh_key_content,
+                )
             raise InvalidStateError("Certificate is empty.")
         except ValidationError as exc:
             logger.error("Invalid charm configuration, %s", exc)
