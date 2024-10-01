@@ -77,8 +77,6 @@ containers:
   wazuh-server:
     resource: wazuh-server-image
 resources:
-  # An OCI image resource for each container listed above.
-  # You may remove this if your charm will run without a workload sidecar container.
   wazuh-server-image:
     type: oci-image
     description: OCI image for the Wazuh server
@@ -92,4 +90,20 @@ requires:
   ingress:
     interface: traefik_route
     limit: 1
-
+config:
+  options:
+    custom-config-repository:
+      type: string
+      description: >
+        The repository URL where the Wazuh configuration is stored. The username has to be provided as in 
+        git+ssh://username@repository@branch, where the branch is optional.
+        The charms expects the repository to contain a var/ossec directory to be copied over /var/ossec on
+        the running instance.
+    custom-config-ssh-key:
+      type: secret
+      description: >
+        The Juju secret ID corresponding to the private key for SSH authentication.
+        The secret should contain a single key, "value", which maps to the actual SSH key. 
+        To create the secret, run the following command: 
+        `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`,
+        and use the secret ID output to configure this option.

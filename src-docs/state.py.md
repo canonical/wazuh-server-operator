@@ -53,7 +53,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/state.py#L20"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
@@ -61,7 +61,7 @@ Unit that this execution is responsible for.
 reconcile() → None
 ```
 
-Reconcile Synapse configuration. 
+Reconcile configuration. 
 
 
 ---
@@ -75,15 +75,16 @@ Exception raised when a charm configuration is found to be invalid.
 
 ---
 
-## <kbd>class</kbd> `State`
-The Wazuh server charm state. 
+## <kbd>class</kbd> `ProxyConfig`
+Proxy configuration. 
 
 
 
 **Attributes:**
  
- - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
- - <b>`certificate`</b>:  the TLs certificate. 
+ - <b>`http_proxy`</b>:  The http proxy URL. 
+ - <b>`https_proxy`</b>:  The https proxy URL. 
+ - <b>`no_proxy`</b>:  Comma separated list of hostnames to bypass proxy. 
 
 
 ---
@@ -110,9 +111,91 @@ Returns the set of fields that have been explicitly set on this model instance.
 
 
 
+
 ---
 
-<a href="../src/state.py#L41"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+## <kbd>class</kbd> `State`
+The Wazuh server charm state. 
+
+
+
+**Attributes:**
+ 
+ - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
+ - <b>`certificate`</b>:  the TLS certificate. 
+ - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
+ - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
+ - <b>`proxy`</b>:  proxy configuration. 
+
+<a href="../src/state.py#L72"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `__init__`
+
+```python
+__init__(
+    indexer_ips: list[str],
+    certificate: str,
+    wazuh_config: WazuhConfig,
+    custom_config_ssh_key: Optional[str]
+)
+```
+
+Initialize a new instance of the CharmState class. 
+
+
+
+**Args:**
+ 
+ - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
+ - <b>`certificate`</b>:  the TLS certificate. 
+ - <b>`wazuh_config`</b>:  Wazuh configuration. 
+ - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
+
+
+---
+
+#### <kbd>property</kbd> model_extra
+
+Get extra fields set during validation. 
+
+
+
+**Returns:**
+  A dictionary of extra fields, or `None` if `config.extra` is not set to `"allow"`. 
+
+---
+
+#### <kbd>property</kbd> model_fields_set
+
+Returns the set of fields that have been explicitly set on this model instance. 
+
+
+
+**Returns:**
+  A set of strings representing the fields that have been set,  i.e. that were not filled from defaults. 
+
+---
+
+#### <kbd>property</kbd> proxy
+
+Get charm proxy configuration from juju charm environment. 
+
+
+
+**Returns:**
+  charm proxy configuration in the form of ProxyConfig. 
+
+
+
+**Raises:**
+ 
+ - <b>`InvalidStateError`</b>:  if the proxy configuration is invalid. 
+
+
+
+---
+
+<a href="../src/state.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 
@@ -144,5 +227,43 @@ Initialize the state from charm.
 **Raises:**
  
  - <b>`InvalidStateError`</b>:  if the state is invalid. 
+
+
+---
+
+## <kbd>class</kbd> `WazuhConfig`
+The Wazuh server charm configuration. 
+
+
+
+**Attributes:**
+ 
+ - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
+ - <b>`custom_config_ssh_key`</b>:  the secret key corresponding to SSH key for the git repository. 
+
+
+---
+
+#### <kbd>property</kbd> model_extra
+
+Get extra fields set during validation. 
+
+
+
+**Returns:**
+  A dictionary of extra fields, or `None` if `config.extra` is not set to `"allow"`. 
+
+---
+
+#### <kbd>property</kbd> model_fields_set
+
+Returns the set of fields that have been explicitly set on this model instance. 
+
+
+
+**Returns:**
+  A set of strings representing the fields that have been set,  i.e. that were not filled from defaults. 
+
+
 
 
