@@ -168,5 +168,4 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 )
             raise InvalidStateError("Certificate is empty.")
         except ValidationError as exc:
-            logger.error("Invalid charm configuration, %s", exc)
             raise InvalidStateError("Invalid charm configuration.") from exc
