@@ -111,8 +111,19 @@ def test_configure_git_when_branch_specified() -> None:
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"],
+        result="",
+    )
+    harness.handle_exec(
         "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
     )
+    harness.handle_exec("wazuh-server", ["rm", "-rf", wazuh.REPOSITORY_PATH], result="")
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     harness.handle_exec(
         "wazuh-server",
@@ -142,8 +153,19 @@ def test_configure_git_when_no_branch_specified() -> None:
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"],
+        result="",
+    )
+    harness.handle_exec(
         "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
     )
+    harness.handle_exec("wazuh-server", ["rm", "-rf", wazuh.REPOSITORY_PATH], result="")
     custom_config_repository = "git+ssh://user1@git.server/repo_name"
     harness.handle_exec(
         "wazuh-server",
