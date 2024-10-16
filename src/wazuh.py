@@ -82,6 +82,44 @@ def install_certificates(container: ops.Container, public_key: str, private_key:
     container.push(CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True)
 
 
+def _get_current_configuration_url(container: ops.Container) -> str:
+    """Get the current remote repository for configuration.
+
+    Args:
+        container: the container to configure git for.
+
+    Returns:
+        The repository URL.
+    """
+    process = container.exec(
+        ["git", "-C", REPOSITORY_PATH, "config", "--get", "remote.origin.url"]
+    )
+    remote_url = ""
+    try:
+        remote_url, _ = process.wait_output()
+    except ops.pebble.ExecError as ex:
+        logging.debug(ex)
+    return remote_url.rstrip()
+
+
+def _get_current_configuration_url_branch(container: ops.Container) -> str:
+    """Get the current remote repository branch for configuration.
+
+    Args:
+        container: the container to configure git for.
+
+    Returns:
+        The repository branch.
+    """
+    process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"])
+    branch = ""
+    try:
+        branch, _ = process.wait_output()
+    except ops.pebble.ExecError as ex:
+        logging.debug(ex)
+    return branch.rstrip()
+
+
 def configure_git(
     container: ops.Container, custom_config_repository: str, custom_config_ssh_key: str
 ) -> None:
@@ -97,6 +135,11 @@ def configure_git(
     path_parts = url.path.split("@")
     branch = path_parts[1] if len(path_parts) > 1 else None
     base_url = urlunsplit(url._replace(path=path_parts[0]))
+    if (
+        _get_current_configuration_url(container) == base_url
+        and _get_current_configuration_url_branch(container) == branch
+    ):
+        return
     process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)])
     output, _ = process.wait_output()
     container.push(
@@ -117,6 +160,8 @@ def configure_git(
         group=WAZUH_GROUP,
         permissions=0o600,
     )
+    process = container.exec(["rm", "-rf", REPOSITORY_PATH])
+    process.wait_output()
     command = ["git", "clone"]
     if branch:
         command = command + ["--branch", branch]
@@ -137,7 +182,7 @@ def pull_configuration_files(container: ops.Container) -> None:
         process = container.exec(
             [
                 "rsync",
-                "-rav",
+                "-ra",
                 "--chown",
                 "wazuh:wazuh",
                 f"{REPOSITORY_PATH}/var/ossec/",
