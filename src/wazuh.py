@@ -88,12 +88,13 @@ def configure_git(
 
     Args:
         container: the container to configure git for.
-        custom_config_repository: the git repository to add to known hosts.
+        custom_config_repository: the git repository to add to known hosts in format
+        git+ssh://<user>@<url>:<branch>.
         custom_config_ssh_key: the SSH key for the git repository.
     """
     splitted_url = custom_config_repository.split("@")
-    hostname = splitted_url[1].split("/")[0]
     url = "@".join(splitted_url[0:2])
+    hostname = splitted_url[1].split("/")[0]
     branch = splitted_url[2] if len(splitted_url) > 2 else None
     process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
     output, _ = process.wait_output()
