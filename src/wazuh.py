@@ -9,6 +9,7 @@
 
 import logging
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 import ops
 import yaml
@@ -88,11 +89,15 @@ def configure_git(
 
     Args:
         container: the container to configure git for.
-        custom_config_repository: the git repository to add to known hosts.
+        custom_config_repository: the git repository to add to known hosts in format
+        git+ssh://<user>@<url>:<branch>.
         custom_config_ssh_key: the SSH key for the git repository.
     """
-    hostname = custom_config_repository.split("@")[1].split("/")[0]
-    process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
+    url = urlsplit(custom_config_repository)
+    path_parts = url.path.split("@")
+    branch = path_parts[1] if len(path_parts) > 1 else None
+    base_url = urlunsplit(url._replace(path=path_parts[0]))
+    process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)])
     output, _ = process.wait_output()
     container.push(
         KNOWN_HOSTS_PATH,
@@ -112,7 +117,11 @@ def configure_git(
         group=WAZUH_GROUP,
         permissions=0o600,
     )
-    process = container.exec(["git", "clone", custom_config_repository, REPOSITORY_PATH])
+    command = ["git", "clone"]
+    if branch:
+        command = command + ["--branch", branch]
+    command = command + [base_url, REPOSITORY_PATH]
+    process = container.exec(command)
     process.wait_output()
 
 

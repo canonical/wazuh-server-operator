@@ -85,13 +85,14 @@ Configure git.
 **Args:**
  
  - <b>`container`</b>:  the container to configure git for. 
- - <b>`custom_config_repository`</b>:  the git repository to add to known hosts. 
+ - <b>`custom_config_repository`</b>:  the git repository to add to known hosts in format 
+ - <b>`git+ssh`</b>: //<user>@<url>:<branch>. 
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
 
 
 ---
 
-<a href="../src/wazuh.py#L119"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L127"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `pull_configuration_files`
 
