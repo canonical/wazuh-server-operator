@@ -135,7 +135,14 @@ def pull_configuration_files(container: ops.Container) -> None:
         process = container.exec(["git", "--git-dir" f"{REPOSITORY_PATH}/.git", "pull"])
         process.wait_output()
         process = container.exec(
-            ["rsync", "--chown", "wazuh:wazuh", f"{REPOSITORY_PATH}/var/ossec", "/var/ossec"]
+            [
+                "rsync",
+                "-rav",
+                "--chown",
+                "wazuh:wazuh",
+                f"{REPOSITORY_PATH}/var/ossec/",
+                "/var/ossec",
+            ]
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:
