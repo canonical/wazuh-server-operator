@@ -103,10 +103,10 @@ def test_install_certificates() -> None:
     )
 
 
-def test_configure_git() -> None:
+def test_configure_git_when_branch_specified() -> None:
     """
     arrange: do nothing.
-    act: configure git.
+    act: configure git specifying a branch name.
     assert: the files have been saved with the appropriate content.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
@@ -115,7 +115,45 @@ def test_configure_git() -> None:
     )
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     harness.handle_exec(
-        "wazuh-server", ["git", "clone", custom_config_repository, "/root/repository"], result=""
+        "wazuh-server",
+        [
+            "git",
+            "clone",
+            "--branch",
+            "main",
+            "git+ssh://user1@git.server/repo_name",
+            "/root/repository",
+        ],
+        result="",
+    )
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    custom_config_ssh_key = "somekey"
+    wazuh.configure_git(container, custom_config_repository, custom_config_ssh_key)
+    assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
+    assert "somekey" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
+
+
+def test_configure_git_when_no_branch_specified() -> None:
+    """
+    arrange: do nothing.
+    act: configure git without specifying a branch name.
+    assert: the files have been saved with the appropriate content.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
+    )
+    custom_config_repository = "git+ssh://user1@git.server/repo_name"
+    harness.handle_exec(
+        "wazuh-server",
+        [
+            "git",
+            "clone",
+            "git+ssh://user1@git.server/repo_name",
+            "/root/repository",
+        ],
+        result="",
     )
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")

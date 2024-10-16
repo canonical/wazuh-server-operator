@@ -91,7 +91,10 @@ def configure_git(
         custom_config_repository: the git repository to add to known hosts.
         custom_config_ssh_key: the SSH key for the git repository.
     """
-    hostname = custom_config_repository.split("@")[1].split("/")[0]
+    splitted_url = custom_config_repository.split("@")
+    hostname = splitted_url[1].split("/")[0]
+    url = "@".join(splitted_url[0:2])
+    branch = splitted_url[2] if len(splitted_url) > 2 else None
     process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
     output, _ = process.wait_output()
     container.push(
@@ -112,7 +115,11 @@ def configure_git(
         group=WAZUH_GROUP,
         permissions=0o600,
     )
-    process = container.exec(["git", "clone", custom_config_repository, REPOSITORY_PATH])
+    command = ["git", "clone"]
+    if branch:
+        command = command + ["--branch", branch]
+    command = command + [url, REPOSITORY_PATH]
+    process = container.exec(command)
     process.wait_output()
 
 
