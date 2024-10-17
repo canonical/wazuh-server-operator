@@ -189,7 +189,7 @@ def pull_configuration_files(container: ops.Container) -> None:
         container: the container to pull the files into.
     """
     try:
-        process = container.exec(["git", "--git-dir" f"{REPOSITORY_PATH}/.git", "pull"])
+        process = container.exec(["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"])
         process.wait_output()
         process = container.exec(
             [
