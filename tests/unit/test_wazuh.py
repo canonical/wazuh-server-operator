@@ -188,7 +188,7 @@ def test_configure_git_when_no_branch_specified() -> None:
 def test_configure_git_when_no_key_no_repository_specified() -> None:
     """
     arrange: do nothing.
-    act: configure git without specifying a branch name.
+    act: configure git without specifying a repository.
     assert: the files have been saved with the appropriate content.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
