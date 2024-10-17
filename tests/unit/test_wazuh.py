@@ -28,7 +28,7 @@ def test_update_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     act: save a configuration with a set of indexer IPs.
     assert: the IPs have been persisted in the corresponding files.
     """
-    indexer_ips = ["10.0.0.2", "10.0.0.3"]
+    indexer_ips = ["10.0.0.2:9200", "10.0.0.3:9200"]
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
@@ -45,14 +45,15 @@ def test_update_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
-    assert "hosts" in filebeat_config_yaml
-    assert filebeat_config_yaml["hosts"] == [f"{ip}:9200" for ip in indexer_ips]
+    assert "output.elasticsearch" in filebeat_config_yaml
+    assert "hosts" in filebeat_config_yaml["output.elasticsearch"]
+    assert filebeat_config_yaml["output.elasticsearch"]["hosts"] == indexer_ips
     ossec_config = container.pull(wazuh.OSSEC_CONF_PATH, encoding="utf-8").read()
     tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
     hosts = tree.xpath("/root/ossec_config/indexer/hosts//host")
     assert len(hosts) == len(indexer_ips)
     for idx, host in enumerate(hosts):
-        assert host.text == f"https://{indexer_ips[idx]}:9200"
+        assert host.text == f"https://{indexer_ips[idx]}"
 
 
 def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -62,7 +63,7 @@ def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch
     act: save a configuration with a set of indexer IPs.
     assert: a WazuhInstallationError is raised.
     """
-    indexer_ips = ["92.0.0.1", "92.0.0.2"]
+    indexer_ips = ["92.0.0.1:9200", "92.0.0.2:9200"]
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
