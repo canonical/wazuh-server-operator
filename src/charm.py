@@ -103,6 +103,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if self.state.custom_config_repository:
             wazuh.pull_configuration_files(container)
         wazuh.update_configuration(container, self.state.indexer_ips)
+        wazuh.configure_filebeat_user(container, self.state.username, self.state.password)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
         self.unit.status = ops.ActiveStatus()

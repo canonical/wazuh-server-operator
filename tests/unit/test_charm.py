@@ -29,12 +29,15 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
     assert harness.model.unit.status.name == ops.BlockedStatus().name
 
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "install_certificates")
+@patch.object(wazuh, "configure_filebeat_user")
 def test_reconcile_reaches_active_status_when_repository_configured(
+    configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
@@ -51,9 +54,12 @@ def test_reconcile_reaches_active_status_when_repository_configured(
     wazuh_config = WazuhConfig(
         custom_config_repository=custom_config_repository, custom_config_ssh_key=secret_id
     )
+    password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
         certificate="somecert",
         indexer_ips=["10.0.0.1"],
+        username="user1",
+        password=password,
         wazuh_config=wazuh_config,
         custom_config_ssh_key="somekey",
     )
@@ -71,15 +77,19 @@ def test_reconcile_reaches_active_status_when_repository_configured(
         container, str(wazuh_config.custom_config_repository), "somekey"
     )
     pull_configuration_files_mock.assert_called_with(container)
+    configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "install_certificates")
+@patch.object(wazuh, "configure_filebeat_user")
 def test_reconcile_reaches_active_status_when_repository_not_configured(
+    configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
@@ -91,9 +101,12 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
     act: call reconcile.
     assert: the charm reaches active status and configs are applied.
     """
+    password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
         certificate="somecert",
         indexer_ips=["10.0.0.1"],
+        username="user1",
+        password=password,
         wazuh_config=WazuhConfig(custom_config_repository=None, custom_config_ssh_key=None),
         custom_config_ssh_key=None,
     )
@@ -109,6 +122,7 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     configure_git_mock.assert_called_with(container, None, None)
     pull_configuration_files_mock.assert_not_called()
+    configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
