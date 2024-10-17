@@ -145,7 +145,10 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         """
         try:
             secret_id = indexer_relation_data.get("secret-user")
-            secret_content = charm.model.get_secret(id=secret_id).get_content()
+            try:
+                secret_content = charm.model.get_secret(id=secret_id).get_content()
+            except ops.SecretNotFoundError as exc:
+                raise InvalidStateError("Secret not found.") from exc
             username = secret_content.get("username")
             password = secret_content.get("password")
             endpoint_data = indexer_relation_data.get("endpoints")
