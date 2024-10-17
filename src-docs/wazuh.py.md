@@ -111,6 +111,31 @@ Pull configuration files from the repository.
 
 ---
 
+<a href="../src/wazuh.py#L209"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `configure_filebeat_user`
+
+```python
+configure_filebeat_user(
+    container: Container,
+    username: str,
+    password: str
+) → None
+```
+
+Configure the filebeat user. 
+
+
+
+**Args:**
+ 
+ - <b>`container`</b>:  the container to configure the user for. 
+ - <b>`username`</b>:  the username. 
+ - <b>`password`</b>:  the password. 
+
+
+---
+
 ## <kbd>class</kbd> `WazuhInstallationError`
 Base exception for Wazuh errors. 
 
