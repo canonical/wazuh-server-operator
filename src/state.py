@@ -149,8 +149,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 secret_content = charm.model.get_secret(id=secret_id).get_content()
             except ops.SecretNotFoundError as exc:
                 raise InvalidStateError("Secret not found.") from exc
-            username = secret_content.get("username")
-            password = secret_content.get("password")
+            username = secret_content.get("username", "")
+            password = secret_content.get("password", "")
             endpoint_data = indexer_relation_data.get("endpoints")
             endpoints = list(endpoint_data.split(",")) if endpoint_data else []
             certificates_json = (
@@ -178,8 +178,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             if certificates:
                 return cls(
                     indexer_ips=endpoints,
-                    username=username if username else "",
-                    password=password if password else "",
+                    username=username,
+                    password=password,
                     certificate=certificates[0].get("certificate"),
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key_content,
