@@ -46,10 +46,10 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
     Raises:
         WazuhInstallationError: if an error occurs while installing.
     """
-    ip_ports = [f"{ip}:9200" for ip in indexer_ips]
+    ip_ports = [f"{ip}" for ip in indexer_ips]
     filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
-    filebeat_config_yaml["hosts"] = ip_ports
+    filebeat_config_yaml["output.elasticsearch"]["hosts"] = ip_ports
     container.push(FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml), encoding="utf-8")
 
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
