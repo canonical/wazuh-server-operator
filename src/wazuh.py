@@ -173,13 +173,13 @@ def configure_git(
         process = container.exec(["rm", "-rf", REPOSITORY_PATH])
         process.wait_output()
 
-    if base_url:
-        command = ["git", "clone"]
-        if branch:
-            command = command + ["--branch", branch]
-        command = command + [base_url, REPOSITORY_PATH]
-        process = container.exec(command)
-        process.wait_output()
+        if base_url:
+            command = ["git", "clone"]
+            if branch:
+                command = command + ["--branch", branch]
+            command = command + [base_url, REPOSITORY_PATH]
+            process = container.exec(command)
+            process.wait_output()
 
 
 def pull_configuration_files(container: ops.Container) -> None:
