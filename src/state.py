@@ -148,7 +148,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             try:
                 secret_content = charm.model.get_secret(id=secret_id).get_content()
             except ops.SecretNotFoundError as exc:
-                raise InvalidStateError("Secret not found.") from exc
+                raise InvalidStateError("Indexer secret not found.") from exc
             username = secret_content.get("username", "")
             password = secret_content.get("password", "")
             endpoint_data = indexer_relation_data.get("endpoints")
@@ -169,7 +169,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                         id=valid_config.custom_config_ssh_key
                     )
                 except ops.SecretNotFoundError as exc:
-                    raise InvalidStateError("Secret not found.") from exc
+                    raise InvalidStateError("Repository secret not found.") from exc
                 custom_config_ssh_key_content = custom_config_ssh_key_secret.get_content(
                     refresh=True
                 ).get("value")
