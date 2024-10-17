@@ -8,6 +8,7 @@
 """Wazuh operational logic."""
 
 import logging
+import typing
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -26,6 +27,9 @@ WAZUH_GROUP = "wazuh"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
+
+
+logger = logging.getLogger(__name__)
 
 
 class WazuhInstallationError(Exception):
@@ -121,7 +125,9 @@ def _get_current_configuration_url_branch(container: ops.Container) -> str:
 
 
 def configure_git(
-    container: ops.Container, custom_config_repository: str, custom_config_ssh_key: str
+    container: ops.Container,
+    custom_config_repository: typing.Optional[str],
+    custom_config_ssh_key: typing.Optional[str],
 ) -> None:
     """Configure git.
 
@@ -131,43 +137,49 @@ def configure_git(
         git+ssh://<user>@<url>:<branch>.
         custom_config_ssh_key: the SSH key for the git repository.
     """
-    url = urlsplit(custom_config_repository)
-    path_parts = url.path.split("@")
-    branch = path_parts[1] if len(path_parts) > 1 else None
-    base_url = urlunsplit(url._replace(path=path_parts[0]))
+    if custom_config_ssh_key:
+        container.push(
+            RSA_PATH,
+            custom_config_ssh_key,
+            encoding="utf-8",
+            make_dirs=True,
+            user=WAZUH_USER,
+            group=WAZUH_GROUP,
+            permissions=0o600,
+        )
+
+    base_url = None
+    branch = None
+    if custom_config_repository:
+        url = urlsplit(custom_config_repository)
+        path_parts = url.path.split("@")
+        branch = path_parts[1] if len(path_parts) > 1 else None
+        base_url = urlunsplit(url._replace(path=path_parts[0]))
+        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)])
+        output, _ = process.wait_output()
+        container.push(
+            KNOWN_HOSTS_PATH,
+            output,
+            encoding="utf-8",
+            make_dirs=True,
+            user=WAZUH_USER,
+            group=WAZUH_GROUP,
+            permissions=0o600,
+        )
     if (
-        _get_current_configuration_url(container) == base_url
-        and _get_current_configuration_url_branch(container) == branch
+        _get_current_configuration_url(container) != base_url
+        or _get_current_configuration_url_branch(container) != branch
     ):
-        return
-    process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)])
-    output, _ = process.wait_output()
-    container.push(
-        KNOWN_HOSTS_PATH,
-        output,
-        encoding="utf-8",
-        make_dirs=True,
-        user=WAZUH_USER,
-        group=WAZUH_GROUP,
-        permissions=0o600,
-    )
-    container.push(
-        RSA_PATH,
-        custom_config_ssh_key,
-        encoding="utf-8",
-        make_dirs=True,
-        user=WAZUH_USER,
-        group=WAZUH_GROUP,
-        permissions=0o600,
-    )
-    process = container.exec(["rm", "-rf", REPOSITORY_PATH])
-    process.wait_output()
-    command = ["git", "clone"]
-    if branch:
-        command = command + ["--branch", branch]
-    command = command + [base_url, REPOSITORY_PATH]
-    process = container.exec(command)
-    process.wait_output()
+        process = container.exec(["rm", "-rf", REPOSITORY_PATH])
+        process.wait_output()
+
+    if base_url:
+        command = ["git", "clone"]
+        if branch:
+            command = command + ["--branch", branch]
+        command = command + [base_url, REPOSITORY_PATH]
+        process = container.exec(command)
+        process.wait_output()
 
 
 def pull_configuration_files(container: ops.Container) -> None:

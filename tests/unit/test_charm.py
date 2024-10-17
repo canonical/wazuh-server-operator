@@ -76,11 +76,13 @@ def test_reconcile_reaches_active_status_when_repository_configured(
 
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
+@patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "install_certificates")
 def test_reconcile_reaches_active_status_when_repository_not_configured(
     wazuh_install_certificates_mock,
     wazuh_update_configuration_mock,
+    pull_configuration_files_mock,
     configure_git_mock,
     state_from_charm_mock,
 ):
@@ -105,7 +107,8 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
 
     wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
-    configure_git_mock.assert_not_called()
+    configure_git_mock.assert_called_with(container, None, None)
+    pull_configuration_files_mock.assert_not_called()
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
