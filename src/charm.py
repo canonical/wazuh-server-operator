@@ -91,12 +91,16 @@ class WazuhServerCharm(CharmBaseWithState):
             self.certificates.private_key,
             self.state.certificate,
         )
+        wazuh.configure_git(
+            container,
+            (
+                str(self.state.custom_config_repository)
+                if self.state.custom_config_repository
+                else None
+            ),
+            self.state.custom_config_ssh_key,
+        )
         if self.state.custom_config_repository:
-            wazuh.configure_git(
-                container,
-                str(self.state.custom_config_repository),
-                self.state.custom_config_ssh_key,
-            )
             wazuh.pull_configuration_files(container)
         wazuh.update_configuration(container, self.state.indexer_ips)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
