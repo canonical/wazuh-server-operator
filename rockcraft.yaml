@@ -62,7 +62,3 @@ parts:
       umount --recursive $CRAFT_OVERLAY/dev
       umount $CRAFT_OVERLAY/proc
       umount $CRAFT_OVERLAY/etc/resolv.conf
-    override-prime: |
-      echo admin | filebeat keystore add username --stdin --force
-      echo admin | filebeat keystore add password --stdin --force
-      craftctl default

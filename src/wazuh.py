@@ -204,3 +204,44 @@ def pull_configuration_files(container: ops.Container) -> None:
         process.wait_output()
     except ops.pebble.ExecError as ex:
         logging.debug(ex)
+
+
+def configure_filebeat_user(container: ops.Container, username: str, password: str) -> None:
+    """Configure the filebeat user.
+
+    Args:
+        container: the container to configure the user for.
+        username: the username.
+        password: the password.
+    """
+    try:
+        process = container.exec(
+            [
+                "echo",
+                username,
+                "|",
+                "filebeat",
+                "keystore",
+                "add",
+                "username",
+                "--stdin",
+                "--force",
+            ]
+        )
+        process.wait_output()
+        process = container.exec(
+            [
+                "echo",
+                password,
+                "|",
+                "filebeat",
+                "keystore",
+                "add",
+                "password",
+                "--stdin",
+                "--force",
+            ]
+        )
+        process.wait_output()
+    except ops.pebble.ExecError as ex:
+        logging.debug(ex)

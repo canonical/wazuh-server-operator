@@ -58,6 +58,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         indexer_ips: list of Wazuh indexer IPs.
+        username: the filebeat username.
+        password: the filebeat password.
         certificate: the TLS certificate.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
@@ -65,13 +67,17 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
+    username: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
     certificate: str = Field(..., min_length=1)
     custom_config_repository: typing.Optional[AnyUrl] = None
     custom_config_ssh_key: typing.Optional[str] = None
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         indexer_ips: list[str],
+        username: str,
+        password: str,
         certificate: str,
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: typing.Optional[str],
@@ -80,12 +86,16 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             indexer_ips: list of Wazuh indexer IPs.
+            username: the filebeat username.
+            password: the filebeat password.
             certificate: the TLS certificate.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
         """
         super().__init__(
             indexer_ips=indexer_ips,
+            username=username,
+            password=password,
             certificate=certificate,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
@@ -113,9 +123,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         except ValidationError as exc:
             raise InvalidStateError("Invalid proxy configuration.") from exc
 
-    # pylint: disable=unused-argument
     @classmethod
-    def from_charm(
+    def from_charm(  # pylint: disable=unused-argument, too-many-locals
         cls,
         charm: ops.CharmBase,
         indexer_relation_data: dict[str, str],
@@ -135,6 +144,13 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             InvalidStateError: if the state is invalid.
         """
         try:
+            secret_id = indexer_relation_data.get("secret-user")
+            try:
+                secret_content = charm.model.get_secret(id=secret_id).get_content()
+            except ops.SecretNotFoundError as exc:
+                raise InvalidStateError("Indexer secret not found.") from exc
+            username = secret_content.get("username", "")
+            password = secret_content.get("password", "")
             endpoint_data = indexer_relation_data.get("endpoints")
             endpoints = list(endpoint_data.split(",")) if endpoint_data else []
             certificates_json = (
@@ -153,7 +169,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                         id=valid_config.custom_config_ssh_key
                     )
                 except ops.SecretNotFoundError as exc:
-                    raise InvalidStateError("Secret not found.") from exc
+                    raise InvalidStateError("Repository secret not found.") from exc
                 custom_config_ssh_key_content = custom_config_ssh_key_secret.get_content(
                     refresh=True
                 ).get("value")
@@ -162,6 +178,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             if certificates:
                 return cls(
                     indexer_ips=endpoints,
+                    username=username,
+                    password=password,
                     certificate=certificates[0].get("certificate"),
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key_content,
