@@ -15,7 +15,7 @@ Wazuh operational logic.
 
 ---
 
-<a href="../src/wazuh.py#L35"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L39"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `update_configuration`
 
@@ -41,7 +41,7 @@ Update Wazuh configuration.
 
 ---
 
-<a href="../src/wazuh.py#L73"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L77"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `install_certificates`
 
@@ -66,15 +66,15 @@ Update Wazuh filebeat certificates.
 
 ---
 
-<a href="../src/wazuh.py#L85"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L127"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_git`
 
 ```python
 configure_git(
     container: Container,
-    custom_config_repository: str,
-    custom_config_ssh_key: str
+    custom_config_repository: Optional[str],
+    custom_config_ssh_key: Optional[str]
 ) → None
 ```
 
@@ -92,7 +92,7 @@ Configure git.
 
 ---
 
-<a href="../src/wazuh.py#L128"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L185"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `pull_configuration_files`
 
