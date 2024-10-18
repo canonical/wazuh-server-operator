@@ -107,7 +107,7 @@ class CertificatesObserver(Object):
 
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
         """Certificate expiring event handler."""
-        self._request_certificate()
+        self._renew_certificate()
         logger.debug("Certificate expiring. Requested new certificate.")
         self._charm.unit.status = ops.WaitingStatus(
             "Certificate expired. Waiting for a new certificate to be issued."
