@@ -85,9 +85,13 @@ def install_certificates(
         private_key: the certificate's private key.
         root_ca: the certifciate's CA public key.
     """
-    container.push(CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True)
-    container.push(CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True)
-    container.push(CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True)
+    container.push(
+        CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True, permissions=0o400
+    )
+    container.push(
+        CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True, permissions=0o400
+    )
+    container.push(CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
 
 
 def _get_current_configuration_url(container: ops.Container) -> str:
