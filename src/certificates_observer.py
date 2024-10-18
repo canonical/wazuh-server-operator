@@ -27,6 +27,9 @@ class CertificatesObserver(Object):
         super().__init__(charm, RELATION_NAME)
         self._charm = charm
         self.private_key = certificates.generate_private_key().decode()
+        self.csr = certificates.generate_csr(
+            private_key=self.private_key.encode(), subject=self._charm.unit.name
+        )
         self.certificates = certificates.TLSCertificatesRequiresV3(self._charm, RELATION_NAME)
         self.framework.observe(
             self._charm.on.certificates_relation_joined, self._on_certificates_relation_joined
@@ -43,11 +46,7 @@ class CertificatesObserver(Object):
 
     def _request_certificate(self) -> None:
         """Send a certificate request."""
-        csr = certificates.generate_csr(
-            private_key=self.private_key.encode(), subject=self._charm.unit.name
-        )
-
-        self.certificates.request_certificate_creation(certificate_signing_request=csr)
+        self.certificates.request_certificate_creation(certificate_signing_request=self.csr)
 
     def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:
         """Relation joined event handler."""

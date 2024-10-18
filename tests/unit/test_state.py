@@ -15,7 +15,11 @@ import state
 
 @pytest.mark.parametrize(
     "opensearch_relation_data,certificates_relation_data",
-    [({}, {}), ({}, {"certificates": '[{"certificate": ""}]'}), ({"endpoints": "10.0.0.1"}, {})],
+    [
+        ({}, {}),
+        ({}, {"certificates": '[{"certificate": "", "certificate_signing_request": "1"}]'}),
+        ({"endpoints": "10.0.0.1"}, {}),
+    ],
 )
 def test_state_invalid_relation_data(opensearch_relation_data, certificates_relation_data):
     """
@@ -26,7 +30,9 @@ def test_state_invalid_relation_data(opensearch_relation_data, certificates_rela
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
 
     with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, certificates_relation_data)
+        state.State.from_charm(
+            mock_charm, opensearch_relation_data, certificates_relation_data, "1"
+        )
 
 
 def test_state_without_proxy():
@@ -47,13 +53,16 @@ def test_state_without_proxy():
         "username": username,
         "password": password,
     }
+    csr = "1"
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
+        "certificates": json.dumps(
+            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
+        ),
         "secret-user": secret_id,
     }
 
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data
+        mock_charm, opensearch_relation_data, certificates_relation_data, csr
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.username == username
@@ -85,8 +94,11 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
         "username": username,
         "password": password,
     }
+    csr = "1"
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
+        "certificates": json.dumps(
+            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
+        ),
         "secret-user": secret_id,
     }
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://squid.proxy:3228/")
@@ -94,7 +106,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "localhost")
 
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data
+        mock_charm, opensearch_relation_data, certificates_relation_data, csr
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
@@ -129,12 +141,15 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
         "username": username,
         "password": password,
     }
+    csr = "1"
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
+        "certificates": json.dumps(
+            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
+        ),
         "secret-user": secret_id,
     }
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data
+        mock_charm, opensearch_relation_data, certificates_relation_data, csr
     )
     with pytest.raises(state.InvalidStateError):
         charm_state.proxy  # pylint: disable=pointless-statement
@@ -169,12 +184,17 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         "username": username,
         "password": password,
     }
+    csr = "1"
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
+        "certificates": json.dumps(
+            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
+        ),
         "secret-user": secret_id,
     }
     with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, certificates_relation_data)
+        state.State.from_charm(
+            mock_charm, opensearch_relation_data, certificates_relation_data, csr
+        )
 
 
 def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
@@ -206,12 +226,17 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         "username": username,
         "password": password,
     }
+    csr = "1"
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
+        "certificates": json.dumps(
+            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
+        ),
         "secret-user": secret_id,
     }
     with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, certificates_relation_data)
+        state.State.from_charm(
+            mock_charm, opensearch_relation_data, certificates_relation_data, csr
+        )
 
 
 def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
@@ -244,12 +269,15 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
         "password": password,
         "value": "ssh-key",
     }
+    csr = "1"
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
+        "certificates": json.dumps(
+            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
+        ),
         "secret-user": secret_id,
     }
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data
+        mock_charm, opensearch_relation_data, certificates_relation_data, csr
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.username == username

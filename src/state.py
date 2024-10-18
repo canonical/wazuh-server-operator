@@ -134,6 +134,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         charm: ops.CharmBase,
         indexer_relation_data: dict[str, str],
         certificates_relation_data: dict[str, str],
+        certitificate_signing_request: str,
     ) -> "State":
         """Initialize the state from charm.
 
@@ -141,6 +142,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             charm: the root charm.
             indexer_relation_data: the Wazuh indexer app relation data.
             certificates_relation_data: the certificates relation data.
+            certitificate_signing_request: the certificate signing request.
 
         Returns:
             Current state of the charm.
@@ -181,12 +183,17 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 if not custom_config_ssh_key_content:
                     raise InvalidStateError("Secret does not contain the expected key 'value'.")
             if certificates:
+                certificate = [
+                    cert
+                    for cert in certificates
+                    if cert.get("certificate_signing_request") == certitificate_signing_request
+                ][0]
                 return cls(
                     indexer_ips=endpoints,
                     username=username,
                     password=password,
-                    certificate=certificates[0].get("certificate"),
-                    root_ca=certificates[0].get("ca"),
+                    certificate=certificate.get("certificate"),
+                    root_ca=certificate.get("ca"),
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key_content,
                 )
