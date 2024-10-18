@@ -28,7 +28,9 @@ class CertificatesObserver(Object):
         self._charm = charm
         self.private_key = certificates.generate_private_key().decode()
         self.csr = certificates.generate_csr(
-            private_key=self.private_key.encode(), subject=self._charm.unit.name
+            private_key=self.private_key.encode(),
+            subject=self._charm.unit.name,
+            add_unique_id_to_subject_name=False,
         )
         self.certificates = certificates.TLSCertificatesRequiresV3(self._charm, RELATION_NAME)
         self.framework.observe(
