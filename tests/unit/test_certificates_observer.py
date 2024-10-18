@@ -100,7 +100,6 @@ def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     mock.assert_called_once()
-    assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
 def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:

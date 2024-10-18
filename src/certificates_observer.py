@@ -90,6 +90,8 @@ class CertificatesObserver(Object):
         old_csr = self.csr
         secret = self._charm.model.get_secret(label="certificate-csr")
         secret.remove_all_revisions()
+        secret = self._charm.model.get_secret(label="certificate-private-key")
+        secret.remove_all_revisions()
         self.certificates.request_certificate_renewal(
             old_certificate_signing_request=old_csr, new_certificate_signing_request=self.csr
         )
@@ -107,15 +109,12 @@ class CertificatesObserver(Object):
 
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
         """Certificate expiring event handler."""
-        self._renew_certificate()
+        self._request_certificate()
         logger.debug("Certificate expiring. Requested new certificate.")
-        self._charm.unit.status = ops.WaitingStatus(
-            "Certificate expired. Waiting for a new certificate to be issued."
-        )
 
     def _on_certificate_invalidated(self, _: certificates.CertificateInvalidatedEvent) -> None:
         """Certificate invalidated event handler."""
-        self._request_certificate()
+        self._renew_certificate()
         logger.debug("Certificate invalidated.")
         self._charm.unit.status = ops.WaitingStatus(
             "Certificate invalidated. Waiting for a new certificate to be issued."
