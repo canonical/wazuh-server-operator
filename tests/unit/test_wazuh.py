@@ -92,7 +92,9 @@ def test_install_certificates() -> None:
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    wazuh.install_certificates(container, private_key="private_key", public_key="public_key")
+    wazuh.install_certificates(
+        container, private_key="private_key", public_key="public_key", root_ca="root_ca"
+    )
 
     assert (
         "private_key"
@@ -101,6 +103,10 @@ def test_install_certificates() -> None:
     assert (
         "public_key"
         == container.pull(wazuh.CERTIFICATES_PATH / "filebeat.pem", encoding="utf-8").read()
+    )
+    assert (
+        "root_ca"
+        == container.pull(wazuh.CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8").read()
     )
 
 

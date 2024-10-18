@@ -74,16 +74,24 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
 
 
-def install_certificates(container: ops.Container, public_key: str, private_key: str) -> None:
+def install_certificates(
+    container: ops.Container, public_key: str, private_key: str, root_ca: str
+) -> None:
     """Update Wazuh filebeat certificates.
 
     Arguments:
         container: the container for which to update the configuration.
         public_key: the certificate's public key.
         private_key: the certificate's private key.
+        root_ca: the certifciate's CA public key.
     """
-    container.push(CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True)
-    container.push(CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True)
+    container.push(
+        CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True, permissions=0o400
+    )
+    container.push(
+        CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True, permissions=0o400
+    )
+    container.push(CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
 
 
 def _get_current_configuration_url(container: ops.Container) -> str:
@@ -216,31 +224,13 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
     """
     try:
         process = container.exec(
-            [
-                "echo",
-                username,
-                "|",
-                "filebeat",
-                "keystore",
-                "add",
-                "username",
-                "--stdin",
-                "--force",
-            ]
+            ["filebeat", "keystore", "add", "username", "--stdin", "--force"],
+            stdin=username,
         )
         process.wait_output()
         process = container.exec(
-            [
-                "echo",
-                password,
-                "|",
-                "filebeat",
-                "keystore",
-                "add",
-                "password",
-                "--stdin",
-                "--force",
-            ]
+            ["filebeat", "keystore", "add", "password", "--stdin", "--force"],
+            stdin=password,
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:

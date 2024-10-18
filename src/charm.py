@@ -90,6 +90,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.containers.get("wazuh-server"),
             self.certificates.private_key,
             self.state.certificate,
+            self.state.root_ca,
         )
         wazuh.configure_git(
             container,

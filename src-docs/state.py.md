@@ -125,11 +125,12 @@ The Wazuh server charm state.
  - <b>`username`</b>:  the filebeat username. 
  - <b>`password`</b>:  the filebeat password. 
  - <b>`certificate`</b>:  the TLS certificate. 
+ - <b>`root_ca`</b>:  the CA certificate. 
  - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L76"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -139,6 +140,7 @@ __init__(
     username: str,
     password: str,
     certificate: str,
+    root_ca: str,
     wazuh_config: WazuhConfig,
     custom_config_ssh_key: Optional[str]
 )
@@ -154,6 +156,7 @@ Initialize a new instance of the CharmState class.
  - <b>`username`</b>:  the filebeat username. 
  - <b>`password`</b>:  the filebeat password. 
  - <b>`certificate`</b>:  the TLS certificate. 
+ - <b>`root_ca`</b>:  the CA certificate. 
  - <b>`wazuh_config`</b>:  Wazuh configuration. 
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
 
@@ -201,7 +204,7 @@ Get charm proxy configuration from juju charm environment.
 
 ---
 
-<a href="../src/state.py#L126"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L131"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 

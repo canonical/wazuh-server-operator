@@ -61,6 +61,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         username: the filebeat username.
         password: the filebeat password.
         certificate: the TLS certificate.
+        root_ca: the CA certificate.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
@@ -70,6 +71,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     username: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
     certificate: str = Field(..., min_length=1)
+    root_ca: str = Field(..., min_length=1)
     custom_config_repository: typing.Optional[AnyUrl] = None
     custom_config_ssh_key: typing.Optional[str] = None
 
@@ -79,6 +81,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         username: str,
         password: str,
         certificate: str,
+        root_ca: str,
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: typing.Optional[str],
     ):
@@ -89,6 +92,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             username: the filebeat username.
             password: the filebeat password.
             certificate: the TLS certificate.
+            root_ca: the CA certificate.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
         """
@@ -97,6 +101,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             username=username,
             password=password,
             certificate=certificate,
+            root_ca=root_ca,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
         )
@@ -181,6 +186,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     username=username,
                     password=password,
                     certificate=certificates[0].get("certificate"),
+                    root_ca=certificates[0].get("ca"),
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key_content,
                 )

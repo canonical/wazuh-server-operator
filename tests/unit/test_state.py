@@ -41,13 +41,14 @@ def test_state_without_proxy():
     password = secrets.token_hex()
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
+    root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
     }
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate}]),
+        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
         "secret-user": secret_id,
     }
 
@@ -58,6 +59,7 @@ def test_state_without_proxy():
     assert charm_state.username == username
     assert charm_state.password == password
     assert charm_state.certificate == certificate
+    assert charm_state.root_ca == root_ca
     assert charm_state.custom_config_repository is None
     assert charm_state.custom_config_ssh_key is None
     assert charm_state.proxy.http_proxy is None
@@ -77,13 +79,14 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     password = secrets.token_hex()
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
+    root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
     }
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate}]),
+        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
         "secret-user": secret_id,
     }
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://squid.proxy:3228/")
@@ -95,6 +98,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
+    assert charm_state.root_ca == root_ca
     assert charm_state.username == username
     assert charm_state.password == password
     assert charm_state.custom_config_repository is None
@@ -119,13 +123,14 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     password = secrets.token_hex()
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
+    root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
     }
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate}]),
+        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
         "secret-user": secret_id,
     }
     charm_state = state.State.from_charm(
@@ -158,13 +163,14 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
     password = secrets.token_hex()
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
+    root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
     }
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate}]),
+        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
         "secret-user": secret_id,
     }
     with pytest.raises(state.InvalidStateError):
@@ -194,13 +200,14 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     password = secrets.token_hex()
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
+    root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
     }
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate}]),
+        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
         "secret-user": secret_id,
     }
     with pytest.raises(state.InvalidStateError):
@@ -230,6 +237,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     password = secrets.token_hex()
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
+    root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
@@ -237,7 +245,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
         "value": "ssh-key",
     }
     certificates_relation_data = {
-        "certificates": json.dumps([{"certificate": certificate}]),
+        "certificates": json.dumps([{"certificate": certificate, "ca": root_ca}]),
         "secret-user": secret_id,
     }
     charm_state = state.State.from_charm(
@@ -247,6 +255,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     assert charm_state.username == username
     assert charm_state.password == password
     assert charm_state.certificate == certificate
+    assert charm_state.root_ca == root_ca
     assert str(charm_state.custom_config_repository) == custom_config_repository
     assert charm_state.custom_config_ssh_key == "ssh-key"
     assert charm_state.proxy.http_proxy is None
