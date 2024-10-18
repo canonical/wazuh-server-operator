@@ -69,7 +69,9 @@ class CertificatesObserver(Object):
         Returns: the certificate signing request.
         """
         return certificates.generate_csr(
-            private_key=self.private_key.encode(), subject=self._charm.unit.name
+            private_key=self.private_key.encode(),
+            subject=self._charm.unit.name,
+            add_unique_id_to_subject_name=False,
         )
 
     def _request_certificate(self) -> None:
