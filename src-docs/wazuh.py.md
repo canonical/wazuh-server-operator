@@ -48,8 +48,8 @@ Update Wazuh configuration.
 ```python
 install_certificates(
     container: Container,
-    private_key: str,
     public_key: str,
+    private_key: str,
     root_ca: str
 ) → None
 ```
