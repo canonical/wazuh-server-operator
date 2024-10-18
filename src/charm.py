@@ -65,7 +65,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 if certificates_relation
                 else {}
             )
-            return State.from_charm(self, opensearch_relation_data, certificates_relation_data)
+            return State.from_charm(
+                self, opensearch_relation_data, certificates_relation_data, self.certificates.csr
+            )
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")

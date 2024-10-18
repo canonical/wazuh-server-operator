@@ -212,7 +212,8 @@ Get charm proxy configuration from juju charm environment.
 from_charm(
     charm: CharmBase,
     indexer_relation_data: dict[str, str],
-    certificates_relation_data: dict[str, str]
+    certificates_relation_data: dict[str, str],
+    certitificate_signing_request: str
 ) → State
 ```
 
@@ -225,6 +226,7 @@ Initialize the state from charm.
  - <b>`charm`</b>:  the root charm. 
  - <b>`indexer_relation_data`</b>:  the Wazuh indexer app relation data. 
  - <b>`certificates_relation_data`</b>:  the certificates relation data. 
+ - <b>`certitificate_signing_request`</b>:  the certificate signing request. 
 
 
 
