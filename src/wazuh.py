@@ -75,7 +75,7 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
 
 
 def install_certificates(
-    container: ops.Container, private_key: str, public_key: str, root_ca: str
+    container: ops.Container, public_key: str, private_key: str, root_ca: str
 ) -> None:
     """Update Wazuh filebeat certificates.
 
