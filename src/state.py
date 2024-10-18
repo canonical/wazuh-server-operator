@@ -183,17 +183,23 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 if not custom_config_ssh_key_content:
                     raise InvalidStateError("Secret does not contain the expected key 'value'.")
             if certificates:
-                certificate = [
-                    cert
-                    for cert in certificates
-                    if cert.get("certificate_signing_request") == certitificate_signing_request
-                ][0]
+                certificate: dict[str, str] = next(
+                    iter(
+                        [
+                            cert
+                            for cert in certificates
+                            if cert.get("certificate_signing_request")
+                            == certitificate_signing_request
+                        ]
+                    ),
+                    {},
+                )
                 return cls(
                     indexer_ips=endpoints,
                     username=username,
                     password=password,
-                    certificate=certificate.get("certificate"),
-                    root_ca=certificate.get("ca"),
+                    certificate=certificate.get("certificate", ""),
+                    root_ca=certificate.get("ca", ""),
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key_content,
                 )
