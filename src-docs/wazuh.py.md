@@ -49,7 +49,8 @@ Update Wazuh configuration.
 install_certificates(
     container: Container,
     public_key: str,
-    private_key: str
+    private_key: str,
+    root_ca: str
 ) → None
 ```
 
@@ -62,11 +63,12 @@ Update Wazuh filebeat certificates.
  - <b>`container`</b>:  the container for which to update the configuration. 
  - <b>`public_key`</b>:  the certificate's public key. 
  - <b>`private_key`</b>:  the certificate's private key. 
+ - <b>`root_ca`</b>:  the certifciate's CA public key. 
 
 
 ---
 
-<a href="../src/wazuh.py#L127"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L131"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_git`
 
@@ -92,7 +94,7 @@ Configure git.
 
 ---
 
-<a href="../src/wazuh.py#L185"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L189"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `pull_configuration_files`
 
@@ -111,7 +113,7 @@ Pull configuration files from the repository.
 
 ---
 
-<a href="../src/wazuh.py#L209"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L213"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_filebeat_user`
 
