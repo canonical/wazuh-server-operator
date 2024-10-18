@@ -56,7 +56,7 @@ def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> Non
     harness.charm.on.certificates_relation_joined.emit(relation)
 
     mock.assert_called_once()
-    assert ops.ActiveStatus.name == harness.charm.unit.status.name
+    assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
 def test_on_certificate_available() -> None:
@@ -100,6 +100,7 @@ def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     mock.assert_called_once()
+    assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
 def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
