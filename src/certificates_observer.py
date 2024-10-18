@@ -16,7 +16,12 @@ RELATION_NAME = "certificates"
 
 
 class CertificatesObserver(Object):
-    """The Certificates relation observer."""
+    """The Certificates relation observer.
+
+    Attributes:
+        private_key: the private key for the certificates.
+        csr: the certificate signing request.
+    """
 
     def __init__(self, charm: CharmBaseWithState):
         """Initialize the observer and register event handlers.
@@ -26,12 +31,6 @@ class CertificatesObserver(Object):
         """
         super().__init__(charm, RELATION_NAME)
         self._charm = charm
-        self.private_key = certificates.generate_private_key().decode()
-        self.csr = certificates.generate_csr(
-            private_key=self.private_key.encode(),
-            subject=self._charm.unit.name,
-            add_unique_id_to_subject_name=False,
-        )
         self.certificates = certificates.TLSCertificatesRequiresV3(self._charm, RELATION_NAME)
         self.framework.observe(
             self._charm.on.certificates_relation_joined, self._on_certificates_relation_joined
@@ -44,6 +43,33 @@ class CertificatesObserver(Object):
         )
         self.framework.observe(
             self.certificates.on.certificate_invalidated, self._on_certificate_invalidated
+        )
+
+    @property
+    def private_key(self) -> str:
+        """Fetch the private key.
+
+        Returns: the private key.
+        """
+        private_key = None
+        label = "certificate-private-key"
+        try:
+            secret = self._charm.model.get_secret(label=label)
+            private_key = secret.get_content().get("key")
+        except ops.SecretNotFoundError:
+            logger.debug("Secret for private key not found. One will be generated.")
+            private_key = certificates.generate_private_key().decode()
+            secret = self._charm.app.add_secret(content={"key": private_key}, label=label)
+        return private_key
+
+    @property
+    def csr(self) -> str:
+        """Fetch the certificate signing request.
+
+        Returns: the certificate signing request.
+        """
+        return certificates.generate_csr(
+            private_key=self.private_key.encode(), subject=self._charm.unit.name
         )
 
     def _request_certificate(self) -> None:
