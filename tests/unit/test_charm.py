@@ -72,7 +72,9 @@ def test_reconcile_reaches_active_status_when_repository_configured(
 
     harness.charm.reconcile()
 
-    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert", "root_ca")
+    wazuh_install_certificates_mock.assert_called_with(
+        container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
+    )
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     configure_git_mock.assert_called_with(
         container, str(wazuh_config.custom_config_repository), "somekey"
@@ -120,7 +122,9 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
 
     harness.charm.reconcile()
 
-    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert", "root_ca")
+    wazuh_install_certificates_mock.assert_called_with(
+        container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
+    )
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     configure_git_mock.assert_called_with(container, None, None)
     pull_configuration_files_mock.assert_not_called()

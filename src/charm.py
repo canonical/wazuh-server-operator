@@ -87,10 +87,10 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             return
         wazuh.install_certificates(
-            self.unit.containers.get("wazuh-server"),
-            self.certificates.private_key,
-            self.state.certificate,
-            self.state.root_ca,
+            container=self.unit.containers.get("wazuh-server"),
+            private_key=self.certificates.private_key,
+            public_key=self.state.certificate,
+            root_ca=self.state.root_ca,
         )
         wazuh.configure_git(
             container,
