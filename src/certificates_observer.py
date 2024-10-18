@@ -59,7 +59,7 @@ class CertificatesObserver(Object):
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
             private_key = certificates.generate_private_key().decode()
-            secret = self._charm.app.add_secret(content={"key": private_key}, label=label)
+            self._charm.app.add_secret(content={"key": private_key}, label=label)
         return private_key
 
     @property
@@ -78,7 +78,7 @@ class CertificatesObserver(Object):
             csr = certificates.generate_csr(
                 private_key=self.private_key.encode(), subject=self._charm.unit.name
             )
-            secret = self._charm.app.add_secret(content={"csr": csr.decode("utf-8")}, label=label)
+            self._charm.app.add_secret(content={"csr": csr.decode("utf-8")}, label=label)
         return csr
 
     def _request_certificate(self) -> None:
