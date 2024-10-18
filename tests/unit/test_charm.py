@@ -57,6 +57,7 @@ def test_reconcile_reaches_active_status_when_repository_configured(
     password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
         certificate="somecert",
+        root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
         username="user1",
         password=password,
@@ -71,7 +72,7 @@ def test_reconcile_reaches_active_status_when_repository_configured(
 
     harness.charm.reconcile()
 
-    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
+    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert", "root_ca")
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     configure_git_mock.assert_called_with(
         container, str(wazuh_config.custom_config_repository), "somekey"
@@ -104,6 +105,7 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
     password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
         certificate="somecert",
+        root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
         username="user1",
         password=password,
@@ -118,7 +120,7 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
 
     harness.charm.reconcile()
 
-    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert")
+    wazuh_install_certificates_mock.assert_called_with(container, ANY, "somecert", "root_ca")
     wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     configure_git_mock.assert_called_with(container, None, None)
     pull_configuration_files_mock.assert_not_called()
