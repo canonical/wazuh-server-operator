@@ -180,8 +180,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             matching_certificates = [
                 certificate
                 for certificate in provider_certificates
-                if certificate.csr == certitificate_signing_request.encode("utf-8")
-                and not certificate.revoked
+                if certificate.csr == certitificate_signing_request and not certificate.revoked
             ]
             if matching_certificates:
                 return cls(
