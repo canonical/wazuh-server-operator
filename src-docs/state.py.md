@@ -53,7 +53,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/state.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
@@ -130,7 +130,7 @@ The Wazuh server charm state.
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L79"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -204,7 +204,7 @@ Get charm proxy configuration from juju charm environment.
 
 ---
 
-<a href="../src/state.py#L131"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 
@@ -212,7 +212,7 @@ Get charm proxy configuration from juju charm environment.
 from_charm(
     charm: CharmBase,
     indexer_relation_data: dict[str, str],
-    certificates_relation_data: dict[str, str],
+    provider_certificates: list[ProviderCertificate],
     certitificate_signing_request: str
 ) → State
 ```
@@ -225,7 +225,7 @@ Initialize the state from charm.
  
  - <b>`charm`</b>:  the root charm. 
  - <b>`indexer_relation_data`</b>:  the Wazuh indexer app relation data. 
- - <b>`certificates_relation_data`</b>:  the certificates relation data. 
+ - <b>`provider_certificates`</b>:  the provider certificates. 
  - <b>`certitificate_signing_request`</b>:  the certificate signing request. 
 
 
