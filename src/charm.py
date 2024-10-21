@@ -59,14 +59,9 @@ class WazuhServerCharm(CharmBaseWithState):
             opensearch_relation_data = (
                 opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
             )
-            certificates_relation = self.model.get_relation(certificates_observer.RELATION_NAME)
-            certificates_relation_data = (
-                certificates_relation.data[certificates_relation.app]
-                if certificates_relation
-                else {}
-            )
+            certificates = self.certificates.certificates.get_provider_certificates()
             return State.from_charm(
-                self, opensearch_relation_data, certificates_relation_data, self.certificates.csr
+                self, opensearch_relation_data, certificates, self.certificates.csr
             )
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)

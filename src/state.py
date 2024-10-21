@@ -3,12 +3,13 @@
 
 """Wazuh server charm state."""
 
-import json
+import itertools
 import logging
 import os
 import typing
 from abc import ABC, abstractmethod
 
+import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
@@ -133,7 +134,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         cls,
         charm: ops.CharmBase,
         indexer_relation_data: dict[str, str],
-        certificates_relation_data: dict[str, str],
+        provider_certificates: list[certificates.ProviderCertificate],
         certitificate_signing_request: str,
     ) -> "State":
         """Initialize the state from charm.
@@ -141,7 +142,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         Args:
             charm: the root charm.
             indexer_relation_data: the Wazuh indexer app relation data.
-            certificates_relation_data: the certificates relation data.
+            provider_certificates: the provider certificates.
             certitificate_signing_request: the certificate signing request.
 
         Returns:
@@ -160,12 +161,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             password = secret_content.get("password", "")
             endpoint_data = indexer_relation_data.get("endpoints")
             endpoints = list(endpoint_data.split(",")) if endpoint_data else []
-            certificates_json = (
-                certificates_relation_data.get("certificates", "[]")
-                if certificates_relation_data
-                else "[]"
-            )
-            certificates = json.loads(certificates_json)
             args = {key.replace("-", "_"): value for key, value in charm.config.items()}
             # mypy doesn't like the str to Url casting
             valid_config = WazuhConfig(**args)  # type: ignore
@@ -182,27 +177,25 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 ).get("value")
                 if not custom_config_ssh_key_content:
                     raise InvalidStateError("Secret does not contain the expected key 'value'.")
-            if certificates:
-                certificate: dict[str, str] = next(
-                    iter(
-                        [
-                            cert
-                            for cert in certificates
-                            if cert.get("certificate_signing_request")
-                            == certitificate_signing_request
-                        ]
-                    ),
-                    {},
-                )
+            matching_certificates = [
+                certificate
+                for certificate in provider_certificates
+                if certificate.csr == certitificate_signing_request and not certificate.revoked
+            ]
+            if matching_certificates:
                 return cls(
                     indexer_ips=endpoints,
                     username=username,
                     password=password,
-                    certificate=certificate.get("certificate", ""),
-                    root_ca=certificate.get("ca", ""),
+                    certificate=matching_certificates[0].certificate,
+                    root_ca=matching_certificates[0].ca,
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key_content,
                 )
             raise InvalidStateError("Certificate is empty.")
         except ValidationError as exc:
-            raise InvalidStateError("Invalid charm configuration.") from exc
+            error_fields = set(
+                itertools.chain.from_iterable(error["loc"] for error in exc.errors())
+            )
+            error_field_str = " ".join(f"{f}" for f in error_fields)
+            raise InvalidStateError(f"Invalid charm configuration {error_field_str}") from exc

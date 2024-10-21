@@ -3,10 +3,11 @@
 
 """State unit tests."""
 
-import json
+import datetime
 import secrets
 import unittest
 
+import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 import pytest
 
@@ -14,25 +15,37 @@ import state
 
 
 @pytest.mark.parametrize(
-    "opensearch_relation_data,certificates_relation_data",
+    "opensearch_relation_data",
     [
-        ({}, {}),
-        ({}, {"certificates": '[{"certificate": "", "certificate_signing_request": "1"}]'}),
-        ({"endpoints": "10.0.0.1"}, {}),
+        ({}),
+        ({}),
+        ({"endpoints": "10.0.0.1"}),
     ],
 )
-def test_state_invalid_relation_data(opensearch_relation_data, certificates_relation_data):
+def test_state_invalid_relation_data(opensearch_relation_data):
     """
     arrange: given an empty relation data.
     act: when state is initialized through from_charm method.
     assert: a InvalidStateError is raised.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr="1",
+            certificate="somecert",
+            ca="rootca",
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
 
     with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(
-            mock_charm, opensearch_relation_data, certificates_relation_data, "1"
-        )
+        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, "1")
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(mock_charm, opensearch_relation_data, [], "1")
 
 
 def test_state_without_proxy():
@@ -54,15 +67,20 @@ def test_state_without_proxy():
         "password": password,
     }
     csr = "1"
-    certificates_relation_data = {
-        "certificates": json.dumps(
-            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
-        ),
-        "secret-user": secret_id,
-    }
-
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data, csr
+        mock_charm, opensearch_relation_data, provider_certificates, csr
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.username == username
@@ -95,18 +113,24 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
         "password": password,
     }
     csr = "1"
-    certificates_relation_data = {
-        "certificates": json.dumps(
-            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
-        ),
-        "secret-user": secret_id,
-    }
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://squid.proxy:3228/")
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "https://squid.proxy:3228/")
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "localhost")
 
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data, csr
+        mock_charm, opensearch_relation_data, provider_certificates, csr
     )
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
@@ -142,14 +166,20 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
         "password": password,
     }
     csr = "1"
-    certificates_relation_data = {
-        "certificates": json.dumps(
-            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
-        ),
-        "secret-user": secret_id,
-    }
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data, csr
+        mock_charm, opensearch_relation_data, provider_certificates, csr
     )
     with pytest.raises(state.InvalidStateError):
         charm_state.proxy  # pylint: disable=pointless-statement
@@ -185,16 +215,20 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         "password": password,
     }
     csr = "1"
-    certificates_relation_data = {
-        "certificates": json.dumps(
-            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
-        ),
-        "secret-user": secret_id,
-    }
-    with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(
-            mock_charm, opensearch_relation_data, certificates_relation_data, csr
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         )
+    ]
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
 
 
 def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
@@ -227,16 +261,21 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         "password": password,
     }
     csr = "1"
-    certificates_relation_data = {
-        "certificates": json.dumps(
-            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
-        ),
-        "secret-user": secret_id,
-    }
-    with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(
-            mock_charm, opensearch_relation_data, certificates_relation_data, csr
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         )
+    ]
+
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
 
 
 def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
@@ -270,15 +309,22 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
         "value": "ssh-key",
     }
     csr = "1"
-    certificates_relation_data = {
-        "certificates": json.dumps(
-            [{"certificate": certificate, "ca": root_ca, "certificate_signing_request": csr}]
-        ),
-        "secret-user": secret_id,
-    }
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, certificates_relation_data, csr
+        mock_charm, opensearch_relation_data, provider_certificates, csr
     )
+
     assert charm_state.indexer_ips == endpoints
     assert charm_state.username == username
     assert charm_state.password == password
