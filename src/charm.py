@@ -59,14 +59,9 @@ class WazuhServerCharm(CharmBaseWithState):
             opensearch_relation_data = (
                 opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
             )
-            certificates_relation = self.model.get_relation(certificates_observer.RELATION_NAME)
-            certificates_relation_data = (
-                certificates_relation.data[certificates_relation.app]
-                if certificates_relation
-                else {}
-            )
+            certificates = self.certificates.certificates.get_provider_certificates()
             return State.from_charm(
-                self, opensearch_relation_data, certificates_relation_data, self.certificates.csr
+                self, opensearch_relation_data, certificates, self.certificates.csr.decode("utf-8")
             )
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
@@ -122,6 +117,16 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "summary": "wazuh manager",
                     "command": "/var/ossec/bin/wazuh-control start",
+                    "startup": "enabled",
+                },
+                "filebeat": {
+                    "override": "replace",
+                    "summary": "filebear",
+                    "command": (
+                        "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
+                        "--path.home /usr/share/filebeat --path.config /etc/filebeat "
+                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
+                    ),
                     "startup": "enabled",
                 },
             },
