@@ -25,7 +25,6 @@ async def test_filebeat_ok(model: Model, application: Application):
 
     Assert: the filebeat config is valid.
     """
-    assert False
     model.wait_for_idle(
         apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
