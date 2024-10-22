@@ -119,6 +119,16 @@ class WazuhServerCharm(CharmBaseWithState):
                     "command": "/var/ossec/bin/wazuh-control start",
                     "startup": "enabled",
                 },
+                "filebeat": {
+                    "override": "replace",
+                    "summary": "filebear",
+                    "command": (
+                        "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
+                        "--path.home /usr/share/filebeat --path.config /etc/filebeat "
+                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
+                    ),
+                    "startup": "enabled",
+                },
             },
         }
 
