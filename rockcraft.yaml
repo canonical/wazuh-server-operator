@@ -28,6 +28,8 @@ parts:
       - ssh
   filebeat:
     plugin: nil
+    build-packages:
+      - yq
     stage-packages:
       - filebeat
       - net-tools
