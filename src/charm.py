@@ -118,6 +118,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "summary": "wazuh manager",
                     "command": "/var/ossec/bin/wazuh-control start",
                     "startup": "enabled",
+                    "on-success": "ignore",
                 },
                 "filebeat": {
                     "override": "replace",
