@@ -28,6 +28,8 @@ parts:
       - ssh
   filebeat:
     plugin: nil
+    build-packages:
+      - yq
     stage-packages:
       - filebeat
       - net-tools
@@ -35,6 +37,7 @@ parts:
       mkdir -p $CRAFT_PART_INSTALL/etc/filebeat/certs
       chmod 500 $CRAFT_PART_INSTALL/etc/filebeat/certs
       curl --max-time 60 -o $CRAFT_PART_INSTALL/etc/filebeat/filebeat.yml https://packages.wazuh.com/4.8/tpl/wazuh/filebeat/filebeat.yml
+      yq -iy '."output.elasticsearch"."ssl.verification_mode"=false' $CRAFT_PART_INSTALL/etc/filebeat/filebeat.yml
       mkdir -p $CRAFT_PART_INSTALL/usr/share/filebeat/module
       curl --max-time 60 https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C $CRAFT_PART_INSTALL/usr/share/filebeat/module
       curl --max-time 60 -o $CRAFT_PART_INSTALL/etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v4.8.1/extensions/elasticsearch/7.x/wazuh-template.json
