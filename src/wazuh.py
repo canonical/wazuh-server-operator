@@ -205,7 +205,15 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "-ra",
                 "--chown",
                 "wazuh:wazuh",
-                f"{REPOSITORY_PATH}/var/ossec/",
+                "--include='*/'",
+                "--include 'etc/*.conf'",
+                "--include 'etc/decoders/***'",
+                "--include 'etc/rules/***'",
+                "--include 'etc/shared/*.conf'",
+                "--include 'etc/shared/**/*.conf'",
+                "--include 'integrations/***'",
+                "--exclude '*'",
+                "/root/repository/var/ossec/",
                 "/var/ossec",
             ]
         )
