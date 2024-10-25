@@ -36,6 +36,7 @@ class WazuhInstallationError(Exception):
     """Base exception for Wazuh errors."""
 
 
+# pylint: disable=too-many-locals
 def update_configuration(container: ops.Container, indexer_ips: list[str]) -> None:
     """Update Wazuh configuration.
 
@@ -61,6 +62,13 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         new_host = etree.Element("host")
         new_host.text = f"https://{ip_port}"
         hosts[0].append(new_host)
+    new_ssl_agent_ca = etree.Element("ssl_agent_ca")
+    new_ssl_agent_ca.text = str(CERTIFICATES_PATH / "root-ca.pem")
+    ssl_agent_ca = ossec_config_tree.xpath("/root/ossec_config/auth/ssl_agent_ca")
+    if ssl_agent_ca:
+        ssl_agent_ca[0].get_parent().remove(ssl_agent_ca[0])
+    auth = ossec_config_tree.xpath("/root/ossec_config/auth")
+    auth[0].append(new_ssl_agent_ca)
     elements = ossec_config_tree.xpath("//ossec_config")
     content = b""
     for element in elements:
