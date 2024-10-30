@@ -83,8 +83,8 @@ def test_state_without_proxy():
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
     assert charm_state.indexer_ips == endpoints
-    assert charm_state.username == username
-    assert charm_state.password == password
+    assert charm_state.filebeat_username == username
+    assert charm_state.filebeat_password == password
     assert charm_state.certificate == certificate
     assert charm_state.root_ca == root_ca
     assert charm_state.custom_config_repository is None
@@ -135,8 +135,8 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
     assert charm_state.root_ca == root_ca
-    assert charm_state.username == username
-    assert charm_state.password == password
+    assert charm_state.filebeat_username == username
+    assert charm_state.filebeat_password == password
     assert charm_state.custom_config_repository is None
     assert charm_state.custom_config_ssh_key is None
     assert str(charm_state.proxy.http_proxy) == "http://squid.proxy:3228/"
@@ -231,6 +231,51 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
 
 
+def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given a secret_id for the agent password non matching a secret.
+    act: when charm state is initialized.
+    assert: InvalidStateError is raised.
+    """
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.model.get_secret(id=secret_id).side_effect = ops.SecretNotFoundError
+    monkeypatch.setattr(
+        mock_charm,
+        "config",
+        {
+            "agent-password": secret_id,
+        },
+    )
+
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    username = "user1"
+    password = secrets.token_hex()
+    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    certificate = "somecert"
+    root_ca = "someca"
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
+        "username": username,
+        "password": password,
+    }
+    csr = "1"
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
+
+
 def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: given a secret for the repository with invalid content.
@@ -246,6 +291,52 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         {
             "custom-config-repository": "git+ssh://user1@git.server/repo_name@main",
             "custom-config-ssh-key": repository_secret_id,
+        },
+    )
+
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    username = "user1"
+    password = secrets.token_hex()
+    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    certificate = "somecert"
+    root_ca = "someca"
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
+        "username": username,
+        "password": password,
+    }
+    csr = "1"
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
+
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
+
+
+def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given a secret for the agent password with invalid content.
+    act: when charm state is initialized.
+    assert: InvalidStateError is raised.
+    """
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.model.get_secret(id=secret_id).return_value.get_content.return_value = {}
+    monkeypatch.setattr(
+        mock_charm,
+        "config",
+        {
+            "agent-password": secret_id,
         },
     )
 
@@ -326,12 +417,71 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     )
 
     assert charm_state.indexer_ips == endpoints
-    assert charm_state.username == username
-    assert charm_state.password == password
+    assert charm_state.filebeat_username == username
+    assert charm_state.filebeat_password == password
     assert charm_state.certificate == certificate
     assert charm_state.root_ca == root_ca
     assert str(charm_state.custom_config_repository) == custom_config_repository
     assert charm_state.custom_config_ssh_key == "ssh-key"
+    assert charm_state.proxy.http_proxy is None
+    assert charm_state.proxy.https_proxy is None
+    assert charm_state.proxy.no_proxy is None
+
+
+def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given a secret for the agent password valid content.
+    act: when charm state is initialized.
+    assert: the state contains the secret value.
+    """
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    secret_id = f"secret:{secrets.token_hex()}"
+    monkeypatch.setattr(
+        mock_charm,
+        "config",
+        {
+            "agent-password": secret_id,
+        },
+    )
+
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    username = "user1"
+    password = secrets.token_hex()
+    agent_password = secrets.token_hex()
+    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    certificate = "somecert"
+    root_ca = "someca"
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
+        "username": username,
+        "password": password,
+        "value": agent_password,
+    }
+    csr = "1"
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr=csr,
+            certificate=certificate,
+            ca=root_ca,
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
+    charm_state = state.State.from_charm(
+        mock_charm, opensearch_relation_data, provider_certificates, csr
+    )
+
+    assert charm_state.indexer_ips == endpoints
+    assert charm_state.filebeat_username == username
+    assert charm_state.filebeat_password == password
+    assert charm_state.certificate == certificate
+    assert charm_state.root_ca == root_ca
+    assert charm_state.agent_password == agent_password
+    assert charm_state.custom_config_repository is None
+    assert charm_state.custom_config_ssh_key is None
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None

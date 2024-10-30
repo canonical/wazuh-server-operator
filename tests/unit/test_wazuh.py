@@ -3,6 +3,7 @@
 
 """Wazuh unit tests."""
 
+import secrets
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -87,7 +88,7 @@ def test_install_certificates() -> None:
     """
     arrange: do nothing.
     act: save some content as certificates.
-    assert: the files have been saved with the provider content.
+    assert: the files have been saved with the provided content.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
@@ -108,6 +109,21 @@ def test_install_certificates() -> None:
         "root_ca"
         == container.pull(wazuh.CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8").read()
     )
+
+
+def test_configure_agent_password() -> None:
+    """
+    arrange: do nothing.
+    act: save some content as agent password.
+    assert: the files have been saved with the provided content.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    password = secrets.token_hex()
+    wazuh.configure_agent_password(container, password=password)
+
+    assert password == container.pull(wazuh.AGENT_PASSWORD_PATH, encoding="utf-8").read()
 
 
 def test_configure_git_when_branch_specified() -> None:
