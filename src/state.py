@@ -155,10 +155,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         try:
             filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
         except ops.SecretNotFoundError as exc:
-            raise InvalidStateError("Indexer secret not found.") from exc
-        try:
-            filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
-        except ops.SecretNotFoundError as exc:
             raise InvalidStateError("Indexer secret content not found.") from exc
         filebeat_username = filebeat_secret_content.get("username", "")
         filebeat_password = filebeat_secret_content.get("password", "")
