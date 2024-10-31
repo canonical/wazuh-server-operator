@@ -56,6 +56,103 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
     custom_config_ssh_key: typing.Optional[str] = None
 
 
+def _fetch_filebeat_configuration(
+    model: ops.Model, indexer_relation_data: dict[str, str]
+) -> tuple[str, str, list[str]]:
+    """Fetch the filebeat configuration from the relation data.
+
+    Args:
+        model: the Juju model.
+        indexer_relation_data: the Wazuh indexer app relation data.
+
+    Returns: a tuple with the username, password and a list of endpoints.
+
+    Raises:
+        InvalidStateError: if the secret is invalid.
+    """
+    filebeat_secret_id = indexer_relation_data.get("secret-user")
+    try:
+        filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
+    except ops.SecretNotFoundError as exc:
+        raise InvalidStateError("Indexer secret content not found.") from exc
+    filebeat_username = filebeat_secret_content.get("username", "")
+    filebeat_password = filebeat_secret_content.get("password", "")
+    endpoint_data = indexer_relation_data.get("endpoints")
+    endpoints = list(endpoint_data.split(",")) if endpoint_data else []
+    return filebeat_username, filebeat_password, endpoints
+
+
+def _fetch_matching_certificates(
+    provider_certificates: list[certificates.ProviderCertificate],
+    certitificate_signing_request: str,
+) -> list[certificates.ProviderCertificate]:
+    """Fetch the certificates matching the CSR from the relation data.
+
+    Args:
+        provider_certificates: the provider certificates.
+        certitificate_signing_request: the certificate signing request.
+
+    Returns:
+        the certificates matching the CSR.
+    """
+    return [
+        certificate
+        for certificate in provider_certificates
+        if certificate.csr.replace("\n", "") == certitificate_signing_request.replace("\n", "")
+        and not certificate.revoked
+    ]
+
+
+def _fetch_ssh_repository_key(model: ops.Model, config: WazuhConfig) -> str | None:
+    """Fetch the SSH key for the repository.
+
+    Args:
+        model: the Juju model.
+        config: the charm configuration.
+
+    Returns: the SSH key for the repository, if any.
+
+    Raises:
+        InvalidStateError: if the secret when the key should reside is invalid.
+    """
+    custom_config_ssh_key_content = None
+    if config.custom_config_ssh_key:
+        try:
+            custom_config_ssh_key_secret = model.get_secret(id=config.custom_config_ssh_key)
+        except ops.SecretNotFoundError as exc:
+            raise InvalidStateError("Repository secret not found.") from exc
+        custom_config_ssh_key_content = custom_config_ssh_key_secret.get_content(refresh=True).get(
+            "value"
+        )
+        if not custom_config_ssh_key_content:
+            raise InvalidStateError("Repository secret does not contain the expected key 'value'.")
+    return custom_config_ssh_key_content
+
+
+def _fetch_agent_password(model: ops.Model, config: WazuhConfig) -> str | None:
+    """Fetch the password for the agent.
+
+    Args:
+        model: the Juju model.
+        config: the charm configuration.
+
+    Returns: the SSH key for the repository, if any.
+
+    Raises:
+        InvalidStateError: if the secret when the key should reside is invalid.
+    """
+    agent_password_content = None
+    if config.agent_password:
+        try:
+            agent_password_secret = model.get_secret(id=config.agent_password)
+        except ops.SecretNotFoundError as exc:
+            raise InvalidStateError("Agent secret not found.") from exc
+        agent_password_content = agent_password_secret.get_content(refresh=True).get("value")
+        if not agent_password_content:
+            raise InvalidStateError("Agent secret does not contain the expected key 'value'.")
+    return agent_password_content
+
+
 class State(BaseModel):  # pylint: disable=too-few-public-methods
     """The Wazuh server charm state.
 
@@ -137,109 +234,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             raise InvalidStateError("Invalid proxy configuration.") from exc
 
     @classmethod
-    def _fetch_filebeat_configuration(
-        cls, model: ops.Model, indexer_relation_data: dict[str, str]
-    ) -> tuple[str, str, list[str]]:
-        """Fetch the filebeat configuration from the relation data.
-
-        Args:
-            model: the Juju model.
-            indexer_relation_data: the Wazuh indexer app relation data.
-
-        Returns: a tuple with the username, password and a list of endpoints.
-
-        Raises:
-            InvalidStateError: if the secret is invalid.
-        """
-        filebeat_secret_id = indexer_relation_data.get("secret-user")
-        try:
-            filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
-        except ops.SecretNotFoundError as exc:
-            raise InvalidStateError("Indexer secret content not found.") from exc
-        filebeat_username = filebeat_secret_content.get("username", "")
-        filebeat_password = filebeat_secret_content.get("password", "")
-        endpoint_data = indexer_relation_data.get("endpoints")
-        endpoints = list(endpoint_data.split(",")) if endpoint_data else []
-        return filebeat_username, filebeat_password, endpoints
-
-    @classmethod
-    def _fetch_matching_certificates(
-        cls,
-        provider_certificates: list[certificates.ProviderCertificate],
-        certitificate_signing_request: str,
-    ) -> list[certificates.ProviderCertificate]:
-        """Fetch the certificates matching the CSR from the relation data.
-
-        Args:
-            provider_certificates: the provider certificates.
-            certitificate_signing_request: the certificate signing request.
-
-        Returns:
-            the certificates matching the CSR.
-        """
-        return [
-            certificate
-            for certificate in provider_certificates
-            if (
-                certificate.csr.replace("\n", "")
-                == certitificate_signing_request.replace("\n", "")
-            )
-            and not certificate.revoked
-        ]
-
-    @classmethod
-    def _fetch_ssh_repository_key(cls, model: ops.Model, config: WazuhConfig) -> str | None:
-        """Fetch the SSH key for the repository.
-
-        Args:
-            model: the Juju model.
-            config: the charm configuration.
-
-        Returns: the SSH key for the repository, if any.
-
-        Raises:
-            InvalidStateError: if the secret when the key should reside is invalid.
-        """
-        custom_config_ssh_key_content = None
-        if config.custom_config_ssh_key:
-            try:
-                custom_config_ssh_key_secret = model.get_secret(id=config.custom_config_ssh_key)
-            except ops.SecretNotFoundError as exc:
-                raise InvalidStateError("Repository secret not found.") from exc
-            custom_config_ssh_key_content = custom_config_ssh_key_secret.get_content(
-                refresh=True
-            ).get("value")
-            if not custom_config_ssh_key_content:
-                raise InvalidStateError(
-                    "Repository secret does not contain the expected key 'value'."
-                )
-        return custom_config_ssh_key_content
-
-    @classmethod
-    def _fetch_agent_password(cls, model: ops.Model, config: WazuhConfig) -> str | None:
-        """Fetch the password for the agent.
-
-        Args:
-            model: the Juju model.
-            config: the charm configuration.
-
-        Returns: the SSH key for the repository, if any.
-
-        Raises:
-            InvalidStateError: if the secret when the key should reside is invalid.
-        """
-        agent_password_content = None
-        if config.agent_password:
-            try:
-                agent_password_secret = model.get_secret(id=config.agent_password)
-            except ops.SecretNotFoundError as exc:
-                raise InvalidStateError("Agent secret not found.") from exc
-            agent_password_content = agent_password_secret.get_content(refresh=True).get("value")
-            if not agent_password_content:
-                raise InvalidStateError("Agent secret does not contain the expected key 'value'.")
-        return agent_password_content
-
-    @classmethod
     def from_charm(  # pylint: disable=too-many-locals
         cls,
         charm: ops.CharmBase,
@@ -262,15 +256,15 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             InvalidStateError: if the state is invalid.
         """
         try:
-            filebeat_username, filebeat_password, endpoints = State._fetch_filebeat_configuration(
+            filebeat_username, filebeat_password, endpoints = _fetch_filebeat_configuration(
                 charm.model, indexer_relation_data
             )
             args = {key.replace("-", "_"): value for key, value in charm.config.items()}
             # mypy doesn't like the str to Url casting
             valid_config = WazuhConfig(**args)  # type: ignore
-            custom_config_ssh_key = State._fetch_ssh_repository_key(charm.model, valid_config)
-            agent_password = State._fetch_agent_password(charm.model, valid_config)
-            matching_certificates = State._fetch_matching_certificates(
+            custom_config_ssh_key = _fetch_ssh_repository_key(charm.model, valid_config)
+            agent_password = _fetch_agent_password(charm.model, valid_config)
+            matching_certificates = _fetch_matching_certificates(
                 provider_certificates, certitificate_signing_request
             )
             if matching_certificates:
