@@ -7,6 +7,7 @@
 
 import logging
 import typing
+from enum import Enum
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -35,22 +36,42 @@ class WazuhInstallationError(Exception):
     """Base exception for Wazuh errors."""
 
 
-def update_configuration(container: ops.Container, indexer_ips: list[str]) -> None:
-    """Update Wazuh configuration.
+class NodeType(Enum):
+    """Enum for the W<çazuh node types.
+
+    Attrs:
+        WORKER: worker.
+        MASTER: master.
+    """
+
+    WORKER = "worker"
+    MASTER = "master"
+
+
+def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]) -> None:
+    """Update Filebeat configuration.
 
     Arguments:
         container: the container for which to update the configuration.
-        indexer_ips: list of indexer IPs to configure.
-
-    Raises:
-        WazuhInstallationError: if an error occurs while installing.
+        ip_ports: list of indexer IPs and ports to configure.
     """
-    ip_ports = [f"{ip}" for ip in indexer_ips]
     filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
     filebeat_config_yaml["output.elasticsearch"]["hosts"] = ip_ports
     container.push(FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml), encoding="utf-8")
 
+
+def _update_wazuh_configuration(
+    container: ops.Container, ip_ports: list[str], charm_addresses: list[str], unit_name: str
+) -> None:
+    """Update Wazuh configuration.
+
+    Arguments:
+        container: the container for which to update the configuration.
+        ip_ports: list of indexer IPs and ports to configure.
+        charm_addresses: the unit addresses.
+        unit_name: the unit's name.
+    """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
     ossec_config_tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
@@ -60,12 +81,40 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         new_host = etree.Element("host")
         new_host.text = f"https://{ip_port}"
         hosts[0].append(new_host)
+
+    cluster = ossec_config_tree.xpath("/root/ossec_config/cluster")
+    if cluster:
+        cluster[0].getparent().remove(cluster[0])
+    node_name = unit_name.replace("/", "-")
+    node_type = NodeType.MASTER if unit_name.split("/")[1] == "0" else NodeType.WORKER
     elements = ossec_config_tree.xpath("//ossec_config")
-    content = b""
-    for element in elements:
-        content = content + etree.tostring(element, pretty_print=True)
+    if len(charm_addresses) > 1:
+        new_cluster = etree.fromstring(  # nosec
+            _generate_cluster_snippet(node_name, node_type, charm_addresses)
+        )
+        elements[0].append(new_cluster)
+
+    content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
 
+
+def update_configuration(
+    container: ops.Container, indexer_ips: list[str], charm_addresses: list[str], unit_name: str
+) -> None:
+    """Update the charm configuration.
+
+    Arguments:
+        container: the container for which to update the configuration.
+        indexer_ips: list of indexer IPs to configure.
+        charm_addresses: the unit addresses.
+        unit_name: the unit's name.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while installing.
+    """
+    ip_ports = [f"{ip}" for ip in indexer_ips]
+    _update_filebeat_configuration(container, ip_ports)
+    _update_wazuh_configuration(container, ip_ports, charm_addresses, unit_name)
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
         proc.wait_output()
@@ -252,3 +301,33 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
         process.wait_output()
     except ops.pebble.ExecError as ex:
         logging.debug(ex)
+
+
+def _generate_cluster_snippet(node_name: str, node_type: NodeType, addresses: list[str]) -> str:
+    """Generate the cluster configuration snippet for a unit.
+
+    Args:
+        node_name: the node name.
+        node_type: the Wazuh node type.
+        addresses: the list of addresses for all units in the cluster.
+
+    Returns: the content for the cluster node for the Wazuh configuration.
+    """
+    addresses_snippet = ""
+    for address in addresses:
+        addresses_snippet = addresses_snippet + f"<node>{address}</node>\n"
+    return f"""
+        <cluster>
+            <name>wazuh</name>
+            <node_name>{node_name}</node_name>
+            <key>c98b62a9b6169ac5f67dae55ae4a9088</key>
+            <node_type>{node_type.value}</node_type>
+            <port>1516</port>
+            <bind_addr>0.0.0.0</bind_addr>
+            <nodes>
+                {addresses_snippet}
+            </nodes>
+            <hidden>no</hidden>
+            <disabled>no</disabled>
+        </cluster>
+    """

@@ -79,7 +79,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
     )
-    wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
+    wazuh_update_configuration_mock.assert_called_with(
+        container, ["10.0.0.1"], ["wazuh-server-0.wazuh-server-endpoints"], "wazuh-server/0"
+    )
     configure_git_mock.assert_called_with(
         container, str(wazuh_config.custom_config_repository), "somekey"
     )
@@ -139,7 +141,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_not_called()
     pull_configuration_files_mock.assert_not_called()
-    wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
+    wazuh_update_configuration_mock.assert_called_with(
+        container, ["10.0.0.1"], ["wazuh-server-0.wazuh-server-endpoints"], "wazuh-server/0"
+    )
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 

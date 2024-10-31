@@ -15,15 +15,20 @@ Wazuh operational logic.
 
 ---
 
-<a href="../src/wazuh.py#L38"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L101"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `update_configuration`
 
 ```python
-update_configuration(container: Container, indexer_ips: list[str]) → None
+update_configuration(
+    container: Container,
+    indexer_ips: list[str],
+    charm_addresses: list[str],
+    unit_name: str
+) → None
 ```
 
-Update Wazuh configuration. 
+Update the charm configuration. 
 
 
 
@@ -31,6 +36,8 @@ Update Wazuh configuration.
  
  - <b>`container`</b>:  the container for which to update the configuration. 
  - <b>`indexer_ips`</b>:  list of indexer IPs to configure. 
+ - <b>`charm_addresses`</b>:  the unit addresses. 
+ - <b>`unit_name`</b>:  the unit's name. 
 
 
 
@@ -41,7 +48,7 @@ Update Wazuh configuration.
 
 ---
 
-<a href="../src/wazuh.py#L76"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L125"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `install_certificates`
 
@@ -68,7 +75,7 @@ Update Wazuh filebeat certificates.
 
 ---
 
-<a href="../src/wazuh.py#L96"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L145"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_agent_password`
 
@@ -88,7 +95,7 @@ Configure the agent password.
 
 ---
 
-<a href="../src/wazuh.py#L144"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L193"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_git`
 
@@ -114,7 +121,7 @@ Configure git.
 
 ---
 
-<a href="../src/wazuh.py#L202"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L251"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `pull_configuration_files`
 
@@ -133,7 +140,7 @@ Pull configuration files from the repository.
 
 ---
 
-<a href="../src/wazuh.py#L234"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L283"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_filebeat_user`
 
@@ -154,6 +161,17 @@ Configure the filebeat user.
  - <b>`container`</b>:  the container to configure the user for. 
  - <b>`username`</b>:  the username. 
  - <b>`password`</b>:  the password. 
+
+
+---
+
+## <kbd>class</kbd> `NodeType`
+Enum for the W<çazuh node types. 
+
+Attrs:  WORKER: worker.  MASTER: master. 
+
+
+
 
 
 ---

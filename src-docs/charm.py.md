@@ -5,6 +5,9 @@
 # <kbd>module</kbd> `charm.py`
 Wazuh server charm. 
 
+**Global Variables**
+---------------
+- **WAZUH_PEER_RELATION_NAME**
 
 
 ---
@@ -16,9 +19,10 @@ Charm the service.
 
 **Attributes:**
  
+ - <b>`fqdns`</b>:  the unit FQDNs. 
  - <b>`state`</b>:  the charm state. 
 
-<a href="../src/charm.py#L30"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L34"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -55,6 +59,14 @@ A mapping containing the charm's config and current values.
 
 ---
 
+#### <kbd>property</kbd> fqdns
+
+Get the FQDNS for the charm units. 
+
+Returns: the list of FQDNs for the charm units. 
+
+---
+
 #### <kbd>property</kbd> meta
 
 Metadata of this charm. 
@@ -81,7 +93,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/charm.py#L71"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L75"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
