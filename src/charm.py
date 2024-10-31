@@ -98,10 +98,17 @@ class WazuhServerCharm(CharmBaseWithState):
             ),
             self.state.custom_config_ssh_key,
         )
+        wazuh.configure_filebeat_user(
+            container, self.state.filebeat_username, self.state.filebeat_password
+        )
+        if self.state.agent_password:
+            wazuh.configure_agent_password(
+                container=self.unit.containers.get("wazuh-server"),
+                password=self.state.agent_password,
+            )
         if self.state.custom_config_repository:
             wazuh.pull_configuration_files(container)
         wazuh.update_configuration(container, self.state.indexer_ips)
-        wazuh.configure_filebeat_user(container, self.state.username, self.state.password)
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
         self.unit.status = ops.ActiveStatus()
