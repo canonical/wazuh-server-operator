@@ -1,4 +1,0 @@
-rules:
-  # Ignore master - It's terminology used upstream.
-  - name: master
-  - name: MASTER
