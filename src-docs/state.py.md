@@ -5,6 +5,9 @@
 # <kbd>module</kbd> `state.py`
 Wazuh server charm state. 
 
+**Global Variables**
+---------------
+- **WAZUH_CLUSTER_KEY_SECRET_LABEL**
 
 
 ---
@@ -53,7 +56,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/state.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L25"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
@@ -122,6 +125,7 @@ The Wazuh server charm state.
 **Attributes:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`cluster_key`</b>:  the cluster key. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
@@ -131,13 +135,14 @@ The Wazuh server charm state.
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L83"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L88"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
 ```python
 __init__(
     agent_password: Optional[str],
+    cluster_key: str,
     indexer_ips: list[str],
     filebeat_username: str,
     filebeat_password: str,
@@ -155,6 +160,7 @@ Initialize a new instance of the CharmState class.
 **Args:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`cluster_key`</b>:  the cluster key. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
@@ -207,7 +213,7 @@ Get charm proxy configuration from juju charm environment.
 
 ---
 
-<a href="../src/state.py#L242"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L273"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 

@@ -15,7 +15,7 @@ Wazuh operational logic.
 
 ---
 
-<a href="../src/wazuh.py#L101"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L106"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `update_configuration`
 
@@ -24,7 +24,8 @@ update_configuration(
     container: Container,
     indexer_ips: list[str],
     charm_addresses: list[str],
-    unit_name: str
+    unit_name: str,
+    key: str
 ) → None
 ```
 
@@ -38,6 +39,7 @@ Update the charm configuration.
  - <b>`indexer_ips`</b>:  list of indexer IPs to configure. 
  - <b>`charm_addresses`</b>:  the unit addresses. 
  - <b>`unit_name`</b>:  the unit's name. 
+ - <b>`key`</b>:  the Wazuh key for the nodes. 
 
 
 
@@ -48,7 +50,7 @@ Update the charm configuration.
 
 ---
 
-<a href="../src/wazuh.py#L125"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L135"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `install_certificates`
 
@@ -75,7 +77,7 @@ Update Wazuh filebeat certificates.
 
 ---
 
-<a href="../src/wazuh.py#L145"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L155"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_agent_password`
 
@@ -95,7 +97,7 @@ Configure the agent password.
 
 ---
 
-<a href="../src/wazuh.py#L193"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L203"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_git`
 
@@ -121,7 +123,7 @@ Configure git.
 
 ---
 
-<a href="../src/wazuh.py#L251"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L261"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `pull_configuration_files`
 
@@ -140,7 +142,7 @@ Pull configuration files from the repository.
 
 ---
 
-<a href="../src/wazuh.py#L283"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L293"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_filebeat_user`
 
