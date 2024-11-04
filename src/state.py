@@ -16,6 +16,9 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, pars
 logger = logging.getLogger(__name__)
 
 
+WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
+
+
 class CharmBaseWithState(ops.CharmBase, ABC):
     """CharmBase than can build a CharmState."""
 
@@ -61,6 +64,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         agent_password: the agent password.
+        cluster_key: the cluster key.
         indexer_ips: list of Wazuh indexer IPs.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
@@ -72,6 +76,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     agent_password: typing.Optional[str] = None
+    cluster_key: str = Field(min_length=16, max_length=16)
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
@@ -83,6 +88,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         agent_password: typing.Optional[str],
+        cluster_key: str,
         indexer_ips: list[str],
         filebeat_username: str,
         filebeat_password: str,
@@ -95,6 +101,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             agent_password: the agent password.
+            cluster_key: the cluster key.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
@@ -105,6 +112,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         """
         super().__init__(
             agent_password=agent_password,
+            cluster_key=cluster_key,
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
@@ -240,6 +248,29 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         return agent_password_content
 
     @classmethod
+    def _fetch_cluster_key(cls, model: ops.Model) -> str:
+        """Fetch the Wazuh cluster key.
+
+        Args:
+            model: the Juju model.
+
+        Returns: the key for the cluster, if any.
+
+        Raises:
+            InvalidStateError: if the secret when the key should reside is invalid.
+        """
+        try:
+            cluster_key_secret = model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
+        except ops.SecretNotFoundError as exc:
+            raise InvalidStateError("Cluster key secret.") from exc
+        cluster_key_content = cluster_key_secret.get_content(refresh=True).get("value")
+        if not cluster_key_content:
+            raise InvalidStateError(
+                "Cluster key secret does not contain the expected key 'value'."
+            )
+        return cluster_key_content
+
+    @classmethod
     def from_charm(  # pylint: disable=too-many-locals
         cls,
         charm: ops.CharmBase,
@@ -270,12 +301,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             valid_config = WazuhConfig(**args)  # type: ignore
             custom_config_ssh_key = State._fetch_ssh_repository_key(charm.model, valid_config)
             agent_password = State._fetch_agent_password(charm.model, valid_config)
+            cluster_key = State._fetch_cluster_key(charm.model)
             matching_certificates = State._fetch_matching_certificates(
                 provider_certificates, certitificate_signing_request
             )
             if matching_certificates:
                 return cls(
                     agent_password=agent_password,
+                    cluster_key=cluster_key,
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,

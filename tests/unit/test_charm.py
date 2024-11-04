@@ -58,8 +58,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
+    cluster_key = secrets.token_hex(8)
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
+        cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
@@ -80,7 +82,11 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
     )
     wazuh_update_configuration_mock.assert_called_with(
-        container, ["10.0.0.1"], ["wazuh-server-0.wazuh-server-endpoints"], "wazuh-server/0"
+        container,
+        ["10.0.0.1"],
+        ["wazuh-server-0.wazuh-server-endpoints"],
+        "wazuh-server/0",
+        cluster_key,
     )
     configure_git_mock.assert_called_with(
         container, str(wazuh_config.custom_config_repository), "somekey"
@@ -116,8 +122,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert: the charm reaches active status and configs are applied.
     """
     password = secrets.token_hex()
+    cluster_key = secrets.token_hex(8)
     state_from_charm_mock.return_value = State(
         agent_password=None,
+        cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
@@ -142,7 +150,11 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_configure_agent_password_mock.assert_not_called()
     pull_configuration_files_mock.assert_not_called()
     wazuh_update_configuration_mock.assert_called_with(
-        container, ["10.0.0.1"], ["wazuh-server-0.wazuh-server-endpoints"], "wazuh-server/0"
+        container,
+        ["10.0.0.1"],
+        ["wazuh-server-0.wazuh-server-endpoints"],
+        "wazuh-server/0",
+        cluster_key,
     )
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 

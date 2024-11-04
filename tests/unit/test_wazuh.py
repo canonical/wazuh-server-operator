@@ -45,7 +45,8 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
-    wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/0")
+    key = secrets.token_hex(32)
+    wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/0", key)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
@@ -86,7 +87,8 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
-    wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/1")
+    key = secrets.token_hex(32)
+    wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/1", key)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
@@ -127,7 +129,8 @@ def test_update_configuration_when_one_unit(monkeypatch: pytest.MonkeyPatch) -> 
     ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
-    wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/0")
+    key = secrets.token_hex(32)
+    wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/0", key)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
@@ -168,7 +171,8 @@ def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     with pytest.raises(wazuh.WazuhInstallationError):
-        wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/0")
+        key = secrets.token_hex(32)
+        wazuh.update_configuration(container, indexer_ips, unit_ips, "wazuh-server/0", key)
 
 
 def test_install_certificates() -> None:

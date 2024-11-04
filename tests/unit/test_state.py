@@ -62,9 +62,11 @@ def test_state_without_proxy():
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
+    value = secrets.token_hex(8)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
+        "value": value,
     }
     csr = "1"
     provider_certificates = [
@@ -82,6 +84,8 @@ def test_state_without_proxy():
     charm_state = state.State.from_charm(
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
+
+    assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
@@ -108,9 +112,11 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
+    value = secrets.token_hex(8)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
+        "value": value,
     }
     csr = "1"
     provider_certificates = [
@@ -132,6 +138,8 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
+
+    assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
     assert charm_state.root_ca == root_ca
@@ -161,9 +169,11 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
+    value = secrets.token_hex(8)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
+        "value": value,
     }
     csr = "1"
     provider_certificates = [
@@ -394,10 +404,11 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
+    value = secrets.token_hex(8)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
-        "value": "ssh-key",
+        "value": value,
     }
     csr = "1"
     provider_certificates = [
@@ -416,13 +427,14 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
 
+    assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
     assert charm_state.certificate == certificate
     assert charm_state.root_ca == root_ca
     assert str(charm_state.custom_config_repository) == custom_config_repository
-    assert charm_state.custom_config_ssh_key == "ssh-key"
+    assert charm_state.custom_config_ssh_key == value
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
@@ -447,7 +459,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    agent_password = secrets.token_hex()
+    value = secrets.token_hex(8)
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
     root_ca = "someca"
@@ -455,7 +467,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
-        "value": agent_password,
+        "value": value,
     }
     csr = "1"
     provider_certificates = [
@@ -474,12 +486,13 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
 
+    assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
     assert charm_state.certificate == certificate
     assert charm_state.root_ca == root_ca
-    assert charm_state.agent_password == agent_password
+    assert charm_state.agent_password == value
     assert charm_state.custom_config_repository is None
     assert charm_state.custom_config_ssh_key is None
     assert charm_state.proxy.http_proxy is None
