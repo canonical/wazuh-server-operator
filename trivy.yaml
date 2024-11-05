@@ -1,5 +1,6 @@
 timeout: 20m
 scan:
   offline-scan: true
+  # Ignore TLS cert installed by Wazuh
   skip-files:
     - /var/ossec/etc/sslmanager.key
