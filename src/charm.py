@@ -137,6 +137,15 @@ class WazuhServerCharm(CharmBaseWithState):
     @property
     def _pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer."""
+        environment = {}
+        # self.state will never be None at this point
+        proxy = self.state.proxy  # type: ignore
+        if proxy.http_proxy:
+            environment["HTTP_PROXY"] = proxy.http_proxy
+        if proxy.https_proxy:
+            environment["HTTPS_PROXY"] = proxy.https_proxy
+        if proxy.no_proxy:
+            environment["NO_PROXY"] = proxy.no_proxy
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -147,6 +156,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "command": "/var/ossec/bin/wazuh-control start",
                     "startup": "enabled",
                     "on-success": "ignore",
+                    "environment": environment,
                 },
                 "filebeat": {
                     "override": "replace",
