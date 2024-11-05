@@ -37,7 +37,7 @@ class WazuhInstallationError(Exception):
 
 
 class NodeType(Enum):
-    """Enum for the W<çazuh node types.
+    """Enum for the Wazuh node types.
 
     Attrs:
         WORKER: worker.
@@ -61,12 +61,13 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
     container.push(FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml), encoding="utf-8")
 
 
+# Won't sacrify cohesion and readability to make pylint happier
 def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     container: ops.Container,
     ip_ports: list[str],
     charm_addresses: list[str],
     unit_name: str,
-    key: str,
+    cluster_key: str,
 ) -> None:
     """Update Wazuh configuration.
 
@@ -75,7 +76,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
         ip_ports: list of indexer IPs and ports to configure.
         charm_addresses: the unit addresses.
         unit_name: the unit's name.
-        key: the Wazuh key for the nodes.
+        cluster_key: the Wazuh key for the cluster nodes.
     """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
@@ -91,11 +92,12 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     if cluster:
         cluster[0].getparent().remove(cluster[0])
     node_name = unit_name.replace("/", "-")
+    # Unit 0 is always present, so the presence of a master node is guaranteed
     node_type = NodeType.MASTER if unit_name.split("/")[1] == "0" else NodeType.WORKER
     elements = ossec_config_tree.xpath("//ossec_config")
     if len(charm_addresses) > 1:
         new_cluster = etree.fromstring(  # nosec
-            _generate_cluster_snippet(node_name, node_type, charm_addresses, key)
+            _generate_cluster_snippet(node_name, node_type, charm_addresses, cluster_key)
         )
         elements[0].append(new_cluster)
 
@@ -108,23 +110,23 @@ def update_configuration(
     indexer_ips: list[str],
     charm_addresses: list[str],
     unit_name: str,
-    key: str,
+    cluster_key: str,
 ) -> None:
-    """Update the charm configuration.
+    """Update the workload configuration.
 
     Arguments:
         container: the container for which to update the configuration.
         indexer_ips: list of indexer IPs to configure.
         charm_addresses: the unit addresses.
         unit_name: the unit's name.
-        key: the Wazuh key for the nodes.
+        cluster_key: the Wazuh key for the cluster nodes.
 
     Raises:
         WazuhInstallationError: if an error occurs while installing.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(container, ip_ports, charm_addresses, unit_name, key)
+    _update_wazuh_configuration(container, ip_ports, charm_addresses, unit_name, cluster_key)
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
         proc.wait_output()
@@ -321,7 +323,7 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
 
 
 def _generate_cluster_snippet(
-    node_name: str, node_type: NodeType, addresses: list[str], key: str
+    node_name: str, node_type: NodeType, addresses: list[str], cluster_key: str
 ) -> str:
     """Generate the cluster configuration snippet for a unit.
 
@@ -329,7 +331,7 @@ def _generate_cluster_snippet(
         node_name: the node name.
         node_type: the Wazuh node type.
         addresses: the list of addresses for all units in the cluster.
-        key: the Wazuh key for the nodes.
+        cluster_key: the Wazuh key for the cluster nodes.
 
     Returns: the content for the cluster node for the Wazuh configuration.
     """
@@ -340,7 +342,7 @@ def _generate_cluster_snippet(
         <cluster>
             <name>wazuh</name>
             <node_name>{node_name}</node_name>
-            <key>{key}</key>
+            <key>{cluster_key}</key>
             <node_type>{node_type.value}</node_type>
             <port>1516</port>
             <bind_addr>0.0.0.0</bind_addr>

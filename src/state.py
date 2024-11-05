@@ -16,6 +16,7 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, pars
 logger = logging.getLogger(__name__)
 
 
+# Bandit false positive
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
 
 
@@ -170,7 +171,7 @@ def _fetch_cluster_key(model: ops.Model) -> str:
     try:
         cluster_key_secret = model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
     except ops.SecretNotFoundError as exc:
-        raise InvalidStateError("Cluster key secret.") from exc
+        raise InvalidStateError("Cluster key secret not found.") from exc
     cluster_key_content = cluster_key_secret.get_content(refresh=True).get("value")
     if not cluster_key_content:
         raise InvalidStateError("Cluster key secret does not contain the expected key 'value'.")
