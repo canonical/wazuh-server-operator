@@ -116,16 +116,15 @@ class WazuhServerCharm(CharmBaseWithState):
     @property
     def _pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer."""
-        # self.state will never be None at this point, but this makes mypy happy.
-        if not self.state:  # pragma: nocover
-            return {}
         environment = {}
-        if self.state.proxy.http_proxy:
-            environment["HTTP_PROXY"] = self.state.proxy.http_proxy
-        if self.state.proxy.https_proxy:
-            environment["HTTPS_PROXY"] = self.state.proxy.https_proxy
-        if self.state.proxy.no_proxy:
-            environment["NO_PROXY"] = self.state.proxy.no_proxy
+        # self.state will never be None at this point
+        proxy = self.state.proxy  # type: ignore
+        if proxy.http_proxy:
+            environment["HTTP_PROXY"] = proxy.http_proxy
+        if proxy.https_proxy:
+            environment["HTTPS_PROXY"] = proxy.https_proxy
+        if proxy.no_proxy:
+            environment["NO_PROXY"] = proxy.no_proxy
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
