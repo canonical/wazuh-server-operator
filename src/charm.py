@@ -58,7 +58,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 logger.debug(
                     "Secret with label %s not found. Creating one.", WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
-                self.unit.add_secret(
+                self.app.add_secret(
                     {"value": secrets.token_hex(8)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
 
