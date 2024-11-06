@@ -55,9 +55,13 @@ async def test_clustering_ok(model: Model, application: Application):
     stdout = output.data["results"].get("Stdout")
     stderr = output.data["results"].get("Stderr")
     assert code == "0", f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
-    wazuh_unit = application.units[1]  # type: ignore
-    output = await wazuh_unit.run("/var/ossec/bin/cluster_control -l", timeout=10)
+    assert "master" in stdout
+    assert "worker" in stdout
+
+    output = await wazuh_unit.run("/var/ossec/bin/cluster_control -i", timeout=10)
     code = output.data["results"].get("Code")
     stdout = output.data["results"].get("Stdout")
     stderr = output.data["results"].get("Stderr")
-    assert code == "0", f"cluster test for unit 1 failed with code {code}: {stderr or stdout}"
+    assert code == "0", f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
+    assert "connected nodes (1)" in stdout
+    assert "wazuh-server-1" in stdout
