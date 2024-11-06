@@ -156,7 +156,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: given a monkeypatched os.environ mapping that contains invalid proxy values.
     act: when charm state is initialized.
-    assert: InvalidStateError is raised.
+    assert: RecoverableStateError is raised.
     """
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "INVALID_URL")
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
@@ -191,7 +191,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
-    with pytest.raises(state.InvalidStateError):
+    with pytest.raises(state.RecoverableStateError):
         charm_state.proxy  # pylint: disable=pointless-statement
 
 
@@ -199,7 +199,7 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
     """
     arrange: given a secret_id for the repository non matching a secret.
     act: when charm state is initialized.
-    assert: InvalidStateError is raised.
+    assert: RecoverableStateError is raised.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     repository_secret_id = f"secret:{secrets.token_hex()}"
@@ -237,7 +237,7 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         )
     ]
-    with pytest.raises(state.InvalidStateError):
+    with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
 
 
@@ -245,7 +245,7 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
     """
     arrange: given a secret_id for the agent password non matching a secret.
     act: when charm state is initialized.
-    assert: InvalidStateError is raised.
+    assert: RecoverableStateError is raised.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     secret_id = f"secret:{secrets.token_hex()}"
@@ -282,7 +282,7 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         )
     ]
-    with pytest.raises(state.InvalidStateError):
+    with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
 
 
@@ -290,7 +290,7 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: given a secret for the repository with invalid content.
     act: when charm state is initialized.
-    assert: InvalidStateError is raised.
+    assert: RecoverableStateError is raised.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     repository_secret_id = f"secret:{secrets.token_hex()}"
@@ -329,7 +329,7 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         )
     ]
 
-    with pytest.raises(state.InvalidStateError):
+    with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
 
 
@@ -337,7 +337,7 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: given a secret for the agent password with invalid content.
     act: when charm state is initialized.
-    assert: InvalidStateError is raised.
+    assert: RecoverableStateError is raised.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     secret_id = f"secret:{secrets.token_hex()}"
@@ -375,7 +375,7 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         )
     ]
 
-    with pytest.raises(state.InvalidStateError):
+    with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
 
 

@@ -16,7 +16,13 @@ import certificates_observer
 import opensearch_observer
 import traefik_route_observer
 import wazuh
-from state import WAZUH_CLUSTER_KEY_SECRET_LABEL, CharmBaseWithState, InvalidStateError, State
+from state import (
+    WAZUH_CLUSTER_KEY_SECRET_LABEL,
+    CharmBaseWithState,
+    InvalidStateError,
+    RecoverableStateError,
+    State,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +89,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 self, opensearch_relation_data, certificates, self.certificates.csr.decode("utf-8")
             )
         except InvalidStateError as exc:
+            logger.error("Invalid charm configuration, %s", exc)
+            raise exc
+        except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
