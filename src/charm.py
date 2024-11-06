@@ -141,9 +141,9 @@ class WazuhServerCharm(CharmBaseWithState):
         # self.state will never be None at this point
         proxy = self.state.proxy  # type: ignore
         if proxy.http_proxy:
-            environment["HTTP_PROXY"] = proxy.http_proxy
+            environment["HTTP_PROXY"] = str(proxy.http_proxy)
         if proxy.https_proxy:
-            environment["HTTPS_PROXY"] = proxy.https_proxy
+            environment["HTTPS_PROXY"] = str(proxy.https_proxy)
         if proxy.no_proxy:
             environment["NO_PROXY"] = proxy.no_proxy
         return {
