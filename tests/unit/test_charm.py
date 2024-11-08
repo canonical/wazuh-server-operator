@@ -34,11 +34,13 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
+@patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
-def test_reconcile_reaches_active_status_when_repository_configured(
+def test_reconcile_reaches_active_status_when_repository_and_password_configured(
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
+    wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
     configure_git_mock,
@@ -55,12 +57,14 @@ def test_reconcile_reaches_active_status_when_repository_configured(
         custom_config_repository=custom_config_repository, custom_config_ssh_key=secret_id
     )
     password = secrets.token_hex()
+    agent_password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
+        agent_password=agent_password,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
-        username="user1",
-        password=password,
+        filebeat_username="user1",
+        filebeat_password=password,
         wazuh_config=wazuh_config,
         custom_config_ssh_key="somekey",
     )
@@ -79,8 +83,11 @@ def test_reconcile_reaches_active_status_when_repository_configured(
     configure_git_mock.assert_called_with(
         container, str(wazuh_config.custom_config_repository), "somekey"
     )
-    pull_configuration_files_mock.assert_called_with(container)
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
+    wazuh_configure_agent_password_mock.assert_called_with(
+        container=container, password=agent_password
+    )
+    pull_configuration_files_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
@@ -89,11 +96,13 @@ def test_reconcile_reaches_active_status_when_repository_configured(
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
+@patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
-def test_reconcile_reaches_active_status_when_repository_not_configured(
+def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
+    wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
     configure_git_mock,
@@ -106,11 +115,12 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
     """
     password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
+        agent_password=None,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
-        username="user1",
-        password=password,
+        filebeat_username="user1",
+        filebeat_password=password,
         wazuh_config=WazuhConfig(custom_config_repository=None, custom_config_ssh_key=None),
         custom_config_ssh_key=None,
     )
@@ -125,10 +135,11 @@ def test_reconcile_reaches_active_status_when_repository_not_configured(
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
     )
-    wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     configure_git_mock.assert_called_with(container, None, None)
-    pull_configuration_files_mock.assert_not_called()
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
+    wazuh_configure_agent_password_mock.assert_not_called()
+    pull_configuration_files_mock.assert_not_called()
+    wazuh_update_configuration_mock.assert_called_with(container, ["10.0.0.1"])
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 

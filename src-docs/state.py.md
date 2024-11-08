@@ -121,24 +121,26 @@ The Wazuh server charm state.
 
 **Attributes:**
  
+ - <b>`agent_password`</b>:  the agent password. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
- - <b>`username`</b>:  the filebeat username. 
- - <b>`password`</b>:  the filebeat password. 
+ - <b>`filebeat_username`</b>:  the filebeat username. 
+ - <b>`filebeat_password`</b>:  the filebeat password. 
  - <b>`certificate`</b>:  the TLS certificate. 
  - <b>`root_ca`</b>:  the CA certificate. 
  - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L79"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L180"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
 ```python
 __init__(
+    agent_password: Optional[str],
     indexer_ips: list[str],
-    username: str,
-    password: str,
+    filebeat_username: str,
+    filebeat_password: str,
     certificate: str,
     root_ca: str,
     wazuh_config: WazuhConfig,
@@ -152,9 +154,10 @@ Initialize a new instance of the CharmState class.
 
 **Args:**
  
+ - <b>`agent_password`</b>:  the agent password. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
- - <b>`username`</b>:  the filebeat username. 
- - <b>`password`</b>:  the filebeat password. 
+ - <b>`filebeat_username`</b>:  the filebeat username. 
+ - <b>`filebeat_password`</b>:  the filebeat password. 
  - <b>`certificate`</b>:  the TLS certificate. 
  - <b>`root_ca`</b>:  the CA certificate. 
  - <b>`wazuh_config`</b>:  Wazuh configuration. 
@@ -204,7 +207,7 @@ Get charm proxy configuration from juju charm environment.
 
 ---
 
-<a href="../src/state.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L236"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 
@@ -249,8 +252,9 @@ The Wazuh server charm configuration.
 
 **Attributes:**
  
+ - <b>`agent_password`</b>:  the secret key corresponding to the agent secret. 
  - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
- - <b>`custom_config_ssh_key`</b>:  the secret key corresponding to SSH key for the git repository. 
+ - <b>`custom_config_ssh_key`</b>:  the secret key corresponding to the SSH key for the git repository. 
 
 
 ---

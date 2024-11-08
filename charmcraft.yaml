@@ -92,6 +92,10 @@ requires:
     limit: 1
 config:
   options:
+    agent-password:
+      type: secret
+      description: >
+        The Juju secret ID corresponding to the password used by the agents to connect to Wazuh.
     custom-config-repository:
       type: string
       description: >

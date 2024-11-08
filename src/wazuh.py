@@ -3,8 +3,6 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# pylint: disable=import-outside-toplevel
-
 """Wazuh operational logic."""
 
 import logging
@@ -21,6 +19,7 @@ from lxml import etree  # nosec
 
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
+AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 WAZUH_USER = "wazuh"
 WAZUH_GROUP = "wazuh"
@@ -36,7 +35,6 @@ class WazuhInstallationError(Exception):
     """Base exception for Wazuh errors."""
 
 
-# pylint: disable=too-many-locals
 def update_configuration(container: ops.Container, indexer_ips: list[str]) -> None:
     """Update Wazuh configuration.
 
@@ -62,13 +60,6 @@ def update_configuration(container: ops.Container, indexer_ips: list[str]) -> No
         new_host = etree.Element("host")
         new_host.text = f"https://{ip_port}"
         hosts[0].append(new_host)
-    new_ssl_agent_ca = etree.Element("ssl_agent_ca")
-    new_ssl_agent_ca.text = str(CERTIFICATES_PATH / "root-ca.pem")
-    ssl_agent_ca = ossec_config_tree.xpath("/root/ossec_config/auth/ssl_agent_ca")
-    if ssl_agent_ca:
-        ssl_agent_ca[0].get_parent().remove(ssl_agent_ca[0])
-    auth = ossec_config_tree.xpath("/root/ossec_config/auth")
-    auth[0].append(new_ssl_agent_ca)
     elements = ossec_config_tree.xpath("//ossec_config")
     content = b""
     for element in elements:
@@ -100,6 +91,23 @@ def install_certificates(
         CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True, permissions=0o400
     )
     container.push(CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
+
+
+def configure_agent_password(container: ops.Container, password: str) -> None:
+    """Configure the agent password.
+
+    Arguments:
+        container: the container for which to update the password.
+        password: the password for authenticating the agents.
+    """
+    container.push(
+        AGENT_PASSWORD_PATH,
+        password,
+        user=WAZUH_USER,
+        group=WAZUH_GROUP,
+        make_dirs=True,
+        permissions=0o640,
+    )
 
 
 def _get_current_configuration_url(container: ops.Container) -> str:
