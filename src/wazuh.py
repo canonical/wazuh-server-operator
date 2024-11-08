@@ -100,7 +100,14 @@ def configure_agent_password(container: ops.Container, password: str) -> None:
         container: the container for which to update the password.
         password: the password for authenticating the agents.
     """
-    container.push(AGENT_PASSWORD_PATH, password, make_dirs=True, permissions=0o400)
+    container.push(
+        AGENT_PASSWORD_PATH,
+        password,
+        user=WAZUH_USER,
+        group=WAZUH_GROUP,
+        make_dirs=True,
+        permissions=0o640,
+    )
 
 
 def _get_current_configuration_url(container: ops.Container) -> str:

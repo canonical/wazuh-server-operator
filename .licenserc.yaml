@@ -21,6 +21,7 @@ header:
     - 'LICENSE'
     - 'trivy.yaml'
     - 'pyproject.toml'
+    - '.trivyignore'
     - 'zap_rules.tsv'
     - 'lib/**'
     - 'tests/unit/resources/**'
