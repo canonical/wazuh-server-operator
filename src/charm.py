@@ -192,7 +192,7 @@ class WazuhServerCharm(CharmBaseWithState):
         peer_relation = self.model.relations[WAZUH_PEER_RELATION_NAME]
         if peer_relation:
             relation = peer_relation[0]
-            # relation.units will contain the units after the relation-joined event
+            # relation.units will contain all the units after the relation-joined event
             # since a relation-changed is emitted for every relation-joined event.
             for u in relation.units:
                 # <unit-name>.<app-name>-endpoints.<model-name>.svc.cluster.local
