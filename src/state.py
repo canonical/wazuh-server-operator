@@ -189,7 +189,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         agent_password: the agent password.
-        cluster_key: the cluster key.
+        cluster_key: the Wazuh key for the cluster nodes.
         indexer_ips: list of Wazuh indexer IPs.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
@@ -226,7 +226,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             agent_password: the agent password.
-            cluster_key: the cluster key.
+            cluster_key: the Wazuh key for the cluster nodes.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.

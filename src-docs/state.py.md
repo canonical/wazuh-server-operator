@@ -134,7 +134,7 @@ The Wazuh server charm state.
 **Attributes:**
  
  - <b>`agent_password`</b>:  the agent password. 
- - <b>`cluster_key`</b>:  the cluster key. 
+ - <b>`cluster_key`</b>:  the Wazuh key for the cluster nodes. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
@@ -169,7 +169,7 @@ Initialize a new instance of the CharmState class.
 **Args:**
  
  - <b>`agent_password`</b>:  the agent password. 
- - <b>`cluster_key`</b>:  the cluster key. 
+ - <b>`cluster_key`</b>:  the Wazuh key for the cluster nodes. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
