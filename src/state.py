@@ -16,7 +16,7 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, pars
 logger = logging.getLogger(__name__)
 
 
-# Bandit false positive
+# Bandit mistakenly thinks this is a password
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
 
 
