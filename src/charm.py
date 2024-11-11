@@ -10,6 +10,7 @@ import typing
 
 import ops
 import requests
+import secrets
 from ops import pebble
 
 import certificates_observer
@@ -63,7 +64,7 @@ class WazuhServerCharm(CharmBaseWithState):
             r = requests.put(
                 "https://localhost:55000/security/users/2",
                 headers={"Authorization": default_token},
-                data={"password": self.state.api_password},
+                data={"password": secrets.token_hex()},
                 timeout=10,
                 verify=False,
             )
