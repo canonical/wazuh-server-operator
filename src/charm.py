@@ -61,14 +61,14 @@ class WazuhServerCharm(CharmBaseWithState):
         default_token = "Bearer wazuh:wazuh"  # nosec
         try:
             r = requests.put(
-                "https://localhost:55000security/users/2",
+                "https://localhost:55000/security/users/2",
                 headers={"Authorization": default_token},
                 data={"password": self.state.api_password},
                 timeout=10,
             )
             r.raise_for_status()
             r = requests.put(
-                "https://localhost:55000security/users/1",
+                "https://localhost:55000/security/users/1",
                 headers={"Authorization": default_token},
                 data={"password": self.state.api_password},
                 timeout=10,
