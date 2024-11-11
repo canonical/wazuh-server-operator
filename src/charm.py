@@ -6,11 +6,11 @@
 """Wazuh server charm."""
 
 import logging
+import secrets
 import typing
 
 import ops
 import requests
-import secrets
 from ops import pebble
 
 import certificates_observer
