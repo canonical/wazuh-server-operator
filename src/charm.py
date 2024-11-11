@@ -139,7 +139,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 },
                 "filebeat": {
                     "override": "replace",
-                    "summary": "filebear",
+                    "summary": "filebeat",
                     "command": (
                         "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
                         "--path.home /usr/share/filebeat --path.config /etc/filebeat "
@@ -147,6 +147,18 @@ class WazuhServerCharm(CharmBaseWithState):
                     ),
                     "startup": "enabled",
                 },
+                "prometheus-exporter": {
+                    "override": "replace",
+                    "summary": "prometheus exporter",
+                    "command": "/usr/bin/python3 /usr/bin/prometheus_exporter.py",
+                    "startup": "enabled",
+                    "environment": {
+                        "WAZUH_API_HOST": "localhost",
+                        "WAZUH_API_PORT": "55000",
+                        "WAZUH_API_USERNAME": "",
+                        "WAZUH_API_PASSWORD": "",
+                    },
+                }
             },
         }
 
