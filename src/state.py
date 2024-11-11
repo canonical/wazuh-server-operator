@@ -37,9 +37,9 @@ class ProxyConfig(BaseModel):  # pylint: disable=too-few-public-methods
         no_proxy: Comma separated list of hostnames to bypass proxy.
     """
 
-    http_proxy: typing.Optional[AnyHttpUrl]
-    https_proxy: typing.Optional[AnyHttpUrl]
-    no_proxy: typing.Optional[str]
+    http_proxy: AnyHttpUrl | None
+    https_proxy: AnyHttpUrl | None
+    no_proxy: str | None
 
 
 class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
@@ -47,13 +47,15 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         agent_password: the secret key corresponding to the agent secret.
+        api_password: the secret key corresponding to the wazuh API secret.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the secret key corresponding to the SSH key for the git repository.
     """
 
-    agent_password: typing.Optional[str] = None
-    custom_config_repository: typing.Optional[AnyUrl] = None
-    custom_config_ssh_key: typing.Optional[str] = None
+    agent_password: str | None = None
+    api_password: str | None = None
+    custom_config_repository: AnyUrl | None = None
+    custom_config_ssh_key: str | None = None
 
 
 def _fetch_filebeat_configuration(
@@ -129,22 +131,22 @@ def _fetch_ssh_repository_key(model: ops.Model, config: WazuhConfig) -> str | No
     return custom_config_ssh_key_content
 
 
-def _fetch_agent_password(model: ops.Model, config: WazuhConfig) -> str | None:
-    """Fetch the password for the agent.
+def _fetch_password(model: ops.Model, secret_id: str | None) -> str | None:
+    """Fetch the password for the a given secret ID.
 
     Args:
         model: the Juju model.
-        config: the charm configuration.
+        secret_id: the secret ID.
 
-    Returns: the SSH key for the repository, if any.
+    Returns: the password stored in the secret, if any.
 
     Raises:
         InvalidStateError: if the secret when the key should reside is invalid.
     """
     agent_password_content = None
-    if config.agent_password:
+    if secret_id:
         try:
-            agent_password_secret = model.get_secret(id=config.agent_password)
+            agent_password_secret = model.get_secret(id=secret_id)
         except ops.SecretNotFoundError as exc:
             raise InvalidStateError("Agent secret not found.") from exc
         agent_password_content = agent_password_secret.get_content(refresh=True).get("value")
@@ -158,6 +160,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         agent_password: the agent password.
+        api_password: the API password.
         indexer_ips: list of Wazuh indexer IPs.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
@@ -168,30 +171,33 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         proxy: proxy configuration.
     """
 
-    agent_password: typing.Optional[str] = None
+    agent_password: str | None = None
+    api_password: str | None = None
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
     certificate: str = Field(..., min_length=1)
     root_ca: str = Field(..., min_length=1)
-    custom_config_repository: typing.Optional[AnyUrl] = None
-    custom_config_ssh_key: typing.Optional[str] = None
+    custom_config_repository: AnyUrl | None = None
+    custom_config_ssh_key: str | None = None
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
-        agent_password: typing.Optional[str],
+        agent_password: str | None,
+        api_password: str | None,
         indexer_ips: list[str],
         filebeat_username: str,
         filebeat_password: str,
         certificate: str,
         root_ca: str,
         wazuh_config: WazuhConfig,
-        custom_config_ssh_key: typing.Optional[str],
+        custom_config_ssh_key: str | None,
     ):
         """Initialize a new instance of the CharmState class.
 
         Args:
             agent_password: the agent password.
+            api_password: the API password.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
@@ -202,6 +208,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         """
         super().__init__(
             agent_password=agent_password,
+            api_password=api_password,
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
@@ -263,13 +270,15 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             # mypy doesn't like the str to Url casting
             valid_config = WazuhConfig(**args)  # type: ignore
             custom_config_ssh_key = _fetch_ssh_repository_key(charm.model, valid_config)
-            agent_password = _fetch_agent_password(charm.model, valid_config)
+            agent_password = _fetch_password(charm.model, valid_config.agent_password)
+            api_password = _fetch_password(charm.model, valid_config.api_password)
             matching_certificates = _fetch_matching_certificates(
                 provider_certificates, certitificate_signing_request
             )
             if matching_certificates:
                 return cls(
                     agent_password=agent_password,
+                    api_password=api_password,
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,

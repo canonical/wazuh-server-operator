@@ -9,6 +9,7 @@ import logging
 import typing
 
 import ops
+import requests
 from ops import pebble
 
 import certificates_observer
@@ -38,6 +39,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
 
+        self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(
             self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
         )
@@ -50,6 +52,31 @@ class WazuhServerCharm(CharmBaseWithState):
     def _on_config_changed(self, _: ops.ConfigChangedEvent) -> None:
         """Config changed handler."""
         self.reconcile()
+
+    def _on_install(self, _: ops.InstallEvent) -> None:
+        """Install event handler."""
+        if not self.state:
+            return
+        # This is the default user password
+        default_token = "Bearer wazuh:wazuh"  # nosec
+        try:
+            r = requests.put(
+                "https://localhost:55000security/users/2",
+                headers={"Authorization": default_token},
+                data={"password": self.state.api_password},
+                timeout=10,
+            )
+            r.raise_for_status()
+            r = requests.put(
+                "https://localhost:55000security/users/1",
+                headers={"Authorization": default_token},
+                data={"password": self.state.api_password},
+                timeout=10,
+            )
+            r.raise_for_status()
+        except requests.exceptions.RequestException as exc:
+            logger.error("Error modifying the default passwords: %s", exc)
+            self.unit.status = ops.ErrorStatus("Error modifying the default passwords.")
 
     @property
     def state(self) -> State | None:
@@ -139,7 +166,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 },
                 "filebeat": {
                     "override": "replace",
-                    "summary": "filebear",
+                    "summary": "filebeat",
                     "command": (
                         "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
                         "--path.home /usr/share/filebeat --path.config /etc/filebeat "

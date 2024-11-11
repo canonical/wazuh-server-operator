@@ -58,8 +58,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
+    api_password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
+        api_password=api_password,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
@@ -114,8 +116,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert: the charm reaches active status and configs are applied.
     """
     password = secrets.token_hex()
+    api_password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
         agent_password=None,
+        api_password=api_password,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],

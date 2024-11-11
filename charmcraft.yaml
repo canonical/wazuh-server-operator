@@ -96,6 +96,10 @@ config:
       type: secret
       description: >
         The Juju secret ID corresponding to the password used by the agents to connect to Wazuh.
+    api-password:
+      type: secret
+      description: >
+        The Juju secret ID corresponding to the password used by the wazuh API.
     custom-config-repository:
       type: string
       description: >
