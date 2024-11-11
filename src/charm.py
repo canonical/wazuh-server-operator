@@ -65,6 +65,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 headers={"Authorization": default_token},
                 data={"password": self.state.api_password},
                 timeout=10,
+                verify=False,
             )
             r.raise_for_status()
             r = requests.put(
@@ -72,6 +73,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 headers={"Authorization": default_token},
                 data={"password": self.state.api_password},
                 timeout=10,
+                verify=False,
             )
             r.raise_for_status()
         except requests.exceptions.RequestException as exc:
