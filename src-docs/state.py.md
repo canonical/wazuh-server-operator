@@ -122,6 +122,7 @@ The Wazuh server charm state.
 **Attributes:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`api_password`</b>:  the API password. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
@@ -131,20 +132,21 @@ The Wazuh server charm state.
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L180"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L184"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
 ```python
 __init__(
-    agent_password: Optional[str],
+    agent_password: str | None,
+    api_password: str | None,
     indexer_ips: list[str],
     filebeat_username: str,
     filebeat_password: str,
     certificate: str,
     root_ca: str,
     wazuh_config: WazuhConfig,
-    custom_config_ssh_key: Optional[str]
+    custom_config_ssh_key: str | None
 )
 ```
 
@@ -155,6 +157,7 @@ Initialize a new instance of the CharmState class.
 **Args:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`api_password`</b>:  the API password. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
@@ -207,7 +210,7 @@ Get charm proxy configuration from juju charm environment.
 
 ---
 
-<a href="../src/state.py#L236"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L243"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 
@@ -253,6 +256,7 @@ The Wazuh server charm configuration.
 **Attributes:**
  
  - <b>`agent_password`</b>:  the secret key corresponding to the agent secret. 
+ - <b>`api_password`</b>:  the secret key corresponding to the wazuh API secret. 
  - <b>`custom_config_repository`</b>:  the git repository where the configuration is. 
  - <b>`custom_config_ssh_key`</b>:  the secret key corresponding to the SSH key for the git repository. 
 
