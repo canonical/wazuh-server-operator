@@ -54,10 +54,10 @@ class WazuhServerCharm(CharmBaseWithState):
         """Config changed handler."""
         self.reconcile()
 
-    def _on_install(self, _: ops.InstallEvent) -> None:
+    def _on_install(self, event: ops.InstallEvent) -> None:
         """Install event handler."""
         if not self.state:
-            return
+            event.defer()
         # This is the default user password
         default_token = "Bearer wazuh:wazuh"  # nosec
         try:
