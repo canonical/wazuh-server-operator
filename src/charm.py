@@ -17,15 +17,25 @@ import certificates_observer
 import opensearch_observer
 import traefik_route_observer
 import wazuh
-from state import CharmBaseWithState, InvalidStateError, State
+from state import (
+    WAZUH_CLUSTER_KEY_SECRET_LABEL,
+    CharmBaseWithState,
+    InvalidStateError,
+    RecoverableStateError,
+    State,
+)
 
 logger = logging.getLogger(__name__)
+
+
+WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 
 
 class WazuhServerCharm(CharmBaseWithState):
     """Charm the service.
 
     Attributes:
+        fqdns: the unit FQDNs.
         state: the charm state.
     """
 
@@ -59,6 +69,16 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             event.defer()
             return
+        if self.unit.is_leader():
+            try:
+                self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
+            except ops.SecretNotFoundError:
+                logger.debug(
+                    "Secret with label %s not found. Creating one.", WAZUH_CLUSTER_KEY_SECRET_LABEL
+                )
+                self.app.add_secret(
+                    {"value": secrets.token_hex(8)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
+                )
         # This is the default user password
         default_token = "Bearer wazuh:wazuh"  # nosec
         # The certificates might be self signed and there's no security hardening in
@@ -98,6 +118,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 self, opensearch_relation_data, certificates, self.certificates.csr.decode("utf-8")
             )
         except InvalidStateError as exc:
+            logger.error("Invalid charm configuration, %s", exc)
+            raise exc
+        except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
@@ -142,7 +165,9 @@ class WazuhServerCharm(CharmBaseWithState):
             )
         if self.state.custom_config_repository:
             wazuh.pull_configuration_files(container)
-        wazuh.update_configuration(container, self.state.indexer_ips)
+        wazuh.update_configuration(
+            container, self.state.indexer_ips, self.fqdns, self.unit.name, self.state.cluster_key
+        )
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
         self.unit.status = ops.ActiveStatus()
@@ -183,6 +208,28 @@ class WazuhServerCharm(CharmBaseWithState):
                 },
             },
         }
+
+    @property
+    def fqdns(self) -> list[str]:
+        """Get the FQDNS for the charm units.
+
+        Returns: the list of FQDNs for the charm units.
+        """
+        unit_name = self.unit.name.replace("/", "-")
+        app_name = self.app.name
+        addresses = [f"{unit_name}.{app_name}-endpoints"]
+        peer_relation = self.model.relations[WAZUH_PEER_RELATION_NAME]
+        if peer_relation:
+            relation = peer_relation[0]
+            # relation.units will contain all the units after the relation-joined event
+            # since a relation-changed is emitted for every relation-joined event.
+            for u in relation.units:
+                # FQDNs have the form
+                # <unit-name>.<app-name>-endpoints.<model-name>.svc.cluster.local
+                unit_name = u.name.replace("/", "-")
+                address = f"{unit_name}.{app_name}-endpoints"
+                addresses.append(address)
+        return addresses
 
 
 if __name__ == "__main__":  # pragma: nocover
