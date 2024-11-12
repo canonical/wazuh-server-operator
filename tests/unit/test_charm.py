@@ -53,12 +53,14 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     """
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     secret_id = f"secret:{secrets.token_hex(21)}"
+    api_password = secrets.token_hex()
     wazuh_config = WazuhConfig(
-        custom_config_repository=custom_config_repository, custom_config_ssh_key=secret_id
+        api_password=api_password,
+        custom_config_repository=custom_config_repository,
+        custom_config_ssh_key=secret_id,
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
-    api_password = secrets.token_hex()
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
         api_password=api_password,
@@ -125,7 +127,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
-        wazuh_config=WazuhConfig(custom_config_repository=None, custom_config_ssh_key=None),
+        wazuh_config=WazuhConfig(
+            api_password=api_password, custom_config_repository=None, custom_config_ssh_key=None
+        ),
         custom_config_ssh_key=None,
     )
     harness = Harness(WazuhServerCharm)

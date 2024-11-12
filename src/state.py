@@ -53,7 +53,7 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     agent_password: str | None = None
-    api_password: str | None = None
+    api_password: str
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
 
@@ -172,7 +172,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     agent_password: str | None = None
-    api_password: str | None = None
+    api_password: str
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
@@ -184,7 +184,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         agent_password: str | None,
-        api_password: str | None,
+        api_password: str,
         indexer_ips: list[str],
         filebeat_username: str,
         filebeat_password: str,
@@ -272,22 +272,24 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             custom_config_ssh_key = _fetch_ssh_repository_key(charm.model, valid_config)
             agent_password = _fetch_password(charm.model, valid_config.agent_password)
             api_password = _fetch_password(charm.model, valid_config.api_password)
+            if not api_password:
+                raise InvalidStateError("API password is empty.")
             matching_certificates = _fetch_matching_certificates(
                 provider_certificates, certitificate_signing_request
             )
-            if matching_certificates:
-                return cls(
-                    agent_password=agent_password,
-                    api_password=api_password,
-                    indexer_ips=endpoints,
-                    filebeat_username=filebeat_username,
-                    filebeat_password=filebeat_password,
-                    certificate=matching_certificates[0].certificate,
-                    root_ca=matching_certificates[0].ca,
-                    wazuh_config=valid_config,
-                    custom_config_ssh_key=custom_config_ssh_key,
-                )
-            raise InvalidStateError("Certificate is empty.")
+            if not matching_certificates:
+                raise InvalidStateError("Certificate is empty.")
+            return cls(
+                agent_password=agent_password,
+                api_password=api_password,
+                indexer_ips=endpoints,
+                filebeat_username=filebeat_username,
+                filebeat_password=filebeat_password,
+                certificate=matching_certificates[0].certificate,
+                root_ca=matching_certificates[0].ca,
+                wazuh_config=valid_config,
+                custom_config_ssh_key=custom_config_ssh_key,
+            )
         except ValidationError as exc:
             error_fields = set(
                 itertools.chain.from_iterable(error["loc"] for error in exc.errors())

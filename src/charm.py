@@ -58,13 +58,14 @@ class WazuhServerCharm(CharmBaseWithState):
         """Install event handler."""
         if not self.state:
             event.defer()
+            return
         # This is the default user password
         default_token = "Bearer wazuh:wazuh"  # nosec
         # The certificates might be self signed and there's no security hardening in
         # passing them to the request since tampering with `localhost` would mean the
         # container filesystem is compromised
         try:
-            r = requests.put(
+            r = requests.put(  # nosec
                 "https://localhost:55000/security/users/2",
                 headers={"Authorization": default_token},
                 data={"password": secrets.token_hex()},
@@ -72,7 +73,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 verify=False,
             )
             r.raise_for_status()
-            r = requests.put(
+            r = requests.put(  # nosec
                 "https://localhost:55000/security/users/1",
                 headers={"Authorization": default_token},
                 data={"password": self.state.api_password},

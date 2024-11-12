@@ -139,7 +139,7 @@ The Wazuh server charm state.
 ```python
 __init__(
     agent_password: str | None,
-    api_password: str | None,
+    api_password: str,
     indexer_ips: list[str],
     filebeat_username: str,
     filebeat_password: str,
