@@ -296,7 +296,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             charm.model, indexer_relation_data
         )
         args = {key.replace("-", "_"): value for key, value in charm.config.items()}
-        # mypy doesn't like the str to Url casting and validation is alredy performed by pydantic
+        # mypy doesn't like the str to Url casting and validation is already performed by pydantic
         valid_config = None
         try:
             valid_config = WazuhConfig(**args)  # type: ignore
