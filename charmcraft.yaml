@@ -96,6 +96,10 @@ config:
       type: secret
       description: >
         The Juju secret ID corresponding to the password used by the agents to connect to Wazuh.
+    api-password:
+      type: secret
+      description: >
+        The Juju secret ID corresponding to the password used by the wazuh API.
     custom-config-repository:
       type: string
       description: >
@@ -111,3 +115,6 @@ config:
         To create the secret, run the following command: 
         `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`,
         and use the secret ID output to configure this option.
+peers:
+  wazuh-peers:
+    interface: wazuh-instance
