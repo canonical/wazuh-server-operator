@@ -60,6 +60,9 @@ class WazuhServerCharm(CharmBaseWithState):
             event.defer()
         # This is the default user password
         default_token = "Bearer wazuh:wazuh"  # nosec
+        # The certificates might be self signed and there's no security hardening in
+        # passing them to the request since tampering with `localhost` would mean the
+        # container filesystem is compromised
         try:
             r = requests.put(
                 "https://localhost:55000/security/users/2",
