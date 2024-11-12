@@ -14,6 +14,7 @@ import requests
 from ops import pebble
 
 import certificates_observer
+import observability
 import opensearch_observer
 import traefik_route_observer
 import wazuh
@@ -49,6 +50,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.certificates = certificates_observer.CertificatesObserver(self)
         self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
+        self._observability = observability.Observability(self)
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(
@@ -130,7 +132,7 @@ class WazuhServerCharm(CharmBaseWithState):
 
         This is the main entry for changes that require a restart.
         """
-        container = self.unit.get_container("wazuh-server")
+        container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
             logger.warning(
                 "Unable to connect to container during reconcile. "
@@ -141,7 +143,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             return
         wazuh.install_certificates(
-            container=self.unit.containers.get("wazuh-server"),
+            container=self.unit.containers.get(wazuh.CONTAINER_NAME),
             private_key=self.certificates.private_key,
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
@@ -160,7 +162,7 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         if self.state.agent_password:
             wazuh.configure_agent_password(
-                container=self.unit.containers.get("wazuh-server"),
+                container=self.unit.containers.get(wazuh.CONTAINER_NAME),
                 password=self.state.agent_password,
             )
         if self.state.custom_config_repository:
@@ -217,7 +219,7 @@ class WazuhServerCharm(CharmBaseWithState):
                         "WAZUH_API_USERNAME": "",
                         "WAZUH_API_PASSWORD": "",
                     },
-                }
+                },
             },
         }
 

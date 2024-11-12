@@ -18,15 +18,17 @@ import yaml
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 
-CERTIFICATES_PATH = Path("/etc/filebeat/certs")
-FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
-WAZUH_USER = "wazuh"
-WAZUH_GROUP = "wazuh"
+CERTIFICATES_PATH = Path("/etc/filebeat/certs")
+CONTAINER_NAME = "wazuh-server"
+FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
-RSA_PATH = "/root/.ssh/id_rsa"
+LOGS_PATH = Path("/var/ossec/logs")
+OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
+RSA_PATH = "/root/.ssh/id_rsa"
+WAZUH_GROUP = "wazuh"
+WAZUH_USER = "wazuh"
 
 
 logger = logging.getLogger(__name__)

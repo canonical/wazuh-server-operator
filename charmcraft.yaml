@@ -80,15 +80,24 @@ resources:
   wazuh-server-image:
     type: oci-image
     description: OCI image for the Wazuh server
+provides:
+  grafana-dashboard:
+    interface: grafana_dashboard
+  metrics-endpoint:
+    interface: prometheus_scrape
 requires:
   certificates:
     interface: tls-certificates
     limit: 1
-  opensearch-client:
-    interface: opensearch_client
-    limit: 1
   ingress:
     interface: traefik_route
+    limit: 1
+  logging:
+        interface: loki_push_api
+        limit: 1
+        optional: true
+  opensearch-client:
+    interface: opensearch_client
     limit: 1
 config:
   options:
