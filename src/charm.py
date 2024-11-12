@@ -195,6 +195,7 @@ class WazuhServerCharm(CharmBaseWithState):
             # relation.units will contain all the units after the relation-joined event
             # since a relation-changed is emitted for every relation-joined event.
             for u in relation.units:
+                # FQDNs have the form
                 # <unit-name>.<app-name>-endpoints.<model-name>.svc.cluster.local
                 unit_name = u.name.replace("/", "-")
                 address = f"{unit_name}.{app_name}-endpoints"
