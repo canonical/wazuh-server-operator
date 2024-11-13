@@ -30,7 +30,7 @@ async def test_filebeat_ok(model: Model, application: Application):
     )
 
     wazuh_unit = application.units[0]  # type: ignore
-    action = await wazuh_unit.run("filebeat test output", timeout=10)
+    action = await wazuh_unit.run("/usr/bin/filebeat test output", timeout=10)
     await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
