@@ -31,6 +31,8 @@ async def test_filebeat_ok(model: Model, application: Application):
 
     wazuh_unit = application.units[0]  # type: ignore
     output = await wazuh_unit.run("filebeat test output", timeout=10)
+    print(output)
+    print(output.data)
     code = output.data["results"].get("Code")
     stdout = output.data["results"].get("Stdout")
     stderr = output.data["results"].get("Stderr")
