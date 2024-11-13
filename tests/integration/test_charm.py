@@ -25,7 +25,7 @@ async def test_filebeat_ok(model: Model, application: Application):
 
     Assert: the filebeat config is valid.
     """
-    model.wait_for_idle(
+    await model.wait_for_idle(
         apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
 
@@ -43,7 +43,7 @@ async def test_clustering_ok(model: Model, application: Application):
 
     Assert: the clustering config is valid.
     """
-    model.wait_for_idle(
+    await model.wait_for_idle(
         apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
     await application.scale(2)
