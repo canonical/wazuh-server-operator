@@ -54,7 +54,9 @@ async def test_clustering_ok(model: Model, application: Application):
 
     wazuh_unit = application.units[0]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
-    action = await wazuh_unit.run(f"{pebble_exec} -- /var/ossec/bin/cluster_control -l", timeout=10)
+    action = await wazuh_unit.run(
+        f"{pebble_exec} -- /var/ossec/bin/cluster_control -l", timeout=10
+    )
     await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
@@ -64,7 +66,9 @@ async def test_clustering_ok(model: Model, application: Application):
     assert "master" in stdout
     assert "worker" in stdout
 
-    action = await wazuh_unit.run(f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10)
+    action = await wazuh_unit.run(
+        f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10
+    )
     await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
