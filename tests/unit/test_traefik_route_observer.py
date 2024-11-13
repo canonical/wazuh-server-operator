@@ -90,7 +90,8 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                 "conn-tcp": {"address": ":1514"},
                 "enrole-tcp": {"address": ":1515"},
                 "api-tcp": {"address": ":55000"},
-            }
+            },
+            "tcpServersTransport": {"tls": {"insecureSkipVerify": "true"}},
         },
     )
 
