@@ -98,7 +98,7 @@ async def opensearch_provider_fixture(
     )
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
-    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=2000)
+    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
     yield application
 
 
