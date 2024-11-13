@@ -30,7 +30,8 @@ async def test_filebeat_ok(model: Model, application: Application):
     )
 
     wazuh_unit = application.units[0]  # type: ignore
-    action = await wazuh_unit.run("/usr/bin/filebeat test output", timeout=10)
+    pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
+    action = await wazuh_unit.run(f"{pebble_exec} -- /usr/bin/filebeat test output", timeout=10)
     await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
@@ -52,7 +53,8 @@ async def test_clustering_ok(model: Model, application: Application):
     await model.wait_for_idle(idle_period=30, apps=[application.name], status="active")
 
     wazuh_unit = application.units[0]  # type: ignore
-    action = await wazuh_unit.run("/var/ossec/bin/cluster_control -l", timeout=10)
+    pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
+    action = await wazuh_unit.run(f"{pebble_exec} -- /var/ossec/bin/cluster_control -l", timeout=10)
     await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
@@ -62,7 +64,7 @@ async def test_clustering_ok(model: Model, application: Application):
     assert "master" in stdout
     assert "worker" in stdout
 
-    action = await wazuh_unit.run("/var/ossec/bin/cluster_control -i", timeout=10)
+    action = await wazuh_unit.run(f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10)
     await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
