@@ -31,7 +31,7 @@ async def test_filebeat_ok(model: Model, application: Application):
 
     wazuh_unit = application.units[0]  # type: ignore
     action = await wazuh_unit.run("filebeat test output", timeout=10)
-    action.wait()
+    await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
@@ -53,7 +53,7 @@ async def test_clustering_ok(model: Model, application: Application):
 
     wazuh_unit = application.units[0]  # type: ignore
     action = await wazuh_unit.run("/var/ossec/bin/cluster_control -l", timeout=10)
-    action.wait()
+    await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
@@ -63,7 +63,7 @@ async def test_clustering_ok(model: Model, application: Application):
     assert "worker" in stdout
 
     action = await wazuh_unit.run("/var/ossec/bin/cluster_control -i", timeout=10)
-    action.wait()
+    await action.wait()
     logger.error(action.results)
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
