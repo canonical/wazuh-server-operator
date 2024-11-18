@@ -62,7 +62,10 @@ class TraefikRouteObserver(Object):
         for protocol, port in PORTS.items():
             sanitized_protocol = protocol.replace("_", "-")
             entry_points[sanitized_protocol] = {"address": f":{port}"}
-        return {"entryPoints": entry_points}
+        return {
+            "entryPoints": entry_points,
+            "tcpServersTransport": {"tls": {"insecureSkipVerify": "true"}},
+        }
 
     @property
     def _ingress_config(self) -> dict[str, dict[str, dict[str, typing.Any]]]:

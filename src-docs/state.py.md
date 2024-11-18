@@ -5,6 +5,9 @@
 # <kbd>module</kbd> `state.py`
 Wazuh server charm state. 
 
+**Global Variables**
+---------------
+- **WAZUH_CLUSTER_KEY_SECRET_LABEL**
 
 
 ---
@@ -53,7 +56,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/state.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L26"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
@@ -67,7 +70,7 @@ Reconcile configuration.
 ---
 
 ## <kbd>class</kbd> `InvalidStateError`
-Exception raised when a charm configuration is found to be invalid. 
+Exception raised when a charm configuration is invalid and unrecoverable by the operator. 
 
 
 
@@ -114,6 +117,15 @@ Returns the set of fields that have been explicitly set on this model instance.
 
 ---
 
+## <kbd>class</kbd> `RecoverableStateError`
+Exception raised when a charm configuration is invalid and recoverable by the operator. 
+
+
+
+
+
+---
+
 ## <kbd>class</kbd> `State`
 The Wazuh server charm state. 
 
@@ -122,6 +134,7 @@ The Wazuh server charm state.
 **Attributes:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`cluster_key`</b>:  the Wazuh key for the cluster nodes. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
@@ -131,13 +144,14 @@ The Wazuh server charm state.
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L180"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L213"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
 ```python
 __init__(
     agent_password: Optional[str],
+    cluster_key: str,
     indexer_ips: list[str],
     filebeat_username: str,
     filebeat_password: str,
@@ -155,6 +169,7 @@ Initialize a new instance of the CharmState class.
 **Args:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`cluster_key`</b>:  the Wazuh key for the cluster nodes. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
@@ -201,13 +216,13 @@ Get charm proxy configuration from juju charm environment.
 
 **Raises:**
  
- - <b>`InvalidStateError`</b>:  if the proxy configuration is invalid. 
+ - <b>`RecoverableStateError`</b>:  if the proxy configuration is invalid. 
 
 
 
 ---
 
-<a href="../src/state.py#L236"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L272"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 
@@ -240,7 +255,8 @@ Initialize the state from charm.
 
 **Raises:**
  
- - <b>`InvalidStateError`</b>:  if the state is invalid. 
+ - <b>`InvalidStateError`</b>:  if the state is invalid and unrecoverable. 
+ - <b>`RecoverableStateError`</b>:  if the state is invalid and recoverable. 
 
 
 ---
