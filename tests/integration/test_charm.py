@@ -20,6 +20,27 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
+async def test_filebeat_ok(model: Model, application: Application):
+    """Deploy the charm together with related charms.
+
+    Assert: the filebeat config is valid.
+    """
+    await model.wait_for_idle(
+        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
+    )
+
+    wazuh_unit = application.units[0]  # type: ignore
+    pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
+    action = await wazuh_unit.run(f"{pebble_exec} -- /usr/bin/filebeat test output", timeout=10)
+    await action.wait()
+    logger.error(action.results)
+    code = action.results.get("return-code")
+    stdout = action.results.get("stdout")
+    stderr = action.results.get("stderr")
+    assert code == "0", f"filebeat test failed with code {code}: {stderr or stdout}"
+
+
+@pytest.mark.abort_on_fail
 async def test_clustering_ok(model: Model, application: Application):
     """Deploy the charm together with related charms and scale to two units.
 
@@ -56,24 +77,3 @@ async def test_clustering_ok(model: Model, application: Application):
     assert code == "0", f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
     assert "connected nodes (1)" in stdout
     assert "wazuh-server-1" in stdout
-
-
-@pytest.mark.abort_on_fail
-async def test_filebeat_ok(model: Model, application: Application):
-    """Deploy the charm together with related charms.
-
-    Assert: the filebeat config is valid.
-    """
-    await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
-    )
-
-    wazuh_unit = application.units[0]  # type: ignore
-    pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
-    action = await wazuh_unit.run(f"{pebble_exec} -- /usr/bin/filebeat test output", timeout=10)
-    await action.wait()
-    logger.error(action.results)
-    code = action.results.get("return-code")
-    stdout = action.results.get("stdout")
-    stderr = action.results.get("stderr")
-    assert code == "0", f"filebeat test failed with code {code}: {stderr or stdout}"
