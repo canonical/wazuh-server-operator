@@ -325,7 +325,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key,
                 )
-            raise InvalidStateError("Certificate is empty.")
+            raise RecoverableStateError("Certificate is empty.")
         except ValidationError as exc:
             error_fields = set(
                 itertools.chain.from_iterable(error["loc"] for error in exc.errors())
