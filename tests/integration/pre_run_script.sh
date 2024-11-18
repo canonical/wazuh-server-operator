@@ -14,6 +14,7 @@ TESTING_MODEL="$(juju switch)"
 echo "bootstrapping lxd juju controller"
 # Change microk8s default file limits
 sed -i 's/ulimit -n 16384 || true/ulimit -n 458752 || true/g' /var/snap/microk8s/current/args/containerd-env
+cat /var/snap/microk8s/current/args/containerd-env
 sudo snap restart microk8s
 sg snap_microk8s -c "microk8s status --wait-ready"
 sg snap_microk8s -c "juju bootstrap localhost localhost"
