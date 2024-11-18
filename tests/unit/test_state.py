@@ -44,7 +44,7 @@ def test_state_invalid_relation_data(opensearch_relation_data):
 
     with pytest.raises(state.InvalidStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, "1")
-    with pytest.raises(state.InvalidStateError):
+    with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, [], "1")
 
 
