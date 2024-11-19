@@ -26,6 +26,9 @@ parts:
       - git-core
       - rsync
       - ssh
+    override-stage: |
+      mkdir -p $CRAFT_PART_INSTALL/root/repository
+      craftctl default
   filebeat:
     plugin: nil
     build-packages:
@@ -59,7 +62,6 @@ parts:
       chroot $CRAFT_OVERLAY bash -c 'echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list'
       chroot $CRAFT_OVERLAY apt-get update
       chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install wazuh-manager filebeat --yes"
-      chroot $CRAFT_OVERLAY bash -c "mkdir /root/repository"
       umount --recursive $CRAFT_OVERLAY/dev
       umount $CRAFT_OVERLAY/proc
       umount $CRAFT_OVERLAY/etc/resolv.conf
