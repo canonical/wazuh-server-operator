@@ -93,7 +93,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     assert container
     harness.set_can_connect(container, True)
 
-    harness.charm.reconcile()
+    harness.charm.reconcile(None)
 
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
@@ -157,7 +157,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert container
     harness.set_can_connect(container, True)
 
-    harness.charm.reconcile()
+    harness.charm.reconcile(None)
 
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
@@ -188,7 +188,7 @@ def test_reconcile_reaches_waiting_status_when_cant_connect():
     assert container
     harness.set_can_connect(container, False)
 
-    harness.charm.reconcile()
+    harness.charm.reconcile(None)
 
     assert harness.model.unit.status.name == ops.WaitingStatus().name
 
@@ -208,20 +208,4 @@ def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock):
     harness.set_can_connect(container, True)
 
     with pytest.raises(InvalidStateError):
-        harness.charm.reconcile()
-
-
-@patch.object(WazuhServerCharm, "reconcile")
-def test_pebble_ready_reconciles(reconcile_mock):
-    """
-    arrange: mock the reconcile method.
-    act: trigger a pebble ready event reconcile.
-    assert: reconcile is called.
-    """
-    harness = Harness(WazuhServerCharm)
-    harness.begin()
-    harness.container_pebble_ready("wazuh-server")
-
-    harness.charm.reconcile()
-
-    reconcile_mock.assert_called()
+        harness.charm.reconcile(None)

@@ -35,9 +35,7 @@ class CertificatesObserver(Object):
         self.framework.observe(
             self._charm.on.certificates_relation_joined, self._on_certificates_relation_joined
         )
-        self.framework.observe(
-            self.certificates.on.certificate_available, self._on_certificate_available
-        )
+        self.framework.observe(self.certificates.on.certificate_available, self._charm.reconcile)
         self.framework.observe(
             self.certificates.on.certificate_expiring, self._on_certificate_expiring
         )
@@ -102,10 +100,6 @@ class CertificatesObserver(Object):
         self._charm.unit.status = ops.WaitingStatus(
             "Certificate does not exist. Waiting for a new certificate to be issued."
         )
-
-    def _on_certificate_available(self, _: certificates.CertificateAvailableEvent) -> None:
-        """Certificate available event handler."""
-        self._charm.reconcile()
 
     def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
         """Certificate expiring event handler."""

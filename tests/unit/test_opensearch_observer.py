@@ -30,7 +30,7 @@ class ObservedCharm(ops.CharmBase):
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self.count = 0
 
-    def reconcile(self) -> None:
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile the configuration with charm state."""
         self.count = self.count + 1
 

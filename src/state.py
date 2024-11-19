@@ -24,7 +24,7 @@ class CharmBaseWithState(ops.CharmBase, ABC):
     """CharmBase than can build a CharmState."""
 
     @abstractmethod
-    def reconcile(self) -> None:
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile configuration."""
 
 

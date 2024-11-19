@@ -50,10 +50,9 @@ class WazuhServerCharm(CharmBaseWithState):
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
 
         self.framework.observe(self.on.install, self._on_install)
-        self.framework.observe(
-            self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
-        )
-        self.framework.observe(self.on.config_changed, self._on_config_changed)
+        self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
+        self.framework.observe(self.on.config_changed, self.reconcile)
+        self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -67,14 +66,6 @@ class WazuhServerCharm(CharmBaseWithState):
                 self.app.add_secret(
                     {"value": secrets.token_hex(8)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
-
-    def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
-        """Pebble ready handler."""
-        self.reconcile()
-
-    def _on_config_changed(self, _: ops.ConfigChangedEvent) -> None:
-        """Config changed handler."""
-        self.reconcile()
 
     @property
     def state(self) -> State | None:
@@ -96,7 +87,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
 
-    def reconcile(self) -> None:
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.
