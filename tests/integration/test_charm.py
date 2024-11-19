@@ -37,7 +37,6 @@ async def test_clustering_ok(model: Model, application: Application):
         f"{pebble_exec} -- /var/ossec/bin/cluster_control -l", timeout=10
     )
     await action.wait()
-    logger.error(action.results)
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
@@ -49,7 +48,6 @@ async def test_clustering_ok(model: Model, application: Application):
         f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10
     )
     await action.wait()
-    logger.error(action.results)
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
