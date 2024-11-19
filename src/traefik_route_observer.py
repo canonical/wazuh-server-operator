@@ -85,6 +85,7 @@ class TraefikRouteObserver(Object):
                 "entryPoints": [sanitized_protocol],
                 "service": service_name,
                 "rule": "HostSNI(`*`)",
+                "tcp": {"passthrough": "true"},
             }
             services[service_name] = {
                 "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
