@@ -40,7 +40,7 @@ async def test_clustering_ok(model: Model, application: Application):
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
-    assert code == "0", f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
+    assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
     assert "master" in stdout
     assert "worker" in stdout
 
@@ -51,7 +51,7 @@ async def test_clustering_ok(model: Model, application: Application):
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
-    assert code == "0", f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
+    assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
     assert "connected nodes (1)" in stdout
     assert "wazuh-server-1" in stdout
 
@@ -74,4 +74,4 @@ async def test_filebeat_ok(model: Model, application: Application):
     code = action.results.get("return-code")
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
-    assert code == "0", f"filebeat test failed with code {code}: {stderr or stdout}"
+    assert code == 0, f"filebeat test failed with code {code}: {stderr or stdout}"
