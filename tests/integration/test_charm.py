@@ -56,7 +56,7 @@ async def test_clustering_ok(model: Model, application: Application):
     assert "wazuh-server-1" in stdout
 
 
-@pytest.skip
+@pytest.mark.skip("Not working yet")
 @pytest.mark.abort_on_fail
 async def test_filebeat_ok(model: Model, application: Application):
     """Deploy the charm together with related charms.
