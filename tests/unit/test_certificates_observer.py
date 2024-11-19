@@ -34,7 +34,7 @@ class ObservedCharm(ops.CharmBase):
         self.certificates = certificates_observer.CertificatesObserver(self)
         self.count = 0
 
-    def reconcile(self) -> None:
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile the configuration with charm state."""
         self.count = self.count + 1
 

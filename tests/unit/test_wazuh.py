@@ -237,7 +237,7 @@ def test_configure_git_when_branch_specified() -> None:
     harness.handle_exec(
         "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
     )
-    harness.handle_exec("wazuh-server", ["rm", "-rf", wazuh.REPOSITORY_PATH], result="")
+    harness.handle_exec("wazuh-server", ["rm", "-rf", f"{wazuh.REPOSITORY_PATH}/*"], result="")
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     harness.handle_exec(
         "wazuh-server",
@@ -279,7 +279,7 @@ def test_configure_git_when_no_branch_specified() -> None:
     harness.handle_exec(
         "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
     )
-    harness.handle_exec("wazuh-server", ["rm", "-rf", wazuh.REPOSITORY_PATH], result="")
+    harness.handle_exec("wazuh-server", ["rm", "-rf", f"{wazuh.REPOSITORY_PATH}/*"], result="")
     custom_config_repository = "git+ssh://user1@git.server/repo_name"
     harness.handle_exec(
         "wazuh-server",
@@ -316,7 +316,7 @@ def test_configure_git_when_no_key_no_repository_specified() -> None:
         ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"],
         result="",
     )
-    harness.handle_exec("wazuh-server", ["rm", "-rf", wazuh.REPOSITORY_PATH], result="")
+    harness.handle_exec("wazuh-server", ["rm", "-rf", f"{wazuh.REPOSITORY_PATH}/*"], result="")
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     wazuh.configure_git(container, None, None)
