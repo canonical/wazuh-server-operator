@@ -26,6 +26,9 @@ parts:
       - git-core
       - rsync
       - ssh
+    override-stage: |
+      mkdir -p $CRAFT_PART_INSTALL/root/repository
+      craftctl default
   filebeat:
     plugin: nil
     build-packages:

@@ -51,18 +51,10 @@ class WazuhServerCharm(CharmBaseWithState):
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
 
         self.framework.observe(self.on.install, self._on_install)
-        self.framework.observe(
-            self.on.wazuh_server_pebble_ready, self._on_wazuh_server_pebble_ready
-        )
-        self.framework.observe(self.on.config_changed, self._on_config_changed)
-
-    def _on_wazuh_server_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
-        """Pebble ready handler."""
-        self.reconcile()
-
-    def _on_config_changed(self, _: ops.ConfigChangedEvent) -> None:
-        """Config changed handler."""
-        self.reconcile()
+        self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
+        self.framework.observe(self.on.config_changed, self.reconcile)
+        self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
+        self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
 
     def _on_install(self, event: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -77,33 +69,33 @@ class WazuhServerCharm(CharmBaseWithState):
                     "Secret with label %s not found. Creating one.", WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
                 self.app.add_secret(
-                    {"value": secrets.token_hex(8)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
+                    {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
-        # This is the default user password
-        default_token = "Bearer wazuh:wazuh"  # nosec
-        # The certificates might be self signed and there's no security hardening in
-        # passing them to the request since tampering with `localhost` would mean the
-        # container filesystem is compromised
-        try:
-            r = requests.put(  # nosec
-                "https://localhost:55000/security/users/2",
-                headers={"Authorization": default_token},
-                data={"password": secrets.token_hex()},
-                timeout=10,
-                verify=False,
-            )
-            r.raise_for_status()
-            r = requests.put(  # nosec
-                "https://localhost:55000/security/users/1",
-                headers={"Authorization": default_token},
-                data={"password": self.state.api_password},
-                timeout=10,
-                verify=False,
-            )
-            r.raise_for_status()
-        except requests.exceptions.RequestException as exc:
-            logger.error("Error modifying the default passwords: %s", exc)
-            self.unit.status = ops.ErrorStatus("Error modifying the default passwords.")
+            # This is the default user password
+            default_token = "Bearer wazuh:wazuh"  # nosec
+            # The certificates might be self signed and there's no security hardening in
+            # passing them to the request since tampering with `localhost` would mean the
+            # container filesystem is compromised
+            try:
+                r = requests.put(  # nosec
+                    "https://localhost:55000/security/users/2",
+                    headers={"Authorization": default_token},
+                    data={"password": secrets.token_hex()},
+                    timeout=10,
+                    verify=False,
+                )
+                r.raise_for_status()
+                r = requests.put(  # nosec
+                    "https://localhost:55000/security/users/1",
+                    headers={"Authorization": default_token},
+                    data={"password": self.state.api_password},
+                    timeout=10,
+                    verify=False,
+                )
+                r.raise_for_status()
+            except requests.exceptions.RequestException as exc:
+                logger.error("Error modifying the default passwords: %s", exc)
+                self.unit.status = ops.ErrorStatus("Error modifying the default passwords.")
 
     @property
     def state(self) -> State | None:
@@ -125,7 +117,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
 
-    def reconcile(self) -> None:
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.

@@ -61,7 +61,9 @@ class TraefikRouteObserver(Object):
         for protocol, port in PORTS.items():
             sanitized_protocol = protocol.replace("_", "-")
             entry_points[sanitized_protocol] = {"address": f":{port}"}
-        return {"entryPoints": entry_points}
+        return {
+            "entryPoints": entry_points,
+        }
 
     @property
     def _ingress_config(self) -> dict[str, dict[str, dict[str, typing.Any]]]:
@@ -80,7 +82,8 @@ class TraefikRouteObserver(Object):
             routers[f"juju-{self.model.name}-{self.model.app.name}-{sanitized_protocol}"] = {
                 "entryPoints": [sanitized_protocol],
                 "service": service_name,
-                "rule": "ClientIP(`0.0.0.0/0`)",
+                "rule": "HostSNI(`*`)",
+                "tls": {"passthrough": True},
             }
             services[service_name] = {
                 "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}

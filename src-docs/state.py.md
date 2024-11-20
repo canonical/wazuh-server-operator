@@ -61,7 +61,7 @@ Unit that this execution is responsible for.
 ### <kbd>function</kbd> `reconcile`
 
 ```python
-reconcile() → None
+reconcile(_: HookEvent) → None
 ```
 
 Reconcile configuration. 
