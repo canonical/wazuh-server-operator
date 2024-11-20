@@ -18,7 +18,6 @@ RELATION_NAME = "ingress"
 PORTS: dict[str, int] = {
     "conn_tcp": 1514,
     "enrole_tcp": 1515,
-    "api_tcp": 55000,
 }
 
 
