@@ -10,7 +10,6 @@ import secrets
 import typing
 
 import ops
-import requests
 from ops import pebble
 
 import certificates_observer
@@ -71,31 +70,6 @@ class WazuhServerCharm(CharmBaseWithState):
                 self.app.add_secret(
                     {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
-            # This is the default user password
-            default_token = "Bearer wazuh:wazuh"  # nosec
-            # The certificates might be self signed and there's no security hardening in
-            # passing them to the request since tampering with `localhost` would mean the
-            # container filesystem is compromised
-            try:
-                r = requests.put(  # nosec
-                    "https://localhost:55000/security/users/2",
-                    headers={"Authorization": default_token},
-                    data={"password": secrets.token_hex()},
-                    timeout=10,
-                    verify=False,
-                )
-                r.raise_for_status()
-                r = requests.put(  # nosec
-                    "https://localhost:55000/security/users/1",
-                    headers={"Authorization": default_token},
-                    data={"password": self.state.api_password},
-                    timeout=10,
-                    verify=False,
-                )
-                r.raise_for_status()
-            except requests.exceptions.RequestException as exc:
-                logger.error("Error modifying the default passwords: %s", exc)
-                self.unit.status = ops.ErrorStatus("Error modifying the default passwords.")
 
     @property
     def state(self) -> State | None:
@@ -162,6 +136,7 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
+        wazuh.change_api_password("wazuh", self.state.api_password)
         self.unit.status = ops.ActiveStatus()
 
     @property
