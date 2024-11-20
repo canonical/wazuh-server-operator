@@ -64,7 +64,6 @@ class TraefikRouteObserver(Object):
             entry_points[sanitized_protocol] = {"address": f":{port}"}
         return {
             "entryPoints": entry_points,
-            "tcpServersTransport": {"tls": {"insecureSkipVerify": "true"}},
         }
 
     @property
@@ -85,6 +84,7 @@ class TraefikRouteObserver(Object):
                 "entryPoints": [sanitized_protocol],
                 "service": service_name,
                 "rule": "HostSNI(`*`)",
+                "tls": {"passthrough": True},
             }
             services[service_name] = {
                 "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
