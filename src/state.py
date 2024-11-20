@@ -307,29 +307,36 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         valid_config = None
         try:
             valid_config = WazuhConfig(**args)  # type: ignore
-            custom_config_ssh_key = _fetch_ssh_repository_key(charm.model, valid_config)
-            agent_password = _fetch_password(charm.model, valid_config.agent_password)
-            api_password = _fetch_password(charm.model, valid_config.api_password)
-            cluster_key = _fetch_cluster_key(charm.model)
-            if not api_password:
-                raise RecoverableStateError("API password is empty.")
-            matching_certificates = _fetch_matching_certificates(
-                provider_certificates, certitificate_signing_request
+        except ValidationError as exc:
+            error_fields = set(
+                itertools.chain.from_iterable(error["loc"] for error in exc.errors())
             )
-            if not matching_certificates:
-                raise InvalidStateError("Certificate is empty.")
-            return cls(
-                agent_password=agent_password,
-                api_password=api_password,
-                cluster_key=cluster_key,
-                indexer_ips=endpoints,
-                filebeat_username=filebeat_username,
-                filebeat_password=filebeat_password,
-                certificate=matching_certificates[0].certificate,
-                root_ca=matching_certificates[0].ca,
-                wazuh_config=valid_config,
-                custom_config_ssh_key=custom_config_ssh_key,
-            )
+            error_field_str = " ".join(f"{f}" for f in error_fields)
+            raise RecoverableStateError(f"Invalid charm configuration {error_field_str}") from exc
+        custom_config_ssh_key = _fetch_ssh_repository_key(charm.model, valid_config)
+        agent_password = _fetch_password(charm.model, valid_config.agent_password)
+        api_password = _fetch_password(charm.model, valid_config.api_password)
+        cluster_key = _fetch_cluster_key(charm.model)
+        if not api_password:
+            raise RecoverableStateError("API password is empty.")
+        matching_certificates = _fetch_matching_certificates(
+            provider_certificates, certitificate_signing_request
+        )
+        try:
+            if matching_certificates:
+                return cls(
+                    agent_password=agent_password,
+                    api_password=api_password,
+                    cluster_key=cluster_key,
+                    indexer_ips=endpoints,
+                    filebeat_username=filebeat_username,
+                    filebeat_password=filebeat_password,
+                    certificate=matching_certificates[0].certificate,
+                    root_ca=matching_certificates[0].ca,
+                    wazuh_config=valid_config,
+                    custom_config_ssh_key=custom_config_ssh_key,
+                )
+            raise RecoverableStateError("Certificate is empty.")
         except ValidationError as exc:
             error_fields = set(
                 itertools.chain.from_iterable(error["loc"] for error in exc.errors())
