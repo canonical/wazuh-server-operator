@@ -255,7 +255,7 @@ def configure_git(
         _get_current_configuration_url(container) != base_url
         or _get_current_configuration_url_branch(container) != branch
     ):
-        process = container.exec(["rm", "-rf", REPOSITORY_PATH])
+        process = container.exec(["rm", "-rf", f"{REPOSITORY_PATH}/*"])
         process.wait_output()
 
         if base_url:

@@ -24,7 +24,7 @@ class CharmBaseWithState(ops.CharmBase, ABC):
     """CharmBase than can build a CharmState."""
 
     @abstractmethod
-    def reconcile(self) -> None:
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile configuration."""
 
 
@@ -201,7 +201,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     agent_password: typing.Optional[str] = None
-    cluster_key: str = Field(min_length=16, max_length=16)
+    cluster_key: str = Field(min_length=32, max_length=32)
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
