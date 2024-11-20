@@ -114,6 +114,13 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+@pytest.fixture(scope="module", name="api_password")
+def api_password_fixture() -> str:
+    """Get Wazuh's API password for the 'wazuh' user."""
+    return secrets.token_hex()
+
+
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
     charm: str,
@@ -122,13 +129,17 @@ async def application_fixture(
     opensearch_provider: Application,
     pytestconfig: pytest.Config,
     traefik: Application,
+    api_password: str,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
-    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+    secret_id = await model.add_secret(name="api-password", data_args=[f"value={api_password}"])
+    application = await model.deploy(
+        f"./{charm}", resources=resources, config={"api-password": secret_id}, trust=True
+    )
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
