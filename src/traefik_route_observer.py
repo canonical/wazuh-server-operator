@@ -64,7 +64,6 @@ class TraefikRouteObserver(Object):
             entry_points[sanitized_protocol] = {"address": f":{port}"}
         return {
             "entryPoints": entry_points,
-            "tcpServersTransport": {"tls": {"insecureSkipVerify": "true"}},
         }
 
     @property
