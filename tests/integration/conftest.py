@@ -140,7 +140,7 @@ async def application_fixture(
         f"./{charm}", resources=resources, config={"api-password": secret_id}, trust=True
     )
     # Wazuh mistakenly thinks this is a password
-    await model.grant_secret(secret_name="api-password", application="wazuh-server")  # nosec
+    await model.grant_secret(secret_name="api-password", application=application.name)  # nosec
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
