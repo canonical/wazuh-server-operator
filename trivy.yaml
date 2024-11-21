@@ -4,3 +4,4 @@ scan:
   # Ignore TLS cert installed by Wazuh
   skip-files:
     - /var/ossec/etc/sslmanager.key
+  disable-vex-notice: true
