@@ -382,14 +382,14 @@ def change_api_password(old_password: str, new_password: str) -> None:
         # The new password already matches. Nothing to do.
         if r.status_code == 204:
             return
-        r = requests.put(  # nosec
-            "https://localhost:55000/security/users/2",
-            headers={"Authorization": token},
-            data={"password": secrets.token_hex()},
-            timeout=10,
-            verify=False,
-        )
-        r.raise_for_status()
+        # r = requests.put(  # nosec
+        #     "https://localhost:55000/security/users/2",
+        #     headers={"Authorization": token},
+        #     data={"password": secrets.token_hex()},
+        #     timeout=10,
+        #     verify=False,
+        # )
+        # r.raise_for_status()
         r = requests.put(  # nosec
             "https://localhost:55000/security/users/1",
             headers={"Authorization": token},
