@@ -136,11 +136,11 @@ async def application_fixture(
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
     secret_id = await model.add_secret(name="api-password", data_args=[f"value={api_password}"])
-    # Wazuh mistakenly thinks this is a password
-    await model.grant_secret(secret_name="api-password", application="wazuh-server")  # nosec
     application = await model.deploy(
         f"./{charm}", resources=resources, config={"api-password": secret_id}, trust=True
     )
+    # Wazuh mistakenly thinks this is a password
+    await model.grant_secret(secret_name="api-password", application="wazuh-server")  # nosec
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
