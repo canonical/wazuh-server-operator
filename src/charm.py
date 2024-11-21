@@ -180,11 +180,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     "level": "alive",
                     "tcp": {"port": 55000},
                 },
-                "wazuh-ready": {
-                    "override": "replace",
-                    "level": "alive",
-                    "http": {"url": "https://localhost:55000/cluster/healthcheck"},
-                },
             },
         }
 
