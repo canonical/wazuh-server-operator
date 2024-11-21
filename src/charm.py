@@ -79,8 +79,6 @@ class WazuhServerCharm(CharmBaseWithState):
             opensearch_relation_data = (
                 opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
             )
-            if not opensearch_relation_data:
-                raise RecoverableStateError("No indexer relation data yet.")
             certificates = self.certificates.certificates.get_provider_certificates()
             return State.from_charm(
                 self, opensearch_relation_data, certificates, self.certificates.csr.decode("utf-8")
