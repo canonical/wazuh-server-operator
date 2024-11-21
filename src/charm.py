@@ -55,11 +55,8 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
 
-    def _on_install(self, event: ops.InstallEvent) -> None:
+    def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
-        if not self.state:
-            event.defer()
-            return
         if self.unit.is_leader():
             try:
                 self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
