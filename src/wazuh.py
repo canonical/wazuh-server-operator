@@ -398,4 +398,6 @@ def change_api_password(old_password: str, new_password: str) -> None:
         r.raise_for_status()
     except requests.exceptions.RequestException as exc:
         logger.error("Error modifying the default password: %s", exc)
+        logger.error("OLD: %s", old_password)
+        logger.error("NEW: %s", new_password)
         raise WazuhInstallationError("Error modifying the default password.") from exc
