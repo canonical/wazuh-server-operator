@@ -367,32 +367,30 @@ def change_api_password(old_password: str, new_password: str) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while processing the requests.
     """
-    # This is the default user password
-    token = f"Bearer wazuh:{old_password}"  # nosec
     # The certificates might be self signed and there's no security hardening in
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
     try:
         r = requests.put(  # nosec
             "https://localhost:55000/security/user/authenticate",
-            headers={"Authorization": f"Bearer wazuh:{new_password}"},
+            auth=("wazuh", new_password),
             timeout=10,
             verify=False,
         )
         # The new password already matches. Nothing to do.
         if r.status_code == 204:
             return
-        # r = requests.put(  # nosec
-        #     "https://localhost:55000/security/users/2",
-        #     headers={"Authorization": token},
-        #     data={"password": secrets.token_hex()},
-        #     timeout=10,
-        #     verify=False,
-        # )
-        # r.raise_for_status()
+        r = requests.put(  # nosec
+            "https://localhost:55000/security/users/2",
+            auth=("wazuh", old_password),
+            data={"password": secrets.token_hex()},
+            timeout=10,
+            verify=False,
+        )
+        r.raise_for_status()
         r = requests.put(  # nosec
             "https://localhost:55000/security/users/1",
-            headers={"Authorization": token},
+            auth=("wazuh", old_password),
             data={"password": new_password},
             timeout=10,
             verify=False,
