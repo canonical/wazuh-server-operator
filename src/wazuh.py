@@ -378,7 +378,7 @@ def change_api_password(old_password: str, new_password: str) -> None:
             verify=False,
         )
         # The new password already matches. Nothing to do.
-        if r.status_code == 204:
+        if r.status_code == 200:
             return
         r = requests.put(  # nosec
             "https://localhost:55000/security/users/2",
