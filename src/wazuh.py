@@ -371,7 +371,7 @@ def change_api_password(old_password: str, new_password: str) -> None:
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
     try:
-        r = requests.put(  # nosec
+        r = requests.get(  # nosec
             "https://localhost:55000/security/user/authenticate",
             auth=("wazuh", new_password),
             timeout=10,
@@ -400,4 +400,14 @@ def change_api_password(old_password: str, new_password: str) -> None:
         logger.error("Error modifying the default password: %s", exc)
         logger.error("OLD: %s", old_password)
         logger.error("NEW: %s", new_password)
+        try:
+            r = requests.get(  # nosec
+                "https://localhost:55000/security/user/authenticate",
+                auth=("wazuh", old_password),
+                timeout=10,
+                verify=False,
+            )
+            r.raise_for_status()
+        except requests.exceptions.RequestException as exc:
+            logger.error("Error modifying the default password: %s", exc)
         raise WazuhInstallationError("Error modifying the default password.") from exc
