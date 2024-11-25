@@ -373,24 +373,25 @@ def change_api_password(old_password: str, new_password: str) -> None:
     try:
         r = requests.get(  # nosec
             "https://localhost:55000/security/user/authenticate",
-            auth=("wazuh", new_password),
+            auth=("wazuh", old_password),
             timeout=10,
             verify=False,
         )
-        # The new password already matches. Nothing to do.
-        if r.status_code == 200:
+        token = r.json()["data"]["token"]
+        # The old password has already been changed. Nothing to do.
+        if r.status_code == 401:
             return
-        # r = requests.put(  # nosec
-        #     "https://localhost:55000/security/users/2",
-        #     auth=("wazuh", old_password),
-        #     data={"password": secrets.token_hex()},
-        #     timeout=10,
-        #     verify=False,
-        # )
-        # r.raise_for_status()
+        r = requests.put(  # nosec
+            "https://localhost:55000/security/users/2",
+            headers={"Authorization": f"Bearer {token}"},
+            data={"password": secrets.token_hex()},
+            timeout=10,
+            verify=False,
+        )
+        r.raise_for_status()
         r = requests.put(  # nosec
             "https://localhost:55000/security/users/1",
-            auth=("wazuh", old_password),
+            headers={"Authorization": f"Bearer {token}"},
             data={"password": new_password},
             timeout=10,
             verify=False,
@@ -398,16 +399,4 @@ def change_api_password(old_password: str, new_password: str) -> None:
         r.raise_for_status()
     except requests.exceptions.RequestException as exc:
         logger.error("Error modifying the default password: %s", exc)
-        logger.error("OLD: %s", old_password)
-        logger.error("NEW: %s", new_password)
-        try:
-            r = requests.get(  # nosec
-                "https://localhost:55000/security/user/authenticate",
-                auth=("wazuh", old_password),
-                timeout=10,
-                verify=False,
-            )
-            r.raise_for_status()
-        except requests.exceptions.RequestException as exc:
-            logger.error("Error modifying the default password: %s", exc)
         raise WazuhInstallationError("Error modifying the default password.") from exc
