@@ -377,10 +377,10 @@ def change_api_password(old_password: str, new_password: str) -> None:
             timeout=10,
             verify=False,
         )
-        token = r.json()["data"]["token"]
         # The old password has already been changed. Nothing to do.
         if r.status_code == 401:
             return
+        token = r.json()["data"]["token"]
         r = requests.put(  # nosec
             "https://localhost:55000/security/users/2",
             headers={"Authorization": f"Bearer {token}"},
