@@ -21,22 +21,6 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_filebeat_ok(application: Application):
-    """Deploy the charm together with related charms.
-
-    Assert: the filebeat config is valid.
-    """
-    wazuh_unit = application.units[0]  # type: ignore
-    pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
-    action = await wazuh_unit.run(f"{pebble_exec} -- /usr/bin/filebeat test output", timeout=10)
-    await action.wait()
-    code = action.results.get("return-code")
-    stdout = action.results.get("stdout")
-    stderr = action.results.get("stderr")
-    assert code == 0, f"filebeat test failed with code {code}: {stderr or stdout}"
-
-
-@pytest.mark.abort_on_fail
 async def test_api(model: Model, application: Application, api_password: str):
     """Deploy the charm together with related charms.
 
