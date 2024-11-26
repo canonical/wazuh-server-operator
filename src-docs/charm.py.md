@@ -23,7 +23,7 @@ Charm the service.
  - <b>`fqdns`</b>:  the unit FQDNs. 
  - <b>`state`</b>:  the charm state. 
 
-<a href="../src/charm.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L41"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -94,12 +94,12 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/charm.py#L128"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L91"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
 ```python
-reconcile() → None
+reconcile(_: HookEvent) → None
 ```
 
 Reconcile Wazuh configuration with charm state. 

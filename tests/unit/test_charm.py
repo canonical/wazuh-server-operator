@@ -54,7 +54,9 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "change_api_password")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
+    change_api_password_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -78,7 +80,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
-    cluster_key = secrets.token_hex(8)
+    cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
         api_password=api_password,
@@ -97,7 +99,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     assert container
     harness.set_can_connect(container, True)
 
-    harness.charm.reconcile()
+    harness.charm.reconcile(None)
 
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
@@ -117,6 +119,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container=container, password=agent_password
     )
     pull_configuration_files_mock.assert_called_with(container)
+    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_password)
+    change_api_password_mock.assert_any_call("wazuh-wui", "wazuh-wui", api_password)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
@@ -128,7 +132,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "change_api_password")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
+    change_api_password_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -144,7 +150,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     """
     password = secrets.token_hex()
     api_password = secrets.token_hex()
-    cluster_key = secrets.token_hex(8)
+    cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=None,
         api_password=api_password,
@@ -165,7 +171,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert container
     harness.set_can_connect(container, True)
 
-    harness.charm.reconcile()
+    harness.charm.reconcile(None)
 
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
@@ -181,6 +187,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server/0",
         cluster_key,
     )
+    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_password)
+    change_api_password_mock.assert_any_call("wazuh-wui", "wazuh-wui", api_password)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
@@ -196,7 +204,7 @@ def test_reconcile_reaches_waiting_status_when_cant_connect():
     assert container
     harness.set_can_connect(container, False)
 
-    harness.charm.reconcile()
+    harness.charm.reconcile(None)
 
     assert harness.model.unit.status.name == ops.WaitingStatus().name
 
@@ -216,20 +224,4 @@ def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock):
     harness.set_can_connect(container, True)
 
     with pytest.raises(InvalidStateError):
-        harness.charm.reconcile()
-
-
-@patch.object(WazuhServerCharm, "reconcile")
-def test_pebble_ready_reconciles(reconcile_mock):
-    """
-    arrange: mock the reconcile method.
-    act: trigger a pebble ready event reconcile.
-    assert: reconcile is called.
-    """
-    harness = Harness(WazuhServerCharm)
-    harness.begin()
-    harness.container_pebble_ready("wazuh-server")
-
-    harness.charm.reconcile()
-
-    reconcile_mock.assert_called()
+        harness.charm.reconcile(None)

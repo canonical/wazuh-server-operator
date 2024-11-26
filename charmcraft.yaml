@@ -109,6 +109,7 @@ config:
       type: secret
       description: >
         The Juju secret ID corresponding to the password used by the wazuh API.
+        Once set, it can't be changed. This configuration is only applied the first time the charm is installed.
     custom-config-repository:
       type: string
       description: >

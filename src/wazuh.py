@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import ops
+import requests
 import yaml
 
 # Bandit classifies this import as vulnerable. For more details, see
@@ -257,7 +258,7 @@ def configure_git(
         _get_current_configuration_url(container) != base_url
         or _get_current_configuration_url_branch(container) != branch
     ):
-        process = container.exec(["rm", "-rf", REPOSITORY_PATH])
+        process = container.exec(["rm", "-rf", f"{REPOSITORY_PATH}/*"])
         process.wait_output()
 
         if base_url:
@@ -355,3 +356,57 @@ def _generate_cluster_snippet(
             <disabled>no</disabled>
         </cluster>
     """
+
+
+def change_api_password(username: str, old_password: str, new_password: str) -> None:
+    """Change Wazuh's API password for the default 'wazuh' user.
+
+    Args:
+        username: the username to change the user for.
+        old_password: the old API password for the user.
+        new_password: the new API password for the user.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while processing the requests.
+    """
+    # The certificates might be self signed and there's no security hardening in
+    # passing them to the request since tampering with `localhost` would mean the
+    # container filesystem is compromised
+    try:
+        r = requests.get(  # nosec
+            "https://localhost:55000/security/user/authenticate",
+            auth=(username, old_password),
+            timeout=10,
+            verify=False,
+        )
+        # The old password has already been changed. Nothing to do.
+        if r.status_code == 401:
+            return
+        token = r.json()["data"]["token"]
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        r = requests.get(  # nosec
+            "https://localhost:55000/security/users",
+            headers=headers,
+            timeout=10,
+            verify=False,
+        )
+        r.raise_for_status()
+        user_id = [
+            user["id"]
+            for user in r.json()["data"]["affected_items"]
+            if user["username"] == username
+        ][0]
+        r = requests.put(  # nosec
+            f"https://localhost:55000/security/users/{user_id}",
+            headers=headers,
+            data={"password": new_password},
+            timeout=10,
+            verify=False,
+        )
+        r.raise_for_status()
+    except requests.exceptions.RequestException as exc:
+        logger.error("Error modifying the default password: %s", exc)
+        raise WazuhInstallationError("Error modifying the default password.") from exc

@@ -59,17 +59,14 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                     "juju-testing-observer-charm-conn-tcp": {
                         "entryPoints": ["conn-tcp"],
                         "service": "juju-testing-observer-charm-service-conn-tcp",
-                        "rule": "ClientIP(`0.0.0.0/0`)",
+                        "rule": "HostSNI(`*`)",
+                        "tls": {"passthrough": True},
                     },
                     "juju-testing-observer-charm-enrole-tcp": {
                         "entryPoints": ["enrole-tcp"],
                         "service": "juju-testing-observer-charm-service-enrole-tcp",
-                        "rule": "ClientIP(`0.0.0.0/0`)",
-                    },
-                    "juju-testing-observer-charm-api-tcp": {
-                        "entryPoints": ["api-tcp"],
-                        "service": "juju-testing-observer-charm-service-api-tcp",
-                        "rule": "ClientIP(`0.0.0.0/0`)",
+                        "rule": "HostSNI(`*`)",
+                        "tls": {"passthrough": True},
                     },
                 },
                 "services": {
@@ -79,9 +76,6 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                     "juju-testing-observer-charm-service-enrole-tcp": {
                         "loadBalancer": {"servers": [{"address": "wazuh-server.local:1515"}]}
                     },
-                    "juju-testing-observer-charm-service-api-tcp": {
-                        "loadBalancer": {"servers": [{"address": "wazuh-server.local:55000"}]}
-                    },
                 },
             },
         },
@@ -89,7 +83,6 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
             "entryPoints": {
                 "conn-tcp": {"address": ":1514"},
                 "enrole-tcp": {"address": ":1515"},
-                "api-tcp": {"address": ":55000"},
             }
         },
     )

@@ -67,7 +67,6 @@ async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, No
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
-    await model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -83,7 +82,6 @@ async def self_signed_certificates_fixture(
         config={"ca-common-name": "Test CA"},
     )
     await machine_model.create_offer(f"{application.name}:certificates", application.name)
-    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -94,11 +92,13 @@ async def opensearch_provider_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     application = await machine_model.deploy(
-        "opensearch", application_name="opensearch", channel="2/edge", num_units=2
+        "wazuh-indexer", application_name="wazuh-indexer", channel="latest/edge", num_units=3
     )
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
-    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
+    await machine_model.wait_for_idle(
+        apps=[application.name, self_signed_certificates.name], status="active", timeout=2000
+    )
     yield application
 
 
@@ -113,6 +113,12 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
     return charm
 
 
+@pytest.fixture(scope="module", name="api_password")
+def api_password_fixture() -> str:
+    """Get Wazuh's API password for the 'wazuh' user."""
+    return secrets.token_hex()
+
+
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
@@ -122,13 +128,19 @@ async def application_fixture(
     opensearch_provider: Application,
     pytestconfig: pytest.Config,
     traefik: Application,
+    api_password: str,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
-    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+    secret_id = await model.add_secret(name="api-password", data_args=[f"value={api_password}"])
+    application = await model.deploy(
+        f"./{charm}", resources=resources, config={"api-password": secret_id}, trust=True
+    )
+    # Wazuh mistakenly thinks this is a password
+    await model.grant_secret(secret_name="api-password", application=application.name)  # nosec
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -138,5 +150,7 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(traefik.name, application.name)
-    await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
+    await model.wait_for_idle(
+        apps=[application.name, traefik.name], status="active", raise_on_error=True, timeout=2000
+    )
     yield application

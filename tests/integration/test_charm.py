@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 
 import pytest
+import requests
 import yaml
 from juju.application import Application
 from juju.model import Model
@@ -20,21 +21,22 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_filebeat_ok(model: Model, application: Application):
+async def test_api(model: Model, application: Application, api_password: str):
     """Deploy the charm together with related charms.
 
     Assert: the filebeat config is valid.
     """
-    model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
+    status = await model.get_status()
+    unit = list(status.applications[application.name].units)[0]
+    address = status["applications"][application.name]["units"][unit]["address"]
+    auth = f"Bearer wazuh:{api_password}"
+    response = requests.post(  # nosec
+        f"https://{address}:55000/security/user/authenticate",
+        headers={"Authorization": auth},
+        timeout=10,
+        verify=False,
     )
-
-    wazuh_unit = application.units[0]  # type: ignore
-    output = await wazuh_unit.run("filebeat test output", timeout=10)
-    code = output.data["results"].get("Code")
-    stdout = output.data["results"].get("Stdout")
-    stderr = output.data["results"].get("Stderr")
-    assert code == "0", f"filebeat test failed with code {code}: {stderr or stdout}"
+    assert response.status_code == 200
 
 
 @pytest.mark.abort_on_fail
@@ -43,25 +45,32 @@ async def test_clustering_ok(model: Model, application: Application):
 
     Assert: the clustering config is valid.
     """
-    model.wait_for_idle(
+    await model.wait_for_idle(
         apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
     await application.scale(2)
     await model.wait_for_idle(idle_period=30, apps=[application.name], status="active")
 
     wazuh_unit = application.units[0]  # type: ignore
-    output = await wazuh_unit.run("/var/ossec/bin/cluster_control -l", timeout=10)
-    code = output.data["results"].get("Code")
-    stdout = output.data["results"].get("Stdout")
-    stderr = output.data["results"].get("Stderr")
-    assert code == "0", f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
+    pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
+    action = await wazuh_unit.run(
+        f"{pebble_exec} -- /var/ossec/bin/cluster_control -l", timeout=10
+    )
+    await action.wait()
+    code = action.results.get("return-code")
+    stdout = action.results.get("stdout")
+    stderr = action.results.get("stderr")
+    assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
     assert "master" in stdout
     assert "worker" in stdout
 
-    output = await wazuh_unit.run("/var/ossec/bin/cluster_control -i", timeout=10)
-    code = output.data["results"].get("Code")
-    stdout = output.data["results"].get("Stdout")
-    stderr = output.data["results"].get("Stderr")
-    assert code == "0", f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
+    action = await wazuh_unit.run(
+        f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10
+    )
+    await action.wait()
+    code = action.results.get("return-code")
+    stdout = action.results.get("stdout")
+    stderr = action.results.get("stderr")
+    assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
     assert "connected nodes (1)" in stdout
     assert "wazuh-server-1" in stdout
