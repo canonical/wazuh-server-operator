@@ -181,8 +181,8 @@ class WazuhServerCharm(CharmBaseWithState):
                     "environment": {
                         "WAZUH_API_HOST": "localhost",
                         "WAZUH_API_PORT": "55000",
-                        "WAZUH_API_USERNAME": "",
-                        "WAZUH_API_PASSWORD": "",
+                        "WAZUH_API_USERNAME": "wazuh",
+                        "WAZUH_API_PASSWORD": self.state.api_password,
                     },
                 },
             },
