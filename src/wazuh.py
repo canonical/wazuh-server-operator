@@ -6,7 +6,6 @@
 """Wazuh operational logic."""
 
 import logging
-import secrets
 import typing
 from enum import Enum
 from pathlib import Path
@@ -357,12 +356,13 @@ def _generate_cluster_snippet(
     """
 
 
-def change_api_password(old_password: str, new_password: str) -> None:
+def change_api_password(username: str, old_password: str, new_password: str) -> None:
     """Change Wazuh's API password for the default 'wazuh' user.
 
     Args:
-        old_password: the old API password for the 'wazuh' user.
-        new_password: the new API password for the 'wazuh' user.
+        username: the username to change the user for.
+        old_password: the old API password for the user.
+        new_password: the new API password for the user.
 
     Raises:
         WazuhInstallationError: if an error occurs while processing the requests.
@@ -373,7 +373,7 @@ def change_api_password(old_password: str, new_password: str) -> None:
     try:
         r = requests.get(  # nosec
             "https://localhost:55000/security/user/authenticate",
-            auth=("wazuh", old_password),
+            auth=(username, old_password),
             timeout=10,
             verify=False,
         )
@@ -385,16 +385,20 @@ def change_api_password(old_password: str, new_password: str) -> None:
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
-        # r = requests.put(  # nosec
-        #     "https://localhost:55000/security/users/2",
-        #     headers=headers,
-        #     data={"password": secrets.token_hex()},
-        #     timeout=10,
-        #     verify=False,
-        # )
-        # r.raise_for_status()
+        r = requests.get(  # nosec
+            "https://localhost:55000/security/users",
+            headers=headers,
+            timeout=10,
+            verify=False,
+        )
+        r.raise_for_status()
+        user_id = [
+            user["id"]
+            for user in r.json()["data"]["affected_items"]
+            if user["username"] == username
+        ][0]
         r = requests.put(  # nosec
-            "https://localhost:55000/security/users/1",
+            f"https://localhost:55000/security/users/{user_id}",
             headers=headers,
             data={"password": new_password},
             timeout=10,

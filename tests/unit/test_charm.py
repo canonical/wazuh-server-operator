@@ -119,7 +119,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container=container, password=agent_password
     )
     pull_configuration_files_mock.assert_called_with(container)
-    change_api_password_mock.assert_called_with("wazuh", api_password)
+    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_password)
+    change_api_password_mock.assert_any_call("wazuh-wui", "wazuh-wui", api_password)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
@@ -186,7 +187,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server/0",
         cluster_key,
     )
-    change_api_password_mock.assert_called_with("wazuh", api_password)
+    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_password)
+    change_api_password_mock.assert_any_call("wazuh-wui", "wazuh-wui", api_password)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
