@@ -385,14 +385,14 @@ def change_api_password(old_password: str, new_password: str) -> None:
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
-        r = requests.put(  # nosec
-            "https://localhost:55000/security/users/2",
-            headers=headers,
-            data={"password": secrets.token_hex()},
-            timeout=10,
-            verify=False,
-        )
-        r.raise_for_status()
+        # r = requests.put(  # nosec
+        #     "https://localhost:55000/security/users/2",
+        #     headers=headers,
+        #     data={"password": secrets.token_hex()},
+        #     timeout=10,
+        #     verify=False,
+        # )
+        # r.raise_for_status()
         r = requests.put(  # nosec
             "https://localhost:55000/security/users/1",
             headers=headers,
