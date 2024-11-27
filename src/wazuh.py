@@ -383,8 +383,7 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         response.raise_for_status()
         token = response.json()["data"]["token"]
         headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}"
         }
         response = requests.get(  # nosec
             "https://localhost:55000/security/users",
@@ -401,7 +400,7 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         response = requests.put(  # nosec
             f"https://localhost:55000/security/users/{user_id}",
             headers=headers,
-            data={"password": new_password},
+            json={"password": new_password},
             timeout=10,
             verify=False,
         )
