@@ -382,9 +382,7 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
             return
         response.raise_for_status()
         token = response.json()["data"]["token"]
-        headers = {
-            "Authorization": f"Bearer {token}"
-        }
+        headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
             "https://localhost:55000/security/users",
             headers=headers,
