@@ -357,7 +357,7 @@ def _generate_cluster_snippet(
 
 
 def change_api_password(username: str, old_password: str, new_password: str) -> None:
-    """Change Wazuh's API password for the default 'wazuh' user.
+    """Change Wazuh's API password for a given user.
 
     Args:
         username: the username to change the user for.
@@ -371,40 +371,41 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
     try:
-        r = requests.get(  # nosec
+        response = requests.get(  # nosec
             "https://localhost:55000/security/user/authenticate",
             auth=(username, old_password),
             timeout=10,
             verify=False,
         )
         # The old password has already been changed. Nothing to do.
-        if r.status_code == 401:
+        if response.status_code == 401:
             return
-        token = r.json()["data"]["token"]
+        response.raise_for_status()
+        token = response.json()["data"]["token"]
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
-        r = requests.get(  # nosec
+        response = requests.get(  # nosec
             "https://localhost:55000/security/users",
             headers=headers,
             timeout=10,
             verify=False,
         )
-        r.raise_for_status()
+        response.raise_for_status()
         user_id = [
             user["id"]
             for user in r.json()["data"]["affected_items"]
             if user["username"] == username
         ][0]
-        r = requests.put(  # nosec
+        response = requests.put(  # nosec
             f"https://localhost:55000/security/users/{user_id}",
             headers=headers,
             data={"password": new_password},
             timeout=10,
             verify=False,
         )
-        r.raise_for_status()
+        response.raise_for_status()
     except requests.exceptions.RequestException as exc:
         logger.error("Error modifying the default password: %s", exc)
         raise WazuhInstallationError("Error modifying the default password.") from exc

@@ -175,7 +175,7 @@ Configure the filebeat user.
 change_api_password(username: str, old_password: str, new_password: str) → None
 ```
 
-Change Wazuh's API password for the default 'wazuh' user. 
+Change Wazuh's API password for a given user. 
 
 
 
