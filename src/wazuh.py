@@ -381,7 +381,7 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         if response.status_code == 401:
             return
         response.raise_for_status()
-        token = response.json()["data"]["token"]
+        token = response.json()["data"]["token"] if response.json()["data"] else None
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
             "https://localhost:55000/security/users",
@@ -390,10 +390,9 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
             verify=False,
         )
         response.raise_for_status()
+        data = response.json()["data"]
         user_id = [
-            user["id"]
-            for user in response.json()["data"]["affected_items"]
-            if user["username"] == username
+            user["id"] for user in data["affected_items"] if data and user["username"] == username
         ][0]
         response = requests.put(  # nosec
             f"https://localhost:55000/security/users/{user_id}",
