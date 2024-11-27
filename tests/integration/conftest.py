@@ -6,6 +6,7 @@
 import logging
 import os.path
 import secrets
+import string
 import typing
 
 import pytest
@@ -116,7 +117,8 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
 @pytest.fixture(scope="module", name="api_password")
 def api_password_fixture() -> str:
     """Get Wazuh's API password for the 'wazuh' user."""
-    return secrets.token_hex()
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    return "".join(secrets.choice(alphabet) for _ in range(16))
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
