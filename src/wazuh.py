@@ -395,7 +395,7 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         response.raise_for_status()
         user_id = [
             user["id"]
-            for user in r.json()["data"]["affected_items"]
+            for user in response.json()["data"]["affected_items"]
             if user["username"] == username
         ][0]
         response = requests.put(  # nosec
