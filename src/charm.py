@@ -133,8 +133,15 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
-        wazuh.change_api_password("wazuh", "wazuh", self.state.api_password)
-        wazuh.change_api_password("wazuh-wui", "wazuh-wui", self.state.api_password)
+        # If the default password has already been changed, we do nothing.
+        try:
+            wazuh.change_api_password("wazuh", "wazuh", self.state.api_password)
+        except wazuh.WazuhAuthenticationError:
+            pass
+        try:
+            wazuh.change_api_password("wazuh-wui", "wazuh-wui", self.state.api_password)
+        except wazuh.WazuhAuthenticationError:
+            pass
         self.unit.status = ops.ActiveStatus()
 
     @property

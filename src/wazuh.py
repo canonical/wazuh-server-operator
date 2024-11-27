@@ -37,6 +37,10 @@ class WazuhInstallationError(Exception):
     """Base exception for Wazuh errors."""
 
 
+class WazuhAuthenticationError(Exception):
+    """Wazuh authentication errors."""
+
+
 class NodeType(Enum):
     """Enum for the Wazuh node types.
 
@@ -365,6 +369,7 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         new_password: the new API password for the user.
 
     Raises:
+        WazuhAuthenticationError: if an authentication error occurs.
         WazuhInstallationError: if an error occurs while processing the requests.
     """
     # The certificates might be self signed and there's no security hardening in
@@ -379,7 +384,7 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         )
         # The old password has already been changed. Nothing to do.
         if response.status_code == 401:
-            return
+            raise WazuhAuthenticationError("The provided password is not valid.")
         response.raise_for_status()
         token = response.json()["data"]["token"] if response.json()["data"] else None
         headers = {"Authorization": f"Bearer {token}"}
