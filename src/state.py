@@ -16,8 +16,13 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, pars
 logger = logging.getLogger(__name__)
 
 
+WAZUH_API_CREDENTIALS = "wazuh-api-credentials"
 # Bandit mistakenly thinks this is a password
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
+WAZUH_DEFAULT_API_CREDENTIALS = {
+    "wazuh": "wazuh",
+    "wazuh-wui": "wazuh-wui",
+}
 
 
 class CharmBaseWithState(ops.CharmBase, ABC):
@@ -55,13 +60,11 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
 
     Attributes:
         agent_password: the secret key corresponding to the agent secret.
-        api_password: the secret key corresponding to the wazuh API secret.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the secret key corresponding to the SSH key for the git repository.
     """
 
     agent_password: str | None = None
-    api_password: str
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
 
@@ -186,14 +189,37 @@ def _fetch_cluster_key(model: ops.Model) -> str:
     return cluster_key_content
 
 
+def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
+    """Fetch the Wazuh API credentials.
+
+    Args:
+        model: the Juju model.
+
+    Returns: a map containing the users and credentials for the API.
+
+    Raises:
+        InvalidStateError: if the secret when the key should reside is invalid.
+    """
+    try:
+        api_credentials_secret = model.get_secret(label=WAZUH_API_CREDENTIALS)
+        api_credentials_content = api_credentials_secret.get_content(refresh=True)
+        if not api_credentials_content:
+            raise InvalidStateError("API credentials secret is empty.")
+        return api_credentials_content
+    except ops.SecretNotFoundError:
+        logger.debug("Secret wazuh-api-credentials not found. Using default values.")
+        return WAZUH_DEFAULT_API_CREDENTIALS
+
+
 class State(BaseModel):  # pylint: disable=too-few-public-methods
     """The Wazuh server charm state.
 
     Attributes:
         agent_password: the agent password.
-        api_password: the API password.
+        api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_ips: list of Wazuh indexer IPs.
+        is_default_api_password: if the default API password is in use.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
         certificate: the TLS certificate.
@@ -204,7 +230,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     agent_password: str | None = None
-    api_password: str
+    api_credentials: dict[str, str]
     cluster_key: str = Field(min_length=32, max_length=32)
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
@@ -217,7 +243,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         agent_password: str | None,
-        api_password: str,
+        api_credentials: dict[str, str],
         cluster_key: str,
         indexer_ips: list[str],
         filebeat_username: str,
@@ -231,7 +257,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             agent_password: the agent password.
-            api_password: the API password.
+            api_credentials: a map ccontaining the API credentials.
             cluster_key: the Wazuh key for the cluster nodes.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
@@ -243,7 +269,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         """
         super().__init__(
             agent_password=agent_password,
-            api_password=api_password,
+            api_credentials=api_credentials,
             cluster_key=cluster_key,
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
@@ -315,10 +341,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             raise RecoverableStateError(f"Invalid charm configuration {error_field_str}") from exc
         custom_config_ssh_key = _fetch_ssh_repository_key(charm.model, valid_config)
         agent_password = _fetch_password(charm.model, valid_config.agent_password)
-        api_password = _fetch_password(charm.model, valid_config.api_password)
+        api_credentials = _fetch_api_credentials(charm.model)
         cluster_key = _fetch_cluster_key(charm.model)
-        if not api_password:
-            raise RecoverableStateError("API password is empty.")
         matching_certificates = _fetch_matching_certificates(
             provider_certificates, certitificate_signing_request
         )
@@ -326,7 +350,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             if matching_certificates:
                 return cls(
                     agent_password=agent_password,
-                    api_password=api_password,
+                    api_credentials=api_credentials,
                     cluster_key=cluster_key,
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
@@ -343,3 +367,11 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             )
             error_field_str = " ".join(f"{f}" for f in error_fields)
             raise InvalidStateError(f"Invalid charm configuration {error_field_str}") from exc
+
+    @property
+    def is_default_api_password(self) -> bool:
+        """Check if the default API password is in use..
+
+        Returns: True if the current password is the default
+        """
+        return WAZUH_DEFAULT_API_CREDENTIALS == self.api_credentials

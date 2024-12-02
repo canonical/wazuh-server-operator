@@ -21,7 +21,7 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_api(model: Model, application: Application, api_password: str):
+async def test_api(model: Model, application: Application, api_credentials: dict[str, str]):
     """Deploy the charm together with related charms.
 
     Assert: the filebeat config is valid.
@@ -29,10 +29,9 @@ async def test_api(model: Model, application: Application, api_password: str):
     status = await model.get_status()
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
-    auth = f"Bearer wazuh:{api_password}"
     response = requests.post(  # nosec
         f"https://{address}:55000/security/user/authenticate",
-        headers={"Authorization": auth},
+        auth=("wazuh", api_credentials["wazuh"]),
         timeout=10,
         verify=False,
     )
@@ -45,11 +44,10 @@ async def test_clustering_ok(model: Model, application: Application):
 
     Assert: the clustering config is valid.
     """
+    await application.scale(2)
     await model.wait_for_idle(
         apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
-    await application.scale(2)
-    await model.wait_for_idle(idle_period=30, apps=[application.name], status="active")
 
     wazuh_unit = application.units[0]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"

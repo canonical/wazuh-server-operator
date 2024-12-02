@@ -6,6 +6,7 @@
 import logging
 import os.path
 import secrets
+import string
 import typing
 
 import pytest
@@ -13,6 +14,8 @@ import pytest_asyncio
 from juju.application import Application
 from juju.model import Controller, Model
 from pytest_operator.plugin import OpsTest
+
+import state
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +116,12 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
     return charm
 
 
-@pytest.fixture(scope="module", name="api_password")
-def api_password_fixture() -> str:
-    """Get Wazuh's API password for the 'wazuh' user."""
-    return secrets.token_hex()
+@pytest.fixture(scope="module", name="api_credentials")
+def api_credentials_fixture() -> dict[str, str]:
+    """Get Wazuh's API credentials."""
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    password = "".join(secrets.choice(alphabet) for _ in range(16))
+    return {"wazuh": password, "wazuh-wui": password}
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
@@ -128,19 +133,22 @@ async def application_fixture(
     opensearch_provider: Application,
     pytestconfig: pytest.Config,
     traefik: Application,
-    api_password: str,
+    api_credentials: dict[str, str],
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
-    secret_id = await model.add_secret(name="api-password", data_args=[f"value={api_password}"])
-    application = await model.deploy(
-        f"./{charm}", resources=resources, config={"api-password": secret_id}, trust=True
+    await model.add_secret(
+        name=state.WAZUH_CLUSTER_KEY_SECRET_LABEL,
+        data_args=[f"{username}={password}" for username, password in api_credentials.items()],
     )
+    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
     # Wazuh mistakenly thinks this is a password
-    await model.grant_secret(secret_name="api-password", application=application.name)  # nosec
+    await model.grant_secret(
+        secret_name="wazuh-api-credentials", application=application.name
+    )  # nosec
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -151,6 +159,6 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
-        apps=[application.name, traefik.name], status="active", raise_on_error=True, timeout=2000
+        apps=[application.name, traefik.name], status="active", raise_on_error=True, timeout=1500
     )
     yield application

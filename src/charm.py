@@ -19,6 +19,7 @@ import traefik_route_observer
 import wazuh
 from state import (
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
+    WAZUH_DEFAULT_API_CREDENTIALS,
     CharmBaseWithState,
     InvalidStateError,
     RecoverableStateError,
@@ -135,8 +136,16 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
-        wazuh.change_api_password("wazuh", "wazuh", self.state.api_password)
-        wazuh.change_api_password("wazuh-wui", "wazuh-wui", self.state.api_password)
+
+        if self.state.is_default_api_password:
+            credentials = wazuh.generate_api_credentials()
+            for username, password in credentials.items():
+                wazuh.change_api_password(
+                    username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
+                )
+            wazuh.store_api_credentials(self.app, credentials)
+            container.add_layer("wazuh", self._pebble_layer, combine=True)
+            container.replan()
         self.unit.status = ops.ActiveStatus()
 
     @property
@@ -182,7 +191,7 @@ class WazuhServerCharm(CharmBaseWithState):
                         "WAZUH_API_HOST": "localhost",
                         "WAZUH_API_PORT": "55000",
                         "WAZUH_API_USERNAME": "wazuh",
-                        "WAZUH_API_PASSWORD": self.state.api_password,
+                        "WAZUH_API_PASSWORD": self.state.api_credentials["wazuh"],
                     },
                 },
             },
