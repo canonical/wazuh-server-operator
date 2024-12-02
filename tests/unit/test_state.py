@@ -30,7 +30,7 @@ def test_state_invalid_relation_data(opensearch_relation_data):
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     secret_id = f"secret:{secrets.token_hex()}"
-    mock_charm.config = {"api-password": secret_id}
+    mock_charm.config = {"wazuh-api-credentials": secret_id}
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -58,7 +58,7 @@ def test_state_without_proxy():
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     secret_id = f"secret:{secrets.token_hex()}"
-    mock_charm.config = {"api-password": secret_id}
+    mock_charm.config = {"wazuh-api-credentials": secret_id}
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
@@ -113,7 +113,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     secret_id = f"secret:{secrets.token_hex()}"
-    mock_charm.config = {"api-password": secret_id}
+    mock_charm.config = {"wazuh-api-credentials": secret_id}
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
@@ -172,7 +172,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "INVALID_URL")
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     secret_id = f"secret:{secrets.token_hex()}"
-    mock_charm.config = {"api-password": secret_id}
+    mock_charm.config = {"wazuh-api-credentials": secret_id}
 
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
@@ -221,7 +221,7 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         mock_charm,
         "config",
         {
-            "api-password": secret_id,
+            "wazuh-api-credentials": secret_id,
             "custom-config-repository": "git+ssh://user1@git.server/repo_name@main",
             "custom-config-ssh-key": repository_secret_id,
         },
@@ -268,7 +268,7 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
         "config",
         {
             "agent-password": secret_id,
-            "api-password": secret_id,
+            "wazuh-api-credentials": secret_id,
         },
     )
 
@@ -314,7 +314,7 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         mock_charm,
         "config",
         {
-            "api-password": secret_id,
+            "wazuh-api-credentials": secret_id,
             "custom-config-repository": "git+ssh://user1@git.server/repo_name@main",
             "custom-config-ssh-key": repository_secret_id,
         },
@@ -362,7 +362,7 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         "config",
         {
             "agent-password": secret_id,
-            "api-password": secret_id,
+            "wazuh-api-credentials": secret_id,
         },
     )
 
@@ -410,7 +410,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
         mock_charm,
         "config",
         {
-            "api-password": value,
+            "wazuh-api-credentials": value,
             "custom-config-repository": custom_config_repository,
             "custom-config-ssh-key": repository_secret_id,
         },
@@ -472,7 +472,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
         "config",
         {
             "agent-password": secret_id,
-            "api-password": secret_id,
+            "wazuh-api-credentials": secret_id,
         },
     )
 
