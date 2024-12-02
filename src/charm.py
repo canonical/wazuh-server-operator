@@ -104,6 +104,7 @@ class WazuhServerCharm(CharmBaseWithState):
             return
         if not self.state:
             return
+        self.unit.status = ops.MaintenanceStatus()
         wazuh.install_certificates(
             container=self.unit.containers.get("wazuh-server"),
             private_key=self.certificates.private_key,
