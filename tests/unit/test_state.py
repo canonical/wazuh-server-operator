@@ -102,6 +102,7 @@ def test_state_without_proxy():
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
+    assert not charm_state.is_default_api_password
 
 
 def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
@@ -159,6 +160,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     assert str(charm_state.proxy.http_proxy) == "http://squid.proxy:3228/"
     assert str(charm_state.proxy.https_proxy) == "https://squid.proxy:3228/"
     assert charm_state.proxy.no_proxy == "localhost"
+    assert not charm_state.is_default_api_password
 
 
 def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
