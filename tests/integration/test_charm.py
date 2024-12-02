@@ -21,7 +21,7 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_api(model: Model, application: Application, api_password: str):
+async def test_api(model: Model, application: Application, api_credentials: dict[str, str]):
     """Deploy the charm together with related charms.
 
     Assert: the filebeat config is valid.
@@ -31,7 +31,7 @@ async def test_api(model: Model, application: Application, api_password: str):
     address = status["applications"][application.name]["units"][unit]["address"]
     response = requests.post(  # nosec
         f"https://{address}:55000/security/user/authenticate",
-        auth=("wazuh", api_password),
+        auth=("wazuh", api_credentials["wazuh"]),
         timeout=10,
         verify=False,
     )

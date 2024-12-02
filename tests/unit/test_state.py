@@ -89,7 +89,8 @@ def test_state_without_proxy():
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
 
-    assert charm_state.api_password == value
+    assert charm_state.api_credentials is not None
+    assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
     assert charm_state.filebeat_username == username
@@ -145,7 +146,8 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
-    assert charm_state.api_password == value
+    assert charm_state.api_credentials is not None
+    assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate

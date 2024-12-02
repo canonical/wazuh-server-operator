@@ -6,6 +6,8 @@
 """Wazuh operational logic."""
 
 import logging
+import secrets
+import string
 import typing
 from enum import Enum
 from pathlib import Path
@@ -19,15 +21,19 @@ import yaml
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 
+AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
-AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
-WAZUH_USER = "wazuh"
-WAZUH_GROUP = "wazuh"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
+OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
+WAZUH_DEFAULT_CREDENTIALS = {
+    "wazuh": "wazuh",
+    "wazuh-wui": "wazuh-wui",
+}
+WAZUH_GROUP = "wazuh"
+WAZUH_USER = "wazuh"
 
 
 logger = logging.getLogger(__name__)
@@ -411,3 +417,12 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         logger.error("Error modifying the default password: %s", exc)
         logger.error("Error %s", response.json())
         raise WazuhInstallationError("Error modifying the default password.") from exc
+
+
+def generate_api_password() -> str:
+    """Generate a password that complies with the API password imposed by Wazuh.
+
+    Returns: a string with a compliant password.
+    """
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    return "".join(secrets.choice(alphabet) for _ in range(16))

@@ -17,6 +17,7 @@ import opensearch_observer
 import traefik_route_observer
 import wazuh
 from state import (
+    WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     CharmBaseWithState,
     InvalidStateError,
@@ -66,6 +67,19 @@ class WazuhServerCharm(CharmBaseWithState):
                 )
                 self.app.add_secret(
                     {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
+                )
+            try:
+                self.model.get_secret(label=WAZUH_API_CREDENTIALS)
+            except ops.SecretNotFoundError:
+                logger.debug(
+                    "Secret with label %s not found. Creating one.", WAZUH_API_CREDENTIALS
+                )
+                self.app.add_secret(
+                    {
+                        "wazuh": wazuh.generate_api_password(),
+                        "wazuh-wui": wazuh.generate_api_password(),
+                    },
+                    label=WAZUH_API_CREDENTIALS,
                 )
 
     @property
@@ -135,11 +149,10 @@ class WazuhServerCharm(CharmBaseWithState):
         container.replan()
         # If the default password has already been changed, we do nothing.
         try:
-            wazuh.change_api_password("wazuh", "wazuh", self.state.api_password)
-        except wazuh.WazuhAuthenticationError:
-            pass
-        try:
-            wazuh.change_api_password("wazuh-wui", "wazuh-wui", self.state.api_password)
+            for username, password in self.state.api_credentials.items():
+                wazuh.change_api_password(
+                    username, wazuh.WAZUH_DEFAULT_CREDENTIALS[username], password
+                )
         except wazuh.WazuhAuthenticationError:
             pass
         self.unit.status = ops.ActiveStatus()

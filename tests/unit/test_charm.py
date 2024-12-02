@@ -72,9 +72,12 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     """
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     secret_id = f"secret:{secrets.token_hex(21)}"
-    api_password = secrets.token_hex()
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+    }
     wazuh_config = WazuhConfig(
-        api_password=api_password,
+        api_credentials=api_credentials,
         custom_config_repository=custom_config_repository,
         custom_config_ssh_key=secret_id,
     )
@@ -83,7 +86,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
-        api_password=api_password,
+        api_credentials=api_credentials,
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
@@ -119,8 +122,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container=container, password=agent_password
     )
     pull_configuration_files_mock.assert_called_with(container)
-    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_password)
-    change_api_password_mock.assert_any_call("wazuh-wui", "wazuh-wui", api_password)
+    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_credentials["wazuh"])
+    change_api_password_mock.assert_any_call(
+        "wazuh-wui", "wazuh-wui", api_credentials["wazuh-wui"]
+    )
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
@@ -149,11 +154,14 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert: the charm reaches active status and configs are applied.
     """
     password = secrets.token_hex()
-    api_password = secrets.token_hex()
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+    }
     cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=None,
-        api_password=api_password,
+        api_credentials=api_credentials,
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
@@ -161,7 +169,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         filebeat_username="user1",
         filebeat_password=password,
         wazuh_config=WazuhConfig(
-            api_password=api_password, custom_config_repository=None, custom_config_ssh_key=None
+            api_credentials=api_credentials,
+            custom_config_repository=None,
+            custom_config_ssh_key=None,
         ),
         custom_config_ssh_key=None,
     )
@@ -187,8 +197,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server/0",
         cluster_key,
     )
-    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_password)
-    change_api_password_mock.assert_any_call("wazuh-wui", "wazuh-wui", api_password)
+    change_api_password_mock.assert_any_call("wazuh", "wazuh", api_credentials["wazuh"])
+    change_api_password_mock.assert_any_call(
+        "wazuh-wui", "wazuh-wui", api_credentials["wazuh-wui"]
+    )
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
