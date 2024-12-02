@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 WAZUH_API_CREDENTIALS = "wazuh-api-credentials"
 # Bandit mistakenly thinks this is a password
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
+WAZUH_DEFAULT_API_CREDENTIALS = {
+    "wazuh": "wazuh",
+    "wazuh-wui": "wazuh-wui",
+}
 
 
 class CharmBaseWithState(ops.CharmBase, ABC):
@@ -198,12 +202,13 @@ def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
     """
     try:
         api_credentials_secret = model.get_secret(label=WAZUH_API_CREDENTIALS)
-    except ops.SecretNotFoundError as exc:
-        raise InvalidStateError("API credentials key secret not found.") from exc
-    api_credentials_content = api_credentials_secret.get_content(refresh=True)
-    if not api_credentials_content:
-        raise InvalidStateError("API credentials secret is empty.")
-    return api_credentials_content
+        api_credentials_content = api_credentials_secret.get_content(refresh=True)
+        if not api_credentials_content:
+            raise InvalidStateError("API credentials secret is empty.")
+        return api_credentials_content
+    except ops.SecretNotFoundError:
+        logger.debug("Secret wazuh-api-credentials not found. Using default values.")
+        return WAZUH_DEFAULT_API_CREDENTIALS
 
 
 class State(BaseModel):  # pylint: disable=too-few-public-methods
@@ -214,6 +219,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_ips: list of Wazuh indexer IPs.
+        is_default_api_password: if the default API password is in use.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
         certificate: the TLS certificate.
@@ -361,3 +367,11 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             )
             error_field_str = " ".join(f"{f}" for f in error_fields)
             raise InvalidStateError(f"Invalid charm configuration {error_field_str}") from exc
+
+    @property
+    def is_default_api_password(self) -> bool:
+        """Check if the default API password is in use..
+
+        Returns: True if the current password is the default
+        """
+        return WAZUH_DEFAULT_API_CREDENTIALS == self.api_credentials

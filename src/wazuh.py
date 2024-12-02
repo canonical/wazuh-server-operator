@@ -21,6 +21,8 @@ import yaml
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 
+import state
+
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
@@ -28,10 +30,6 @@ KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
-WAZUH_DEFAULT_CREDENTIALS = {
-    "wazuh": "wazuh",
-    "wazuh-wui": "wazuh-wui",
-}
 WAZUH_GROUP = "wazuh"
 WAZUH_USER = "wazuh"
 
@@ -419,10 +417,31 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
 
-def generate_api_password() -> str:
+def _generate_api_password() -> str:
     """Generate a password that complies with the API password imposed by Wazuh.
 
     Returns: a string with a compliant password.
     """
     alphabet = string.ascii_letters + string.digits + string.punctuation
     return "".join(secrets.choice(alphabet) for _ in range(16))
+
+
+def generate_api_credentials() -> dict[str, str]:
+    """Generate the credentials for the default API users.
+
+    Returns: a dict containing the new credentials.
+    """
+    return {
+        "wazuh": _generate_api_password(),
+        "wazuh-wui": _generate_api_password(),
+    }
+
+
+def store_api_credentials(app: ops.Application, credentials: dict[str, str]) -> None:
+    """Store the wazuh API credentials in a secret.
+
+    Args:
+        app: the Juju application.
+        credentials: the API credentials to store.
+    """
+    app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
