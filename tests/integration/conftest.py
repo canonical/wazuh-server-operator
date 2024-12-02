@@ -67,7 +67,6 @@ async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, No
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
-    await model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -83,7 +82,6 @@ async def self_signed_certificates_fixture(
         config={"ca-common-name": "Test CA"},
     )
     await machine_model.create_offer(f"{application.name}:certificates", application.name)
-    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -94,11 +92,13 @@ async def opensearch_provider_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     application = await machine_model.deploy(
-        "opensearch", application_name="opensearch", channel="2/edge", num_units=2
+        "wazuh-indexer", application_name="wazuh-indexer", channel="latest/edge", num_units=3
     )
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
-    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
+    await machine_model.wait_for_idle(
+        apps=[application.name, self_signed_certificates.name], status="active", timeout=1400
+    )
     yield application
 
 
@@ -138,5 +138,7 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(traefik.name, application.name)
-    await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
+    await model.wait_for_idle(
+        apps=[application.name, traefik.name], status="active", raise_on_error=True
+    )
     yield application

@@ -44,7 +44,7 @@ def test_state_invalid_relation_data(opensearch_relation_data):
 
     with pytest.raises(state.InvalidStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, "1")
-    with pytest.raises(state.InvalidStateError):
+    with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(mock_charm, opensearch_relation_data, [], "1")
 
 
@@ -62,7 +62,7 @@ def test_state_without_proxy():
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
-    value = secrets.token_hex(8)
+    value = secrets.token_hex(16)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
@@ -112,7 +112,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
-    value = secrets.token_hex(8)
+    value = secrets.token_hex(16)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
@@ -169,7 +169,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
-    value = secrets.token_hex(8)
+    value = secrets.token_hex(16)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
@@ -404,7 +404,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
-    value = secrets.token_hex(8)
+    value = secrets.token_hex(16)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
         "password": password,
@@ -459,7 +459,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    value = secrets.token_hex(8)
+    value = secrets.token_hex(16)
     opensearch_relation_data = {"endpoints": ",".join(endpoints)}
     certificate = "somecert"
     root_ca = "someca"

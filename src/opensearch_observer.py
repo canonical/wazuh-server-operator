@@ -5,7 +5,6 @@
 
 import logging
 
-import ops
 from charms.data_platform_libs.v0.data_interfaces import OpenSearchRequires
 from ops.framework import Object
 
@@ -29,10 +28,5 @@ class OpenSearchObserver(Object):
         self.opensearch = OpenSearchRequires(charm, RELATION_NAME, "placeholder")
 
         self.framework.observe(
-            self._charm.on.opensearch_client_relation_changed,
-            self._on_opensearch_client_relation_changed,
+            self._charm.on.opensearch_client_relation_changed, self._charm.reconcile
         )
-
-    def _on_opensearch_client_relation_changed(self, _: ops.RelationJoinedEvent) -> None:
-        """Opensearch relation changed event handler."""
-        self._charm.reconcile()
