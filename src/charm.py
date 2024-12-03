@@ -17,7 +17,9 @@ import opensearch_observer
 import traefik_route_observer
 import wazuh
 from state import (
+    WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
+    WAZUH_DEFAULT_API_CREDENTIALS,
     CharmBaseWithState,
     InvalidStateError,
     RecoverableStateError,
@@ -133,6 +135,14 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
+
+        if self.state.is_default_api_password:
+            credentials = wazuh.generate_api_credentials()
+            for username, password in credentials.items():
+                wazuh.change_api_password(
+                    username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
+                )
+            self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
         self.unit.status = ops.ActiveStatus()
 
     @property
@@ -161,13 +171,25 @@ class WazuhServerCharm(CharmBaseWithState):
                 },
                 "filebeat": {
                     "override": "replace",
-                    "summary": "filebear",
+                    "summary": "filebeat",
                     "command": (
                         "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
                         "--path.home /usr/share/filebeat --path.config /etc/filebeat "
                         "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
                     ),
                     "startup": "enabled",
+                },
+            },
+            "checks": {
+                "wazuh-alive": {
+                    "override": "replace",
+                    "level": "alive",
+                    "tcp": {"port": 55000},
+                },
+                "filebeat-alive": {
+                    "override": "replace",
+                    "level": "alive",
+                    "exec": {"command": "filebeat test output"},
                 },
             },
         }
