@@ -322,3 +322,15 @@ def test_configure_git_when_no_key_no_repository_specified() -> None:
     wazuh.configure_git(container, None, None)
     assert not container.exists(wazuh.KNOWN_HOSTS_PATH)
     assert not container.exists(wazuh.RSA_PATH)
+
+
+def test_generate_api_credentials() -> None:
+    """
+    arrange: do nothing.
+    act: generate API credentials.
+    assert: a map with the 'wazuh' and 'wazuh-wui' credentials is returned.
+    """
+    credentials = wazuh.generate_api_credentials()
+
+    assert "wazuh" in credentials
+    assert "wazuh-wui" in credentials

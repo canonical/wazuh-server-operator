@@ -15,7 +15,7 @@ The Certificates relation observer.
 ## <kbd>class</kbd> `OpenSearchObserver`
 The Opensearch relation observer. 
 
-<a href="../src/opensearch_observer.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/opensearch_observer.py#L20"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
