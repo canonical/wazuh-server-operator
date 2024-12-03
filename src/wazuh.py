@@ -21,8 +21,6 @@ import yaml
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 
-import state
-
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
