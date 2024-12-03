@@ -185,18 +185,18 @@ class WazuhServerCharm(CharmBaseWithState):
                     ),
                     "startup": "enabled",
                 },
-                "prometheus-exporter": {
-                    "override": "replace",
-                    "summary": "prometheus exporter",
-                    "command": "/usr/bin/python3 /usr/bin/prometheus_exporter.py",
-                    "startup": "enabled",
-                    "environment": {
-                        "WAZUH_API_HOST": "localhost",
-                        "WAZUH_API_PORT": "55000",
-                        "WAZUH_API_USERNAME": "wazuh",
-                        "WAZUH_API_PASSWORD": self.state.api_credentials["wazuh"],
-                    },
-                },
+                # "prometheus-exporter": {
+                #     "override": "replace",
+                #     "summary": "prometheus exporter",
+                #     "command": "/usr/bin/python3 /usr/bin/python3.12/prometheus_exporter.py",
+                #     "startup": "enabled",
+                #     "environment": {
+                #         "WAZUH_API_HOST": "localhost",
+                #         "WAZUH_API_PORT": "55000",
+                #         "WAZUH_API_USERNAME": "wazuh",
+                #         "WAZUH_API_PASSWORD": self.state.api_credentials["wazuh"],
+                #     },
+                # },
             },
             "checks": {
                 "wazuh-alive": {
