@@ -388,9 +388,11 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         )
         # The old password has already been changed. Nothing to do.
         if response.status_code == 401:
-            raise WazuhAuthenticationError("The provided password is not valid.")
+            raise WazuhAuthenticationError(f"The provided password for '{username}' is not valid.")
         response.raise_for_status()
         token = response.json()["data"]["token"] if response.json()["data"] else None
+        if token is None:
+            logger.error("Unexpected response. Auth token has not been issued.")
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
             "https://localhost:55000/security/users",
@@ -435,13 +437,3 @@ def generate_api_credentials() -> dict[str, str]:
         "wazuh": _generate_api_password(),
         "wazuh-wui": _generate_api_password(),
     }
-
-
-def store_api_credentials(app: ops.Application, credentials: dict[str, str]) -> None:
-    """Store the wazuh API credentials in a secret.
-
-    Args:
-        app: the Juju application.
-        credentials: the API credentials to store.
-    """
-    app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)

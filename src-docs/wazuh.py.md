@@ -195,7 +195,7 @@ Change Wazuh's API password for a given user.
 
 ---
 
-<a href="../src/wazuh.py#L429"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L431"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `generate_api_credentials`
 
@@ -206,26 +206,6 @@ generate_api_credentials() → dict[str, str]
 Generate the credentials for the default API users. 
 
 Returns: a dict containing the new credentials. 
-
-
----
-
-<a href="../src/wazuh.py#L440"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-## <kbd>function</kbd> `store_api_credentials`
-
-```python
-store_api_credentials(app: Application, credentials: dict[str, str]) → None
-```
-
-Store the wazuh API credentials in a secret. 
-
-
-
-**Args:**
- 
- - <b>`app`</b>:  the Juju application. 
- - <b>`credentials`</b>:  the API credentials to store. 
 
 
 ---

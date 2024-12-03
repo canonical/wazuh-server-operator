@@ -17,6 +17,7 @@ import opensearch_observer
 import traefik_route_observer
 import wazuh
 from state import (
+    WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     WAZUH_DEFAULT_API_CREDENTIALS,
     CharmBaseWithState,
@@ -104,7 +105,6 @@ class WazuhServerCharm(CharmBaseWithState):
             return
         if not self.state:
             return
-        self.unit.status = ops.MaintenanceStatus()
         wazuh.install_certificates(
             container=self.unit.containers.get("wazuh-server"),
             private_key=self.certificates.private_key,
@@ -142,7 +142,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 wazuh.change_api_password(
                     username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
                 )
-            wazuh.store_api_credentials(self.app, credentials)
+            self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
         self.unit.status = ops.ActiveStatus()
 
     @property
