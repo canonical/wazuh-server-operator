@@ -7,7 +7,7 @@ This document explains the processes and practices recommended for contributing 
 - Generally, before developing enhancements to this charm, you should consider [opening an issue
   ](https://github.com/canonical/wazuh-server-operator/issues) explaining your use case.
 - If you would like to chat with us about your use-cases or proposed implementation, you can reach
-  us at [Canonical Mattermost public channel](https://chat.charmhub.io/charmhub/channels/charm-dev)
+  us at [Canonical Matrix public channel](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
   or [Discourse](https://discourse.charmhub.io/).
 - Familiarising yourself with the [Charmed Operator Framework](https://juju.is/docs/sdk) library
   will help you a lot when working on new features or bug fixes.
@@ -22,7 +22,7 @@ This document explains the processes and practices recommended for contributing 
 
 The code for this charm can be downloaded as follows:
 
-```
+```bash
 git clone https://github.com/canonical/wazuh-server-operator
 ```
 
@@ -35,7 +35,7 @@ source .tox/unit/bin/activate
 
 ### Testing
 
-Note that the [Wazuh Server](rockcraft.yaml) image needs to be built and pushed to microk8s for the tests to run. It should be tagged as `localhost:32000/wazuh-server:latest` so that Kubernetes knows how to pull them from the microk8s repository. Note that the microk8s registry needs to be enabled using `microk8s enable registry`. More details regarding the OCI images below. The following commands can then be used to run the tests:
+Note that the [Wazuh Server](rockcraft.yaml) image needs to be built and pushed to MicroK8s for the tests to run. It should be tagged as `localhost:32000/wazuh-server:latest` so that Kubernetes knows how to pull them from the MicroK8s repository. Note that the MicroK8s registry needs to be enabled using `microk8s enable registry`. More details regarding the OCI images below. The following commands can then be used to run the tests:
 
 * `tox`: Runs all of the basic checks (`lint`, `unit`, `static`, and `coverage-report`).
 * `tox -e fmt`: Runs formatting using `black` and `isort`.

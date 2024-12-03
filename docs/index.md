@@ -30,6 +30,6 @@ The Wazuh Server Operator is a member of the Ubuntu family. It's an open-source 
 - [Code of conduct](https://ubuntu.com/community/code-of-conduct)
 - [Get support](https://discourse.charmhub.io/)
 - [Join our online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
-- [Contribute](Contribute)
+- [Contribute](https://charmhub.io/wazuh-server/docs/how-to-contribute)
 
 Thinking about using the Wazuh Server Operator for your next project? [Get in touch](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)!
