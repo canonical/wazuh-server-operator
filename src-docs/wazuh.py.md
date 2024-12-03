@@ -7,15 +7,15 @@ Wazuh operational logic.
 
 **Global Variables**
 ---------------
-- **WAZUH_USER**
-- **WAZUH_GROUP**
 - **KNOWN_HOSTS_PATH**
 - **RSA_PATH**
 - **REPOSITORY_PATH**
+- **WAZUH_GROUP**
+- **WAZUH_USER**
 
 ---
 
-<a href="../src/wazuh.py#L108"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L115"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `update_configuration`
 
@@ -50,7 +50,7 @@ Update the workload configuration.
 
 ---
 
-<a href="../src/wazuh.py#L137"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L144"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `install_certificates`
 
@@ -77,7 +77,7 @@ Update Wazuh filebeat certificates.
 
 ---
 
-<a href="../src/wazuh.py#L157"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L164"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_agent_password`
 
@@ -97,7 +97,7 @@ Configure the agent password.
 
 ---
 
-<a href="../src/wazuh.py#L212"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L219"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_git`
 
@@ -123,7 +123,7 @@ Configure git.
 
 ---
 
-<a href="../src/wazuh.py#L270"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L277"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `pull_configuration_files`
 
@@ -142,7 +142,7 @@ Pull configuration files from the repository.
 
 ---
 
-<a href="../src/wazuh.py#L302"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L309"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `configure_filebeat_user`
 
@@ -167,10 +167,62 @@ Configure the filebeat user.
 
 ---
 
+<a href="../src/wazuh.py#L365"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `change_api_password`
+
+```python
+change_api_password(username: str, old_password: str, new_password: str) → None
+```
+
+Change Wazuh's API password for a given user. 
+
+
+
+**Args:**
+ 
+ - <b>`username`</b>:  the username to change the user for. 
+ - <b>`old_password`</b>:  the old API password for the user. 
+ - <b>`new_password`</b>:  the new API password for the user. 
+
+
+
+**Raises:**
+ 
+ - <b>`WazuhAuthenticationError`</b>:  if an authentication error occurs. 
+ - <b>`WazuhInstallationError`</b>:  if an error occurs while processing the requests. 
+
+
+---
+
+<a href="../src/wazuh.py#L429"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `generate_api_credentials`
+
+```python
+generate_api_credentials() → dict[str, str]
+```
+
+Generate the credentials for the default API users. 
+
+Returns: a dict containing the new credentials. 
+
+
+---
+
 ## <kbd>class</kbd> `NodeType`
 Enum for the Wazuh node types. 
 
 Attrs:  WORKER: worker.  MASTER: master. 
+
+
+
+
+
+---
+
+## <kbd>class</kbd> `WazuhAuthenticationError`
+Wazuh authentication errors. 
 
 
 
