@@ -22,7 +22,12 @@ You can follow the tutorial [here](https://charmhub.io/wazuh-server/docs/getting
 
 ## Integrations
 
-This charm can be integrated with other Juju charms and services. You can find the full list of integrations [here](https://charmhub.io/wazuh-server/integrations).
+This charm can be integrated with other Juju charms and services:
+    - [Wazuh Indexer](https://charmhub.io/wazuh-indexer): Wazuh indexer is a highly scalable, full-text search and analytics engine forked from OpenSearch.
+    - [Traefik](https://charmhub.io/traefik-k8s): Traefik is an application proxy that providers routing and load balancing of microservices.
+    - [Certificates](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/tls_certificates/v1/README.md): Any provider charm compliant with the `tls-certificates/v1` interface, providing TLS certificates.
+
+You can find the full list of integrations [here](https://charmhub.io/wazuh-server/integrations).
 
 ## Learn more
 * [Read more](https://charmhub.io/wazuh-server) <!--Link to the charm's official documentation-->
