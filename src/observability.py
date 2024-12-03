@@ -1,7 +1,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Provide the Observability class to represent the observability stack for Synapse."""
+"""Provide the Observability class to represent the observability stack for Wazuh."""
 
 
 import ops
@@ -16,7 +16,7 @@ PROMETHEUS_PORT = 5000
 
 
 class Observability:  # pylint: disable=too-few-public-methods
-    """A class representing the observability stack for Synapse application."""
+    """A class representing the observability stack for Wazuh application."""
 
     def __init__(self, charm: ops.CharmBase):
         """Initialize a new instance of the Observability class.
