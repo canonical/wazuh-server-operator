@@ -22,7 +22,7 @@ The Traefik route relation observer.
  
  - <b>`hostname`</b>:  The unit's hostname. 
 
-<a href="../src/traefik_route_observer.py#L32"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/traefik_route_observer.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
