@@ -6,27 +6,30 @@
 """Wazuh operational logic."""
 
 import logging
+import secrets
+import string
 import typing
 from enum import Enum
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import ops
+import requests
 import yaml
 
 # Bandit classifies this import as vulnerable. For more details, see
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 
+AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
-AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
-WAZUH_USER = "wazuh"
-WAZUH_GROUP = "wazuh"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
+OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
+WAZUH_GROUP = "wazuh"
+WAZUH_USER = "wazuh"
 
 
 logger = logging.getLogger(__name__)
@@ -34,6 +37,10 @@ logger = logging.getLogger(__name__)
 
 class WazuhInstallationError(Exception):
     """Base exception for Wazuh errors."""
+
+
+class WazuhAuthenticationError(Exception):
+    """Wazuh authentication errors."""
 
 
 class NodeType(Enum):
@@ -353,3 +360,78 @@ def _generate_cluster_snippet(
             <disabled>no</disabled>
         </cluster>
     """
+
+
+def change_api_password(username: str, old_password: str, new_password: str) -> None:
+    """Change Wazuh's API password for a given user.
+
+    Args:
+        username: the username to change the user for.
+        old_password: the old API password for the user.
+        new_password: the new API password for the user.
+
+    Raises:
+        WazuhAuthenticationError: if an authentication error occurs.
+        WazuhInstallationError: if an error occurs while processing the requests.
+    """
+    # The certificates might be self signed and there's no security hardening in
+    # passing them to the request since tampering with `localhost` would mean the
+    # container filesystem is compromised
+    try:
+        response = requests.get(  # nosec
+            "https://localhost:55000/security/user/authenticate",
+            auth=(username, old_password),
+            timeout=10,
+            verify=False,
+        )
+        # The old password has already been changed. Nothing to do.
+        if response.status_code == 401:
+            raise WazuhAuthenticationError(f"The provided password for '{username}' is not valid.")
+        response.raise_for_status()
+        token = response.json()["data"]["token"] if response.json()["data"] else None
+        if token is None:
+            logger.error("Unexpected response. Auth token has not been issued.")
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.get(  # nosec
+            "https://localhost:55000/security/users",
+            headers=headers,
+            timeout=10,
+            verify=False,
+        )
+        response.raise_for_status()
+        data = response.json()["data"]
+        user_id = [
+            user["id"] for user in data["affected_items"] if data and user["username"] == username
+        ][0]
+        response = requests.put(  # nosec
+            f"https://localhost:55000/security/users/{user_id}",
+            headers=headers,
+            json={"password": new_password},
+            timeout=10,
+            verify=False,
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException as exc:
+        logger.error("Error modifying the default password: %s", exc)
+        logger.error("Error %s", response.json())
+        raise WazuhInstallationError("Error modifying the default password.") from exc
+
+
+def _generate_api_password() -> str:
+    """Generate a password that complies with the API password imposed by Wazuh.
+
+    Returns: a string with a compliant password.
+    """
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    return "".join(secrets.choice(alphabet) for _ in range(16))
+
+
+def generate_api_credentials() -> dict[str, str]:
+    """Generate the credentials for the default API users.
+
+    Returns: a dict containing the new credentials.
+    """
+    return {
+        "wazuh": _generate_api_password(),
+        "wazuh-wui": _generate_api_password(),
+    }
