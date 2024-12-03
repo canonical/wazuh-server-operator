@@ -6,6 +6,7 @@
 import logging
 import os.path
 import secrets
+import string
 import typing
 
 import pytest
@@ -13,6 +14,8 @@ import pytest_asyncio
 from juju.application import Application
 from juju.model import Controller, Model
 from pytest_operator.plugin import OpsTest
+
+import state
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +100,7 @@ async def opensearch_provider_fixture(
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     await machine_model.wait_for_idle(
-        apps=[application.name, self_signed_certificates.name], status="active", timeout=1400
+        apps=[application.name, self_signed_certificates.name], status="active", timeout=2000
     )
     yield application
 
@@ -113,6 +116,14 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
     return charm
 
 
+@pytest.fixture(scope="module", name="api_credentials")
+def api_credentials_fixture() -> dict[str, str]:
+    """Get Wazuh's API credentials."""
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    password = "".join(secrets.choice(alphabet) for _ in range(16))
+    return {"wazuh": password, "wazuh-wui": password}
+
+
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
@@ -122,13 +133,19 @@ async def application_fixture(
     opensearch_provider: Application,
     pytestconfig: pytest.Config,
     traefik: Application,
+    api_credentials: dict[str, str],
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
+    await model.add_secret(
+        name=state.WAZUH_API_CREDENTIALS,
+        data_args=[f"{username}={password}" for username, password in api_credentials.items()],
+    )
     application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+    await model.grant_secret(secret_name=state.WAZUH_API_CREDENTIALS, application=application.name)
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -139,6 +156,6 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
-        apps=[application.name, traefik.name], status="active", raise_on_error=True
+        apps=[application.name, traefik.name], status="active", raise_on_error=True, timeout=1500
     )
     yield application

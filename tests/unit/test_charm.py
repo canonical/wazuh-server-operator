@@ -46,7 +46,7 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
     assert harness.model.unit.status.name == ops.BlockedStatus().name
 
 
-# pylint: disable=too-many-arguments, too-many-positional-arguments
+# pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
@@ -70,14 +70,21 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     """
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     secret_id = f"secret:{secrets.token_hex(21)}"
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+    }
     wazuh_config = WazuhConfig(
-        custom_config_repository=custom_config_repository, custom_config_ssh_key=secret_id
+        api_credentials=api_credentials,
+        custom_config_repository=custom_config_repository,
+        custom_config_ssh_key=secret_id,
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
     cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
+        api_credentials=api_credentials,
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
@@ -139,16 +146,25 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert: the charm reaches active status and configs are applied.
     """
     password = secrets.token_hex()
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+    }
     cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=None,
+        api_credentials=api_credentials,
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
-        wazuh_config=WazuhConfig(custom_config_repository=None, custom_config_ssh_key=None),
+        wazuh_config=WazuhConfig(
+            api_credentials=api_credentials,
+            custom_config_repository=None,
+            custom_config_ssh_key=None,
+        ),
         custom_config_ssh_key=None,
     )
     harness = Harness(WazuhServerCharm)
