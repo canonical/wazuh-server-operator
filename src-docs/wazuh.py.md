@@ -7,26 +7,16 @@ Wazuh operational logic.
 
 **Global Variables**
 ---------------
-<<<<<<< HEAD
 - **CONTAINER_NAME**
-=======
->>>>>>> secure-api
 - **KNOWN_HOSTS_PATH**
-- **REPOSITORY_PATH**
-<<<<<<< HEAD
 - **RSA_PATH**
-=======
->>>>>>> secure-api
+- **REPOSITORY_PATH**
 - **WAZUH_GROUP**
 - **WAZUH_USER**
 
 ---
 
-<<<<<<< HEAD
-<a href="../src/wazuh.py#L111"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-=======
 <a href="../src/wazuh.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
->>>>>>> secure-api
 
 ## <kbd>function</kbd> `update_configuration`
 
@@ -61,11 +51,7 @@ Update the workload configuration.
 
 ---
 
-<<<<<<< HEAD
-<a href="../src/wazuh.py#L140"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-=======
 <a href="../src/wazuh.py#L146"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
->>>>>>> secure-api
 
 ## <kbd>function</kbd> `install_certificates`
 
@@ -92,11 +78,7 @@ Update Wazuh filebeat certificates.
 
 ---
 
-<<<<<<< HEAD
-<a href="../src/wazuh.py#L160"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-=======
 <a href="../src/wazuh.py#L166"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
->>>>>>> secure-api
 
 ## <kbd>function</kbd> `configure_agent_password`
 
@@ -116,11 +98,7 @@ Configure the agent password.
 
 ---
 
-<<<<<<< HEAD
-<a href="../src/wazuh.py#L215"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-=======
 <a href="../src/wazuh.py#L221"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
->>>>>>> secure-api
 
 ## <kbd>function</kbd> `configure_git`
 
@@ -146,11 +124,7 @@ Configure git.
 
 ---
 
-<<<<<<< HEAD
-<a href="../src/wazuh.py#L273"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-=======
 <a href="../src/wazuh.py#L279"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
->>>>>>> secure-api
 
 ## <kbd>function</kbd> `pull_configuration_files`
 
@@ -169,11 +143,7 @@ Pull configuration files from the repository.
 
 ---
 
-<<<<<<< HEAD
-<a href="../src/wazuh.py#L305"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-=======
 <a href="../src/wazuh.py#L311"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
->>>>>>> secure-api
 
 ## <kbd>function</kbd> `configure_filebeat_user`
 
@@ -198,11 +168,7 @@ Configure the filebeat user.
 
 ---
 
-<<<<<<< HEAD
-<a href="../src/wazuh.py#L361"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-=======
 <a href="../src/wazuh.py#L367"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
->>>>>>> secure-api
 
 ## <kbd>function</kbd> `change_api_password`
 
@@ -230,7 +196,7 @@ Change Wazuh's API password for a given user.
 
 ---
 
-<a href="../src/wazuh.py#L429"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L431"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `generate_api_credentials`
 
@@ -241,26 +207,6 @@ generate_api_credentials() → dict[str, str]
 Generate the credentials for the default API users. 
 
 Returns: a dict containing the new credentials. 
-
-
----
-
-<a href="../src/wazuh.py#L440"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-## <kbd>function</kbd> `store_api_credentials`
-
-```python
-store_api_credentials(app: Application, credentials: dict[str, str]) → None
-```
-
-Store the wazuh API credentials in a secret. 
-
-
-
-**Args:**
- 
- - <b>`app`</b>:  the Juju application. 
- - <b>`credentials`</b>:  the API credentials to store. 
 
 
 ---

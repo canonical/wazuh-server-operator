@@ -18,6 +18,7 @@ import opensearch_observer
 import traefik_route_observer
 import wazuh
 from state import (
+    WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     WAZUH_DEFAULT_API_CREDENTIALS,
     CharmBaseWithState,
@@ -143,7 +144,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 wazuh.change_api_password(
                     username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
                 )
-            wazuh.store_api_credentials(self.app, credentials)
+            self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
             container.add_layer("wazuh", self._pebble_layer, combine=True)
             container.replan()
         self.unit.status = ops.ActiveStatus()
@@ -160,6 +161,8 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["HTTPS_PROXY"] = str(proxy.https_proxy)
         if proxy.no_proxy:
             environment["NO_PROXY"] = proxy.no_proxy
+        if not self.state:
+            return {}
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
