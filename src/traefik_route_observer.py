@@ -82,11 +82,13 @@ class TraefikRouteObserver(Object):
             routers[f"juju-{self.model.name}-{self.model.app.name}-{sanitized_protocol}"] = {
                 "entryPoints": [sanitized_protocol],
                 "service": service_name,
-                "rule": "HostSNI(`*`)",
-                "tls": {"passthrough": True},
+                "rule": "ClientIP(`0.0.0.0/0`)",
             }
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
+                "loadBalancer": {
+                    "servers": [{"address": f"{self.hostname}:{port}"}],
+                    "terminationDelay": 1000,
+                }
             }
         return {
             "tcp": {
