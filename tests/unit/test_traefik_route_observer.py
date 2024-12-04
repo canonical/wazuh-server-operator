@@ -71,10 +71,16 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                 },
                 "services": {
                     "juju-testing-observer-charm-service-conn-tcp": {
-                        "loadBalancer": {"servers": [{"address": "wazuh-server.local:1514"}]}
+                        "loadBalancer": {
+                            "servers": [{"address": "wazuh-server.local:1514"}],
+                            "terminationDelay": 1000,
+                        }
                     },
                     "juju-testing-observer-charm-service-enrole-tcp": {
-                        "loadBalancer": {"servers": [{"address": "wazuh-server.local:1515"}]}
+                        "loadBalancer": {
+                            "servers": [{"address": "wazuh-server.local:1515"}],
+                            "terminationDelay": 1000,
+                        }
                     },
                 },
             },
