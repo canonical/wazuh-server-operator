@@ -218,28 +218,27 @@ Change Wazuh's API password for a given user.
 
 **Raises:**
  
- - <b>`WazuhAuthenticationError`</b>:  if an authentication error occurs. 
  - <b>`WazuhInstallationError`</b>:  if an error occurs while processing the requests. 
 
 
 ---
 
-<a href="../src/wazuh.py#L452"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L442"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-## <kbd>function</kbd> `generate_api_credentials`
+## <kbd>function</kbd> `generate_api_password`
 
 ```python
-generate_api_credentials() → dict[str, str]
+generate_api_password() → str
 ```
 
-Generate the credentials for the default API users. 
+Generate a password that complies with the API password imposed by Wazuh. 
 
-Returns: a dict containing the new credentials. 
+Returns: a string with a compliant password. 
 
 
 ---
 
-<a href="../src/wazuh.py#L462"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L451"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `create_readonly_api_user`
 

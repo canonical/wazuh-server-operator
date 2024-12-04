@@ -19,9 +19,20 @@ logger = logging.getLogger(__name__)
 WAZUH_API_CREDENTIALS = "wazuh-api-credentials"
 # Bandit mistakenly thinks this is a password
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
-WAZUH_DEFAULT_API_CREDENTIALS = {
-    "wazuh": "wazuh",
-    "wazuh-wui": "wazuh-wui",
+WAZUH_USERS = {
+    "wazuh": {
+        "default_password": "wazuh",
+        "default": True,
+    },
+    "wazuh-wui": {
+        "default_password": "wazuh-wui",
+        "default": True,
+    },
+    # This user will be created by the charm
+    "prometheus": {
+        "default_password": "",
+        "default": False,
+    },
 }
 
 
@@ -208,7 +219,7 @@ def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
         return api_credentials_content
     except ops.SecretNotFoundError:
         logger.debug("Secret wazuh-api-credentials not found. Using default values.")
-        return WAZUH_DEFAULT_API_CREDENTIALS
+        return {}
 
 
 class State(BaseModel):  # pylint: disable=too-few-public-methods
@@ -219,7 +230,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_ips: list of Wazuh indexer IPs.
-        is_default_api_password: if the default API password is in use.
+        unconfigured_api_users: if any default API password is in use.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
         certificate: the TLS certificate.
@@ -369,9 +380,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             raise InvalidStateError(f"Invalid charm configuration {error_field_str}") from exc
 
     @property
-    def is_default_api_password(self) -> bool:
-        """Check if the default API password is in use..
+    def unconfigured_api_users(self) -> dict[str, dict[str, object]]:
+        """List unconfigured usernames.
 
-        Returns: True if the current password is the default
+        Returns: a map containing the unconfigured users and their details.
         """
-        return WAZUH_DEFAULT_API_CREDENTIALS == self.api_credentials
+        return {
+            username: details
+            for username, details in WAZUH_USERS.items()
+            if username not in self.api_credentials
+            or self.api_credentials[username] == details["default_password"]
+        }

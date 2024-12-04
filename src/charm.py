@@ -20,7 +20,7 @@ import wazuh
 from state import (
     WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
-    WAZUH_DEFAULT_API_CREDENTIALS,
+    WAZUH_USERS,
     CharmBaseWithState,
     InvalidStateError,
     RecoverableStateError,
@@ -138,12 +138,21 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
 
-        if self.state.is_default_api_password:
-            credentials = wazuh.generate_api_credentials()
-            token = wazuh.authenticate_user(username,  WAZUH_DEFAULT_API_CREDENTIALS[username])
-            for username, password in credentials.items():
-                wazuh.change_api_password(username, password, token)
-            self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+        if self.state.unconfigured_api_users:
+            # Current credentials that will be updated on every successful operation
+            credentials = self.state.api_credentials
+            token = wazuh.authenticate_user("wazuh", WAZUH_USERS["wazuh"]["default_password"])
+            for username, details in self.state.unconfigured_api_users:
+                password = wazuh.generate_api_password()
+                # The user has already been created when installing
+                if details["default"]:
+                    wazuh.change_api_password(username, password, token)
+                # The user is new
+                else:
+                    wazuh.create_readonly_api_user(username, password, token)
+                # Store the new credentials longside the existing ones
+                credentials[username] = password
+                self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
             container.add_layer("wazuh", self._pebble_layer, combine=True)
             container.replan()
         self.unit.status = ops.ActiveStatus()
@@ -193,7 +202,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 #         "WAZUH_API_HOST": "localhost",
                 #         "WAZUH_API_PORT": "55000",
                 #         "WAZUH_API_USERNAME": "wazuh",
-                #         "WAZUH_API_PASSWORD": self.state.api_credentials["wazuh"],
+                #         "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
                 #     },
                 # },
             },

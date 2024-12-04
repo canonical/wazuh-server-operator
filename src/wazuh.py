@@ -393,7 +393,7 @@ def authenticate_user(username: str, password: str) -> str:
         response.raise_for_status()
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
-            raise WazuhAuthenticationError(f"Response for '{username}' does not contain auth token.")
+            raise WazuhAuthenticationError(f"Response for '{username}' does not contain token.")
         return token
     except requests.exceptions.RequestException as exc:
         raise WazuhAuthenticationError from exc
@@ -408,7 +408,6 @@ def change_api_password(username: str, password: str, token: str) -> None:
         token: the auth token for the API.
 
     Raises:
-        WazuhAuthenticationError: if an authentication error occurs.
         WazuhInstallationError: if an error occurs while processing the requests.
     """
     # The certificates might be self signed and there's no security hardening in
@@ -440,7 +439,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
 
-def _generate_api_password() -> str:
+def generate_api_password() -> str:
     """Generate a password that complies with the API password imposed by Wazuh.
 
     Returns: a string with a compliant password.
@@ -448,16 +447,6 @@ def _generate_api_password() -> str:
     alphabet = string.ascii_letters + string.digits + string.punctuation
     return "".join(secrets.choice(alphabet) for _ in range(16))
 
-
-def generate_api_credentials() -> dict[str, str]:
-    """Generate the credentials for the default API users.
-
-    Returns: a dict containing the new credentials.
-    """
-    return {
-        "wazuh": _generate_api_password(),
-        "wazuh-wui": _generate_api_password(),
-    }
 
 def create_readonly_api_user(username: str, password: str, token: str) -> None:
     """Create a new readonly user for Wazuh's API.
