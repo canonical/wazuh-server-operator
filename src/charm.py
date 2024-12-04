@@ -140,10 +140,9 @@ class WazuhServerCharm(CharmBaseWithState):
 
         if self.state.is_default_api_password:
             credentials = wazuh.generate_api_credentials()
+            token = wazuh.authenticate_user(username,  WAZUH_DEFAULT_API_CREDENTIALS[username])
             for username, password in credentials.items():
-                wazuh.change_api_password(
-                    username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
-                )
+                wazuh.change_api_password(username, password, token)
             self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
             container.add_layer("wazuh", self._pebble_layer, combine=True)
             container.replan()

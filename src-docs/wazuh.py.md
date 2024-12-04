@@ -170,10 +170,38 @@ Configure the filebeat user.
 
 <a href="../src/wazuh.py#L367"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
+## <kbd>function</kbd> `authenticate_user`
+
+```python
+authenticate_user(username: str, password: str) → str
+```
+
+Authenticate an API user. 
+
+
+
+**Args:**
+ 
+ - <b>`username`</b>:  the username. 
+ - <b>`password`</b>:  the password for the user. 
+
+Returns: the JWT token 
+
+
+
+**Raises:**
+ 
+ - <b>`WazuhAuthenticationError`</b>:  if an authentication error occurs. . 
+
+
+---
+
+<a href="../src/wazuh.py#L402"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
 ## <kbd>function</kbd> `change_api_password`
 
 ```python
-change_api_password(username: str, old_password: str, new_password: str) → None
+change_api_password(username: str, password: str, token: str) → None
 ```
 
 Change Wazuh's API password for a given user. 
@@ -183,8 +211,8 @@ Change Wazuh's API password for a given user.
 **Args:**
  
  - <b>`username`</b>:  the username to change the user for. 
- - <b>`old_password`</b>:  the old API password for the user. 
- - <b>`new_password`</b>:  the new API password for the user. 
+ - <b>`password`</b>:  the new password for the user. 
+ - <b>`token`</b>:  the auth token for the API. 
 
 
 
@@ -196,7 +224,7 @@ Change Wazuh's API password for a given user.
 
 ---
 
-<a href="../src/wazuh.py#L431"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L452"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `generate_api_credentials`
 
@@ -207,6 +235,33 @@ generate_api_credentials() → dict[str, str]
 Generate the credentials for the default API users. 
 
 Returns: a dict containing the new credentials. 
+
+
+---
+
+<a href="../src/wazuh.py#L462"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `create_readonly_api_user`
+
+```python
+create_readonly_api_user(username: str, password: str, token: str) → None
+```
+
+Create a new readonly user for Wazuh's API. 
+
+
+
+**Args:**
+ 
+ - <b>`username`</b>:  the username for the user. 
+ - <b>`password`</b>:  the password for the user. 
+ - <b>`token`</b>:  the auth token for the API. 
+
+
+
+**Raises:**
+ 
+ - <b>`WazuhInstallationError`</b>:  if an error occurs while processing the requests. 
 
 
 ---
