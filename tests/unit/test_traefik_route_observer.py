@@ -59,14 +59,12 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                     "juju-testing-observer-charm-conn-tcp": {
                         "entryPoints": ["conn-tcp"],
                         "service": "juju-testing-observer-charm-service-conn-tcp",
-                        "rule": "HostSNI(`*`)",
-                        "tls": {"passthrough": True},
+                        "rule": "ClientIP(`0.0.0.0/0`)",
                     },
                     "juju-testing-observer-charm-enrole-tcp": {
                         "entryPoints": ["enrole-tcp"],
                         "service": "juju-testing-observer-charm-service-enrole-tcp",
-                        "rule": "HostSNI(`*`)",
-                        "tls": {"passthrough": True},
+                        "rule": "ClientIP(`0.0.0.0/0`)",
                     },
                 },
                 "services": {
