@@ -86,7 +86,10 @@ class TraefikRouteObserver(Object):
                 "tls": {"passthrough": True},
             }
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
+                "loadBalancer": {
+                    "servers": [{"address": f"{self.hostname}:{port}"}],
+                    "terminationDelay": 1000,
+                }
             }
         return {
             "tcp": {
