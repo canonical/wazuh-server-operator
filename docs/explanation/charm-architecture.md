@@ -1,6 +1,6 @@
 # Charm architecture
 
-Wazuh is a security platform that provides unified XDR and SIEM protection for endpoints and cloud workloads. The solution is composed of a single universal agent and three central components: the Wazuh server, the Wazuh indexer, and the Wazuh dashboard. This charm corresponds to the Wazuh server.
+Wazuh is a security platform that provides unified XDR and SIEM protection for endpoints and cloud workloads. The solution is composed of a single universal agent and three central components: the Wazuh Server, the Wazuh indexer, and the Wazuh dashboard. This charm corresponds to the Wazuh Server.
 
 The charm design leverages the [sidecar](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/#example-1-sidecar-containers) pattern to allow multiple containers in each pod
 with [Pebble](https://juju.is/docs/sdk/pebble) running as the workload
@@ -14,8 +14,8 @@ Pebble `services` are configured through [layers](https://github.com/canonical/p
 and the following containers represent each one a layer forming the effective
 Pebble configuration, or `plan`:
 
-1. A [Wazuh server](https://www.nginx.com/) container itself, which
-has Wazuh server installed and configured.
+1. A [Wazuh Server](https://www.nginx.com/) container itself, which
+has Wazuh Server installed and configured.
 
 As a result, if you run a `kubectl get pods` on a namespace named for the Juju
 model you've deployed the Synapse charm into, you'll see something like the
@@ -35,19 +35,19 @@ processes startup as explained above.
 ## OCI images
 
 We use [Rockcraft](https://canonical-rockcraft.readthedocs-hosted.com/en/latest/)
-to build OCI Image for Wazuh server.
-The image is defined in [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) and is published to [Charmhub](https://charmhub.io/), the official repository
+to build OCI Image for Wazuh Server.
+The image is defined in [Wazuh Server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) and is published to [Charmhub](https://charmhub.io/), the official repository
 of charms.
 This is done by publishing a resource to Charmhub as described in the
 [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
-### Wazuh server
+### Wazuh Server
 
-Wazuh server is an application controllerd by the `/var/ossec/bin/wazuh-control` script.
+Wazuh Server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
 
-Wazuh server listens on ports 1514, 1515 and 55000; the first two serving the services for the agents to connect, and the last one serving the API.
+Wazuh Server listens on ports 1514, 1515 and 55000; the first two serving the services for the agents to connect, and the last one serving the API.
 
-The workload that this container is running is defined in the [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
+The workload that this container is running is defined in the [Wazuh Server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
 
 ## Integrations
 
