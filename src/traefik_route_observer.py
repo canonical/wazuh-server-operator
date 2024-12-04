@@ -85,7 +85,10 @@ class TraefikRouteObserver(Object):
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
+                "loadBalancer": {
+                    "servers": [{"address": f"{self.hostname}:{port}"}],
+                    "terminationDelay": 1000,
+                }
             }
         return {
             "tcp": {
