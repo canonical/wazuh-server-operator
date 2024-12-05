@@ -9,7 +9,7 @@ Wazuh server charm state.
 ---------------
 - **WAZUH_API_CREDENTIALS**
 - **WAZUH_CLUSTER_KEY_SECRET_LABEL**
-- **WAZUH_DEFAULT_API_CREDENTIALS**
+- **WAZUH_USERS**
 
 
 ---
@@ -58,7 +58,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/state.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
@@ -139,7 +139,7 @@ The Wazuh server charm state.
  - <b>`api_credentials`</b>:  a map containing the API credentials. 
  - <b>`cluster_key`</b>:  the Wazuh key for the cluster nodes. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
- - <b>`is_default_api_password`</b>:  if the default API password is in use. 
+ - <b>`unconfigured_api_users`</b>:  if any default API password is in use. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
  - <b>`certificate`</b>:  the TLS certificate. 
@@ -148,7 +148,7 @@ The Wazuh server charm state.
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L243"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L254"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -184,14 +184,6 @@ Initialize a new instance of the CharmState class.
  - <b>`wazuh_config`</b>:  Wazuh configuration. 
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
 
-
----
-
-#### <kbd>property</kbd> is_default_api_password
-
-Check if the default API password is in use.. 
-
-Returns: True if the current password is the default 
 
 ---
 
@@ -232,11 +224,19 @@ Get charm proxy configuration from juju charm environment.
  
  - <b>`RecoverableStateError`</b>:  if the proxy configuration is invalid. 
 
+---
+
+#### <kbd>property</kbd> unconfigured_api_users
+
+List unconfigured usernames. 
+
+Returns: a map containing the unconfigured users and their details. 
+
 
 
 ---
 
-<a href="../src/state.py#L305"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L316"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 

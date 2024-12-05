@@ -13,13 +13,14 @@ import ops
 from ops import pebble
 
 import certificates_observer
+import observability
 import opensearch_observer
 import traefik_route_observer
 import wazuh
 from state import (
     WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
-    WAZUH_DEFAULT_API_CREDENTIALS,
+    WAZUH_USERS,
     CharmBaseWithState,
     InvalidStateError,
     RecoverableStateError,
@@ -50,6 +51,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.certificates = certificates_observer.CertificatesObserver(self)
         self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
+        self._observability = observability.Observability(self)
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
@@ -95,7 +97,7 @@ class WazuhServerCharm(CharmBaseWithState):
 
         This is the main entry for changes that require a restart.
         """
-        container = self.unit.get_container("wazuh-server")
+        container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
             logger.warning(
                 "Unable to connect to container during reconcile. "
@@ -106,7 +108,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             return
         wazuh.install_certificates(
-            container=self.unit.containers.get("wazuh-server"),
+            container=self.unit.containers.get(wazuh.CONTAINER_NAME),
             private_key=self.certificates.private_key,
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
@@ -125,7 +127,7 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         if self.state.agent_password:
             wazuh.configure_agent_password(
-                container=self.unit.containers.get("wazuh-server"),
+                container=self.unit.containers.get(wazuh.CONTAINER_NAME),
                 password=self.state.agent_password,
             )
         if self.state.custom_config_repository:
@@ -136,13 +138,23 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("wazuh", self._pebble_layer, combine=True)
         container.replan()
 
-        if self.state.is_default_api_password:
-            credentials = wazuh.generate_api_credentials()
-            for username, password in credentials.items():
-                wazuh.change_api_password(
-                    username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
-                )
-            self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+        if self.state.unconfigured_api_users:
+            # Current credentials that will be updated on every successful operation
+            credentials = self.state.api_credentials
+            token = wazuh.authenticate_user("wazuh", WAZUH_USERS["wazuh"]["default_password"])
+            for username, details in self.state.unconfigured_api_users:
+                password = wazuh.generate_api_password()
+                # The user has already been created when installing
+                if details["default"]:
+                    wazuh.change_api_password(username, password, token)
+                # The user is new
+                else:
+                    wazuh.create_readonly_api_user(username, password, token)
+                # Store the new credentials longside the existing ones
+                credentials[username] = password
+                self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+            container.add_layer("wazuh", self._pebble_layer, combine=True)
+            container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
@@ -158,6 +170,8 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["HTTPS_PROXY"] = str(proxy.https_proxy)
         if proxy.no_proxy:
             environment["NO_PROXY"] = proxy.no_proxy
+        if not self.state:
+            return {}
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -179,6 +193,19 @@ class WazuhServerCharm(CharmBaseWithState):
                         "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
                     ),
                     "startup": "enabled",
+                },
+                "prometheus-exporter": {
+                    "override": "replace",
+                    "summary": "prometheus exporter",
+                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
+                    "startup": "enabled",
+                    "user": "prometheus",
+                    "environment": {
+                        "WAZUH_API_HOST": "localhost",
+                        "WAZUH_API_PORT": "55000",
+                        "WAZUH_API_USERNAME": "wazuh",
+                        "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
+                    },
                 },
             },
             "checks": {

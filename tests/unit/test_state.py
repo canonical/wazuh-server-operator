@@ -89,7 +89,7 @@ def test_state_without_proxy():
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
 
-    assert charm_state.api_credentials is not None
+    assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
@@ -102,7 +102,7 @@ def test_state_without_proxy():
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
-    assert not charm_state.is_default_api_password
+    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
 
 
 def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
@@ -147,7 +147,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm, opensearch_relation_data, provider_certificates, csr
     )
-    assert charm_state.api_credentials is not None
+    assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
     assert charm_state.indexer_ips == endpoints
@@ -160,7 +160,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     assert str(charm_state.proxy.http_proxy) == "http://squid.proxy:3228/"
     assert str(charm_state.proxy.https_proxy) == "https://squid.proxy:3228/"
     assert charm_state.proxy.no_proxy == "localhost"
-    assert not charm_state.is_default_api_password
+    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
 
 
 def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
