@@ -29,6 +29,7 @@ async def test_api(model: Model, application: Application, api_credentials: dict
     status = await model.get_status()
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
+    logger.error("CREDENTIALS: %s", api_credentials["wazuh"])
     response = requests.post(  # nosec
         f"https://{address}:55000/security/user/authenticate",
         auth=("wazuh", api_credentials["wazuh"]),
