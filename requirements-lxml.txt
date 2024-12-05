@@ -1,2 +1,2 @@
 lxml==5.3.0
-signxml==4.0.2
+signxml==4.0.3
