@@ -1,26 +1,40 @@
-<!--
-Avoid using this README file for information that is maintained or published elsewhere, e.g.:
+[![CharmHub Badge](https://charmhub.io/indico/badge.svg)](https://charmhub.io/wazuh-server)
+[![Publish to edge](https://github.com/canonical/wazuh-server-operator/actions/workflows/publish_charm.yaml/badge.svg)](https://github.com/canonical/wazuh-server-operator/actions/workflows/publish_charm.yaml)
+[![Promote charm](https://github.com/canonical/wazuh-server-operator/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/wazuh-server-operator/actions/workflows/promote_charm.yaml)
+[![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
 
-* metadata.yaml > published on Charmhub
-* documentation > published on (or linked to from) Charmhub
-* detailed contribution guide > documentation or CONTRIBUTING.md
+# Wazuh Server Operator
 
-Use links instead.
--->
+A Juju charm deploying and managing Wazuh Server on Kubernetes. Wazuh is an
+open-source XDR and SIEM tool to protect endpoints and cloud workloads. It allows for deployment on
+many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) to
+[Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
+offerings.
 
-# is-charms-template
+Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
 
-Charmhub package name: operator-template
-More information: https://charmhub.io/is-charms-template
+For information about how to deploy, integrate, and manage this charm, see the Official [Wazuh Server Operator Documentation](https://charmhub.io/wazuh-server/docs).
 
-Describe your charm in one or two sentences.
 
-## Other resources
+## Get started
 
-<!-- If your charm is documented somewhere else other than Charmhub, provide a link separately. -->
+You can follow the tutorial [here](https://charmhub.io/wazuh-server/docs/getting-started).
 
-- [Read more](https://example.com)
+## Integrations
 
-- [Contributing](CONTRIBUTING.md) <!-- or link to other contribution documentation -->
+This charm can be integrated with other Juju charms and services:
+- [Wazuh Indexer](https://charmhub.io/wazuh-indexer): Wazuh indexer is a highly scalable, full-text search and analytics engine forked from OpenSearch.
+- [Traefik](https://charmhub.io/traefik-k8s): Traefik is an application proxy that providers routing and load balancing of microservices.
+- [Certificates](https://github.com/canonical/charm-relation-interfaces/blob/main/interfaces/tls_certificates/v1/README.md): Any provider charm compliant with the `tls-certificates/v1` interface, providing TLS certificates.
 
-- See the [Juju SDK documentation](https://juju.is/docs/sdk) for more information about developing and improving charms.
+You can find the full list of integrations [here](https://charmhub.io/wazuh-server/integrations).
+
+## Learn more
+* [Read more](https://charmhub.io/wazuh-server) <!--Link to the charm's official documentation-->
+* [Developer documentation](https://documentation.wazuh.com/) <!--Link to any developer documentation-->
+* [Official webpage](https://wazuh.com/) <!--(Optional) Link to official webpage/blog/marketing content-->
+* [Troubleshooting](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--(Optional) Link to a page or section about troubleshooting/FAQ-->
+## Project and community
+* [Issues](https://github.com/canonical/wazuh-server-operator/issues) <!--Link to GitHub issues (if applicable)-->
+* [Contributing](https://charmhub.io/wazuh-server/docs/how-to-contribute) <!--Link to any contribution guides-->
+* [Matrix](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--Link to contact info (if applicable), e.g. Matrix channel-->

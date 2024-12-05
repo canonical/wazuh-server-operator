@@ -11,8 +11,8 @@ package-repositories:
     url: https://packages.wazuh.com/4.x/apt/
 
 name: wazuh-server
-summary: Wazuh server
-description:  Wazuh server OCI image
+summary: Wazuh Server
+description:  Wazuh Server OCI image
 version: "1.0"
 base: ubuntu@24.04
 build-base: ubuntu@24.04

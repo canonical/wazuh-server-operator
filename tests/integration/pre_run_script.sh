@@ -6,7 +6,7 @@
 # Pre-run script for integration test operator-workflows action.
 # https://github.com/canonical/operator-workflows/blob/main/.github/workflows/integration_test.yaml
 
-# OpenSearch charms are deployed on lxd and Wazuh server charm is deployed on microk8s.
+# OpenSearch charms are deployed on lxd and Wazuh Server charm is deployed on microk8s.
 
 TESTING_MODEL="$(juju switch)"
 
