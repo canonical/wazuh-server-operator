@@ -49,7 +49,7 @@ where `<agent-password>` is the password you want to configure and`<secret-id>` 
 
 Run `juju status` to see the current status of the deployment. Wazuh server unit should be in `waiting status`.
 
-Provide the integratoins between the Wazuh Server and the other charms:
+Provide the integrations between the Wazuh Server and the other charms:
 ```bash
 juju integrate wazuh-server self-signed-certificates
 juju integrate wazuh-server traefik-k8s
