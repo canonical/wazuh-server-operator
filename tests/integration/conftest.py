@@ -140,12 +140,7 @@ async def application_fixture(
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
-    await model.add_secret(
-        name=state.WAZUH_API_CREDENTIALS,
-        data_args=[f"{username}={password}" for username, password in api_credentials.items()],
-    )
     application = await model.deploy(f"./{charm}", resources=resources, trust=True)
-    await model.grant_secret(secret_name=state.WAZUH_API_CREDENTIALS, application=application.name)
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
