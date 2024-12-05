@@ -54,7 +54,9 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
+    get_version_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -94,6 +96,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         wazuh_config=wazuh_config,
         custom_config_ssh_key="somekey",
     )
+    get_version_mock.return_value = "v4.9.2"
     harness = Harness(WazuhServerCharm)
     harness.begin()
     container = harness.model.unit.containers.get("wazuh-server")
@@ -120,6 +123,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container=container, password=agent_password
     )
     pull_configuration_files_mock.assert_called_with(container)
+    get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
@@ -131,7 +135,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
+    get_version_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -167,6 +173,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         ),
         custom_config_ssh_key=None,
     )
+    get_version_mock.return_value = "v4.9.2"
     harness = Harness(WazuhServerCharm)
     harness.begin()
     container = harness.model.unit.containers.get("wazuh-server")
@@ -189,6 +196,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server/0",
         cluster_key,
     )
+    get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
