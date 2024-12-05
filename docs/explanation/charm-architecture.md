@@ -11,7 +11,7 @@ configuring processes to run in a container and controlling those processes
 throughout the workload lifecycle.
 
 Pebble `services` are configured through [layers](https://github.com/canonical/pebble#layer-specification),
-and the following containers represent each one a layer forming the effective
+and the following containers each represent a layer that forms the effective
 Pebble configuration, or `plan`:
 
 1. A [Wazuh Server](https://www.nginx.com/) container itself, which
