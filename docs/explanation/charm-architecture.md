@@ -17,8 +17,8 @@ Pebble configuration, or `plan`:
 1. A [Wazuh Server](https://www.nginx.com/) container itself, which
 has Wazuh Server installed and configured.
 
-As a result, if you run a `kubectl get pods` on a namespace named for the Juju
-model you've deployed the Synapse charm into, you'll see something like the
+As a result, if you run `kubectl get pods` on a namespace named for the Juju
+model you've deployed the Wazuh Server charm into, you'll see something like the
 following:
 
 ```bash
