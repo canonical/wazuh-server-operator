@@ -141,15 +141,14 @@ class WazuhServerCharm(CharmBaseWithState):
         if self.state.unconfigured_api_users:
             # Current credentials that will be updated on every successful operation
             credentials = self.state.api_credentials
+            token = wazuh.authenticate_user("wazuh", WAZUH_USERS["wazuh"]["default_password"])
             for username, details in self.state.unconfigured_api_users:
                 password = wazuh.generate_api_password()
                 # The user has already been created when installing
                 if details["default"]:
-                    token = wazuh.authenticate_user("wazuh", WAZUH_USERS[username]["default_password"])
                     wazuh.change_api_password(username, password, token)
                 # The user is new
                 else:
-                    token = wazuh.authenticate_user("wazuh", WAZUH_USERS["wazuh"]["default_password"])
                     wazuh.create_readonly_api_user(username, password, token)
                 # Store the new credentials longside the existing ones
                 credentials[username] = password
