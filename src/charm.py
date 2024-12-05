@@ -155,6 +155,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
             container.add_layer("wazuh", self._pebble_layer, combine=True)
             container.replan()
+        self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
     @property

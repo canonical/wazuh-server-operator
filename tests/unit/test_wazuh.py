@@ -322,3 +322,21 @@ def test_configure_git_when_no_key_no_repository_specified() -> None:
     wazuh.configure_git(container, None, None)
     assert not container.exists(wazuh.KNOWN_HOSTS_PATH)
     assert not container.exists(wazuh.RSA_PATH)
+
+
+def test_get_version() -> None:
+    """
+    arrange: mock the system call to fetch the version.
+    act: fetch the version.
+    assert: the version is correctly parsed from the output.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.begin_with_initial_hooks()
+    harness.handle_exec(
+        "wazuh-server",
+        ["/var/ossec/bin/wazuh-control", "info"],
+        result='WAZUH_VERSION="v4.9.2"\nWAZUH_REVISION="40921"\nWAZUH_TYPE="server"\n',
+    )
+    container = harness.charm.unit.get_container("wazuh-server")
+    version = wazuh.get_version(container)
+    assert "v4.9.2" == version

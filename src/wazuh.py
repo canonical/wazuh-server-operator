@@ -6,6 +6,7 @@
 """Wazuh operational logic."""
 
 import logging
+import re
 import secrets
 import string
 import typing
@@ -497,3 +498,17 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
     except requests.exceptions.RequestException as exc:
         logger.error("Error %s", response.json())
         raise WazuhInstallationError("Error creating a readonly user.") from exc
+
+
+def get_version(container: ops.Container) -> str:
+    """Get the Wazuh version.
+
+    Arguments:
+        container: the container in which to check the version.
+
+    Returns: the Wazuh version number.
+    """
+    process = container.exec(["/var/ossec/bin/wazuh-control", "info"])
+    version_string, _ = process.wait_output()
+    version = re.search('^WAZUH_VERSION="(.*)"', version_string)
+    return version.group(1) if version else ""
