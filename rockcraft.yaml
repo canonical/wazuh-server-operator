@@ -20,6 +20,12 @@ license: Apache-2.0
 platforms:
   amd64:
 parts:
+  add-user:
+    plugin: nil
+    overlay-script: |
+      chmod 755 $CRAFT_OVERLAY/etc
+      groupadd -R $CRAFT_OVERLAY --gid 2000 prometheus
+      useradd -R $CRAFT_OVERLAY --system --gid 2000 --uid 2000 --home /srv/prometheus prometheus
   utils:
     plugin: nil
     stage-packages:
@@ -73,9 +79,14 @@ parts:
     source-depth: 1
     source-type: git
     source-commit: 7ab31b3f73b0ce344bd7e4d0deb1d544ae1b7d1c
+    python-requirements: [requirements.txt]
+    override-build: |
+      cp $CRAFT_PART_SRC/*py $CRAFT_PART_INSTALL/
+      craftctl default
     organize:
-      main.py: prometheus_exporter.py
-    prime:
-      - -.github
-      - -deployment
-      - -tests
+      main.py: srv/prometheus/prometheus_exporter.py
+    permissions:
+      - path: srv/prometheus/prometheus_exporter.py
+        owner: 2000
+        group: 2000
+        mode: "755"
