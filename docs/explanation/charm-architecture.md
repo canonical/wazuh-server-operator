@@ -29,9 +29,6 @@ wazuh-server-0                    2/2     Running   0         6h4m
 This shows there are 2 containers - the one named above, as well as a container
 for the charm code itself.
 
-All containers will have the command `/charm/bin/pebble`. Pebble is responsible for service management, as explained above.
-processes startup as explained above.
-
 ## OCI images
 
 We use [Rockcraft](https://canonical-rockcraft.readthedocs-hosted.com/en/latest/)
@@ -48,10 +45,6 @@ Wazuh Server is an application controlled by the `/var/ossec/bin/wazuh-control` 
 Wazuh Server listens on ports 1514, 1515 and 55000; the first two serving the services for the agents to connect, and the last one serving the API.
 
 The workload that this container is running is defined in the [Wazuh Server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
-
-## Integrations
-
-See [Integrations](https://charmhub.io/synapse/docs/reference/integrations).
 
 ## Charm code overview
 
@@ -76,6 +69,7 @@ juju config wazuh-server custom-config-repository=git+hhtp://github.com/sample-r
 3. Event handlers are defined in the charm's framework observers. An example looks like the following:
 ```python
 self.framework.observe(self.on.config_changed, self._on_config_changed)
+```
 4. The method `_on_config_changed` will take the necessary actions. 
 The actions include waiting for all the relations to be ready and then configuring
 the container.

@@ -11,6 +11,7 @@
 * A working station, e.g., a laptop, with amd64 architecture.
 * Juju 3 installed and bootstrapped to a MicroK8s and to an LXD controller. You can accomplish
 this process by using a [Multipass](https://multipass.run/) VM as outlined in this guide: [Set up / Tear down your test environment](https://juju.is/docs/juju/set-up--tear-down-your-test-environment)
+* A deployed Wazij Indexer. For instructions to deploy the Wazuh Indexer, check [its documentation](https://charmhub.io/wazuh-indexer).
 
 :warning: When using a Multipass VM, make sure to replace IP addresses with the
 VM IP in steps that assume you're running locally. To get the IP address of the
@@ -36,7 +37,6 @@ juju deploy wazuh-server
 juju deploy self-signed-certificates
 juju deploy traefik-k8s --trust
 ```
-For instructions to deploy the Wazuh Indexer, check [its documentation](https://charmhub.io/wazuh-indexer).
 
 To connect the agents, you'll need to configure the agent password. For that,
 create a secret and set it in the Wazuh server configuration:
@@ -59,7 +59,12 @@ juju integrate wazuh-server <offer-url>
 
 Note that `<offer-url>` is the Juju offer for the Wazuh Indexer.
 
+
+Monitor the deployment using `juju status` until the output looks similar to the following one:
 ```bash
+SAAS                             Status  Store                           URL
+wazuh-indexer-opensearch-client  active  juju-controller-lxd             admin/wazuh.wazuh-indexer-opensearch-client
+
 App           Version  Status  Scale  Charm                     Channel        Rev  Address        Exposed  Message
 certificates           active      1  self-signed-certificates  latest/stable  155  10.87.137.125  no       
 traefik       2.11.0   active      1  traefik-k8s               latest/stable  223  10.87.242.226  no       Serving at 10.142.2.62
