@@ -6,6 +6,7 @@
 """Wazuh operational logic."""
 
 import logging
+import re
 import secrets
 import string
 import typing
@@ -435,3 +436,17 @@ def generate_api_credentials() -> dict[str, str]:
         "wazuh": _generate_api_password(),
         "wazuh-wui": _generate_api_password(),
     }
+
+
+def get_version(container: ops.Container) -> str:
+    """Get the Wazuh version.
+
+    Arguments:
+        container: the container in which to check the version.
+
+    Returns: the Wazuh version number.
+    """
+    process = container.exec(["/var/ossec/bin/wazuh-control", "info"])
+    version_string, _ = process.wait_output()
+    version = re.search('^WAZUH_VERSION="(.*)"', version_string)
+    return version.group(1) if version else ""
