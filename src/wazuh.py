@@ -288,7 +288,7 @@ def pull_configuration_files(container: ops.Container) -> None:
         process = container.exec(
             [
                 "rsync",
-                "-ra",
+                "-a",
                 "--chown",
                 "wazuh:wazuh",
                 "--include='*/'",

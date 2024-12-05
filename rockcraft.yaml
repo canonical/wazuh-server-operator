@@ -81,9 +81,10 @@ parts:
     source-commit: 7ab31b3f73b0ce344bd7e4d0deb1d544ae1b7d1c
     python-requirements: [requirements.txt]
     override-build: |
-      cp $CRAFT_PART_SRC/*py $CRAFT_PART_INSTALL/
       craftctl default
+      cp -r $CRAFT_PART_SRC/* $CRAFT_PART_INSTALL/
     organize:
+      wazuh: srv/prometheus/wazuh
       main.py: srv/prometheus/prometheus_exporter.py
     permissions:
       - path: srv/prometheus/prometheus_exporter.py

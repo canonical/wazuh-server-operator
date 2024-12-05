@@ -196,7 +196,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-exporter": {
                     "override": "replace",
                     "summary": "prometheus exporter",
-                    "command": "/usr/bin/python3 /usr/bin/prometheus_exporter.py",
+                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
                     "startup": "enabled",
                     "user": "prometheus",
                     "environment": {
