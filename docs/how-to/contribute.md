@@ -35,7 +35,7 @@ source .tox/unit/bin/activate
 
 ### Testing
 
-Note that the [Wazuh Server](rockcraft.yaml) image needs to be built and pushed to MicroK8s for the tests to run. It should be tagged as `localhost:32000/wazuh-server:latest` so that Kubernetes knows how to pull them from the MicroK8s repository. Note that the MicroK8s registry needs to be enabled using `microk8s enable registry`. More details regarding the OCI images below. The following commands can then be used to run the tests:
+Note that the [Wazuh Server](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) image needs to be built and pushed to MicroK8s for the tests to run. It should be tagged as `localhost:32000/wazuh-server:latest` so that Kubernetes knows how to pull them from the MicroK8s repository. Note that the MicroK8s registry needs to be enabled using `microk8s enable registry`. More details regarding the OCI images below. The following commands can then be used to run the tests:
 
 * `tox`: Runs all of the basic checks (`lint`, `unit`, `static`, and `coverage-report`).
 * `tox -e fmt`: Runs formatting using `black` and `isort`.
