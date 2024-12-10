@@ -143,6 +143,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
                 )
             self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+        self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
     @property
