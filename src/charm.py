@@ -20,7 +20,6 @@ import wazuh
 from state import (
     WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
-    WAZUH_USERS,
     CharmBaseWithState,
     InvalidStateError,
     RecoverableStateError,
