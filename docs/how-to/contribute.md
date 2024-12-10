@@ -1,8 +1,8 @@
 # How to contribute
 
-## Overview
-
 This document explains the processes and practices recommended for contributing enhancements to the Wazuh Server operator.
+
+## Overview
 
 - Generally, before developing enhancements to this charm, you should consider [opening an issue
   ](https://github.com/canonical/wazuh-server-operator/issues) explaining your use case.
