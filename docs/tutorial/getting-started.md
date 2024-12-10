@@ -27,8 +27,8 @@ juju add-model wazuh-tutorial
 ```
 
 ## Deploy the Wazuh Server charm
-Synapse requires connections to Wazuh indexer, Traefik and a charm implementing the TLS certificates relation,
-for this tutorial we will be using Self Signed X.509 Certificates. Deploy all these charm applications.
+Synapse requires connections to Wazuh indexer, Traefik and a charm implementing the TLS certificates relation.
+For this tutorial we will be using Self Signed X.509 Certificates.
 
 ### Deploy and integrate the charms
 
