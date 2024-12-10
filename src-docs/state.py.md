@@ -3,7 +3,7 @@
 <a href="../src/state.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 # <kbd>module</kbd> `state.py`
-Wazuh server charm state. 
+Wazuh Server charm state. 
 
 **Global Variables**
 ---------------
@@ -129,7 +129,7 @@ Exception raised when a charm configuration is invalid and recoverable by the op
 ---
 
 ## <kbd>class</kbd> `State`
-The Wazuh server charm state. 
+The Wazuh Server charm state. 
 
 
 
@@ -276,7 +276,7 @@ Initialize the state from charm.
 ---
 
 ## <kbd>class</kbd> `WazuhConfig`
-The Wazuh server charm configuration. 
+The Wazuh Server charm configuration. 
 
 
 

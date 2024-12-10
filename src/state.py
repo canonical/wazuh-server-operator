@@ -1,7 +1,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Wazuh server charm state."""
+"""Wazuh Server charm state."""
 
 import itertools
 import logging
@@ -67,7 +67,7 @@ class ProxyConfig(BaseModel):  # pylint: disable=too-few-public-methods
 
 
 class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
-    """The Wazuh server charm configuration.
+    """The Wazuh Server charm configuration.
 
     Attributes:
         agent_password: the secret key corresponding to the agent secret.
@@ -223,7 +223,7 @@ def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
 
 
 class State(BaseModel):  # pylint: disable=too-few-public-methods
-    """The Wazuh server charm state.
+    """The Wazuh Server charm state.
 
     Attributes:
         agent_password: the agent password.
