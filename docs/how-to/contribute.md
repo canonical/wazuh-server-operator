@@ -61,7 +61,7 @@ Build the charm in this git repository using:
 charmcraft pack
 ```
 For the integration tests (and also to deploy the charm locally), the wazuh-server
-image is required in the microk8s registry. To enable it:
+image is required in the Microk8s registry. To enable it:
 
     microk8s enable registry
 
