@@ -207,8 +207,12 @@ class WazuhServerCharm(CharmBaseWithState):
                     "environment": {
                         "WAZUH_API_HOST": "localhost",
                         "WAZUH_API_PORT": "55000",
-                        "WAZUH_API_USERNAME": "wazuh",
-                        "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
+                        "WAZUH_API_USERNAME": "prometheus",
+                        "WAZUH_API_PASSWORD": (
+                            self.state.api_credentials["prometheus"]
+                            if "prometheus" in self.state.api_credentials
+                            else ""
+                        ),
                     },
                 },
             },
