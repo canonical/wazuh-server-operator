@@ -135,7 +135,7 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh.update_configuration(
             container, self.state.indexer_ips, self.fqdns, self.unit.name, self.state.cluster_key
         )
-        container.add_layer("wazuh", self._pebble_layer, combine=True)
+        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
 
         if self.state.unconfigured_api_users:
@@ -157,14 +157,14 @@ class WazuhServerCharm(CharmBaseWithState):
                 # Store the new credentials longside the existing ones
                 credentials[username] = password
                 self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
-            container.add_layer("wazuh", self._pebble_layer, combine=True)
+            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
             container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
     @property
-    def _pebble_layer(self) -> pebble.LayerDict:
-        """Return a dictionary representing a Pebble layer."""
+    def _wazuh_pebble_layer(self) -> pebble.LayerDict:
+        """Return a dictionary representing a Pebble layer for Wazuh."""
         environment = {}
         # self.state will never be None at this point
         proxy = self.state.proxy  # type: ignore
@@ -198,23 +198,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     ),
                     "startup": "enabled",
                 },
-                "prometheus-exporter": {
-                    "override": "replace",
-                    "summary": "prometheus exporter",
-                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
-                    "startup": "enabled",
-                    "user": "prometheus",
-                    "environment": {
-                        "WAZUH_API_HOST": "localhost",
-                        "WAZUH_API_PORT": "55000",
-                        "WAZUH_API_USERNAME": "prometheus",
-                        "WAZUH_API_PASSWORD": (
-                            self.state.api_credentials["prometheus"]
-                            if "prometheus" in self.state.api_credentials
-                            else ""
-                        ),
-                    },
-                },
             },
             "checks": {
                 "wazuh-alive": {
@@ -226,6 +209,38 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "level": "alive",
                     "exec": {"command": "filebeat test output"},
+                },
+            },
+        }
+
+    @property
+    def _prometheus_pebble_layer(self) -> pebble.LayerDict:
+        """Return a dictionary representing a Pebble layer for the Prometheus exporter."""
+        if not self.state:
+            return {}
+        return {
+            "summary": "wazuh manager layer",
+            "description": "pebble config layer for wazuh-manager",
+            "services": {
+                "prometheus-exporter": {
+                    "override": "replace",
+                    "summary": "prometheus exporter",
+                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
+                    "startup": "enabled",
+                    "user": "prometheus",
+                    "environment": {
+                        "WAZUH_API_HOST": "localhost",
+                        "WAZUH_API_PORT": "55000",
+                        "WAZUH_API_USERNAME": "prometheus",
+                        "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
+                    },
+                }
+            },
+            "checks": {
+                "prometheus-alive": {
+                    "override": "replace",
+                    "level": "alive",
+                    "tcp": {"port": 5000},
                 },
             },
         }
