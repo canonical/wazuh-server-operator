@@ -14,6 +14,8 @@ import yaml
 from juju.application import Application
 from juju.model import Model
 
+import state
+
 logger = logging.getLogger(__name__)
 
 CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"))
@@ -21,12 +23,15 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_api(model: Model, application: Application, api_credentials: dict[str, str]):
+async def test_api(model: Model, application: Application):
     """Deploy the charm together with related charms.
 
     Assert: the filebeat config is valid.
     """
     status = await model.get_status()
+    api_credentials = (
+        await model.list_secrets({"label": state.WAZUH_API_CREDENTIALS}, show_secrets=True)
+    )[0].value
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
     response = requests.post(  # nosec
