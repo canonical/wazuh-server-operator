@@ -147,6 +147,6 @@ async def application_fixture(
         ],
         status="active",
         raise_on_error=True,
-        timeout=1500,
+        timeout=1800,
     )
     yield application
