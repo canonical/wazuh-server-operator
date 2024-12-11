@@ -139,9 +139,14 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
-        apps=[application.name, traefik.name, opensearch_provider.name, self_signed_certificates.name],
+        apps=[
+            application.name,
+            traefik.name,
+            opensearch_provider.name,
+            self_signed_certificates.name,
+        ],
         status="active",
         raise_on_error=True,
-        timeout=1500
+        timeout=1500,
     )
     yield application
