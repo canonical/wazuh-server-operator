@@ -146,7 +146,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 password = wazuh.generate_api_password()
                 # The user has already been created when installing
                 if details["default"]:
-                    token = wazuh.authenticate_user(username, password)
+                    token = wazuh.authenticate_user(username, credentials[username])
                     wazuh.change_api_password(username, password, token)
                     logger.debug("Changed API user %s", username)
                 # The user is new
