@@ -211,15 +211,18 @@ def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
     Raises:
         InvalidStateError: if the secret when the key should reside is invalid.
     """
+    default_credentials = {
+        username: str(details["default_password"]) for username, details in WAZUH_USERS.items()
+    }
     try:
         api_credentials_secret = model.get_secret(label=WAZUH_API_CREDENTIALS)
         api_credentials_content = api_credentials_secret.get_content(refresh=True)
         if not api_credentials_content:
             raise InvalidStateError("API credentials secret is empty.")
-        return api_credentials_content
+        return {**default_credentials, **api_credentials_content}
     except ops.SecretNotFoundError:
         logger.debug("Secret wazuh-api-credentials not found. Using default values.")
-        return {}
+        return default_credentials
 
 
 class State(BaseModel):  # pylint: disable=too-few-public-methods
