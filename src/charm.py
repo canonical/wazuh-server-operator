@@ -157,7 +157,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 # Store the new credentials longside the existing ones
                 credentials[username] = password
                 try:
-                    secret = self.app.get_secret(label=WAZUH_API_CREDENTIALS)
+                    secret = self.app.model.get_secret(label=WAZUH_API_CREDENTIALS)
                     secret.set_content(credentials)
                 except ops.SecretNotFoundError:
                     self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
