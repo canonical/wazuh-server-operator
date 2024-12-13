@@ -446,7 +446,12 @@ def generate_api_password() -> str:
     Returns: a string with a compliant password.
     """
     alphabet = string.ascii_letters + string.digits + string.punctuation
-    return "".join(secrets.choice(alphabet) for _ in range(16))
+    password = [secrets.choice(alphabet) for _ in range(14)]
+    digit = secrets.choice(string.digits)
+    password.insert(secrets.randbelow(len(password) + 1), digit)
+    punctuation = secrets.choice(string.punctuation)
+    password.insert(secrets.randbelow(len(password) + 1), punctuation)
+    return "".join(password)
 
 
 def create_readonly_api_user(username: str, password: str, token: str) -> None:
