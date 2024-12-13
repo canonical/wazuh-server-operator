@@ -447,12 +447,9 @@ def generate_api_password() -> str:
     """
     alphabet = string.ascii_letters + string.digits + string.punctuation
     password = [secrets.choice(alphabet) for _ in range(13)]
-    letter = secrets.choice(string.ascii_letters)
-    password.insert(secrets.randbelow(len(password) + 1), letter)
-    digit = secrets.choice(string.digits)
-    password.insert(secrets.randbelow(len(password) + 1), digit)
-    punctuation = secrets.choice(string.punctuation)
-    password.insert(secrets.randbelow(len(password) + 1), punctuation)
+    for charset in [string.ascii_letters, string.digits, string.punctuation]:
+        char = secrets.choice(charset)
+        password.insert(secrets.randbelow(len(password) + 1), char)
     return "".join(password)
 
 
