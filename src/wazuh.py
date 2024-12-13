@@ -437,7 +437,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
         logger.error("Error %s", response.json())
-        raise WazuhInstallationError("Error modifying the default password.") from exc
+        raise WazuhInstallationError(f"Error modifying the default password {password}.") from exc
 
 
 def generate_api_password() -> str:
@@ -497,7 +497,9 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
         logger.error("Error %s", response.json())
-        raise WazuhInstallationError("Error creating a readonly user.") from exc
+        raise WazuhInstallationError(
+            f"Error creating a readonly user with password {password}."
+        ) from exc
 
 
 def get_version(container: ops.Container) -> str:
