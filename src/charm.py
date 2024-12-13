@@ -209,11 +209,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     "level": "alive",
                     "tcp": {"port": 55000},
                 },
-                # "filebeat-alive": {
-                #     "override": "replace",
-                #     "level": "alive",
-                #     "exec": {"command": "filebeat test output"},
-                # },
             },
         }
 
