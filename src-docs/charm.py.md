@@ -3,7 +3,7 @@
 <a href="../src/charm.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 # <kbd>module</kbd> `charm.py`
-Wazuh server charm. 
+Wazuh Server charm. 
 
 **Global Variables**
 ---------------
