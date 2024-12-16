@@ -36,10 +36,18 @@ async def test_api(model: Model, application: Application):
     address = status["applications"][application.name]["units"][unit]["address"]
     response = requests.get(  # nosec
         f"https://{address}:55000/security/user/authenticate",
-        auth=("prometheus", api_credentials["prometheus"]),
+        auth=("wazuh", "wazuh"),
         timeout=10,
         verify=False,
     )
+    logger.error(response)
+    response = requests.get(  # nosec
+        f"https://{address}:55000/security/user/authenticate",
+        auth=("wazuh", api_credentials["wazuh"]),
+        timeout=10,
+        verify=False,
+    )
+    logger.error(response)
     assert response.status_code == 200
 
 
