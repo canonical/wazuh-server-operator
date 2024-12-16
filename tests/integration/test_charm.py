@@ -15,7 +15,6 @@ from juju.application import Application
 from juju.model import Model
 
 import state
-import wazuh
 
 logger = logging.getLogger(__name__)
 
