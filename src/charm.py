@@ -150,10 +150,10 @@ class WazuhServerCharm(CharmBaseWithState):
                     wazuh.change_api_password(username, password, token)
                     logger.debug("Changed API user %s", username)
                 # The user is new
-                else:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
-                    wazuh.create_readonly_api_user(username, password, token)
-                    logger.debug("Created API user %s", username)
+                # else:
+                #     token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                #     wazuh.create_readonly_api_user(username, password, token)
+                #     logger.debug("Created API user %s", username)
                 # Store the new credentials longside the existing ones
                 credentials[username] = password
                 try:
