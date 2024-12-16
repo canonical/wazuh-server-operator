@@ -15,6 +15,7 @@ from juju.application import Application
 from juju.model import Model
 
 import state
+import wazuh
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +32,12 @@ async def test_api(model: Model, application: Application):
     status = await model.get_status()
     api_credentials = (
         await model.list_secrets({"label": state.WAZUH_API_CREDENTIALS}, show_secrets=True)
-    )[0].value
-    logger.error(api_credentials)
-    logger.error(api_credentials["data"])
+    )[0].value["data"]
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
-    response = requests.post(  # nosec
+    response = requests.get(  # nosec
         f"https://{address}:55000/security/user/authenticate",
-        auth=("wazuh", api_credentials["data"]["wazuh"]),
+        auth=("wazuh", api_credentials["wazuh"]),
         timeout=10,
         verify=False,
     )
