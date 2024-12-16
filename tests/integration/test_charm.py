@@ -36,7 +36,7 @@ async def test_api(model: Model, application: Application):
     address = status["applications"][application.name]["units"][unit]["address"]
     response = requests.get(  # nosec
         f"https://{address}:55000/security/user/authenticate",
-        auth=("wazuh", api_credentials["wazuh"]),
+        auth=("prometheus", api_credentials["prometheus"]),
         timeout=10,
         verify=False,
     )
