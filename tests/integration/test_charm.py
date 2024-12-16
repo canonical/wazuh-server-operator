@@ -33,13 +33,12 @@ async def test_api(model: Model, application: Application):
         await model.list_secrets({"label": state.WAZUH_API_CREDENTIALS}, show_secrets=True)
     )[0].value
     logger.error(api_credentials)
-    logger.error(api_credentials[0])
-    logger.error(api_credentials[0].value)
+    logger.error(api_credentials["data"])
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
     response = requests.post(  # nosec
         f"https://{address}:55000/security/user/authenticate",
-        auth=("wazuh", api_credentials["wazuh"]),
+        auth=("wazuh", api_credentials["data"]["wazuh"]),
         timeout=10,
         verify=False,
     )
