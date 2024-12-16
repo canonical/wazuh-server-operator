@@ -390,7 +390,9 @@ def authenticate_user(username: str, password: str) -> str:
         )
         # The old password has already been changed. Nothing to do.
         if response.status_code == 401:
-            raise WazuhAuthenticationError(f"The provided password for {username} is not valid.")
+            raise WazuhAuthenticationError(
+                f"The provided password for {username} {password} is not valid."
+            )
         response.raise_for_status()
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
