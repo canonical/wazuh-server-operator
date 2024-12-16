@@ -154,7 +154,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
                     wazuh.create_readonly_api_user(username, password, token)
                     logger.debug("Created API user %s", username)
-                Store the new credentials longside the existing ones
+                # Store the new credentials longside the existing ones
                 credentials[username] = password
                 try:
                     secret = self.model.get_secret(label=WAZUH_API_CREDENTIALS)
