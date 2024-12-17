@@ -139,7 +139,7 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
-        apps=[application.name, traefik.name],
+        apps=[application.name],
         status="active",
         raise_on_error=True,
         timeout=1800,
