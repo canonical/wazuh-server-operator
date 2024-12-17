@@ -40,8 +40,8 @@ async def test_clustering_ok(model: Model, application: Application):
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
-    assert "master" in stdout
-    assert "worker" in stdout
+    assert "master" in stdout, stdout
+    assert "worker" in stdout, stdout
 
     action = await wazuh_unit.run(
         f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10
@@ -51,5 +51,5 @@ async def test_clustering_ok(model: Model, application: Application):
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
-    assert "connected nodes (1)" in stdout
-    assert "wazuh-server-1" in stdout
+    assert "connected nodes (1)" in stdout, stdout
+    assert "wazuh-server-1" in stdout, stdout
