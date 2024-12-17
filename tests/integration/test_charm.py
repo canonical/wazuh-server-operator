@@ -30,7 +30,7 @@ async def test_clustering_ok(model: Model, application: Application):
         apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
 
-    wazuh_unit = application.units[0]  # type: ignore
+    wazuh_unit = application.units[1]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
     action = await wazuh_unit.run(
         f"{pebble_exec} -- /var/ossec/bin/cluster_control -l", timeout=10
