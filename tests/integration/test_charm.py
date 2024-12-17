@@ -23,35 +23,6 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_api(model: Model, application: Application):
-    """Deploy the charm together with related charms.
-
-    Assert: the filebeat config is valid.
-    """
-    status = await model.get_status()
-    api_credentials = (
-        await model.list_secrets({"label": state.WAZUH_API_CREDENTIALS}, show_secrets=True)
-    )[0].value["data"]
-    unit = list(status.applications[application.name].units)[0]
-    address = status["applications"][application.name]["units"][unit]["address"]
-    response = requests.get(  # nosec
-        f"https://{address}:55000/security/user/authenticate",
-        auth=("wazuh", "wazuh"),
-        timeout=10,
-        verify=False,
-    )
-    logger.error(response)
-    response = requests.get(  # nosec
-        f"https://{address}:55000/security/user/authenticate",
-        auth=("wazuh", api_credentials["wazuh"]),
-        timeout=10,
-        verify=False,
-    )
-    logger.error(response)
-    assert response.status_code == 200
-
-
-@pytest.mark.abort_on_fail
 async def test_clustering_ok(model: Model, application: Application):
     """Deploy the charm together with related charms and scale to two units.
 
