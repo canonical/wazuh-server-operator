@@ -9,12 +9,9 @@ import logging
 from pathlib import Path
 
 import pytest
-import requests
 import yaml
 from juju.application import Application
 from juju.model import Model
-
-import state
 
 logger = logging.getLogger(__name__)
 
