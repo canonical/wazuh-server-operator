@@ -105,6 +105,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
         if not self.state:
+            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
         wazuh.install_certificates(
             container=self.unit.containers.get(wazuh.CONTAINER_NAME),
