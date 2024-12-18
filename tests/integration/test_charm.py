@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 
 import pytest
+import requests
 import yaml
 from juju.application import Application
 from juju.model import Model
@@ -17,6 +18,24 @@ logger = logging.getLogger(__name__)
 
 CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"))
 APP_NAME = CHARMCRAFT["name"]
+
+
+@pytest.mark.abort_on_fail
+async def test_api(model: Model, application: Application, api_credentials: dict[str, str]):
+    """Deploy the charm together with related charms.
+
+    Assert: the filebeat config is valid.
+    """
+    status = await model.get_status()
+    unit = list(status.applications[application.name].units)[0]
+    address = status["applications"][application.name]["units"][unit]["address"]
+    response = requests.get(  # nosec
+        f"https://{address}:55000/security/user/authenticate",
+        auth=("wazuh", api_credentials["wazuh"]),
+        timeout=10,
+        verify=False,
+    )
+    assert response.status_code == 200
 
 
 @pytest.mark.abort_on_fail
