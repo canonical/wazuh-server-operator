@@ -391,6 +391,5 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         return {
             username: details
             for username, details in WAZUH_USERS.items()
-            if username not in self.api_credentials
-            or self.api_credentials[username] == details["default_password"]
+            if self.api_credentials[username] == str(details["default_password"])
         }

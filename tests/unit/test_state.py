@@ -457,6 +457,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
+    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
 
 
 def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch):
@@ -518,3 +519,4 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
+    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
