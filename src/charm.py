@@ -138,8 +138,8 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
 
+        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
         if self.state.unconfigured_api_users:
-            logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
             # Current credentials that will be updated on every successful operation
             credentials = self.state.api_credentials
             for username, details in self.state.unconfigured_api_users.items():
