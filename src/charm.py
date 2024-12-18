@@ -155,13 +155,15 @@ class WazuhServerCharm(CharmBaseWithState):
                     token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
                     wazuh.create_readonly_api_user(username, password, token)
                     logger.debug("Created API user %s", username)
-                # Store the new credentials longside the existing ones
+                # Store the new credentials alongside the existing ones
                 credentials[username] = password
                 try:
                     secret = self.model.get_secret(label=WAZUH_API_CREDENTIALS)
                     secret.set_content(credentials)
+                    logger.debug(f"Updated secret %s with credentials %", secret.id, credentials.keys())
                 except ops.SecretNotFoundError:
-                    self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+                    secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+                    logger.debug(f"Added secret %s with credentials %", secret.id, credentials.keys())
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
