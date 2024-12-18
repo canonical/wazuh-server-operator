@@ -40,7 +40,8 @@ async def test_api(model: Model, application: Application):
         timeout=10,
         verify=False,
     )
-    assert response.status_code == 200
+    logger.debug("Credentials %s", api_credentials)
+    assert response.status_code == 200, f"Failed to authenticate with user wazuh and password {api_credentials["wazuh"]}"
 
 
 @pytest.mark.abort_on_fail
