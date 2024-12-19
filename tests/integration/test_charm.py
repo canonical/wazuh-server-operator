@@ -22,25 +22,22 @@ CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"
 APP_NAME = CHARMCRAFT["name"]
 
 
-# @pytest.mark.abort_on_fail
-# async def test_api(model: Model, application: Application):
-#     """Deploy the charm together with related charms.
+@pytest.mark.abort_on_fail
+async def test_api(model: Model, application: Application):
+    """Deploy the charm together with related charms.
 
-#     Assert: the filebeat config is valid.
-#     """
-#     status = await model.get_status()
-#     unit = list(status.applications[application.name].units)[0]
-#     address = status["applications"][application.name]["units"][unit]["address"]
-#     secrets = await model.list_secrets(show_secrets=True)  # type: ignore
-#     secret = next(secret for secret in secrets if secret.label == state.WAZUH_API_CREDENTIALS)
-#     api_credentials = secret.value["data"]
-#     response = requests.get(  # nosec
-#         f"https://{address}:55000/security/user/authenticate",
-#         auth=("wazuh", api_credentials["wazuh"]),
-#         timeout=10,
-#         verify=False,
-#     )
-#     assert response.status_code == 200, f"Failed to authenticate wazuh:{api_credentials['wazuh']}"
+    Assert: the filebeat config is valid.
+    """
+    status = await model.get_status()
+    unit = list(status.applications[application.name].units)[0]
+    address = status["applications"][application.name]["units"][unit]["address"]
+    response = requests.get(  # nosec
+        f"https://{address}:55000/security/user/authenticate",
+        auth=("wazuh", "wazuh"),
+        timeout=10,
+        verify=False,
+    )
+    assert response.status_code == 401
 
 
 @pytest.mark.abort_on_fail
