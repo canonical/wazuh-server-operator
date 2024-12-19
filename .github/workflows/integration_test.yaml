@@ -15,7 +15,7 @@ jobs:
       channel: 1.31-strict/stable
       extra-arguments: |
         --kube-config=${GITHUB_WORKSPACE}/kube-config
-      juju-channel: 3.4/stable
+      juju-channel: 3.6/stable
       load-test-enabled: false
       pre-run-script: |
         -c "sudo microk8s config > ${GITHUB_WORKSPACE}/kube-config
