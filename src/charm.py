@@ -36,7 +36,7 @@ class WazuhServerCharm(CharmBaseWithState):
     """Charm the service.
 
     Attributes:
-        fqdns: the unit FQDNs.
+        master_fqdn: the FQDN for unit 0.
         state: the charm state.
     """
 
@@ -133,7 +133,11 @@ class WazuhServerCharm(CharmBaseWithState):
         if self.state.custom_config_repository:
             wazuh.pull_configuration_files(container)
         wazuh.update_configuration(
-            container, self.state.indexer_ips, self.fqdns, self.unit.name, self.state.cluster_key
+            container,
+            self.state.indexer_ips,
+            self.master_fqdn,
+            self.unit.name,
+            self.state.cluster_key,
         )
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
@@ -248,26 +252,14 @@ class WazuhServerCharm(CharmBaseWithState):
         }
 
     @property
-    def fqdns(self) -> list[str]:
-        """Get the FQDNS for the charm units.
+    def master_fqdn(self) -> str:
+        """Get the FQDN for the unit 0.
 
-        Returns: the list of FQDNs for the charm units.
+        Returns: the FQDN for the unit 0.
         """
-        unit_name = self.unit.name.replace("/", "-")
+        unit_name = f"{self.unit.name.split('/')[0]}-0"
         app_name = self.app.name
-        addresses = [f"{unit_name}.{app_name}-endpoints"]
-        peer_relation = self.model.relations[WAZUH_PEER_RELATION_NAME]
-        if peer_relation:
-            relation = peer_relation[0]
-            # relation.units will contain all the units after the relation-joined event
-            # since a relation-changed is emitted for every relation-joined event.
-            for u in relation.units:
-                # FQDNs have the form
-                # <unit-name>.<app-name>-endpoints.<model-name>.svc.cluster.local
-                unit_name = u.name.replace("/", "-")
-                address = f"{unit_name}.{app_name}-endpoints"
-                addresses.append(address)
-        return addresses
+        return f"{unit_name}.{app_name}-endpoints"
 
 
 if __name__ == "__main__":  # pragma: nocover

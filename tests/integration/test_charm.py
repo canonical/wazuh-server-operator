@@ -50,7 +50,7 @@ async def test_api(model: Model, application: Application):
 
 
 @pytest.mark.abort_on_fail
-async def test_clustering_ok(model: Model, application: Application):
+async def test_clustering_ok(application: Application):
     """
     Arrange: deploy the charm together with related charms.
     Act: scale up to two units

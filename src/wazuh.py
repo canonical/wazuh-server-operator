@@ -75,7 +75,7 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
 def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     container: ops.Container,
     ip_ports: list[str],
-    charm_addresses: list[str],
+    master_address: str,
     unit_name: str,
     cluster_key: str,
 ) -> None:
@@ -84,7 +84,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     Arguments:
         container: the container for which to update the configuration.
         ip_ports: list of indexer IPs and ports to configure.
-        charm_addresses: the unit addresses.
+        master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
     """
@@ -105,11 +105,10 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     # Unit 0 is always present, so the presence of a master node is guaranteed
     node_type = NodeType.MASTER if unit_name.split("/")[1] == "0" else NodeType.WORKER
     elements = ossec_config_tree.xpath("//ossec_config")
-    if len(charm_addresses) > 1:
-        new_cluster = etree.fromstring(  # nosec
-            _generate_cluster_snippet(node_name, node_type, charm_addresses, cluster_key)
-        )
-        elements[0].append(new_cluster)
+    new_cluster = etree.fromstring(  # nosec
+        _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
+    )
+    elements[0].append(new_cluster)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
@@ -118,7 +117,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
 def update_configuration(
     container: ops.Container,
     indexer_ips: list[str],
-    charm_addresses: list[str],
+    master_address: str,
     unit_name: str,
     cluster_key: str,
 ) -> None:
@@ -127,7 +126,7 @@ def update_configuration(
     Arguments:
         container: the container for which to update the configuration.
         indexer_ips: list of indexer IPs to configure.
-        charm_addresses: the unit addresses.
+        master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
 
@@ -136,7 +135,7 @@ def update_configuration(
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(container, ip_ports, charm_addresses, unit_name, cluster_key)
+    _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
         proc.wait_output()
@@ -333,21 +332,18 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
 
 
 def _generate_cluster_snippet(
-    node_name: str, node_type: NodeType, addresses: list[str], cluster_key: str
+    node_name: str, node_type: NodeType, master_address: str, cluster_key: str
 ) -> str:
     """Generate the cluster configuration snippet for a unit.
 
     Args:
         node_name: the node name.
         node_type: the Wazuh node type.
-        addresses: the list of addresses for all units in the cluster.
+        master_address: the for unit 0 in the cluster.
         cluster_key: the Wazuh key for the cluster nodes.
 
     Returns: the content for the cluster node for the Wazuh configuration.
     """
-    addresses_snippet = ""
-    for address in addresses:
-        addresses_snippet = addresses_snippet + f"<node>{address}</node>\n"
     return f"""
         <cluster>
             <name>wazuh</name>
@@ -357,7 +353,7 @@ def _generate_cluster_snippet(
             <port>1516</port>
             <bind_addr>0.0.0.0</bind_addr>
             <nodes>
-                {addresses_snippet}
+                <node>{master_address}</node>
             </nodes>
             <hidden>no</hidden>
             <disabled>no</disabled>

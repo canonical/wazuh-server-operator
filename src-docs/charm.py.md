@@ -21,7 +21,7 @@ Charm the service.
 
 **Attributes:**
  
- - <b>`fqdns`</b>:  the unit FQDNs. 
+ - <b>`fqdn`</b>:  the FQDN for unit 0. 
  - <b>`state`</b>:  the charm state. 
 
 <a href="../src/charm.py#L43"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
@@ -61,11 +61,11 @@ A mapping containing the charm's config and current values.
 
 ---
 
-#### <kbd>property</kbd> fqdns
+#### <kbd>property</kbd> master_fqdn
 
-Get the FQDNS for the charm units. 
+Get the FQDN for the unit 0. 
 
-Returns: the list of FQDNs for the charm units. 
+Returns: the FQDN for the unit 0. 
 
 ---
 
