@@ -24,9 +24,10 @@ APP_NAME = CHARMCRAFT["name"]
 
 @pytest.mark.abort_on_fail
 async def test_api(model: Model, application: Application):
-    """Deploy the charm together with related charms.
-
-    Assert: the filebeat config is valid.
+    """
+    Arrange: deploy the charm together with related charms.
+    Act: scale up to two units
+    Assert: the default credentials are no longer valid for any of the units.
     """
     status = await model.get_status()
     unit = list(status.applications[application.name].units)[0]
@@ -48,8 +49,6 @@ async def test_api(model: Model, application: Application):
 
     unit = list(status.applications[application.name].units)[1]
     address = status["applications"][application.name]["units"][unit]["address"]
-    # Check the defaults are changed instead of the new creds
-    # https://github.com/juju/python-libjuju/issues/947
     response = requests.get(  # nosec
         f"https://{address}:55000/security/user/authenticate",
         auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
