@@ -46,7 +46,7 @@ async def test_api(model: Model, application: Application):
             timeout=10,
             verify=False,
         )
-        assert response.status_code == 401
+        assert response.status_code == 401, f"Default user still in use for unit {unit.name}"
 
 
 @pytest.mark.abort_on_fail
