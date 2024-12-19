@@ -31,9 +31,11 @@ async def test_api(model: Model, application: Application):
     status = await model.get_status()
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
+    # Check the defaults are changed instead of the new creds
+    # https://github.com/juju/python-libjuju/issues/947
     response = requests.get(  # nosec
         f"https://{address}:55000/security/user/authenticate",
-        auth=("wazuh", "wazuh"),
+        auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
         timeout=10,
         verify=False,
     )
