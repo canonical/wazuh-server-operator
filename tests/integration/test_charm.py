@@ -41,6 +41,23 @@ async def test_api(model: Model, application: Application):
     )
     assert response.status_code == 401
 
+    await application.scale(2)
+    await model.wait_for_idle(
+        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
+    )
+
+    unit = list(status.applications[application.name].units)[1]
+    address = status["applications"][application.name]["units"][unit]["address"]
+    # Check the defaults are changed instead of the new creds
+    # https://github.com/juju/python-libjuju/issues/947
+    response = requests.get(  # nosec
+        f"https://{address}:55000/security/user/authenticate",
+        auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
+        timeout=10,
+        verify=False,
+    )
+    assert response.status_code == 401
+
 
 @pytest.mark.abort_on_fail
 async def test_clustering_ok(model: Model, application: Application):
@@ -48,11 +65,6 @@ async def test_clustering_ok(model: Model, application: Application):
 
     Assert: the clustering config is valid.
     """
-    await application.scale(2)
-    await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
-    )
-
     wazuh_unit = application.units[0]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
     action = await wazuh_unit.run(
