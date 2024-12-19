@@ -32,7 +32,9 @@ async def test_api(model: Model, application: Application):
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
     logger.debug("Fetched address %s", address)
-    secret = await model.list_secrets({"label": state.WAZUH_API_CREDENTIALS}, show_secrets=True)[0]
+    secret = (
+        await model.list_secrets({"label": state.WAZUH_API_CREDENTIALS}, show_secrets=True)
+    )[0]
     logger.debug("Fetched secret ID %s", secret.id)
     api_credentials = secret.value["data"]
     response = requests.get(  # nosec
