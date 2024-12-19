@@ -14,6 +14,8 @@ import yaml
 from juju.application import Application
 from juju.model import Model
 
+import state
+
 logger = logging.getLogger(__name__)
 
 CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"))
@@ -21,7 +23,7 @@ APP_NAME = CHARMCRAFT["name"]
 
 
 @pytest.mark.abort_on_fail
-async def test_api(model: Model, application: Application, api_credentials: dict[str, str]):
+async def test_api(model: Model, application: Application):
     """Deploy the charm together with related charms.
 
     Assert: the filebeat config is valid.
@@ -29,13 +31,16 @@ async def test_api(model: Model, application: Application, api_credentials: dict
     status = await model.get_status()
     unit = list(status.applications[application.name].units)[0]
     address = status["applications"][application.name]["units"][unit]["address"]
-    response = requests.post(  # nosec
+    secrets = await model.list_secrets(show_secrets=True)  # type: ignore
+    secret = next(secret for secret in secrets if secret.label == state.WAZUH_API_CREDENTIALS)
+    api_credentials = secret.value["data"]
+    response = requests.get(  # nosec
         f"https://{address}:55000/security/user/authenticate",
         auth=("wazuh", api_credentials["wazuh"]),
         timeout=10,
         verify=False,
     )
-    assert response.status_code == 200
+    assert response.status_code == 200, f"Failed to authenticate wazuh:{api_credentials['wazuh']}"
 
 
 @pytest.mark.abort_on_fail
@@ -59,8 +64,8 @@ async def test_clustering_ok(model: Model, application: Application):
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
-    assert "master" in stdout
-    assert "worker" in stdout
+    assert "master" in stdout, stdout
+    assert "worker" in stdout, stdout
 
     action = await wazuh_unit.run(
         f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10
@@ -70,5 +75,5 @@ async def test_clustering_ok(model: Model, application: Application):
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
-    assert "connected nodes (1)" in stdout
-    assert "wazuh-server-1" in stdout
+    assert "connected nodes (1)" in stdout, stdout
+    assert "wazuh-server-1" in stdout, stdout

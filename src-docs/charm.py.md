@@ -9,7 +9,6 @@ Wazuh Server charm.
 ---------------
 - **WAZUH_API_CREDENTIALS**
 - **WAZUH_CLUSTER_KEY_SECRET_LABEL**
-- **WAZUH_DEFAULT_API_CREDENTIALS**
 - **WAZUH_PEER_RELATION_NAME**
 
 
@@ -96,7 +95,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/charm.py#L93"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L94"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 

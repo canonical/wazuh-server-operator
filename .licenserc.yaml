@@ -24,5 +24,6 @@ header:
     - '.trivyignore'
     - 'zap_rules.tsv'
     - 'lib/**'
+    - 'src/prometheus_alert_rules/**'
     - 'tests/unit/resources/**'
   comment: on-failure
