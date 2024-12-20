@@ -13,13 +13,13 @@ import ops
 from ops import pebble
 
 import certificates_observer
+import observability
 import opensearch_observer
 import traefik_route_observer
 import wazuh
 from state import (
     WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
-    WAZUH_DEFAULT_API_CREDENTIALS,
     CharmBaseWithState,
     InvalidStateError,
     RecoverableStateError,
@@ -36,7 +36,7 @@ class WazuhServerCharm(CharmBaseWithState):
     """Charm the service.
 
     Attributes:
-        fqdns: the unit FQDNs.
+        master_fqdn: the FQDN for unit 0.
         state: the charm state.
     """
 
@@ -50,6 +50,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.certificates = certificates_observer.CertificatesObserver(self)
         self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
+        self._observability = observability.Observability(self)
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
@@ -95,7 +96,7 @@ class WazuhServerCharm(CharmBaseWithState):
 
         This is the main entry for changes that require a restart.
         """
-        container = self.unit.get_container("wazuh-server")
+        container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
             logger.warning(
                 "Unable to connect to container during reconcile. "
@@ -104,9 +105,10 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
         if not self.state:
+            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
         wazuh.install_certificates(
-            container=self.unit.containers.get("wazuh-server"),
+            container=self.unit.containers.get(wazuh.CONTAINER_NAME),
             private_key=self.certificates.private_key,
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
@@ -125,30 +127,55 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         if self.state.agent_password:
             wazuh.configure_agent_password(
-                container=self.unit.containers.get("wazuh-server"),
+                container=self.unit.containers.get(wazuh.CONTAINER_NAME),
                 password=self.state.agent_password,
             )
         if self.state.custom_config_repository:
             wazuh.pull_configuration_files(container)
         wazuh.update_configuration(
-            container, self.state.indexer_ips, self.fqdns, self.unit.name, self.state.cluster_key
+            container,
+            self.state.indexer_ips,
+            self.master_fqdn,
+            self.unit.name,
+            self.state.cluster_key,
         )
-        container.add_layer("wazuh", self._pebble_layer, combine=True)
+        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
 
-        if self.state.is_default_api_password:
-            credentials = wazuh.generate_api_credentials()
-            for username, password in credentials.items():
-                wazuh.change_api_password(
-                    username, WAZUH_DEFAULT_API_CREDENTIALS[username], password
-                )
-            self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
+        if self.state.unconfigured_api_users:
+            # Current credentials that will be updated on every successful operation
+            credentials = self.state.api_credentials
+            for username, details in self.state.unconfigured_api_users.items():
+                logger.debug("Configuring API user %s", username)
+                password = wazuh.generate_api_password()
+                # The user has already been created when installing
+                if details["default"]:
+                    token = wazuh.authenticate_user(username, credentials[username])
+                    wazuh.change_api_password(username, password, token)
+                    logger.debug("Changed API user %s", username)
+                # The user is new
+                else:
+                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                    wazuh.create_readonly_api_user(username, password, token)
+                    logger.debug("Created API user %s", username)
+                # Store the new credentials alongside the existing ones
+                credentials[username] = password
+                try:
+                    secret = self.model.get_secret(label=WAZUH_API_CREDENTIALS)
+                    secret.set_content(credentials)
+                    logger.debug("Updated secret %s with credentials", secret.id)
+                except ops.SecretNotFoundError:
+                    secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
+                    logger.debug("Added secret %s with credentials", secret.id)
+        container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
+        container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
     @property
-    def _pebble_layer(self) -> pebble.LayerDict:
-        """Return a dictionary representing a Pebble layer."""
+    def _wazuh_pebble_layer(self) -> pebble.LayerDict:
+        """Return a dictionary representing a Pebble layer for Wazuh."""
         environment = {}
         # self.state will never be None at this point
         proxy = self.state.proxy  # type: ignore
@@ -158,6 +185,8 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["HTTPS_PROXY"] = str(proxy.https_proxy)
         if proxy.no_proxy:
             environment["NO_PROXY"] = proxy.no_proxy
+        if not self.state:
+            return {}
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -187,35 +216,50 @@ class WazuhServerCharm(CharmBaseWithState):
                     "level": "alive",
                     "tcp": {"port": 55000},
                 },
-                "filebeat-alive": {
+            },
+        }
+
+    @property
+    def _prometheus_pebble_layer(self) -> pebble.LayerDict:
+        """Return a dictionary representing a Pebble layer for the Prometheus exporter."""
+        if not self.state:
+            return {}
+        return {
+            "summary": "wazuh manager layer",
+            "description": "pebble config layer for wazuh-manager",
+            "services": {
+                "prometheus-exporter": {
+                    "override": "replace",
+                    "summary": "prometheus exporter",
+                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
+                    "startup": "enabled",
+                    "user": "prometheus",
+                    "environment": {
+                        "WAZUH_API_HOST": "localhost",
+                        "WAZUH_API_PORT": "55000",
+                        "WAZUH_API_USERNAME": "prometheus",
+                        "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
+                    },
+                }
+            },
+            "checks": {
+                "prometheus-alive": {
                     "override": "replace",
                     "level": "alive",
-                    "exec": {"command": "filebeat test output"},
+                    "tcp": {"port": 5000},
                 },
             },
         }
 
     @property
-    def fqdns(self) -> list[str]:
-        """Get the FQDNS for the charm units.
+    def master_fqdn(self) -> str:
+        """Get the FQDN for the unit 0.
 
-        Returns: the list of FQDNs for the charm units.
+        Returns: the FQDN for the unit 0.
         """
-        unit_name = self.unit.name.replace("/", "-")
+        unit_name = f"{self.unit.name.split('/')[0]}-0"
         app_name = self.app.name
-        addresses = [f"{unit_name}.{app_name}-endpoints"]
-        peer_relation = self.model.relations[WAZUH_PEER_RELATION_NAME]
-        if peer_relation:
-            relation = peer_relation[0]
-            # relation.units will contain all the units after the relation-joined event
-            # since a relation-changed is emitted for every relation-joined event.
-            for u in relation.units:
-                # FQDNs have the form
-                # <unit-name>.<app-name>-endpoints.<model-name>.svc.cluster.local
-                unit_name = u.name.replace("/", "-")
-                address = f"{unit_name}.{app_name}-endpoints"
-                addresses.append(address)
-        return addresses
+        return f"{unit_name}.{app_name}-endpoints"
 
 
 if __name__ == "__main__":  # pragma: nocover

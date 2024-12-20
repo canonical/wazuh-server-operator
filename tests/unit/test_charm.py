@@ -75,6 +75,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     api_credentials = {
         "wazuh": secrets.token_hex(),
         "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
     }
     wazuh_config = WazuhConfig(
         api_credentials=api_credentials,
@@ -111,7 +112,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_update_configuration_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        ["wazuh-server-0.wazuh-server-endpoints"],
+        "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
     )
@@ -155,6 +156,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     api_credentials = {
         "wazuh": secrets.token_hex(),
         "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
     }
     cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
@@ -192,7 +194,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_update_configuration_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        ["wazuh-server-0.wazuh-server-endpoints"],
+        "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
     )
