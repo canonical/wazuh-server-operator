@@ -21,7 +21,7 @@ Charm the service.
 
 **Attributes:**
  
- - <b>`fqdn`</b>:  the FQDN for unit 0. 
+ - <b>`master_fqdn`</b>:  the FQDN for unit 0. 
  - <b>`state`</b>:  the charm state. 
 
 <a href="../src/charm.py#L43"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
