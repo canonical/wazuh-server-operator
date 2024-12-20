@@ -35,7 +35,8 @@ async def test_api(model: Model, application: Application):
     )
 
     status = await model.get_status()
-    units = list(status.applications[application.name].units)
+    # Type hints are not ok here
+    units = list(status.applications[application.name].units)  # type: ignore
     for unit in units:
         address = status["applications"][application.name]["units"][unit]["address"]
         # Check the defaults are changed instead of the new creds
