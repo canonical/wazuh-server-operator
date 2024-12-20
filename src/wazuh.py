@@ -24,11 +24,13 @@ from lxml import etree  # nosec
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 CERTIFICATES_PATH = Path("/etc/filebeat/certs")
+CONTAINER_NAME = "wazuh-server"
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
+LOGS_PATH = Path("/var/ossec/logs")
+OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
-OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 WAZUH_GROUP = "wazuh"
 WAZUH_USER = "wazuh"
 
@@ -73,7 +75,7 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
 def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     container: ops.Container,
     ip_ports: list[str],
-    charm_addresses: list[str],
+    master_address: str,
     unit_name: str,
     cluster_key: str,
 ) -> None:
@@ -82,7 +84,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     Arguments:
         container: the container for which to update the configuration.
         ip_ports: list of indexer IPs and ports to configure.
-        charm_addresses: the unit addresses.
+        master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
     """
@@ -103,11 +105,10 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     # Unit 0 is always present, so the presence of a master node is guaranteed
     node_type = NodeType.MASTER if unit_name.split("/")[1] == "0" else NodeType.WORKER
     elements = ossec_config_tree.xpath("//ossec_config")
-    if len(charm_addresses) > 1:
-        new_cluster = etree.fromstring(  # nosec
-            _generate_cluster_snippet(node_name, node_type, charm_addresses, cluster_key)
-        )
-        elements[0].append(new_cluster)
+    new_cluster = etree.fromstring(  # nosec
+        _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
+    )
+    elements[0].append(new_cluster)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
@@ -116,7 +117,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
 def update_configuration(
     container: ops.Container,
     indexer_ips: list[str],
-    charm_addresses: list[str],
+    master_address: str,
     unit_name: str,
     cluster_key: str,
 ) -> None:
@@ -125,7 +126,7 @@ def update_configuration(
     Arguments:
         container: the container for which to update the configuration.
         indexer_ips: list of indexer IPs to configure.
-        charm_addresses: the unit addresses.
+        master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
 
@@ -134,7 +135,7 @@ def update_configuration(
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(container, ip_ports, charm_addresses, unit_name, cluster_key)
+    _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
         proc.wait_output()
@@ -287,7 +288,7 @@ def pull_configuration_files(container: ops.Container) -> None:
         process = container.exec(
             [
                 "rsync",
-                "-ra",
+                "-a",
                 "--chown",
                 "wazuh:wazuh",
                 "--include='*/'",
@@ -331,21 +332,18 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
 
 
 def _generate_cluster_snippet(
-    node_name: str, node_type: NodeType, addresses: list[str], cluster_key: str
+    node_name: str, node_type: NodeType, master_address: str, cluster_key: str
 ) -> str:
     """Generate the cluster configuration snippet for a unit.
 
     Args:
         node_name: the node name.
         node_type: the Wazuh node type.
-        addresses: the list of addresses for all units in the cluster.
+        master_address: the for unit 0 in the cluster.
         cluster_key: the Wazuh key for the cluster nodes.
 
     Returns: the content for the cluster node for the Wazuh configuration.
     """
-    addresses_snippet = ""
-    for address in addresses:
-        addresses_snippet = addresses_snippet + f"<node>{address}</node>\n"
     return f"""
         <cluster>
             <name>wazuh</name>
@@ -355,7 +353,7 @@ def _generate_cluster_snippet(
             <port>1516</port>
             <bind_addr>0.0.0.0</bind_addr>
             <nodes>
-                {addresses_snippet}
+                <node>{master_address}</node>
             </nodes>
             <hidden>no</hidden>
             <disabled>no</disabled>
@@ -363,17 +361,18 @@ def _generate_cluster_snippet(
     """
 
 
-def change_api_password(username: str, old_password: str, new_password: str) -> None:
-    """Change Wazuh's API password for a given user.
+def authenticate_user(username: str, password: str) -> str:
+    """Authenticate an API user.
 
     Args:
-        username: the username to change the user for.
-        old_password: the old API password for the user.
-        new_password: the new API password for the user.
+        username: the username.
+        password: the password for the user.
+
+    Returns: the JWT token
 
     Raises:
         WazuhAuthenticationError: if an authentication error occurs.
-        WazuhInstallationError: if an error occurs while processing the requests.
+    .
     """
     # The certificates might be self signed and there's no security hardening in
     # passing them to the request since tampering with `localhost` would mean the
@@ -381,17 +380,37 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
     try:
         response = requests.get(  # nosec
             "https://localhost:55000/security/user/authenticate",
-            auth=(username, old_password),
+            auth=(username, password),
             timeout=10,
             verify=False,
         )
         # The old password has already been changed. Nothing to do.
         if response.status_code == 401:
-            raise WazuhAuthenticationError(f"The provided password for '{username}' is not valid.")
+            raise WazuhAuthenticationError(f"The provided password for {username} is not valid.")
         response.raise_for_status()
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
-            logger.error("Unexpected response. Auth token has not been issued.")
+            raise WazuhAuthenticationError(f"Response for {username} does not contain token.")
+        return token
+    except requests.exceptions.RequestException as exc:
+        raise WazuhAuthenticationError from exc
+
+
+def change_api_password(username: str, password: str, token: str) -> None:
+    """Change Wazuh's API password for a given user.
+
+    Args:
+        username: the username to change the user for.
+        password: the new password for the user.
+        token: the auth token for the API.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while processing the requests.
+    """
+    # The certificates might be self signed and there's no security hardening in
+    # passing them to the request since tampering with `localhost` would mean the
+    # container filesystem is compromised
+    try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
             "https://localhost:55000/security/users",
@@ -407,35 +426,78 @@ def change_api_password(username: str, old_password: str, new_password: str) -> 
         response = requests.put(  # nosec
             f"https://localhost:55000/security/users/{user_id}",
             headers=headers,
-            json={"password": new_password},
+            json={"password": password},
             timeout=10,
             verify=False,
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
-        logger.error("Error modifying the default password: %s", exc)
         logger.error("Error %s", response.json())
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
 
-def _generate_api_password() -> str:
+def generate_api_password() -> str:
     """Generate a password that complies with the API password imposed by Wazuh.
 
     Returns: a string with a compliant password.
     """
-    alphabet = string.ascii_letters + string.digits + string.punctuation
-    return "".join(secrets.choice(alphabet) for _ in range(16))
+    charsets = [string.ascii_lowercase, string.ascii_uppercase, string.digits, string.punctuation]
+    password = [secrets.choice("".join(charsets)) for _ in range(11)]
+    for charset in charsets:
+        char = secrets.choice(charset)
+        password.insert(secrets.randbelow(len(password) + 1), char)
+    return "".join(password)
 
 
-def generate_api_credentials() -> dict[str, str]:
-    """Generate the credentials for the default API users.
+def create_readonly_api_user(username: str, password: str, token: str) -> None:
+    """Create a new readonly user for Wazuh's API.
 
-    Returns: a dict containing the new credentials.
+    Args:
+        username: the username for the user.
+        password: the password for the user.
+        token: the auth token for the API.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while processing the requests.
     """
-    return {
-        "wazuh": _generate_api_password(),
-        "wazuh-wui": _generate_api_password(),
-    }
+    # The certificates might be self signed and there's no security hardening in
+    # passing them to the request since tampering with `localhost` would mean the
+    # container filesystem is compromised
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = requests.post(  # nosec
+            "https://localhost:55000/security/users",
+            headers=headers,
+            json={"username": username, "password": password},
+            timeout=10,
+            verify=False,
+        )
+        response.raise_for_status()
+        data = response.json()["data"]
+        user_id = [
+            user["id"] for user in data["affected_items"] if data and user["username"] == username
+        ][0]
+        response = requests.get(  # nosec
+            "https://localhost:55000/security/roles",
+            headers=headers,
+            timeout=10,
+            verify=False,
+        )
+        response.raise_for_status()
+        data = response.json()["data"]
+        role_id = [
+            role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
+        ][0]
+        response = requests.post(  # nosec
+            f"https://localhost:55000/security/users/{user_id}/roles?role_ids={role_id}",
+            headers=headers,
+            timeout=10,
+            verify=False,
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException as exc:
+        logger.error("Error %s", response.json())
+        raise WazuhInstallationError("Error creating a readonly user.") from exc
 
 
 def get_version(container: ops.Container) -> str:
