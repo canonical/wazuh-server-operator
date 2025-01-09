@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 # Pre-run script for integration test operator-workflows action.
 # https://github.com/canonical/operator-workflows/blob/main/.github/workflows/integration_test.yaml
 
-# OpenSearch charms are deployed on lxd and Wazuh server charm is deployed on microk8s.
+# OpenSearch charms are deployed on lxd and Wazuh Server charm is deployed on microk8s.
 
 TESTING_MODEL="$(juju switch)"
 
@@ -14,7 +14,6 @@ TESTING_MODEL="$(juju switch)"
 echo "bootstrapping lxd juju controller"
 # Change microk8s default file limits
 echo "ulimit -n 458752" | sudo tee -a /var/snap/microk8s/current/args/containerd-env
-sudo cat /var/snap/microk8s/current/args/containerd-env
 sudo snap restart microk8s
 sg snap_microk8s -c "microk8s status --wait-ready"
 sg snap_microk8s -c "juju bootstrap localhost localhost"

@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """The Traefik route relation observer."""
@@ -64,7 +64,6 @@ class TraefikRouteObserver(Object):
             entry_points[sanitized_protocol] = {"address": f":{port}"}
         return {
             "entryPoints": entry_points,
-            "tcpServersTransport": {"tls": {"insecureSkipVerify": "true"}},
         }
 
     @property
@@ -87,7 +86,10 @@ class TraefikRouteObserver(Object):
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
+                "loadBalancer": {
+                    "servers": [{"address": f"{self.hostname}:{port}"}],
+                    "terminationDelay": 1000,
+                }
             }
         return {
             "tcp": {

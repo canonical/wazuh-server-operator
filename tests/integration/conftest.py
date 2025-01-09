@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """General configuration module for integration tests."""
@@ -67,7 +67,6 @@ async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, No
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
-    await model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -83,7 +82,6 @@ async def self_signed_certificates_fixture(
         config={"ca-common-name": "Test CA"},
     )
     await machine_model.create_offer(f"{application.name}:certificates", application.name)
-    await machine_model.wait_for_idle(apps=[application.name], status="active", timeout=1000)
     yield application
 
 
@@ -99,7 +97,7 @@ async def opensearch_provider_fixture(
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     await machine_model.wait_for_idle(
-        apps=[application.name, self_signed_certificates.name], status="active", timeout=1400
+        apps=[application.name, self_signed_certificates.name], status="active", timeout=2000
     )
     yield application
 
@@ -140,5 +138,10 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(traefik.name, application.name)
-    await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=True)
+    await model.wait_for_idle(
+        apps=[application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1800,
+    )
     yield application

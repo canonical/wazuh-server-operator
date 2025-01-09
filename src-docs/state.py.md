@@ -3,11 +3,13 @@
 <a href="../src/state.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 # <kbd>module</kbd> `state.py`
-Wazuh server charm state. 
+Wazuh Server charm state. 
 
 **Global Variables**
 ---------------
+- **WAZUH_API_CREDENTIALS**
 - **WAZUH_CLUSTER_KEY_SECRET_LABEL**
+- **WAZUH_USERS**
 
 
 ---
@@ -56,12 +58,12 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/state.py#L26"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 
 ```python
-reconcile() → None
+reconcile(_: HookEvent) → None
 ```
 
 Reconcile configuration. 
@@ -127,15 +129,17 @@ Exception raised when a charm configuration is invalid and recoverable by the op
 ---
 
 ## <kbd>class</kbd> `State`
-The Wazuh server charm state. 
+The Wazuh Server charm state. 
 
 
 
 **Attributes:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`api_credentials`</b>:  a map containing the API credentials. 
  - <b>`cluster_key`</b>:  the Wazuh key for the cluster nodes. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
+ - <b>`unconfigured_api_users`</b>:  if any default API password is in use. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
  - <b>`filebeat_password`</b>:  the filebeat password. 
  - <b>`certificate`</b>:  the TLS certificate. 
@@ -144,13 +148,14 @@ The Wazuh server charm state.
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L213"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L257"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
 ```python
 __init__(
-    agent_password: Optional[str],
+    agent_password: str | None,
+    api_credentials: dict[str, str],
     cluster_key: str,
     indexer_ips: list[str],
     filebeat_username: str,
@@ -158,7 +163,7 @@ __init__(
     certificate: str,
     root_ca: str,
     wazuh_config: WazuhConfig,
-    custom_config_ssh_key: Optional[str]
+    custom_config_ssh_key: str | None
 )
 ```
 
@@ -169,6 +174,7 @@ Initialize a new instance of the CharmState class.
 **Args:**
  
  - <b>`agent_password`</b>:  the agent password. 
+ - <b>`api_credentials`</b>:  a map ccontaining the API credentials. 
  - <b>`cluster_key`</b>:  the Wazuh key for the cluster nodes. 
  - <b>`indexer_ips`</b>:  list of Wazuh indexer IPs. 
  - <b>`filebeat_username`</b>:  the filebeat username. 
@@ -218,11 +224,19 @@ Get charm proxy configuration from juju charm environment.
  
  - <b>`RecoverableStateError`</b>:  if the proxy configuration is invalid. 
 
+---
+
+#### <kbd>property</kbd> unconfigured_api_users
+
+List unconfigured usernames. 
+
+Returns: a map containing the unconfigured users and their details. 
+
 
 
 ---
 
-<a href="../src/state.py#L272"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L319"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 
@@ -262,7 +276,7 @@ Initialize the state from charm.
 ---
 
 ## <kbd>class</kbd> `WazuhConfig`
-The Wazuh server charm configuration. 
+The Wazuh Server charm configuration. 
 
 
 

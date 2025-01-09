@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 # TODO: build from sources
@@ -11,8 +11,8 @@ package-repositories:
     url: https://packages.wazuh.com/4.x/apt/
 
 name: wazuh-server
-summary: Wazuh server
-description:  Wazuh server OCI image
+summary: Wazuh Server
+description:  Wazuh Server OCI image
 version: "1.0"
 base: ubuntu@24.04
 build-base: ubuntu@24.04
@@ -20,6 +20,12 @@ license: Apache-2.0
 platforms:
   amd64:
 parts:
+  add-user:
+    plugin: nil
+    overlay-script: |
+      chmod 755 $CRAFT_OVERLAY/etc
+      groupadd -R $CRAFT_OVERLAY --gid 2000 prometheus
+      useradd -R $CRAFT_OVERLAY --system --gid 2000 --uid 2000 --home /srv/prometheus prometheus
   utils:
     plugin: nil
     stage-packages:
@@ -65,3 +71,23 @@ parts:
       umount --recursive $CRAFT_OVERLAY/dev
       umount $CRAFT_OVERLAY/proc
       umount $CRAFT_OVERLAY/etc/resolv.conf
+  prometheus-exporter:
+    plugin: python
+    stage-packages:
+      - python3-venv
+    source: https://github.com/pyToshka/wazuh-prometheus-exporter.git
+    source-depth: 1
+    source-type: git
+    source-commit: 7ab31b3f73b0ce344bd7e4d0deb1d544ae1b7d1c
+    python-requirements: [requirements.txt]
+    override-build: |
+      craftctl default
+      cp -r $CRAFT_PART_SRC/* $CRAFT_PART_INSTALL/
+    organize:
+      wazuh: srv/prometheus/wazuh
+      main.py: srv/prometheus/prometheus_exporter.py
+    permissions:
+      - path: srv/prometheus/prometheus_exporter.py
+        owner: 2000
+        group: 2000
+        mode: "755"

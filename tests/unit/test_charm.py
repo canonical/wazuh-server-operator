@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Charm unit tests."""
@@ -46,7 +46,7 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
     assert harness.model.unit.status.name == ops.BlockedStatus().name
 
 
-# pylint: disable=too-many-arguments, too-many-positional-arguments
+# pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
@@ -54,7 +54,9 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
+    get_version_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -70,14 +72,22 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     """
     custom_config_repository = "git+ssh://user1@git.server/repo_name@main"
     secret_id = f"secret:{secrets.token_hex(21)}"
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
+    }
     wazuh_config = WazuhConfig(
-        custom_config_repository=custom_config_repository, custom_config_ssh_key=secret_id
+        api_credentials=api_credentials,
+        custom_config_repository=custom_config_repository,
+        custom_config_ssh_key=secret_id,
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
-    cluster_key = secrets.token_hex(8)
+    cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
+        api_credentials=api_credentials,
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
@@ -87,6 +97,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         wazuh_config=wazuh_config,
         custom_config_ssh_key="somekey",
     )
+    get_version_mock.return_value = "v4.9.2"
     harness = Harness(WazuhServerCharm)
     harness.begin()
     container = harness.model.unit.containers.get("wazuh-server")
@@ -101,7 +112,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_update_configuration_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        ["wazuh-server-0.wazuh-server-endpoints"],
+        "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
     )
@@ -113,6 +124,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container=container, password=agent_password
     )
     pull_configuration_files_mock.assert_called_with(container)
+    get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
@@ -124,7 +136,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
+    get_version_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -139,18 +153,29 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert: the charm reaches active status and configs are applied.
     """
     password = secrets.token_hex()
-    cluster_key = secrets.token_hex(8)
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
+    }
+    cluster_key = secrets.token_hex(16)
     state_from_charm_mock.return_value = State(
         agent_password=None,
+        api_credentials=api_credentials,
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
-        wazuh_config=WazuhConfig(custom_config_repository=None, custom_config_ssh_key=None),
+        wazuh_config=WazuhConfig(
+            api_credentials=api_credentials,
+            custom_config_repository=None,
+            custom_config_ssh_key=None,
+        ),
         custom_config_ssh_key=None,
     )
+    get_version_mock.return_value = "v4.9.2"
     harness = Harness(WazuhServerCharm)
     harness.begin()
     container = harness.model.unit.containers.get("wazuh-server")
@@ -169,10 +194,11 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_update_configuration_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        ["wazuh-server-0.wazuh-server-endpoints"],
+        "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
     )
+    get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 

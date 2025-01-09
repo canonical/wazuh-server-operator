@@ -1,7 +1,7 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Wazuh server charm state."""
+"""Wazuh Server charm state."""
 
 import itertools
 import logging
@@ -16,8 +16,24 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, pars
 logger = logging.getLogger(__name__)
 
 
+WAZUH_API_CREDENTIALS = "wazuh-api-credentials"
 # Bandit mistakenly thinks this is a password
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
+WAZUH_USERS = {
+    "wazuh": {
+        "default_password": "wazuh",
+        "default": True,
+    },
+    "wazuh-wui": {
+        "default_password": "wazuh-wui",
+        "default": True,
+    },
+    # This user will be created by the charm
+    "prometheus": {
+        "default_password": "",
+        "default": False,
+    },
+}
 
 
 class CharmBaseWithState(ops.CharmBase, ABC):
@@ -45,13 +61,13 @@ class ProxyConfig(BaseModel):  # pylint: disable=too-few-public-methods
         no_proxy: Comma separated list of hostnames to bypass proxy.
     """
 
-    http_proxy: typing.Optional[AnyHttpUrl]
-    https_proxy: typing.Optional[AnyHttpUrl]
-    no_proxy: typing.Optional[str]
+    http_proxy: AnyHttpUrl | None
+    https_proxy: AnyHttpUrl | None
+    no_proxy: str | None
 
 
 class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
-    """The Wazuh server charm configuration.
+    """The Wazuh Server charm configuration.
 
     Attributes:
         agent_password: the secret key corresponding to the agent secret.
@@ -59,9 +75,9 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
         custom_config_ssh_key: the secret key corresponding to the SSH key for the git repository.
     """
 
-    agent_password: typing.Optional[str] = None
-    custom_config_repository: typing.Optional[AnyUrl] = None
-    custom_config_ssh_key: typing.Optional[str] = None
+    agent_password: str | None = None
+    custom_config_repository: AnyUrl | None = None
+    custom_config_ssh_key: str | None = None
 
 
 def _fetch_filebeat_configuration(
@@ -139,22 +155,22 @@ def _fetch_ssh_repository_key(model: ops.Model, config: WazuhConfig) -> str | No
     return custom_config_ssh_key_content
 
 
-def _fetch_agent_password(model: ops.Model, config: WazuhConfig) -> str | None:
-    """Fetch the password for the agent.
+def _fetch_password(model: ops.Model, secret_id: str | None) -> str | None:
+    """Fetch the password for the a given secret ID.
 
     Args:
         model: the Juju model.
-        config: the charm configuration.
+        secret_id: the secret ID.
 
-    Returns: the SSH key for the repository, if any.
+    Returns: the password stored in the secret, if any.
 
     Raises:
         RecoverableStateError: if the secret when the key should reside is invalid.
     """
     agent_password_content = None
-    if config.agent_password:
+    if secret_id:
         try:
-            agent_password_secret = model.get_secret(id=config.agent_password)
+            agent_password_secret = model.get_secret(id=secret_id)
         except ops.SecretNotFoundError as exc:
             raise RecoverableStateError("Agent secret not found.") from exc
         agent_password_content = agent_password_secret.get_content(refresh=True).get("value")
@@ -184,13 +200,40 @@ def _fetch_cluster_key(model: ops.Model) -> str:
     return cluster_key_content
 
 
+def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
+    """Fetch the Wazuh API credentials.
+
+    Args:
+        model: the Juju model.
+
+    Returns: a map containing the users and credentials for the API.
+
+    Raises:
+        InvalidStateError: if the secret when the key should reside is invalid.
+    """
+    default_credentials = {
+        username: str(details["default_password"]) for username, details in WAZUH_USERS.items()
+    }
+    try:
+        api_credentials_secret = model.get_secret(label=WAZUH_API_CREDENTIALS)
+        api_credentials_content = api_credentials_secret.get_content(refresh=True)
+        if not api_credentials_content:
+            raise InvalidStateError("API credentials secret is empty.")
+        return {**default_credentials, **api_credentials_content}
+    except ops.SecretNotFoundError:
+        logger.debug("Secret wazuh-api-credentials not found. Using default values.")
+        return default_credentials
+
+
 class State(BaseModel):  # pylint: disable=too-few-public-methods
-    """The Wazuh server charm state.
+    """The Wazuh Server charm state.
 
     Attributes:
         agent_password: the agent password.
+        api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_ips: list of Wazuh indexer IPs.
+        unconfigured_api_users: if any default API password is in use.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
         certificate: the TLS certificate.
@@ -200,19 +243,21 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         proxy: proxy configuration.
     """
 
-    agent_password: typing.Optional[str] = None
-    cluster_key: str = Field(min_length=16, max_length=16)
+    agent_password: str | None = None
+    api_credentials: dict[str, str]
+    cluster_key: str = Field(min_length=32, max_length=32)
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
     certificate: str = Field(..., min_length=1)
     root_ca: str = Field(..., min_length=1)
-    custom_config_repository: typing.Optional[AnyUrl] = None
-    custom_config_ssh_key: typing.Optional[str] = None
+    custom_config_repository: AnyUrl | None = None
+    custom_config_ssh_key: str | None = None
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
-        agent_password: typing.Optional[str],
+        agent_password: str | None,
+        api_credentials: dict[str, str],
         cluster_key: str,
         indexer_ips: list[str],
         filebeat_username: str,
@@ -220,12 +265,13 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         certificate: str,
         root_ca: str,
         wazuh_config: WazuhConfig,
-        custom_config_ssh_key: typing.Optional[str],
+        custom_config_ssh_key: str | None,
     ):
         """Initialize a new instance of the CharmState class.
 
         Args:
             agent_password: the agent password.
+            api_credentials: a map ccontaining the API credentials.
             cluster_key: the Wazuh key for the cluster nodes.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
@@ -237,6 +283,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         """
         super().__init__(
             agent_password=agent_password,
+            api_credentials=api_credentials,
             cluster_key=cluster_key,
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
@@ -307,7 +354,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             error_field_str = " ".join(f"{f}" for f in error_fields)
             raise RecoverableStateError(f"Invalid charm configuration {error_field_str}") from exc
         custom_config_ssh_key = _fetch_ssh_repository_key(charm.model, valid_config)
-        agent_password = _fetch_agent_password(charm.model, valid_config)
+        agent_password = _fetch_password(charm.model, valid_config.agent_password)
+        api_credentials = _fetch_api_credentials(charm.model)
         cluster_key = _fetch_cluster_key(charm.model)
         matching_certificates = _fetch_matching_certificates(
             provider_certificates, certitificate_signing_request
@@ -316,6 +364,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             if matching_certificates:
                 return cls(
                     agent_password=agent_password,
+                    api_credentials=api_credentials,
                     cluster_key=cluster_key,
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
@@ -332,3 +381,15 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             )
             error_field_str = " ".join(f"{f}" for f in error_fields)
             raise InvalidStateError(f"Invalid charm configuration {error_field_str}") from exc
+
+    @property
+    def unconfigured_api_users(self) -> dict[str, dict[str, object]]:
+        """List unconfigured usernames.
+
+        Returns: a map containing the unconfigured users and their details.
+        """
+        return {
+            username: details
+            for username, details in WAZUH_USERS.items()
+            if self.api_credentials[username] == str(details["default_password"])
+        }
