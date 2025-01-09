@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 # This file configures Charmcraft.
 # See https://juju.is/docs/sdk/charmcraft-config for guidance.
@@ -46,7 +46,7 @@ name: wazuh-server
 summary: A charm deploying the Wazuh Server.
 links:
   contact: https://launchpad.net/~canonical-is-devops
-  documentation: https://discourse.charmhub.io
+  documentation: https://discourse.charmhub.io/t/wazuh-server-documentation-overview/16070
   issues: https://github.com/canonical/wazuh-server-operator/issues
   source: https://github.com/canonical/wazuh-server-operator
 description: |
@@ -80,15 +80,23 @@ resources:
   wazuh-server-image:
     type: oci-image
     description: OCI image for the Wazuh Server
+provides:
+  grafana-dashboard:
+    interface: grafana_dashboard
+  metrics-endpoint:
+    interface: prometheus_scrape
 requires:
   certificates:
     interface: tls-certificates
     limit: 1
-  opensearch-client:
-    interface: opensearch_client
-    limit: 1
   ingress:
     interface: traefik_route
+    limit: 1
+  logging:
+    interface: loki_push_api
+    limit: 1
+  opensearch-client:
+    interface: opensearch_client
     limit: 1
 config:
   options:
