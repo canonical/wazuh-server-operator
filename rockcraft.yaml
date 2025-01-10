@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 # TODO: build from sources
@@ -11,8 +11,8 @@ package-repositories:
     url: https://packages.wazuh.com/4.x/apt/
 
 name: wazuh-server
-summary: Wazuh server
-description:  Wazuh server OCI image
+summary: Wazuh Server
+description:  Wazuh Server OCI image
 version: "1.0"
 base: ubuntu@24.04
 build-base: ubuntu@24.04
@@ -20,14 +20,25 @@ license: Apache-2.0
 platforms:
   amd64:
 parts:
+  add-user:
+    plugin: nil
+    overlay-script: |
+      chmod 755 $CRAFT_OVERLAY/etc
+      groupadd -R $CRAFT_OVERLAY --gid 2000 prometheus
+      useradd -R $CRAFT_OVERLAY --system --gid 2000 --uid 2000 --home /srv/prometheus prometheus
   utils:
     plugin: nil
     stage-packages:
       - git-core
       - rsync
       - ssh
+    override-stage: |
+      mkdir -p $CRAFT_PART_INSTALL/root/repository
+      craftctl default
   filebeat:
     plugin: nil
+    build-packages:
+      - yq
     stage-packages:
       - filebeat
       - net-tools
@@ -35,6 +46,7 @@ parts:
       mkdir -p $CRAFT_PART_INSTALL/etc/filebeat/certs
       chmod 500 $CRAFT_PART_INSTALL/etc/filebeat/certs
       curl --max-time 60 -o $CRAFT_PART_INSTALL/etc/filebeat/filebeat.yml https://packages.wazuh.com/4.8/tpl/wazuh/filebeat/filebeat.yml
+      yq -iy '."output.elasticsearch"."ssl.verification_mode"="none"' $CRAFT_PART_INSTALL/etc/filebeat/filebeat.yml
       mkdir -p $CRAFT_PART_INSTALL/usr/share/filebeat/module
       curl --max-time 60 https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C $CRAFT_PART_INSTALL/usr/share/filebeat/module
       curl --max-time 60 -o $CRAFT_PART_INSTALL/etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v4.8.1/extensions/elasticsearch/7.x/wazuh-template.json
@@ -56,13 +68,26 @@ parts:
       chroot $CRAFT_OVERLAY bash -c 'echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list'
       chroot $CRAFT_OVERLAY apt-get update
       chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install wazuh-manager filebeat --yes"
-      chroot $CRAFT_OVERLAY bash -c "cat /var/ossec/etc/ossec.conf"
-      chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k username -v admin"
-      chroot $CRAFT_OVERLAY bash -c "/var/ossec/bin/wazuh-keystore -f indexer -k password -v admin"
       umount --recursive $CRAFT_OVERLAY/dev
       umount $CRAFT_OVERLAY/proc
       umount $CRAFT_OVERLAY/etc/resolv.conf
-    override-prime: |
-      echo admin | filebeat keystore add username --stdin --force
-      echo admin | filebeat keystore add password --stdin --force
+  prometheus-exporter:
+    plugin: python
+    stage-packages:
+      - python3-venv
+    source: https://github.com/pyToshka/wazuh-prometheus-exporter.git
+    source-depth: 1
+    source-type: git
+    source-commit: 7ab31b3f73b0ce344bd7e4d0deb1d544ae1b7d1c
+    python-requirements: [requirements.txt]
+    override-build: |
       craftctl default
+      cp -r $CRAFT_PART_SRC/* $CRAFT_PART_INSTALL/
+    organize:
+      wazuh: srv/prometheus/wazuh
+      main.py: srv/prometheus/prometheus_exporter.py
+    permissions:
+      - path: srv/prometheus/prometheus_exporter.py
+        owner: 2000
+        group: 2000
+        mode: "755"

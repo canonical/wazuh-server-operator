@@ -1,10 +1,11 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Certificates observer unit tests."""
 
 
 import unittest
+import unittest.mock
 
 import ops
 import pytest
@@ -33,7 +34,7 @@ class ObservedCharm(ops.CharmBase):
         self.certificates = certificates_observer.CertificatesObserver(self)
         self.count = 0
 
-    def reconcile(self) -> None:
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile the configuration with charm state."""
         self.count = self.count + 1
 
@@ -56,7 +57,7 @@ def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> Non
     harness.charm.on.certificates_relation_joined.emit(relation)
 
     mock.assert_called_once()
-    assert ops.ActiveStatus.name == harness.charm.unit.status.name
+    assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
 def test_on_certificate_available() -> None:
@@ -115,8 +116,10 @@ def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
     harness.add_relation(certificates_observer.RELATION_NAME, "certificates-provider")
     mock = unittest.mock.Mock()
     monkeypatch.setattr(
-        harness.charm.certificates.certificates, "request_certificate_creation", mock
+        harness.charm.certificates.certificates, "request_certificate_renewal", mock
     )
+    secret_mock = unittest.mock.MagicMock()
+    monkeypatch.setattr(harness.charm.model, "get_secret", secret_mock)
 
     harness.charm.certificates.certificates.on.certificate_invalidated.emit(
         reason="revoked",

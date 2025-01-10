@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """The Traefik route relation observer."""
@@ -18,6 +18,7 @@ RELATION_NAME = "ingress"
 PORTS: dict[str, int] = {
     "conn_tcp": 1514,
     "enrole_tcp": 1515,
+    "api_tcp": 55000,
 }
 
 
@@ -61,7 +62,9 @@ class TraefikRouteObserver(Object):
         for protocol, port in PORTS.items():
             sanitized_protocol = protocol.replace("_", "-")
             entry_points[sanitized_protocol] = {"address": f":{port}"}
-        return {"entryPoints": entry_points}
+        return {
+            "entryPoints": entry_points,
+        }
 
     @property
     def _ingress_config(self) -> dict[str, dict[str, dict[str, typing.Any]]]:
@@ -83,7 +86,10 @@ class TraefikRouteObserver(Object):
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
             services[service_name] = {
-                "loadBalancer": {"servers": [{"address": f"{self.hostname}:{port}"}]}
+                "loadBalancer": {
+                    "servers": [{"address": f"{self.hostname}:{port}"}],
+                    "terminationDelay": 1000,
+                }
             }
         return {
             "tcp": {

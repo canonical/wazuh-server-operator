@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Traefik route observer unit tests."""
@@ -66,19 +66,40 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                         "service": "juju-testing-observer-charm-service-enrole-tcp",
                         "rule": "ClientIP(`0.0.0.0/0`)",
                     },
+                    "juju-testing-observer-charm-api-tcp": {
+                        "entryPoints": ["api-tcp"],
+                        "service": "juju-testing-observer-charm-service-api-tcp",
+                        "rule": "ClientIP(`0.0.0.0/0`)",
+                    },
                 },
                 "services": {
                     "juju-testing-observer-charm-service-conn-tcp": {
-                        "loadBalancer": {"servers": [{"address": "wazuh-server.local:1514"}]}
+                        "loadBalancer": {
+                            "servers": [{"address": "wazuh-server.local:1514"}],
+                            "terminationDelay": 1000,
+                        }
                     },
                     "juju-testing-observer-charm-service-enrole-tcp": {
-                        "loadBalancer": {"servers": [{"address": "wazuh-server.local:1515"}]}
+                        "loadBalancer": {
+                            "servers": [{"address": "wazuh-server.local:1515"}],
+                            "terminationDelay": 1000,
+                        }
+                    },
+                    "juju-testing-observer-charm-service-api-tcp": {
+                        "loadBalancer": {
+                            "servers": [{"address": "wazuh-server.local:55000"}],
+                            "terminationDelay": 1000,
+                        }
                     },
                 },
             },
         },
         static={
-            "entryPoints": {"conn-tcp": {"address": ":1514"}, "enrole-tcp": {"address": ":1515"}}
+            "entryPoints": {
+                "conn-tcp": {"address": ":1514"},
+                "enrole-tcp": {"address": ":1515"},
+                "api-tcp": {"address": ":55000"},
+            }
         },
     )
 

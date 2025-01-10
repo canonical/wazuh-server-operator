@@ -1,3 +1,7 @@
 timeout: 20m
 scan:
   offline-scan: true
+  # Ignore TLS cert installed by Wazuh
+  skip-files:
+    - /var/ossec/etc/sslmanager.key
+    - /var/ossec/framework/python/lib/python3.10/site-packages/google/auth/crypt/__pycache__/_python_rsa.cpython-310.pyc
