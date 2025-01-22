@@ -139,7 +139,9 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.name,
             self.state.cluster_key,
         )
-        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+        container.add_layer(
+            "wazuh", self._wazuh_pebble_layer_without_readiness_check, combine=True
+        )
         container.replan()
 
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
@@ -168,13 +170,14 @@ class WazuhServerCharm(CharmBaseWithState):
                 except ops.SecretNotFoundError:
                     secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
+        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
     @property
-    def _wazuh_pebble_layer(self) -> pebble.LayerDict:
+    def _wazuh_pebble_layer_without_readiness_check(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer for Wazuh."""
         environment = {}
         # self.state will never be None at this point
@@ -220,6 +223,24 @@ class WazuhServerCharm(CharmBaseWithState):
         }
 
     @property
+    def _wazuh_pebble_layer(self) -> pebble.LayerDict:
+        """Return a dictionary representing a Pebble layer for Wazuh."""
+        if not self.state:
+            return {}
+        layer = self._wazuh_pebble_layer_without_readiness_check
+        layer["checks"]["wazuh-ready"] = {
+            "override": "replace",
+            "level": "ready",
+            "http": {
+                "url": "http://localhost:55000",
+                "headers": {
+                    "Authorization": f"Basic wazuh-wui:{self.state.api_credentials['wazuh-wui']}"
+                },
+            },
+        }
+        return layer
+
+    @property
     def _prometheus_pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer for the Prometheus exporter."""
         if not self.state:
@@ -249,6 +270,11 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "level": "alive",
                     "tcp": {"port": 5000},
+                },
+                "prometheus-ready": {
+                    "override": "replace",
+                    "level": "alive",
+                    "http": {"url": "http://localhost:5000/metrics"},
                 },
             },
         }
