@@ -139,9 +139,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.name,
             self.state.cluster_key,
         )
-        container.add_layer(
-            "wazuh", self._wazuh_pebble_layer_without_readiness_check, combine=True
-        )
+        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
 
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
@@ -170,7 +168,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 except ops.SecretNotFoundError:
                     secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
-        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+            container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
@@ -228,6 +226,8 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             return {}
         layer = self._wazuh_pebble_layer_without_readiness_check
+        if self.state.unconfigured_api_users:
+            return layer
         layer["checks"]["wazuh-ready"] = {
             "override": "replace",
             "level": "ready",
