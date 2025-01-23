@@ -271,11 +271,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     "level": "alive",
                     "tcp": {"port": 5000},
                 },
-                "prometheus-ready": {
-                    "override": "replace",
-                    "level": "alive",
-                    "http": {"url": "http://localhost:5000/metrics"},
-                },
             },
         }
 
