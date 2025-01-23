@@ -156,9 +156,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     logger.debug("Changed API user %s", username)
                 # The user is new
                 else:
-                    logger.debug(
-                        "Configuring API user %s wazuh creds %s", username, credentials["wazuh"]
-                    )
                     token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
                     wazuh.create_readonly_api_user(username, password, token)
                     logger.debug("Created API user %s", username)
