@@ -116,12 +116,12 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         "wazuh-server/0",
         cluster_key,
     )
-    configure_git_mock.assert_called_with(
-        container, str(wazuh_config.custom_config_repository), "somekey"
-    )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_called_with(
         container=container, password=agent_password
+    )
+    configure_git_mock.assert_called_with(
+        container, str(wazuh_config.custom_config_repository), "somekey"
     )
     pull_configuration_files_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)
@@ -187,9 +187,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
     )
-    configure_git_mock.assert_called_with(container, None, None)
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_not_called()
+    configure_git_mock.assert_not_called()
     pull_configuration_files_mock.assert_not_called()
     wazuh_update_configuration_mock.assert_called_with(
         container,

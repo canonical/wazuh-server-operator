@@ -91,6 +91,38 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
 
+    def _configure_installation(self) -> None:
+        """Configure the Wazuh installation."""
+        if not self.state:
+            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
+            return
+        container = self.unit.containers.get(wazuh.CONTAINER_NAME)
+        wazuh.install_certificates(
+            container=container,
+            private_key=self.certificates.private_key,
+            public_key=self.state.certificate,
+            root_ca=self.state.root_ca,
+        )
+        wazuh.configure_filebeat_user(
+            container, self.state.filebeat_username, self.state.filebeat_password
+        )
+        if self.state.agent_password:
+            wazuh.configure_agent_password(container=container, password=self.state.agent_password)
+        if self.state.custom_config_repository:
+            wazuh.configure_git(
+                container,
+                str(self.state.custom_config_repository),
+                self.state.custom_config_ssh_key,
+            )
+            wazuh.pull_configuration_files(container)
+        wazuh.update_configuration(
+            container,
+            self.state.indexer_ips,
+            self.master_fqdn,
+            self.unit.name,
+            self.state.cluster_key,
+        )
+
     def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
 
@@ -107,39 +139,12 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        wazuh.install_certificates(
-            container=self.unit.containers.get(wazuh.CONTAINER_NAME),
-            private_key=self.certificates.private_key,
-            public_key=self.state.certificate,
-            root_ca=self.state.root_ca,
-        )
-        wazuh.configure_git(
-            container,
-            (
-                str(self.state.custom_config_repository)
-                if self.state.custom_config_repository
-                else None
-            ),
-            self.state.custom_config_ssh_key,
-        )
-        wazuh.configure_filebeat_user(
-            container, self.state.filebeat_username, self.state.filebeat_password
-        )
-        if self.state.agent_password:
-            wazuh.configure_agent_password(
-                container=self.unit.containers.get(wazuh.CONTAINER_NAME),
-                password=self.state.agent_password,
-            )
-        if self.state.custom_config_repository:
-            wazuh.pull_configuration_files(container)
-        wazuh.update_configuration(
-            container,
-            self.state.indexer_ips,
-            self.master_fqdn,
-            self.unit.name,
-            self.state.cluster_key,
-        )
+        self._configure_installation()
+
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+        # The prometheus exporter requires the users to be set up
+        if not self.state.unconfigured_api_users:
+            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
 
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
@@ -168,10 +173,10 @@ class WazuhServerCharm(CharmBaseWithState):
                 except ops.SecretNotFoundError:
                     secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
+            # Fetch the new wazuh layer, which has readiness checks
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
             container.replan()
-        # container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-        # container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
@@ -210,6 +215,21 @@ class WazuhServerCharm(CharmBaseWithState):
                         "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
                     ),
                     "startup": "enabled",
+                },
+                "prometheus-exporter": {
+                    "override": "replace",
+                    "summary": "prometheus exporter",
+                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
+                    "startup": "enabled",
+                    "user": "prometheus",
+                    "after": "wazuh",
+                    "on-failure": "restart",
+                    "environment": {
+                        "WAZUH_API_HOST": "localhost",
+                        "WAZUH_API_PORT": "55000",
+                        "WAZUH_API_USERNAME": "prometheus",
+                        "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
+                    },
                 },
             },
             "checks": {
