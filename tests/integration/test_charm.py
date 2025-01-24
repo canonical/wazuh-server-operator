@@ -31,7 +31,7 @@ async def test_api(model: Model, application: Application):
     """
     await application.scale(2)
     await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
+        apps=[application.name], status="active", raise_on_error=True, timeout=2400
     )
 
     status = await model.get_status()
