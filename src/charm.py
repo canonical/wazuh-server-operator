@@ -145,6 +145,7 @@ class WazuhServerCharm(CharmBaseWithState):
         # The prometheus exporter requires the users to be set up
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
         if not self.state.unconfigured_api_users.items():
+            logger.debug("Skipping prometheus pebble layer")
             container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
 
@@ -174,6 +175,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
             # Fetch the new wazuh layer, which has readiness checks
+            logger.debug("Reconfiguring pebble layers")
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
             container.replan()
@@ -248,6 +250,7 @@ class WazuhServerCharm(CharmBaseWithState):
             return {}
         layer = self._wazuh_pebble_layer_without_readiness_check
         if self.state.unconfigured_api_users:
+            logger.debug("Skipping readiness checks for wazuh")
             return layer
         layer["checks"]["wazuh-ready"] = {
             "override": "replace",
