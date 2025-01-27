@@ -270,8 +270,8 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             return {}
         return {
-            "summary": "wazuh manager layer",
-            "description": "pebble config layer for wazuh-manager",
+            "summary": "wazuh exporter layer",
+            "description": "pebble config layer for wazuh-exporter",
             "services": {
                 "prometheus-exporter": {
                     "override": "replace",
