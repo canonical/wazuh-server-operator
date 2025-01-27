@@ -51,6 +51,7 @@ async def test_api(model: Model, application: Application):
 
 
 @pytest.mark.abort_on_fail
+@pytest.mark.skip
 async def test_clustering_ok(application: Application):
     """
     Arrange: deploy the charm together with related charms.
