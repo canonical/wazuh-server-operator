@@ -29,8 +29,9 @@ async def test_api(model: Model, application: Application):
     Act: scale up to two units
     Assert: the default credentials are no longer valid for any of the units.
     """
+    await application.scale(2)
     await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=2400
+        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
     )
 
     status = await model.get_status()
@@ -50,7 +51,6 @@ async def test_api(model: Model, application: Application):
 
 
 @pytest.mark.abort_on_fail
-@pytest.mark.skip
 async def test_clustering_ok(application: Application):
     """
     Arrange: deploy the charm together with related charms.
