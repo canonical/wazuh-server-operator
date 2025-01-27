@@ -144,9 +144,9 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         # The prometheus exporter requires the users to be set up
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
-        if not self.state.unconfigured_api_users:
-            logger.debug("Adding prometheus pebble layer")
-            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
+        # if not self.state.unconfigured_api_users:
+        #     logger.debug("Adding prometheus pebble layer")
+        #     container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
 
         if self.state.unconfigured_api_users:
