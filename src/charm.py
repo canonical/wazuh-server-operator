@@ -144,9 +144,9 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         # The prometheus exporter requires the users to be set up
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
-        # if not self.state.unconfigured_api_users:
-        #     logger.debug("Adding prometheus pebble layer")
-        #     container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
+        if not self.state.unconfigured_api_users:
+            logger.debug("Adding prometheus pebble layer")
+            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
 
         if self.state.unconfigured_api_users:
@@ -217,21 +217,6 @@ class WazuhServerCharm(CharmBaseWithState):
                         "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
                     ),
                     "startup": "enabled",
-                },
-                "prometheus-exporter": {
-                    "override": "replace",
-                    "summary": "prometheus exporter",
-                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
-                    "startup": "enabled",
-                    "user": "prometheus",
-                    "after": "wazuh",
-                    "on-failure": "restart",
-                    "environment": {
-                        "WAZUH_API_HOST": "localhost",
-                        "WAZUH_API_PORT": "55000",
-                        "WAZUH_API_USERNAME": "prometheus",
-                        "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
-                    },
                 },
             },
             "checks": {
