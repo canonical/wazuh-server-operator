@@ -241,7 +241,7 @@ class WazuhServerCharm(CharmBaseWithState):
             "override": "replace",
             "level": "ready",
             "http": {
-                "url": "http://localhost:55000",
+                "url": "http://localhost:55000/security/user/authenticate",
                 "headers": {
                     "Authorization": f"Basic wazuh-wui:{self.state.api_credentials['wazuh-wui']}"
                 },
@@ -264,7 +264,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
                     "startup": "enabled",
                     "user": "prometheus",
-                    "after": "wazuh",
+                    "requires": "wazuh",
                     "on-failure": "restart",
                     "environment": {
                         "WAZUH_API_HOST": "localhost",
@@ -279,6 +279,13 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "level": "alive",
                     "tcp": {"port": 5000},
+                },
+                "prometheus-ready": {
+                    "override": "replace",
+                    "level": "alive",
+                    "http": {
+                        "url": "https://localhost:5000/metrics",
+                    },
                 },
             },
         }
