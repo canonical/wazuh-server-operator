@@ -231,9 +231,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "http": {
                         "url": "http://localhost:55000",
                         "headers": {
-                            "Authorization": (
-                                f"Basic wazuh:{self.state.api_credentials['wazuh']}"
-                            )
+                            "Authorization": f"Basic wazuh:{self.state.api_credentials['wazuh']}"
                         },
                     },
                 },
