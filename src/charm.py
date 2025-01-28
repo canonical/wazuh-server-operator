@@ -241,7 +241,7 @@ class WazuhServerCharm(CharmBaseWithState):
             "override": "replace",
             "level": "ready",
             "http": {
-                "url": "http://localhost:55000/security/user/authenticate",
+                "url": "http://localhost:55000",
                 "headers": {
                     "Authorization": f"Basic wazuh-wui:{self.state.api_credentials['wazuh-wui']}"
                 },
