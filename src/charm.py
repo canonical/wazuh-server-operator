@@ -174,11 +174,11 @@ class WazuhServerCharm(CharmBaseWithState):
                 except ops.SecretNotFoundError:
                     secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
-            # Fetch the new wazuh layer, which has readiness checks
+            # Fetch the new wazuh layer, which has different env vars
             logger.debug("Reconfiguring pebble layers")
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-            container.restart("wazuh", "prometheus-exporter")
+            container.replamn()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
