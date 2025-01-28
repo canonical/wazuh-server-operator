@@ -183,7 +183,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.unit.status = ops.ActiveStatus()
 
     @property
-    def _wazuh_pebble_layer_without_readiness_check(self) -> pebble.LayerDict:
+    def _wazuh_pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer for Wazuh."""
         environment = {}
         # self.state will never be None at this point
@@ -225,29 +225,20 @@ class WazuhServerCharm(CharmBaseWithState):
                     "level": "alive",
                     "tcp": {"port": 55000},
                 },
-            },
-        }
-
-    @property
-    def _wazuh_pebble_layer(self) -> pebble.LayerDict:
-        """Return a dictionary representing a Pebble layer for Wazuh."""
-        if not self.state:
-            return {}
-        layer = self._wazuh_pebble_layer_without_readiness_check
-        if self.state.unconfigured_api_users:
-            logger.debug("Skipping readiness checks for wazuh")
-            return layer
-        layer["checks"]["wazuh-ready"] = {
-            "override": "replace",
-            "level": "ready",
-            "http": {
-                "url": "http://localhost:55000",
-                "headers": {
-                    "Authorization": f"Basic wazuh-wui:{self.state.api_credentials['wazuh-wui']}"
+                "wazuh-ready": {
+                    "override": "replace",
+                    "level": "ready",
+                    "http": {
+                        "url": "http://localhost:55000",
+                        "headers": {
+                            "Authorization": (
+                                f"Basic wazuh-wui:{self.state.api_credentials['wazuh-wui']}"
+                            )
+                        },
+                    },
                 },
             },
         }
-        return layer
 
     @property
     def _prometheus_pebble_layer(self) -> pebble.LayerDict:
