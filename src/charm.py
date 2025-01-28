@@ -142,13 +142,10 @@ class WazuhServerCharm(CharmBaseWithState):
         self._configure_installation()
 
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-        # The prometheus exporter requires the users to be set up
-        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
-        if not self.state.unconfigured_api_users:
-            logger.debug("Adding prometheus pebble layer")
-            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
 
+        # The prometheus exporter requires the users to be set up
+        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
         if self.state.unconfigured_api_users:
             # Current credentials that will be updated on every successful operation
             credentials = self.state.api_credentials
@@ -177,8 +174,8 @@ class WazuhServerCharm(CharmBaseWithState):
             # Fetch the new wazuh layer, which has different env vars
             logger.debug("Reconfiguring pebble layers")
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-            container.replan()
+        container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
+        container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
