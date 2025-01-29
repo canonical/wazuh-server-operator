@@ -29,6 +29,10 @@ async def test_api(model: Model, application: Application):
     Act: scale up to two units
     Assert: the default credentials are no longer valid for any of the units.
     """
+    await application.scale(2)
+    await model.wait_for_idle(
+        apps=[application.name], status="active", raise_on_error=True, timeout=600
+    )
     status = await model.get_status()
     # Type hints are not ok here
     units = list(status.applications[application.name].units)  # type: ignore
@@ -49,7 +53,7 @@ async def test_api(model: Model, application: Application):
 async def test_clustering_ok(application: Application):
     """
     Arrange: deploy the charm together with related charms.
-    Act: scale up to two units
+    Act: scale up to two units.
     Assert: the clustering config is valid.
     """
     wazuh_unit = application.units[0]  # type: ignore
