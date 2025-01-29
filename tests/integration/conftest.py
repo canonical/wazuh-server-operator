@@ -122,11 +122,6 @@ async def application_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
-    await model.wait_for_idle(
-        apps=[self_signed_certificates.name, opensearch_provider.name, traefik.name],
-        status="active",
-        timeout=2000,
-    )
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
