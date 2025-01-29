@@ -96,9 +96,6 @@ async def opensearch_provider_fixture(
     )
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
-    await machine_model.wait_for_idle(
-        apps=[application.name, self_signed_certificates.name], status="active", timeout=2000
-    )
     yield application
 
 
@@ -125,6 +122,11 @@ async def application_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
+    await model.wait_for_idle(
+        apps=[self_signed_certificates.name, opensearch_provider.name, traefik.name],
+        status="active",
+        timeout=2000,
+    )
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
@@ -138,10 +140,8 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(traefik.name, application.name)
+    await application.scale(2)
     await model.wait_for_idle(
-        apps=[application.name],
-        status="active",
-        raise_on_error=True,
-        timeout=600,
+        apps=[application.name], status="active", raise_on_error=True, timeout=600
     )
     yield application
