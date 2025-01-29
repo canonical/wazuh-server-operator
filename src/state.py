@@ -95,6 +95,8 @@ def _fetch_filebeat_configuration(
         InvalidStateError: if the secret is invalid.
     """
     filebeat_secret_id = indexer_relation_data.get("secret-user")
+    if not filebeat_secret_id:
+        raise InvalidStateError("Indexer secret ID not in relation.") from exc
     try:
         filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
     except ops.SecretNotFoundError as exc:
