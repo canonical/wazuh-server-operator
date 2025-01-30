@@ -140,7 +140,7 @@ def update_configuration(
     try:
         stdout, stderr = proc.wait_output()
     except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
-        logger.error("Error realoading the wazuh deamon %s %s", stdout, stderr)
+        logger.error("Error realoading the wazuh daemon %s %s", stdout, stderr)
         raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
 
 
