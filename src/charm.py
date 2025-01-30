@@ -250,6 +250,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
                     "startup": "enabled",
                     "user": "prometheus",
+                    "after": ["wazuh"],
                     "requires": ["wazuh"],
                     "on-failure": "restart",
                     "environment": {
