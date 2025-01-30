@@ -138,9 +138,8 @@ def update_configuration(
     _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
-        stdout, stderr = proc.wait_output()
+        proc.wait_output()
     except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
-        logger.error("Error realoading the wazuh daemon %s %s", stdout, stderr)
         raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
 
 
