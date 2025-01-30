@@ -174,8 +174,9 @@ class WazuhServerCharm(CharmBaseWithState):
             # Fetch the new wazuh layer, which has different env vars
             logger.debug("Reconfiguring pebble layers")
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+            container.pebble.replan()
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-        container.replan()
+        container.pebble.replan_services(delay=5)
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
