@@ -251,12 +251,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
-                    "http": {
-                        "url": "http://localhost:55000/security/user/authenticate",
-                        "headers": {
-                            "Authorization": f"Basic wazuh:{self.state.api_credentials['wazuh']}"
-                        },
-                    },
+                    "exec": (
+                        f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} {wazuh.AUTH_ENDPOINT}"
+                    ),
                 },
             },
         }
@@ -296,9 +293,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-ready": {
                     "override": "replace",
                     "level": "alive",
-                    "http": {
-                        "url": "http://localhost:5000/metrics",
-                    },
+                    "exec": f"curl -k https://localhost:5000/metrics",
                 },
             },
         }
