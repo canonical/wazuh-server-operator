@@ -7,6 +7,8 @@
 
 import logging
 import secrets
+import pathlib
+import textwrap
 import typing
 
 import ops
@@ -29,6 +31,7 @@ from state import (
 logger = logging.getLogger(__name__)
 
 
+CHARM_CALLBACK_SCRIPT_PATH = pathlib.Path("/opt/wazuh-server/charm-callback.sh")
 WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 
 
@@ -122,6 +125,28 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.name,
             self.state.cluster_key,
         )
+    
+    def _install_callback_script(self, health_check_url: str) -> None:
+        """Install platform startup callback script for noticing the charm on start.
+
+        Args:
+            health_check_url: opencti health check endpoint.
+        """
+        script = textwrap.dedent(
+            f"""\
+            while :; do
+                if curl -m 3 -sfo /dev/null "{health_check_url}"; then
+                    pebble notify canonical.com/opencti/platform-healthy
+                    pebble stop charm-callback
+                    break
+                else
+                    sleep 5
+                fi
+            done
+            """
+        )
+        self._container.make_dir(_CHARM_CALLBACK_SCRIPT_PATH.parent, make_parents=True)
+        self._container.push(_CHARM_CALLBACK_SCRIPT_PATH, script, encoding="utf-8")
 
     def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
@@ -223,16 +248,16 @@ class WazuhServerCharm(CharmBaseWithState):
                     "level": "alive",
                     "tcp": {"port": 55000},
                 },
-                # "wazuh-ready": {
-                #     "override": "replace",
-                #     "level": "ready",
-                #     "http": {
-                #         "url": "https://localhost:55000/security/user/authenticate",
-                #         "headers": {
-                #             "Authorization": f"Basic wazuh:{self.state.api_credentials['wazuh']}"
-                #         },
-                #     },
-                # },
+                "wazuh-ready": {
+                    "override": "replace",
+                    "level": "ready",
+                    "http": {
+                        "url": "http://localhost:55000/security/user/authenticate",
+                        "headers": {
+                            "Authorization": f"Basic wazuh:{self.state.api_credentials['wazuh']}"
+                        },
+                    },
+                },
             },
         }
 
@@ -272,7 +297,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "level": "alive",
                     "http": {
-                        "url": "https://localhost:5000/metrics",
+                        "url": "http://localhost:5000/metrics",
                     },
                 },
             },
