@@ -125,7 +125,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.name,
             self.state.cluster_key,
         )
-    
+
     def _install_callback_script(self, health_check_url: str) -> None:
         """Install platform startup callback script for noticing the charm on start.
 
@@ -251,9 +251,12 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
-                    "exec": (
-                        f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} {wazuh.AUTH_ENDPOINT}"
-                    ),
+                    "exec": {
+                        "command": (
+                            f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} "
+                            f"{wazuh.AUTH_ENDPOINT}"
+                        ),
+                    },
                 },
             },
         }
@@ -293,7 +296,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-ready": {
                     "override": "replace",
                     "level": "alive",
-                    "exec": f"curl -k https://localhost:5000/metrics",
+                    "exec": {"command": "curl -k https://localhost:5000/metrics"},
                 },
             },
         }
