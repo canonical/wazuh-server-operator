@@ -199,7 +199,7 @@ class WazuhServerCharm(CharmBaseWithState):
             # Fetch the new wazuh layer, which has different env vars
             logger.debug("Reconfiguring pebble layers")
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-            container.pebble.replan()
+            container.replan()
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.pebble.replan_services(delay=5)
         self.unit.set_workload_version(wazuh.get_version(container))
@@ -273,7 +273,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-exporter": {
                     "override": "replace",
                     "summary": "prometheus exporter",
-                    "command": "sleep 1; /usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
+                    "command": "sleep 1;xj /usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
                     "startup": "enabled",
                     "user": "prometheus",
                     "after": ["wazuh"],
