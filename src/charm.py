@@ -251,7 +251,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "summary": "prometheus exporter",
                     "command": (
-                        "sleep 1 && /usr/bin/python3 /srv/prometheus/prometheus_exporter.py"
+                        "sh -c 'sleep 1; /usr/bin/python3 /srv/prometheus/prometheus_exporter.py'"
                     ),
                     "startup": "enabled",
                     "user": "prometheus",
