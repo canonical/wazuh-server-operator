@@ -252,7 +252,10 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "level": "ready",
                     "exec": {
-                        "command": f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} {wazuh.AUTH_ENDPOINT}"
+                        "command": (
+                            f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} "
+                            f"{wazuh.AUTH_ENDPOINT}"
+                        )
                     },
                 },
             },
@@ -270,7 +273,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-exporter": {
                     "override": "replace",
                     "summary": "prometheus exporter",
-                    "command": "sleep 1; /usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
+                    "command": (
+                        "sleep 1 && /usr/bin/python3 /srv/prometheus/prometheus_exporter.py"
+                    ),
                     "startup": "enabled",
                     "user": "prometheus",
                     "after": ["wazuh"],
