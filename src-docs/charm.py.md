@@ -24,7 +24,7 @@ Charm the service.
  - <b>`master_fqdn`</b>:  the FQDN for unit 0. 
  - <b>`state`</b>:  the charm state. 
 
-<a href="../src/charm.py#L43"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L45"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -95,7 +95,7 @@ Unit that this execution is responsible for.
 
 ---
 
-<a href="../src/charm.py#L126"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L128"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `reconcile`
 

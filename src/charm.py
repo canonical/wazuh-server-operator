@@ -6,9 +6,8 @@
 """Wazuh Server charm."""
 
 import logging
-import secrets
 import pathlib
-import textwrap
+import secrets
 import typing
 
 import ops
@@ -125,28 +124,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.name,
             self.state.cluster_key,
         )
-
-    def _install_callback_script(self, health_check_url: str) -> None:
-        """Install platform startup callback script for noticing the charm on start.
-
-        Args:
-            health_check_url: opencti health check endpoint.
-        """
-        script = textwrap.dedent(
-            f"""\
-            while :; do
-                if curl -m 3 -sfo /dev/null "{health_check_url}"; then
-                    pebble notify canonical.com/opencti/platform-healthy
-                    pebble stop charm-callback
-                    break
-                else
-                    sleep 5
-                fi
-            done
-            """
-        )
-        self._container.make_dir(_CHARM_CALLBACK_SCRIPT_PATH.parent, make_parents=True)
-        self._container.push(_CHARM_CALLBACK_SCRIPT_PATH, script, encoding="utf-8")
 
     def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
