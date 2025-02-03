@@ -219,7 +219,6 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["NO_PROXY"] = proxy.no_proxy
         if not self.state:
             return {}
-        wazuh_alive_cmd = 
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
