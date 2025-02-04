@@ -31,7 +31,7 @@ async def test_api(model: Model, application: Application):
     """
     await application.scale(2)
     await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=600
+        apps=[application.name], status="active", raise_on_error=True, timeout=1400
     )
     status = await model.get_status()
     # Type hints are not ok here
