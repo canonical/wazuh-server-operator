@@ -6,7 +6,6 @@
 """Wazuh Server charm."""
 
 import logging
-import pathlib
 import secrets
 import typing
 
@@ -30,8 +29,6 @@ from state import (
 
 logger = logging.getLogger(__name__)
 
-
-CHARM_CALLBACK_SCRIPT_PATH = pathlib.Path("/opt/wazuh-server/charm-callback.sh")
 WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 
 
