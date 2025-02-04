@@ -130,6 +130,9 @@ def update_configuration(
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while installing.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
@@ -138,7 +141,8 @@ def update_configuration(
     try:
         proc.wait_output()
     except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
-        logger.error("Error reloading the wazuh daemon %s.", exc.stderr)
+        logger.error(exc)
+        # raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
 
 
 def install_certificates(
