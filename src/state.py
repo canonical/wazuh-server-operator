@@ -52,6 +52,10 @@ class RecoverableStateError(Exception):
     """Exception raised when a charm configuration is invalid and recoverable by the operator."""
 
 
+class IncompleteStateError(Exception):
+    """Exception raised when a charm configuration is invalid and automatically recoverable."""
+
+
 class ProxyConfig(BaseModel):  # pylint: disable=too-few-public-methods
     """Proxy configuration.
 
@@ -93,11 +97,11 @@ def _fetch_filebeat_configuration(
 
     Raises:
         InvalidStateError: if the secret is invalid.
-        RecoverableStateError: if the secret has not yet been passed.
+        IncompleteStateError: if the secret has not yet been passed.
     """
     filebeat_secret_id = indexer_relation_data.get("secret-user")
     if not filebeat_secret_id:
-        raise RecoverableStateError("Indexer secret ID not yet in relation.")
+        raise IncompleteStateError("Indexer secret ID not yet in relation.")
     try:
         filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
     except ops.SecretNotFoundError as exc:

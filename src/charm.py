@@ -22,6 +22,7 @@ from state import (
     WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     CharmBaseWithState,
+    IncompleteStateError,
     InvalidStateError,
     RecoverableStateError,
     State,
@@ -88,6 +89,10 @@ class WazuhServerCharm(CharmBaseWithState):
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             raise exc
+        except IncompleteStateError as exc:
+            logger.error("Invalid charm configuration, %s", exc)
+            self.unit.status = ops.WaitingStatus("Charm state is invalid")
+            return None
         except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
