@@ -7,6 +7,7 @@
 
 import logging
 import secrets
+import shlex
 import typing
 
 import ops
@@ -199,10 +200,6 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["NO_PROXY"] = proxy.no_proxy
         if not self.state:
             return {}
-        wazuh_ready_cmd = (
-            f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} {wazuh.AUTH_ENDPOINT}"
-        )
-        logger.error({"command": f"sh -c '{wazuh_ready_cmd}'"})
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -235,7 +232,13 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
-                    "exec": {"command": f"sh -c '{wazuh_ready_cmd}'"},
+                    "exec": {
+                        "command": (
+                            "sh -c 'curl -k "
+                            f"--user wazuh:{shlex.quote(self.state.api_credentials['wazuh'])} "
+                            f"{wazuh.AUTH_ENDPOINT}'"
+                        )
+                    },
                 },
             },
         }
