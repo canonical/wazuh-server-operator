@@ -118,7 +118,6 @@ async def application_fixture(
     self_signed_certificates: Application,
     opensearch_provider: Application,
     pytestconfig: pytest.Config,
-    traefik: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
@@ -134,6 +133,5 @@ async def application_fixture(
         f"localhost:admin/{self_signed_certificates.model.name}.{self_signed_certificates.name}",
         application.name,
     )
-    await model.integrate(traefik.name, application.name)
-    await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
+    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
     yield application
