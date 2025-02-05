@@ -144,9 +144,10 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
         self._configure_installation()
-
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
+        # Reload since the service might not have been restarted
+        wazuh.reload_configuration(container)
 
         # The prometheus exporter requires the users to be set up
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
@@ -179,8 +180,6 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.debug("Reconfiguring pebble layers")
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
-        # Reload since the service might not have been restarted
-        wazuh.reload_configuration(container)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
@@ -203,6 +202,7 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh_ready_cmd = (
             f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} {wazuh.AUTH_ENDPOINT}"
         )
+        logger.error({"command": f"sh -c '{wazuh_ready_cmd}'"})
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
