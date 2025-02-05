@@ -63,6 +63,7 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     assert "master" == tree.xpath("/root/ossec_config/cluster/node_type")[0].text
     address = tree.xpath("/root/ossec_config/cluster/nodes/node")[0]
     assert address.text == master_ip
+    assert "syslog" == tree.xpath("/root/ossec_config/remote/connection")[0].text
 
 
 def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -103,6 +104,7 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     assert "worker" == tree.xpath("/root/ossec_config/cluster/node_type")[0].text
     address = tree.xpath("/root/ossec_config/cluster/nodes/node")[0]
     assert address.text == master_ip
+    assert "syslog" == tree.xpath("/root/ossec_config/remote/connection")[0].text
 
 
 def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch) -> None:
