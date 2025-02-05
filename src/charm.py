@@ -232,6 +232,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
+                    "threshold": 10,
                     "exec": {
                         "command": (
                             "sh -c 'curl -k "
