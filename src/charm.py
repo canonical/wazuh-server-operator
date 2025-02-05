@@ -207,7 +207,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh": {
                     "override": "replace",
                     "summary": "wazuh manager",
-                    "command": "/var/ossec/bin/wazuh-control start",
+                    "command": "sh -c 'sleep 1; /var/ossec/bin/wazuh-control start'",
                     "startup": "enabled",
                     "on-success": "ignore",
                     "environment": environment,
@@ -216,9 +216,10 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "summary": "filebeat",
                     "command": (
+                        "sh -c 'sleep 1; "
                         "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
                         "--path.home /usr/share/filebeat --path.config /etc/filebeat "
-                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
+                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat'"
                     ),
                     "startup": "enabled",
                 },
