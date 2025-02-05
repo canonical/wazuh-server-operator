@@ -179,8 +179,10 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.debug("Reconfiguring pebble layers")
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
+        # Reload since the service might not have been restarted
+        wazuh.reload_configuration(container)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-        container.pebble.replan_services(delay=5)
+        container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 

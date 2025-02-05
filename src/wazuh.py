@@ -130,13 +130,21 @@ def update_configuration(
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
-
-    Raises:
-        WazuhInstallationError: if an error occurs while installing.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
     _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
+
+
+def reload_configuration(container: ops.Container) -> None:
+    """Reload the workload configuration.
+
+    Arguments:
+        container: the container for which to update the configuration.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while installing.
+    """
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
         proc.wait_output()

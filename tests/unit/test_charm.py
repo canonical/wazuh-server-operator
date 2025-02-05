@@ -54,9 +54,11 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
     get_version_mock,
+    wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -124,6 +126,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container, str(wazuh_config.custom_config_repository), "somekey"
     )
     pull_configuration_files_mock.assert_called_with(container)
+    wazuh_reload_configuration_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
@@ -136,9 +139,11 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
     get_version_mock,
+    wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -198,6 +203,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server/0",
         cluster_key,
     )
+    wazuh_reload_configuration_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 

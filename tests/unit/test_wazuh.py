@@ -105,15 +105,12 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     assert address.text == master_ip
 
 
-def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reload_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     """
-    arrange: copy the Wazuh configuration files into a container and mock the service restart so
-        that it errors.
-    act: save a configuration with a set of indexer IPs.
+    arrange: mock the service restart so that it errors.
+    act: reload the service.
     assert: a WazuhInstallationError is raised.
     """
-    indexer_ips = ["92.0.0.1:9200", "92.0.0.2:9200"]
-    master_ip = "10.1.0.2"
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
@@ -124,14 +121,9 @@ def test_update_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch
     exec_process.wait_output = unittest.mock.MagicMock(side_effect=exec_error)
     exec_mock = unittest.mock.MagicMock(return_value=exec_process)
     monkeypatch.setattr(container, "exec", exec_mock)
-    filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text(encoding="utf-8")
-    container.push(wazuh.FILEBEAT_CONF_PATH, filebeat_content, make_dirs=True)
-    ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
-    container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     with pytest.raises(wazuh.WazuhInstallationError):
-        key = secrets.token_hex(32)
-        wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/0", key)
+        wazuh.reload_configuration(container)
 
 
 def test_install_certificates() -> None:
