@@ -87,7 +87,7 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.error("Invalid charm configuration, %s", exc)
             raise exc
         except IncompleteStateError as exc:
-            logger.error("Invalid charm configuration, %s", exc)
+            logger.debug("Invalid charm configuration, %s", exc)
             self.unit.status = ops.WaitingStatus("Charm state is invalid")
             return None
         except RecoverableStateError as exc:
@@ -233,9 +233,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
-                    "exec": {
-                        "command": f"sh -c '{wazuh_ready_cmd}'"
-                    },
+                    "exec": {"command": f"sh -c '{wazuh_ready_cmd}'"},
                 },
             },
         }
