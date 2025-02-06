@@ -15,6 +15,7 @@ from juju.application import Application
 from juju.model import Model
 
 import state
+import wazuh
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,6 @@ CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"
 APP_NAME = CHARMCRAFT["name"]
 
 
-@pytest.mark.abort_on_fail
 async def test_api(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
@@ -37,7 +37,7 @@ async def test_api(model: Model, application: Application):
         # Check the defaults are changed instead of the new creds
         # https://github.com/juju/python-libjuju/issues/947
         response = requests.get(  # nosec
-            f"https://{address}:55000/security/user/authenticate",
+            f"https://{address}:{wazuh.API_PORT}/security/user/authenticate",
             auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
             timeout=10,
             verify=False,
@@ -45,7 +45,6 @@ async def test_api(model: Model, application: Application):
         assert response.status_code == 401, f"Default user still in use {response.content}"
 
 
-@pytest.mark.abort_on_fail
 async def test_clustering_ok(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
