@@ -23,6 +23,7 @@ CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"
 APP_NAME = CHARMCRAFT["name"]
 
 
+@pytest.mark.abort_on_fail
 async def test_api(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
@@ -42,9 +43,10 @@ async def test_api(model: Model, application: Application):
             timeout=10,
             verify=False,
         )
-        assert response.status_code == 401, f"Default user still in use {response.content}"
+        assert response.status_code == 401, response.content
 
 
+@pytest.mark.abort_on_fail
 async def test_clustering_ok(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
