@@ -9,14 +9,40 @@ import logging
 from pathlib import Path
 
 import pytest
+import requests
 import yaml
 from juju.application import Application
 from juju.model import Model
+
+import state
 
 logger = logging.getLogger(__name__)
 
 CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"))
 APP_NAME = CHARMCRAFT["name"]
+
+
+@pytest.mark.abort_on_fail
+async def test_api(model: Model, application: Application):
+    """
+    Arrange: deploy the charm together with related charms.
+    Act: do nothing.
+    Assert: the default credentials are no longer valid for any of the units.
+    """
+    status = await model.get_status()
+    # Type hints are not ok here
+    units = list(status.applications[application.name].units)  # type: ignore
+    for unit in units:
+        address = status["applications"][application.name]["units"][unit]["address"]
+        # Check the defaults are changed instead of the new creds
+        # https://github.com/juju/python-libjuju/issues/947
+        response = requests.get(  # nosec
+            f"https://{address}:55000/security/user/authenticate",
+            auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
+            timeout=10,
+            verify=False,
+        )
+        assert response.status_code == 401, f"Default user still in use for unit {unit}"
 
 
 @pytest.mark.abort_on_fail

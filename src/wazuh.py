@@ -31,7 +31,8 @@ LOGS_PATH = Path("/var/ossec/logs")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
-AUTH_ENDPOINT = "https://localhost:55000/security/user/authenticate"
+API_PORT = 55000
+AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
 WAZUH_GROUP = "wazuh"
 WAZUH_USER = "wazuh"
 

@@ -145,6 +145,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
         self._configure_installation()
+        self.unit.open_port("tcp", wazuh.API_PORT)
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         # Reload since the service might not have been restarted
@@ -228,7 +229,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-alive": {
                     "override": "replace",
                     "level": "alive",
-                    "tcp": {"port": 55000},
+                    "tcp": {"port": wazuh.API_PORT},
                 },
                 "wazuh-ready": {
                     "override": "replace",
