@@ -423,7 +423,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
-            "https://localhost:55000/security/users",
+            f"https://localhost:{API_PORT}/security/users",
             headers=headers,
             timeout=10,
             verify=False,
@@ -434,7 +434,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ][0]
         response = requests.put(  # nosec
-            f"https://localhost:55000/security/users/{user_id}",
+            f"https://localhost:{API_PORT}/security/users/{user_id}",
             headers=headers,
             json={"password": password},
             timeout=10,
@@ -476,7 +476,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.post(  # nosec
-            "https://localhost:55000/security/users",
+            f"https://localhost:{API_PORT}/security/users",
             headers=headers,
             json={"username": username, "password": password},
             timeout=10,
@@ -488,7 +488,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ][0]
         response = requests.get(  # nosec
-            "https://localhost:55000/security/roles",
+            f"https://localhost:{API_PORT}/security/roles",
             headers=headers,
             timeout=10,
             verify=False,
@@ -499,7 +499,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
         ][0]
         response = requests.post(  # nosec
-            f"https://localhost:55000/security/users/{user_id}/roles?role_ids={role_id}",
+            f"https://localhost:{API_PORT}/security/users/{user_id}/roles?role_ids={role_id}",
             headers=headers,
             timeout=10,
             verify=False,
