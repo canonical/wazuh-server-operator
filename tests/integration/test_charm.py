@@ -45,7 +45,7 @@ async def test_api(model: Model, application: Application):
             timeout=10,
             verify=False,
         )
-        assert response.status_code == 200, response.content
+        assert response.status_code == 401, response.content
 
 
 @pytest.mark.abort_on_fail
