@@ -451,7 +451,12 @@ def generate_api_password() -> str:
 
     Returns: a string with a compliant password.
     """
-    charsets = [string.ascii_lowercase, string.ascii_uppercase, string.digits, string.punctuation]
+    charsets = [
+        string.ascii_lowercase,
+        string.ascii_uppercase,
+        string.digits,
+        "!#$%&()*+,-./:;<=>?@[]^_{|}~",
+    ]
     password = [secrets.choice("".join(charsets)) for _ in range(11)]
     for charset in charsets:
         char = secrets.choice(charset)
