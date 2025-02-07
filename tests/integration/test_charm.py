@@ -30,6 +30,7 @@ async def test_api(model: Model, application: Application):
     Act: do nothing.
     Assert: the default credentials are no longer valid for any of the units.
     """
+    await application.scale(2)
     await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
     status = await model.get_status()
     # Type hints are not ok here
@@ -47,7 +48,6 @@ async def test_api(model: Model, application: Application):
         assert response.status_code == 401, response.content
 
 
-@pytest.mark.skip
 @pytest.mark.abort_on_fail
 async def test_clustering_ok(model: Model, application: Application):
     """

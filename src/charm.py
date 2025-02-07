@@ -16,10 +16,10 @@ from ops import pebble
 import certificates_observer
 import observability
 import opensearch_observer
+import state
 import traefik_route_observer
 import wazuh
 from state import (
-    WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     CharmBaseWithState,
     IncompleteStateError,
@@ -153,35 +153,24 @@ class WazuhServerCharm(CharmBaseWithState):
 
         # The prometheus exporter requires the users to be set up
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
-        if self.state.unconfigured_api_users:
-            # Current credentials that will be updated on every successful operation
-            credentials = self.state.api_credentials
-            for username, details in self.state.unconfigured_api_users.items():
-                logger.debug("Configuring API user %s", username)
-                password = wazuh.generate_api_password()
-                # The user has already been created when installing
-                if details["default"]:
-                    token = wazuh.authenticate_user(username, credentials[username])
-                    wazuh.change_api_password(username, password, token)
-                    logger.debug("Changed API user %s", username)
-                # The user is new
-                else:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
-                    wazuh.create_readonly_api_user(username, password, token)
-                    logger.debug("Created API user %s", username)
-                # Store the new credentials alongside the existing ones
-                credentials[username] = password
+        for username, details in state.WAZUH_USERS.items():
+            token = None
+            # The user has already been created when installing
+            if details["default"]:
                 try:
-                    secret = self.model.get_secret(label=WAZUH_API_CREDENTIALS)
-                    secret.set_content(credentials)
-                    logger.debug("Updated secret %s with credentials", secret.id)
-                except ops.SecretNotFoundError:
-                    secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
-                    logger.debug("Added secret %s with credentials", secret.id)
-            # Fetch the new wazuh layer, which has different env vars
-            logger.debug("Reconfiguring pebble layers")
-            container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-            container.replan()
+                    token = wazuh.authenticate_user(username, details["default_password"])
+                    password = wazuh.generate_api_password()
+                    wazuh.change_api_password(username, password, token)
+                    logger.debug("Changed password for API user %s", username)
+                except wazuh.WazuhAuthenticationError:
+                    logger.debug("Could not authenticate user %s with default password.", username)
+            else:
+                token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
+                wazuh.create_readonly_api_user(username, password, token)
+                logger.debug("Created API user %s", username)
+        # Fetch the new wazuh layer, which has different env vars
+        logger.debug("Reconfiguring pebble layers")
+        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
