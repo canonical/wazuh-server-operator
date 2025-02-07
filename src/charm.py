@@ -175,14 +175,14 @@ class WazuhServerCharm(CharmBaseWithState):
                     logger.debug("Created API user %s", username)
                 except wazuh.WazuhInstallationError:
                     logger.debug("Could not add user %s.", username)
-                # Store the new credentials alongside the existing ones
-                try:
-                    secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
-                    secret.set_content(credentials)
-                    logger.debug("Updated secret %s with credentials", secret.id)
-                except ops.SecretNotFoundError:
-                    secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
-                    logger.debug("Added secret %s with credentials", secret.id)
+            # Store the new credentials alongside the existing ones
+            try:
+                secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
+                secret.set_content(credentials)
+                logger.debug("Updated secret %s with credentials", secret.id)
+            except ops.SecretNotFoundError:
+                secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
+                logger.debug("Added secret %s with credentials", secret.id)
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
