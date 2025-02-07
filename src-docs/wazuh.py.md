@@ -244,7 +244,7 @@ Change Wazuh's API password for a given user.
 
 ---
 
-<a href="../src/wazuh.py#L449"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L448"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `generate_api_password`
 
@@ -259,7 +259,7 @@ Returns: a string with a compliant password.
 
 ---
 
-<a href="../src/wazuh.py#L462"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L466"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `create_readonly_api_user`
 
@@ -286,7 +286,7 @@ Create a new readonly user for Wazuh's API.
 
 ---
 
-<a href="../src/wazuh.py#L513"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/wazuh.py#L517"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `get_version`
 

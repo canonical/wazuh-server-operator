@@ -165,9 +165,12 @@ class WazuhServerCharm(CharmBaseWithState):
                 except wazuh.WazuhAuthenticationError:
                     logger.debug("Could not authenticate user %s with default password.", username)
             else:
-                token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
-                wazuh.create_readonly_api_user(username, password, token)
-                logger.debug("Created API user %s", username)
+                try:
+                    token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
+                    wazuh.create_readonly_api_user(username, password, token)
+                    logger.debug("Created API user %s", username)
+                except wazuh.WazuhInstallationError:
+                    logger.debug("Could not add user %s.", username)
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)

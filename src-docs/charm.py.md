@@ -7,7 +7,6 @@ Wazuh Server charm.
 
 **Global Variables**
 ---------------
-- **WAZUH_API_CREDENTIALS**
 - **WAZUH_CLUSTER_KEY_SECRET_LABEL**
 - **WAZUH_PEER_RELATION_NAME**
 

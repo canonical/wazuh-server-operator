@@ -442,7 +442,6 @@ def change_api_password(username: str, password: str, token: str) -> None:
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
-        logger.error("Error %s", response.json())
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
 
@@ -511,7 +510,6 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
-        logger.error("Error %s", response.json())
         raise WazuhInstallationError("Error creating a readonly user.") from exc
 
 
