@@ -160,7 +160,9 @@ class WazuhServerCharm(CharmBaseWithState):
             if details["default"]:
                 try:
                     token = wazuh.authenticate_user(username, details["default_password"])
-                    password = wazuh.generate_api_password()
+                    password = credentials[username]
+                    if credentials[username] == details["default_password"]:
+                        password = wazuh.generate_api_password()
                     wazuh.change_api_password(username, password, token)
                     credentials[username] = password
                     logger.debug("Changed password for API user %s to %s", username, password)
@@ -169,7 +171,9 @@ class WazuhServerCharm(CharmBaseWithState):
             else:
                 try:
                     token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
-                    password = wazuh.generate_api_password()
+                    password = credentials[username]
+                    if credentials[username]:
+                        password = wazuh.generate_api_password()
                     wazuh.create_readonly_api_user(username, password, token)
                     credentials[username] = password
                     logger.debug("Created API user %s", username)
