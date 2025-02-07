@@ -156,21 +156,33 @@ class WazuhServerCharm(CharmBaseWithState):
         for username, details in state.WAZUH_USERS.items():
             token = None
             # The user has already been created when installing
+            credentials = self.state.api_credentials
             if details["default"]:
                 try:
                     token = wazuh.authenticate_user(username, details["default_password"])
                     password = wazuh.generate_api_password()
                     wazuh.change_api_password(username, password, token)
+                    credentials[username] = password
                     logger.debug("Changed password for API user %s to %s", username, password)
                 except wazuh.WazuhAuthenticationError:
                     logger.debug("Could not authenticate user %s with default password.", username)
             else:
                 try:
                     token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
+                    password = wazuh.generate_api_password()
                     wazuh.create_readonly_api_user(username, password, token)
+                    credentials[username] = password
                     logger.debug("Created API user %s", username)
                 except wazuh.WazuhInstallationError:
                     logger.debug("Could not add user %s.", username)
+                # Store the new credentials alongside the existing ones
+                try:
+                    secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
+                    secret.set_content(credentials)
+                    logger.debug("Updated secret %s with credentials", secret.id)
+                except ops.SecretNotFoundError:
+                    secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
+                    logger.debug("Added secret %s with credentials", secret.id)
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
