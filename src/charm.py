@@ -161,7 +161,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     token = wazuh.authenticate_user(username, details["default_password"])
                     password = wazuh.generate_api_password()
                     wazuh.change_api_password(username, password, token)
-                    logger.debug("Changed password for API user %s", username)
+                    logger.debug("Changed password for API user %s to %s", username, password)
                 except wazuh.WazuhAuthenticationError:
                     logger.debug("Could not authenticate user %s with default password.", username)
             else:
