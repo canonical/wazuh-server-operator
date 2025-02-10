@@ -440,6 +440,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
             timeout=10,
             verify=False,
         )
+        logger.debug(response)
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError("Error modifying the default password.") from exc
