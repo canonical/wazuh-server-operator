@@ -88,8 +88,8 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.error("Invalid charm configuration, %s", exc)
             raise exc
         except IncompleteStateError as exc:
-            logger.debug("Invalid charm configuration, %s", exc)
-            self.unit.status = ops.WaitingStatus("Charm state is invalid")
+            logger.debug("Charm configuration not ready, %s", exc)
+            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
             return None
         except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
