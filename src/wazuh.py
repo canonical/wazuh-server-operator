@@ -440,6 +440,9 @@ def change_api_password(username: str, password: str, token: str) -> None:
             timeout=10,
             verify=False,
         )
+        logger.debug(f"https://localhost:{API_PORT}/security/users/{user_id}")
+        logger.debug(headers)
+        logger.debug(password)
         logger.debug(response)
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
