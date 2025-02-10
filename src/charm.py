@@ -128,7 +128,8 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.cluster_key,
         )
 
-    def reconcile(self, _: ops.HookEvent) -> None:
+    # It doesn't make sense to split the logic further
+    def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.
