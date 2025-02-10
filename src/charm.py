@@ -129,6 +129,7 @@ class WazuhServerCharm(CharmBaseWithState):
         )
 
     # It doesn't make sense to split the logic further
+    # Ignoring mthod too complex error
     def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
         """Reconcile Wazuh configuration with charm state.
 
