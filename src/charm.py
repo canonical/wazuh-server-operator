@@ -129,30 +129,9 @@ class WazuhServerCharm(CharmBaseWithState):
         )
 
     # It doesn't make sense to split the logic further
-    # Ignoring mthod too complex error
-    def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
-        """Reconcile Wazuh configuration with charm state.
-
-        This is the main entry for changes that require a restart.
-        """
-        container = self.unit.get_container(wazuh.CONTAINER_NAME)
-        if not container.can_connect():
-            logger.warning(
-                "Unable to connect to container during reconcile. "
-                "Waiting for future events which will trigger another reconcile."
-            )
-            self.unit.status = ops.WaitingStatus("Waiting for pebble.")
-            return
-        if not self.state:
-            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
-            return
-        self._configure_installation()
-        self.unit.open_port("tcp", wazuh.API_PORT)
-        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-        container.replan()
-        # Reload since the service might not have been restarted
-        wazuh.reload_configuration(container)
-
+    # Ignoring method too complex error
+    def _configure_users(self) -> None:  # noqa: C901
+        """Configure Wazuh users."""
         # The prometheus exporter requires the users to be set up
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
         for username, details in state.WAZUH_USERS.items():
@@ -162,9 +141,11 @@ class WazuhServerCharm(CharmBaseWithState):
             if details["default"]:
                 try:
                     token = wazuh.authenticate_user(username, details["default_password"])
-                    password = credentials[username]
-                    if credentials[username] == details["default_password"]:
-                        password = wazuh.generate_api_password()
+                    password = (
+                        credentials[username]
+                        if credentials[username] == details["default_password"]
+                        else wazuh.generate_api_password()
+                    )
                     wazuh.change_api_password(username, password, token)
                     credentials[username] = password
                     logger.debug("Changed password for API user %s to %s", username, password)
@@ -190,6 +171,30 @@ class WazuhServerCharm(CharmBaseWithState):
                 if self.unit.is_leader():
                     secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
+
+    def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
+        """Reconcile Wazuh configuration with charm state.
+
+        This is the main entry for changes that require a restart.
+        """
+        container = self.unit.get_container(wazuh.CONTAINER_NAME)
+        if not container.can_connect():
+            logger.warning(
+                "Unable to connect to container during reconcile. "
+                "Waiting for future events which will trigger another reconcile."
+            )
+            self.unit.status = ops.WaitingStatus("Waiting for pebble.")
+            return
+        if not self.state:
+            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
+            return
+        self._configure_installation()
+        self.unit.open_port("tcp", wazuh.API_PORT)
+        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+        container.replan()
+        # Reload since the service might not have been restarted
+        wazuh.reload_configuration(container)
+        self._configure_users()
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
