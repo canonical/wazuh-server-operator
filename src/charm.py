@@ -129,7 +129,7 @@ class WazuhServerCharm(CharmBaseWithState):
         )
 
     # It doesn't make sense to split the logic further
-    # Ignoring method too complex error
+    # Ignoring method too complex error from pflake8
     def _configure_users(self) -> None:  # noqa: C901
         """Configure Wazuh users."""
         # The prometheus exporter requires the users to be set up
