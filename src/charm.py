@@ -133,6 +133,8 @@ class WazuhServerCharm(CharmBaseWithState):
     def _configure_users(self) -> None:  # noqa: C901
         """Configure Wazuh users."""
         # The prometheus exporter requires the users to be set up
+        if not self.state:
+            return
         logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
         for username, details in state.WAZUH_USERS.items():
             token = None
@@ -148,7 +150,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     )
                     wazuh.change_api_password(username, password, token)
                     credentials[username] = password
-                    logger.debug("Changed password for API user %s to %s", username, password)
+                    logger.debug("Changed password for API user %s", username)
                 except wazuh.WazuhAuthenticationError:
                     logger.debug("Could not authenticate user %s with default password.", username)
             else:
