@@ -303,7 +303,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-ready": {
                     "override": "replace",
                     "level": "alive",
-                    "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics"},
+                    "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics'"},
                 },
             },
         }
