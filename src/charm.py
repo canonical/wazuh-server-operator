@@ -252,10 +252,12 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
+                    "period": "20s",
                     "threshold": 10,
                     "exec": {
                         "command": (
-                            "sh -c 'curl -k "
+                            "sh -c 'sleep 1; "
+                            "curl -k "
                             f"--user wazuh:{shlex.quote(self.state.api_credentials['wazuh'])} "
                             f"{wazuh.AUTH_ENDPOINT}'"
                         )
@@ -301,7 +303,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-ready": {
                     "override": "replace",
                     "level": "alive",
-                    "exec": {"command": "curl -k https://localhost:5000/metrics"},
+                    "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics"},
                 },
             },
         }
