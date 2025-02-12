@@ -47,6 +47,8 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 
 
 # pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
+@patch.object(wazuh, "authenticate_user")
+@patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
@@ -54,9 +56,11 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
     get_version_mock,
+    wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -64,6 +68,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     pull_configuration_files_mock,
     configure_git_mock,
     state_from_charm_mock,
+    *_,
 ):
     """
     arrange: mock system calls and charm state.
@@ -116,19 +121,22 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         "wazuh-server/0",
         cluster_key,
     )
-    configure_git_mock.assert_called_with(
-        container, str(wazuh_config.custom_config_repository), "somekey"
-    )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_called_with(
         container=container, password=agent_password
     )
+    configure_git_mock.assert_called_with(
+        container, str(wazuh_config.custom_config_repository), "somekey"
+    )
     pull_configuration_files_mock.assert_called_with(container)
+    wazuh_reload_configuration_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+@patch.object(wazuh, "authenticate_user")
+@patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "configure_git")
 @patch.object(wazuh, "pull_configuration_files")
@@ -136,9 +144,11 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
     get_version_mock,
+    wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -146,6 +156,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     pull_configuration_files_mock,
     configure_git_mock,
     state_from_charm_mock,
+    *_,
 ):
     """
     arrange: mock system calls and charm state.
@@ -187,9 +198,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_install_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
     )
-    configure_git_mock.assert_called_with(container, None, None)
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_not_called()
+    configure_git_mock.assert_not_called()
     pull_configuration_files_mock.assert_not_called()
     wazuh_update_configuration_mock.assert_called_with(
         container,
@@ -198,6 +209,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server/0",
         cluster_key,
     )
+    wazuh_reload_configuration_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
