@@ -88,13 +88,8 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.error("Invalid charm configuration, %s", exc)
             raise exc
         except IncompleteStateError as exc:
-<<<<<<< HEAD
-            logger.debug("Invalid charm configuration, %s", exc)
-            self.unit.status = ops.WaitingStatus("Charm state is invalid")
-=======
             logger.debug("Charm configuration not ready, %s", exc)
             self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
->>>>>>> origin/main
             return None
         except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
@@ -133,9 +128,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.cluster_key,
         )
 
-<<<<<<< HEAD
-    def reconcile(self, _: ops.HookEvent) -> None:
-=======
     # It doesn't make sense to split the logic further
     # Ignoring method too complex error from pflake8
     def _configure_users(self) -> None:  # noqa: C901
@@ -183,7 +175,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     logger.debug("Added secret %s with credentials", secret.id)
 
     def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
->>>>>>> origin/main
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.
@@ -200,43 +191,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
         self._configure_installation()
-<<<<<<< HEAD
-
-        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-        container.replan()
-
-        # The prometheus exporter requires the users to be set up
-        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
-        if self.state.unconfigured_api_users:
-            # Current credentials that will be updated on every successful operation
-            credentials = self.state.api_credentials
-            for username, details in self.state.unconfigured_api_users.items():
-                logger.debug("Configuring API user %s", username)
-                password = wazuh.generate_api_password()
-                # The user has already been created when installing
-                if details["default"]:
-                    token = wazuh.authenticate_user(username, credentials[username])
-                    wazuh.change_api_password(username, password, token)
-                    logger.debug("Changed API user %s", username)
-                # The user is new
-                else:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
-                    wazuh.create_readonly_api_user(username, password, token)
-                    logger.debug("Created API user %s", username)
-                # Store the new credentials alongside the existing ones
-                credentials[username] = password
-                try:
-                    secret = self.model.get_secret(label=WAZUH_API_CREDENTIALS)
-                    secret.set_content(credentials)
-                    logger.debug("Updated secret %s with credentials", secret.id)
-                except ops.SecretNotFoundError:
-                    secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
-                    logger.debug("Added secret %s with credentials", secret.id)
-            # Fetch the new wazuh layer, which has different env vars
-            logger.debug("Reconfiguring pebble layers")
-            container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-            container.replan()
-=======
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         # Reload since the service might not have been restarted
@@ -245,7 +199,6 @@ class WazuhServerCharm(CharmBaseWithState):
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
->>>>>>> origin/main
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.pebble.replan_services(delay=5)
         self.unit.set_workload_version(wazuh.get_version(container))
@@ -357,11 +310,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "prometheus-ready": {
                     "override": "replace",
                     "level": "alive",
-<<<<<<< HEAD
-                    "exec": {"command": "curl -k https://localhost:5000/metrics"},
-=======
                     "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics'"},
->>>>>>> origin/main
                 },
             },
         }
