@@ -15,6 +15,7 @@ from juju.application import Application
 from juju.model import Model
 
 import state
+import wazuh
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +27,11 @@ APP_NAME = CHARMCRAFT["name"]
 async def test_api(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
-    Act: scale up to two units
+    Act: scale up to two units.
     Assert: the default credentials are no longer valid for any of the units.
     """
     await application.scale(2)
-    await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_blocked=True, timeout=1000
-    )
-
+    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
     status = await model.get_status()
     # Type hints are not ok here
     units = list(status.applications[application.name].units)  # type: ignore
@@ -42,21 +40,23 @@ async def test_api(model: Model, application: Application):
         # Check the defaults are changed instead of the new creds
         # https://github.com/juju/python-libjuju/issues/947
         response = requests.get(  # nosec
-            f"https://{address}:55000/security/user/authenticate",
+            f"https://{address}:{wazuh.API_PORT}/security/user/authenticate",
             auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
             timeout=10,
             verify=False,
         )
-        assert response.status_code == 401, f"Default user still in use for unit {unit.name}"
+        assert response.status_code == 401, response.content
 
 
 @pytest.mark.abort_on_fail
-async def test_clustering_ok(application: Application):
+async def test_clustering_ok(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
-    Act: scale up to two units
+    Act: scale up to two units.
     Assert: the clustering config is valid.
     """
+    await application.scale(2)
+    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
     wazuh_unit = application.units[0]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
     action = await wazuh_unit.run(

@@ -31,6 +31,8 @@ LOGS_PATH = Path("/var/ossec/logs")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
+API_PORT = 55000
+AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
 WAZUH_GROUP = "wazuh"
 WAZUH_USER = "wazuh"
 
@@ -129,13 +131,21 @@ def update_configuration(
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
-
-    Raises:
-        WazuhInstallationError: if an error occurs while installing.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
     _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
+
+
+def reload_configuration(container: ops.Container) -> None:
+    """Reload the workload configuration.
+
+    Arguments:
+        container: the container for which to update the configuration.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while installing.
+    """
     proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
     try:
         proc.wait_output()
@@ -379,7 +389,7 @@ def authenticate_user(username: str, password: str) -> str:
     # container filesystem is compromised
     try:
         response = requests.get(  # nosec
-            "https://localhost:55000/security/user/authenticate",
+            AUTH_ENDPOINT,
             auth=(username, password),
             timeout=10,
             verify=False,
@@ -413,7 +423,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
-            "https://localhost:55000/security/users",
+            f"https://localhost:{API_PORT}/security/users",
             headers=headers,
             timeout=10,
             verify=False,
@@ -424,7 +434,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ][0]
         response = requests.put(  # nosec
-            f"https://localhost:55000/security/users/{user_id}",
+            f"https://localhost:{API_PORT}/security/users/{user_id}",
             headers=headers,
             json={"password": password},
             timeout=10,
@@ -432,7 +442,6 @@ def change_api_password(username: str, password: str, token: str) -> None:
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
-        logger.error("Error %s", response.json())
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
 
@@ -441,7 +450,12 @@ def generate_api_password() -> str:
 
     Returns: a string with a compliant password.
     """
-    charsets = [string.ascii_lowercase, string.ascii_uppercase, string.digits, string.punctuation]
+    charsets = [
+        string.ascii_lowercase,
+        string.ascii_uppercase,
+        string.digits,
+        "!#$%&()*+,-./:;<=>?@[]^_{|}~",
+    ]
     password = [secrets.choice("".join(charsets)) for _ in range(11)]
     for charset in charsets:
         char = secrets.choice(charset)
@@ -466,7 +480,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.post(  # nosec
-            "https://localhost:55000/security/users",
+            f"https://localhost:{API_PORT}/security/users",
             headers=headers,
             json={"username": username, "password": password},
             timeout=10,
@@ -478,7 +492,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ][0]
         response = requests.get(  # nosec
-            "https://localhost:55000/security/roles",
+            f"https://localhost:{API_PORT}/security/roles",
             headers=headers,
             timeout=10,
             verify=False,
@@ -489,14 +503,13 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
         ][0]
         response = requests.post(  # nosec
-            f"https://localhost:55000/security/users/{user_id}/roles?role_ids={role_id}",
+            f"https://localhost:{API_PORT}/security/users/{user_id}/roles?role_ids={role_id}",
             headers=headers,
             timeout=10,
             verify=False,
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
-        logger.error("Error %s", response.json())
         raise WazuhInstallationError("Error creating a readonly user.") from exc
 
 

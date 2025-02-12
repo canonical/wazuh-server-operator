@@ -7,6 +7,7 @@
 
 import logging
 import secrets
+import shlex
 import typing
 
 import ops
@@ -15,19 +16,19 @@ from ops import pebble
 import certificates_observer
 import observability
 import opensearch_observer
+import state
 import traefik_route_observer
 import wazuh
 from state import (
-    WAZUH_API_CREDENTIALS,
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     CharmBaseWithState,
+    IncompleteStateError,
     InvalidStateError,
     RecoverableStateError,
     State,
 )
 
 logger = logging.getLogger(__name__)
-
 
 WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 
@@ -86,12 +87,94 @@ class WazuhServerCharm(CharmBaseWithState):
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             raise exc
+        except IncompleteStateError as exc:
+            logger.debug("Charm configuration not ready, %s", exc)
+            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
+            return None
         except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
 
-    def reconcile(self, _: ops.HookEvent) -> None:
+    def _configure_installation(self) -> None:
+        """Configure the Wazuh installation."""
+        if not self.state:
+            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
+            return
+        container = self.unit.containers.get(wazuh.CONTAINER_NAME)
+        wazuh.install_certificates(
+            container=container,
+            private_key=self.certificates.private_key,
+            public_key=self.state.certificate,
+            root_ca=self.state.root_ca,
+        )
+        wazuh.configure_filebeat_user(
+            container, self.state.filebeat_username, self.state.filebeat_password
+        )
+        if self.state.agent_password:
+            wazuh.configure_agent_password(container=container, password=self.state.agent_password)
+        if self.state.custom_config_repository:
+            wazuh.configure_git(
+                container,
+                str(self.state.custom_config_repository),
+                self.state.custom_config_ssh_key,
+            )
+            wazuh.pull_configuration_files(container)
+        wazuh.update_configuration(
+            container,
+            self.state.indexer_ips,
+            self.master_fqdn,
+            self.unit.name,
+            self.state.cluster_key,
+        )
+
+    # It doesn't make sense to split the logic further
+    # Ignoring method too complex error from pflake8
+    def _configure_users(self) -> None:  # noqa: C901
+        """Configure Wazuh users."""
+        # The prometheus exporter requires the users to be set up
+        if not self.state:
+            return
+        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
+        for username, details in state.WAZUH_USERS.items():
+            token = None
+            # The user has already been created when installing
+            credentials = self.state.api_credentials
+            if details["default"]:
+                try:
+                    token = wazuh.authenticate_user(username, details["default_password"])
+                    password = (
+                        wazuh.generate_api_password()
+                        if credentials[username] == details["default_password"]
+                        else credentials[username]
+                    )
+                    wazuh.change_api_password(username, password, token)
+                    credentials[username] = password
+                    logger.debug("Changed password for API user %s", username)
+                except wazuh.WazuhAuthenticationError:
+                    logger.debug("Could not authenticate user %s with default password.", username)
+            else:
+                try:
+                    token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
+                    password = credentials[username]
+                    if credentials[username]:
+                        password = wazuh.generate_api_password()
+                    wazuh.create_readonly_api_user(username, password, token)
+                    credentials[username] = password
+                    logger.debug("Created API user %s", username)
+                except wazuh.WazuhInstallationError:
+                    logger.debug("Could not add user %s.", username)
+            # Store the new credentials alongside the existing ones
+            try:
+                secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
+                secret.set_content(credentials)
+                logger.debug("Updated secret %s with credentials", secret.id)
+            except ops.SecretNotFoundError:
+                if self.unit.is_leader():
+                    secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
+                    logger.debug("Added secret %s with credentials", secret.id)
+
+    def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.
@@ -107,67 +190,15 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        wazuh.install_certificates(
-            container=self.unit.containers.get(wazuh.CONTAINER_NAME),
-            private_key=self.certificates.private_key,
-            public_key=self.state.certificate,
-            root_ca=self.state.root_ca,
-        )
-        wazuh.configure_git(
-            container,
-            (
-                str(self.state.custom_config_repository)
-                if self.state.custom_config_repository
-                else None
-            ),
-            self.state.custom_config_ssh_key,
-        )
-        wazuh.configure_filebeat_user(
-            container, self.state.filebeat_username, self.state.filebeat_password
-        )
-        if self.state.agent_password:
-            wazuh.configure_agent_password(
-                container=self.unit.containers.get(wazuh.CONTAINER_NAME),
-                password=self.state.agent_password,
-            )
-        if self.state.custom_config_repository:
-            wazuh.pull_configuration_files(container)
-        wazuh.update_configuration(
-            container,
-            self.state.indexer_ips,
-            self.master_fqdn,
-            self.unit.name,
-            self.state.cluster_key,
-        )
+        self._configure_installation()
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
-
-        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
-        if self.state.unconfigured_api_users:
-            # Current credentials that will be updated on every successful operation
-            credentials = self.state.api_credentials
-            for username, details in self.state.unconfigured_api_users.items():
-                logger.debug("Configuring API user %s", username)
-                password = wazuh.generate_api_password()
-                # The user has already been created when installing
-                if details["default"]:
-                    token = wazuh.authenticate_user(username, credentials[username])
-                    wazuh.change_api_password(username, password, token)
-                    logger.debug("Changed API user %s", username)
-                # The user is new
-                else:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
-                    wazuh.create_readonly_api_user(username, password, token)
-                    logger.debug("Created API user %s", username)
-                # Store the new credentials alongside the existing ones
-                credentials[username] = password
-                try:
-                    secret = self.model.get_secret(label=WAZUH_API_CREDENTIALS)
-                    secret.set_content(credentials)
-                    logger.debug("Updated secret %s with credentials", secret.id)
-                except ops.SecretNotFoundError:
-                    secret = self.app.add_secret(credentials, label=WAZUH_API_CREDENTIALS)
-                    logger.debug("Added secret %s with credentials", secret.id)
+        # Reload since the service might not have been restarted
+        wazuh.reload_configuration(container)
+        self._configure_users()
+        # Fetch the new wazuh layer, which has different env vars
+        logger.debug("Reconfiguring pebble layers")
+        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
@@ -194,7 +225,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh": {
                     "override": "replace",
                     "summary": "wazuh manager",
-                    "command": "/var/ossec/bin/wazuh-control start",
+                    "command": "sh -c 'sleep 1; /var/ossec/bin/wazuh-control start'",
                     "startup": "enabled",
                     "on-success": "ignore",
                     "environment": environment,
@@ -203,9 +234,10 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "summary": "filebeat",
                     "command": (
+                        "sh -c 'sleep 1; "
                         "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
                         "--path.home /usr/share/filebeat --path.config /etc/filebeat "
-                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat"
+                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat'"
                     ),
                     "startup": "enabled",
                 },
@@ -214,7 +246,21 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-alive": {
                     "override": "replace",
                     "level": "alive",
-                    "tcp": {"port": 55000},
+                    "tcp": {"port": wazuh.API_PORT},
+                },
+                "wazuh-ready": {
+                    "override": "replace",
+                    "level": "ready",
+                    "period": "20s",
+                    "threshold": 10,
+                    "exec": {
+                        "command": (
+                            "sh -c 'sleep 1; "
+                            "curl -k "
+                            f"--user wazuh:{shlex.quote(self.state.api_credentials['wazuh'])} "
+                            f"{wazuh.AUTH_ENDPOINT}'"
+                        )
+                    },
                 },
             },
         }
@@ -225,15 +271,20 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             return {}
         return {
-            "summary": "wazuh manager layer",
-            "description": "pebble config layer for wazuh-manager",
+            "summary": "wazuh exporter layer",
+            "description": "pebble config layer for wazuh-exporter",
             "services": {
                 "prometheus-exporter": {
                     "override": "replace",
                     "summary": "prometheus exporter",
-                    "command": "/usr/bin/python3 /srv/prometheus/prometheus_exporter.py",
+                    "command": (
+                        "sh -c 'sleep 1; /usr/bin/python3 /srv/prometheus/prometheus_exporter.py'"
+                    ),
                     "startup": "enabled",
                     "user": "prometheus",
+                    "after": ["wazuh"],
+                    "requires": ["wazuh"],
+                    "on-failure": "restart",
                     "environment": {
                         "WAZUH_API_HOST": "localhost",
                         "WAZUH_API_PORT": "55000",
@@ -247,6 +298,11 @@ class WazuhServerCharm(CharmBaseWithState):
                     "override": "replace",
                     "level": "alive",
                     "tcp": {"port": 5000},
+                },
+                "prometheus-ready": {
+                    "override": "replace",
+                    "level": "alive",
+                    "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics'"},
                 },
             },
         }

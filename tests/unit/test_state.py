@@ -17,9 +17,9 @@ import state
 @pytest.mark.parametrize(
     "opensearch_relation_data",
     [
-        ({}),
-        ({}),
-        ({"endpoints": "10.0.0.1"}),
+        ({"secret-user": f"secret:{secrets.token_hex()}"}),
+        ({"secret-user": f"secret:{secrets.token_hex()}"}),
+        ({"endpoints": "10.0.0.1", "secret-user": f"secret:{secrets.token_hex()}"}),
     ],
 )
 def test_state_invalid_relation_data(opensearch_relation_data):
@@ -62,7 +62,10 @@ def test_state_without_proxy():
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
@@ -117,7 +120,10 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
@@ -177,7 +183,10 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
@@ -230,7 +239,10 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
@@ -275,7 +287,10 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
@@ -323,7 +338,10 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
@@ -369,7 +387,10 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
@@ -419,7 +440,10 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     endpoints = ["10.0.0.1", "10.0.0.2"]
     username = "user1"
     password = secrets.token_hex()
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
@@ -481,7 +505,10 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     username = "user1"
     password = secrets.token_hex()
     value = secrets.token_hex(16)
-    opensearch_relation_data = {"endpoints": ",".join(endpoints)}
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
     certificate = "somecert"
     root_ca = "someca"
     secret_id = f"secret:{secrets.token_hex()}"
