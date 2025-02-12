@@ -71,6 +71,15 @@ Reconcile configuration.
 
 ---
 
+## <kbd>class</kbd> `IncompleteStateError`
+Exception raised when a charm configuration is invalid and automatically recoverable. 
+
+
+
+
+
+---
+
 ## <kbd>class</kbd> `InvalidStateError`
 Exception raised when a charm configuration is invalid and unrecoverable by the operator. 
 
@@ -148,7 +157,7 @@ The Wazuh Server charm state.
  - <b>`custom_config_ssh_key`</b>:  the SSH key for the git repository. 
  - <b>`proxy`</b>:  proxy configuration. 
 
-<a href="../src/state.py#L257"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L264"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 
@@ -236,7 +245,7 @@ Returns: a map containing the unconfigured users and their details.
 
 ---
 
-<a href="../src/state.py#L319"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/state.py#L326"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_charm`
 
