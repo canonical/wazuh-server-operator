@@ -200,7 +200,7 @@ class WazuhServerCharm(CharmBaseWithState):
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-        container.pebble.replan_services(delay=5)
+        container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
 
@@ -218,9 +218,6 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["NO_PROXY"] = proxy.no_proxy
         if not self.state:
             return {}
-        wazuh_ready_cmd = (
-            f"curl -k --user wazuh:{self.state.api_credentials['wazuh']} {wazuh.AUTH_ENDPOINT}"
-        )
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -264,11 +261,6 @@ class WazuhServerCharm(CharmBaseWithState):
                             f"{wazuh.AUTH_ENDPOINT}'"
                         )
                     },
-                },
-                "wazuh-ready": {
-                    "override": "replace",
-                    "level": "ready",
-                    "exec": {"command": f"sh -c '{wazuh_ready_cmd}'"},
                 },
             },
         }
