@@ -296,11 +296,15 @@ class WazuhServerCharm(CharmBaseWithState):
             "checks": {
                 "prometheus-alive": {
                     "override": "replace",
+                    "period": "20s",
+                    "threshold": 10,
                     "level": "alive",
                     "tcp": {"port": 5000},
                 },
                 "prometheus-ready": {
                     "override": "replace",
+                    "period": "20s",
+                    "threshold": 10,
                     "level": "alive",
                     "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics'"},
                 },
