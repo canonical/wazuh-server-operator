@@ -31,9 +31,7 @@ async def test_api(model: Model, application: Application):
     Assert: the default credentials are no longer valid for any of the units.
     """
     await application.scale(2)
-    await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=1400
-    )
+    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
     status = await model.get_status()
     # Type hints are not ok here
     units = list(status.applications[application.name].units)  # type: ignore
@@ -58,9 +56,7 @@ async def test_clustering_ok(model: Model, application: Application):
     Assert: the clustering config is valid.
     """
     await application.scale(2)
-    await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=1400
-    )
+    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
     wazuh_unit = application.units[0]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
     action = await wazuh_unit.run(
