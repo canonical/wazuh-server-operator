@@ -92,7 +92,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
-    ossec_config_tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
+    ossec_config_tree = etree.fromstring(f"<root>{ossec_config}</root>")
     hosts = ossec_config_tree.xpath("/root/ossec_config/indexer/hosts")
     hosts[0].clear()
     for ip_port in ip_ports:
@@ -107,10 +107,12 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     # Unit 0 is always present, so the presence of a master node is guaranteed
     node_type = NodeType.MASTER if unit_name.split("/")[1] == "0" else NodeType.WORKER
     elements = ossec_config_tree.xpath("//ossec_config")
-    new_cluster = etree.fromstring(  # nosec
+    new_cluster = etree.fromstring(
         _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
     )
     elements[0].append(new_cluster)
+    syslog = etree.fromstring(_generate_syslog_snippet())
+    elements[0].append(syslog)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
@@ -368,6 +370,22 @@ def _generate_cluster_snippet(
             <hidden>no</hidden>
             <disabled>no</disabled>
         </cluster>
+    """
+
+
+def _generate_syslog_snippet() -> str:
+    """Generate the snippet for syslog configuration.
+
+    Returns: the content for the remote node for the Wazuh configuration.
+    """
+    return """
+        <remote>
+            <connection>syslog</connection>
+            <port>514</port>
+            <protocol>tcp,udp</protocol>
+            <allowed-ips>0.0.0.0/0</allowed-ips>
+            <local_ip>0.0.0.0</local_ip>
+        </remote>
     """
 
 
