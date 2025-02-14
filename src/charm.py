@@ -157,7 +157,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 try:
                     token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
                     password = credentials[username]
-                    if credentials[username]:
+                    if not credentials[username]:
                         password = wazuh.generate_api_password()
                     wazuh.create_readonly_api_user(username, password, token)
                     credentials[username] = password
