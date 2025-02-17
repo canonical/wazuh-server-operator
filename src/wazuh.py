@@ -505,6 +505,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
+        logger.debug(response.json())
         data = response.json()["data"]
         user_id = [
             user["id"] for user in data["affected_items"] if data and user["username"] == username
@@ -516,6 +517,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
+        logger.debug(response.json())
         data = response.json()["data"]
         role_id = [
             role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
