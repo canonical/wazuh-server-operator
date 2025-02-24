@@ -8,7 +8,7 @@ import socket
 import typing
 
 import ops
-from charms.traefik_route_k8s.v0.traefik_route import TraefikRouteRequirer
+from charms.traefik_k8s.v0.traefik_route import TraefikRouteRequirer
 from ops.framework import Object
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class TraefikRouteObserver(Object):
         super().__init__(charm, RELATION_NAME)
         self._charm = charm
         self.traefik_route = TraefikRouteRequirer(
-            charm, self.model.get_relation(RELATION_NAME), RELATION_NAME
+            charm, self.model.get_relation(RELATION_NAME), RELATION_NAME, raw=True
         )
         self._configure_traefik_route()
 
