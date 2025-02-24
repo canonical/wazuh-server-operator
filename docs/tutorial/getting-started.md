@@ -67,7 +67,7 @@ wazuh-indexer-opensearch-client  active  juju-controller-lxd             admin/w
 
 App           Version  Status  Scale  Charm                     Channel        Rev  Address        Exposed  Message
 certificates           active      1  self-signed-certificates  latest/stable  155  10.87.137.125  no       
-traefik       2.11.0   active      1  traefik-k8s               latest/stable  223  10.87.242.226  no       Serving at 10.142.2.62
+traefik       2.11.0   active      1  traefik-k8s               latest/edge    233  10.87.242.226  no       Serving at 10.142.2.62
 wazuh-server           active      1  wazuh-server              latest/edge     39  10.87.248.244  no     
 ```
 

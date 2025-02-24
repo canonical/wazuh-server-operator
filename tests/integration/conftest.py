@@ -63,7 +63,7 @@ async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, No
     application = await model.deploy(
         "traefik-k8s",
         application_name="traefik-k8s",
-        channel="latest/stable",
+        channel="latest/edge",
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
