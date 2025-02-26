@@ -200,6 +200,9 @@ def _get_current_configuration_url(container: ops.Container) -> str:
 
     Returns:
         The repository URL.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while fetching repository configuration.
     """
     process = container.exec(
         ["git", "-C", REPOSITORY_PATH, "config", "--get", "remote.origin.url"]
@@ -207,9 +210,9 @@ def _get_current_configuration_url(container: ops.Container) -> str:
     remote_url = ""
     try:
         remote_url, _ = process.wait_output()
+        return remote_url.rstrip()
     except ops.pebble.ExecError as ex:
-        logging.debug(ex)
-    return remote_url.rstrip()
+        raise WazuhInstallationError from ex
 
 
 def _get_current_configuration_url_branch(container: ops.Container) -> str:
@@ -220,14 +223,17 @@ def _get_current_configuration_url_branch(container: ops.Container) -> str:
 
     Returns:
         The repository branch.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while fetching repository configuration.
     """
     process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"])
     branch = ""
     try:
         branch, _ = process.wait_output()
+        return branch.rstrip()
     except ops.pebble.ExecError as ex:
-        logging.debug(ex)
-    return branch.rstrip()
+        raise WazuhInstallationError from ex
 
 
 def configure_git(
@@ -293,6 +299,9 @@ def pull_configuration_files(container: ops.Container) -> None:
 
     Args:
         container: the container to pull the files into.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while pulling the files.
     """
     try:
         process = container.exec(["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"])
@@ -317,7 +326,7 @@ def pull_configuration_files(container: ops.Container) -> None:
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:
-        logging.debug(ex)
+        raise WazuhInstallationError from ex
 
 
 def configure_filebeat_user(container: ops.Container, username: str, password: str) -> None:
@@ -327,6 +336,9 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
         container: the container to configure the user for.
         username: the username.
         password: the password.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while configuring the user.
     """
     try:
         process = container.exec(
@@ -340,7 +352,7 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:
-        logging.debug(ex)
+        raise WazuhInstallationError from ex
 
 
 def _generate_cluster_snippet(
