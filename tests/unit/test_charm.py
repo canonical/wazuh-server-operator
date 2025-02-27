@@ -120,6 +120,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
+        ip,
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_called_with(
@@ -208,6 +209,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
+        ip,
     )
     wazuh_reload_configuration_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)

@@ -46,7 +46,8 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     key = secrets.token_hex(32)
-    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/0", key)
+    ip = "192.0.0.1"
+    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/0", key, ip)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
@@ -87,7 +88,8 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     key = secrets.token_hex(32)
-    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/1", key)
+    ip = "192.0.0.1"
+    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/1", key, ip)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
