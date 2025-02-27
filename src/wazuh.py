@@ -111,7 +111,8 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
         _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
     )
     elements[0].append(new_cluster)
-    syslog = etree.fromstring(_generate_syslog_snippet())
+    local_ip = _get_container_ip(container)
+    syslog = etree.fromstring(_generate_syslog_snippet(local_ip))
     elements[0].append(syslog)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
@@ -379,18 +380,37 @@ def _generate_cluster_snippet(
     """
 
 
-def _generate_syslog_snippet() -> str:
+def _get_container_ip(container: ops.Container) -> str:
+    """Fetch the containers IP address for the eth0 interface.
+
+    Args:
+        container: the container to fetch the IP from.
+
+    Returns: the IP address.
+    """
+    proc = container.exec(["ifconfig", "eth0", "|", "awk", "'$1 == \"inet\" {print $2}'"])
+    try:
+        ip, _ = proc.wait_output()
+        return ip
+    except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
+        raise WazuhInstallationError("Error feetching the container IP.") from exc
+
+
+def _generate_syslog_snippet(local_ip: str) -> str:
     """Generate the snippet for syslog configuration.
+
+    Args:
+        local_ip: the workload local IP.
 
     Returns: the content for the remote node for the Wazuh configuration.
     """
-    return """
+    return f"""
         <remote>
             <connection>syslog</connection>
             <port>514</port>
-            <protocol>tcp,udp</protocol>
+            <protocol>tcp</protocol>
             <allowed-ips>0.0.0.0/0</allowed-ips>
-            <local_ip>0.0.0.0</local_ip>
+            <local_ip>{local_ip}</local_ip>
         </remote>
     """
 
