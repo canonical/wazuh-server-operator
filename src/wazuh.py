@@ -200,9 +200,6 @@ def _get_current_configuration_url(container: ops.Container) -> str:
 
     Returns:
         The repository URL.
-
-    Raises:
-        WazuhInstallationError: if an error occurs while fetching repository configuration.
     """
     process = container.exec(
         ["git", "-C", REPOSITORY_PATH, "config", "--get", "remote.origin.url"]
@@ -210,9 +207,9 @@ def _get_current_configuration_url(container: ops.Container) -> str:
     remote_url = ""
     try:
         remote_url, _ = process.wait_output()
-        return remote_url.rstrip()
     except ops.pebble.ExecError as ex:
-        raise WazuhInstallationError from ex
+        logging.debug(ex)
+    return remote_url.rstrip()
 
 
 def _get_current_configuration_url_branch(container: ops.Container) -> str:
@@ -223,17 +220,14 @@ def _get_current_configuration_url_branch(container: ops.Container) -> str:
 
     Returns:
         The repository branch.
-
-    Raises:
-        WazuhInstallationError: if an error occurs while fetching repository configuration.
     """
     process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"])
     branch = ""
     try:
         branch, _ = process.wait_output()
-        return branch.rstrip()
     except ops.pebble.ExecError as ex:
-        raise WazuhInstallationError from ex
+        logging.debug(ex)
+    return branch.rstrip()
 
 
 def configure_git(
