@@ -4,4 +4,4 @@ jsonschema==4.23.0
 ops==2.19.0
 pydantic==2.10.6
 requests==2.32.3
-rpds-py==0.23.0
+rpds-py==0.23.1
