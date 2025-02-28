@@ -56,10 +56,11 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
         {
             "tcp": {
                 "routers": {
-                    "juju-testing-observer-charm-syslog-tcp": {
-                        "entryPoints": ["syslog-tcp"],
-                        "service": "juju-testing-observer-charm-service-syslog-tcp",
+                    "juju-testing-observer-charm-syslog-tls": {
+                        "entryPoints": ["syslog-tls"],
+                        "service": "juju-testing-observer-charm-service-syslog-tls",
                         "rule": "ClientIP(`0.0.0.0/0`)",
+                        "tls": {},
                     },
                     "juju-testing-observer-charm-conn-tcp": {
                         "entryPoints": ["conn-tcp"],
@@ -78,7 +79,7 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                     },
                 },
                 "services": {
-                    "juju-testing-observer-charm-service-syslog-tcp": {
+                    "juju-testing-observer-charm-service-syslog-tls": {
                         "loadBalancer": {
                             "servers": [{"address": "wazuh-server.local:514"}],
                             "terminationDelay": 1000,
@@ -107,7 +108,7 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
         },
         static={
             "entryPoints": {
-                "syslog-tcp": {"address": ":514"},
+                "syslog-tls": {"address": ":514"},
                 "conn-tcp": {"address": ":1514"},
                 "enrole-tcp": {"address": ":1515"},
                 "api-tcp": {"address": ":55000"},
