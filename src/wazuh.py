@@ -74,12 +74,14 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
 
 
 # Won't sacrify cohesion and readability to make pylint happier
-def _update_wazuh_configuration(  # pylint: disable=too-many-locals
+# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+def _update_wazuh_configuration(
     container: ops.Container,
     ip_ports: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
+    local_ip: str,
 ) -> None:
     """Update Wazuh configuration.
 
@@ -89,6 +91,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
+        local_ip: the local IP of the workload.
     """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
@@ -111,19 +114,21 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
         _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
     )
     elements[0].append(new_cluster)
-    syslog = etree.fromstring(_generate_syslog_snippet())
+    syslog = etree.fromstring(_generate_syslog_snippet(local_ip))
     elements[0].append(syslog)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
 
 
-def update_configuration(
+# Won't sacrify cohesion and readability to make pylint happier
+def update_configuration(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     container: ops.Container,
     indexer_ips: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
+    local_ip: str,
 ) -> None:
     """Update the workload configuration.
 
@@ -133,10 +138,13 @@ def update_configuration(
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
+        local_ip: the local IP of the workload.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
+    _update_wazuh_configuration(
+        container, ip_ports, master_address, unit_name, cluster_key, local_ip
+    )
 
 
 def reload_configuration(container: ops.Container) -> None:
@@ -379,18 +387,21 @@ def _generate_cluster_snippet(
     """
 
 
-def _generate_syslog_snippet() -> str:
+def _generate_syslog_snippet(local_ip: str) -> str:
     """Generate the snippet for syslog configuration.
+
+    Args:
+        local_ip: the workload local IP.
 
     Returns: the content for the remote node for the Wazuh configuration.
     """
-    return """
+    return f"""
         <remote>
             <connection>syslog</connection>
             <port>514</port>
-            <protocol>tcp,udp</protocol>
+            <protocol>tcp</protocol>
             <allowed-ips>0.0.0.0/0</allowed-ips>
-            <local_ip>0.0.0.0</local_ip>
+            <local_ip>{local_ip}</local_ip>
         </remote>
     """
 

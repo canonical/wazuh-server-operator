@@ -38,6 +38,7 @@ class WazuhServerCharm(CharmBaseWithState):
 
     Attributes:
         master_fqdn: the FQDN for unit 0.
+        local_ip: the local IP.
         state: the charm state.
     """
 
@@ -126,6 +127,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.master_fqdn,
             self.unit.name,
             self.state.cluster_key,
+            self.local_ip,
         )
 
     # It doesn't make sense to split the logic further
@@ -320,6 +322,15 @@ class WazuhServerCharm(CharmBaseWithState):
         unit_name = f"{self.unit.name.split('/')[0]}-0"
         app_name = self.app.name
         return f"{unit_name}.{app_name}-endpoints"
+
+    @property
+    def local_ip(self) -> str:
+        """Fetch the local IP.
+
+        Returns: the local IP address.
+        """
+        binding = self.model.get_binding(WAZUH_PEER_RELATION_NAME)
+        return str(binding.network.bind_address)
 
 
 if __name__ == "__main__":  # pragma: nocover
