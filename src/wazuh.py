@@ -114,8 +114,9 @@ def _update_wazuh_configuration(
         _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
     )
     elements[0].append(new_cluster)
-    syslog = etree.fromstring(_generate_syslog_snippet(local_ip))
-    elements[0].append(syslog)
+    for element in _generate_syslog_snippets(local_ip):
+        node = etree.fromstring(element)
+        elements[0].append(node)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
@@ -371,6 +372,7 @@ def _generate_cluster_snippet(
     Returns: the content for the cluster node for the Wazuh configuration.
     """
     return f"""
+
         <cluster>
             <name>wazuh</name>
             <node_name>{node_name}</node_name>
@@ -384,18 +386,20 @@ def _generate_cluster_snippet(
             <hidden>no</hidden>
             <disabled>no</disabled>
         </cluster>
+
     """
 
 
-def _generate_syslog_snippet(local_ip: str) -> str:
+def _generate_syslog_snippets(local_ip: str) -> list[str]:
     """Generate the snippet for syslog configuration.
 
     Args:
         local_ip: the workload local IP.
 
-    Returns: the content for the remote node for the Wazuh configuration.
+    Returns: the list of nodes for the Wazuh configuration.
     """
-    return f"""
+    return [
+        f"""
         <remote>
             <connection>syslog</connection>
             <port>514</port>
@@ -403,7 +407,16 @@ def _generate_syslog_snippet(local_ip: str) -> str:
             <allowed-ips>0.0.0.0/0</allowed-ips>
             <local_ip>{local_ip}</local_ip>
         </remote>
-    """
+
+        """,
+        """
+        <localfile>
+            <log_format>syslog</log_format>
+            <location>/var/ossec/logs/archive.log</location>
+        </localfile>
+
+        """,
+    ]
 
 
 def authenticate_user(username: str, password: str) -> str:
