@@ -412,7 +412,7 @@ def _generate_syslog_snippets(local_ip: str) -> list[str]:
         """
         <localfile>
             <log_format>syslog</log_format>
-            <location>/var/ossec/logs/archive.log</location>
+            <location>/var/ossec/logs/archives/archives.log</location>
         </localfile>
 
         """,
