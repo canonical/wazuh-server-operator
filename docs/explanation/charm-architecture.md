@@ -42,7 +42,7 @@ This is done by publishing a resource to Charmhub as described in the
 
 Wazuh Server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
 
-Wazuh Server listens on ports 1514, 1515 and 55000; the first two serving the services for the agents to connect, and the last one serving the API.
+Wazuh Server listens on ports 514, 1514, 1515 and 55000; the first exposing a rsyslog service over TLS; the next two, the services for the agents to connect, and the last one serving the API.
 
 The workload that this container is running is defined in the [Wazuh Server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
 
