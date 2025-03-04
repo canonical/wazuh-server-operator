@@ -21,10 +21,7 @@ async def get_k8s_service_address(model: Model, service_name: str) -> str:
     Returns:
         The LoadBalancer service address as a string.
     """
-    command = [
-        f"-n {model.name}",
-        f"get service/{service_name}",
-        "-o=jsonpath={.status.loadBalancer.ingress[0].ip}",
-    ]
-    # sh.kubectl actually exists
-    return sh.kubectl(*command).strip("'")  # pylint: disable=no-member
+    # sh.kubectl.get.service actually exists
+    return sh.kubectl.get.service(  # pylint: disable=no-member
+        service_name, namespace=model.name, o="jsonpath={.status.loadBalancer.ingress[0].ip}"
+    )
