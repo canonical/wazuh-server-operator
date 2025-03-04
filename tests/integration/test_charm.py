@@ -34,7 +34,7 @@ async def test_api(model: Model, application: Application):
     await application.scale(2)
     await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
 
-    traefik_ip = await get_k8s_service_address(model, f"{APP_NAME}-lb")
+    traefik_ip = await get_k8s_service_address(model, "traefik-k8s-lb")
     response = requests.get(  # nosec
         f"https://{traefik_ip}:{wazuh.API_PORT}/security/user/authenticate",
         auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
