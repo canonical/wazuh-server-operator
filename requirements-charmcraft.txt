@@ -1,5 +1,5 @@
 cosl ==0.0.55
-cryptography==44.0.1
+cryptography==44.0.2
 jsonschema==4.23.0
 ops==2.19.0
 pydantic==2.10.6
