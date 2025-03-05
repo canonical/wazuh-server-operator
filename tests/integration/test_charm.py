@@ -16,6 +16,7 @@ from juju.model import Model
 
 import state
 import wazuh
+from tests.integration.helpers import get_k8s_service_address
 
 logger = logging.getLogger(__name__)
 
@@ -28,24 +29,20 @@ async def test_api(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
     Act: scale up to two units.
-    Assert: the default credentials are no longer valid for any of the units.
+    Assert: the default credentials are no longer valid for the API.
     """
     await application.scale(2)
     await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
-    status = await model.get_status()
-    # Type hints are not ok here
-    units = list(status.applications[application.name].units)  # type: ignore
-    for unit in units:
-        address = status["applications"][application.name]["units"][unit]["address"]
-        # Check the defaults are changed instead of the new creds
-        # https://github.com/juju/python-libjuju/issues/947
-        response = requests.get(  # nosec
-            f"https://{address}:{wazuh.API_PORT}/security/user/authenticate",
-            auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
-            timeout=10,
-            verify=False,
-        )
-        assert response.status_code == 401, response.content
+
+    traefik_ip = await get_k8s_service_address(model, "traefik-k8s-lb")
+    response = requests.get(  # nosec
+        f"https://{traefik_ip}:{wazuh.API_PORT}/security/user/authenticate",
+        auth=("wazuh", state.WAZUH_USERS["wazuh"]["default_password"]),
+        timeout=10,
+        verify=False,
+    )
+
+    assert response.status_code == 401, response.content
 
 
 @pytest.mark.abort_on_fail

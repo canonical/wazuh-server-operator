@@ -16,7 +16,7 @@ RELATION_NAME = "ingress"
 
 
 PORTS: dict[str, int] = {
-    "syslog_tcp": 514,
+    "syslog_tls": 514,
     "conn_tcp": 1514,
     "enrole_tcp": 1515,
     "api_tcp": 55000,
@@ -74,18 +74,21 @@ class TraefikRouteObserver(Object):
         Returns:
             the ingress configuration for Traefik.
         """
-        routers = {}
+        routers: dict[str, typing.Any] = {}
         services = {}
         for protocol, port in PORTS.items():
             sanitized_protocol = protocol.replace("_", "-")
+            router_name = f"juju-{self.model.name}-{self.model.app.name}-{sanitized_protocol}"
             service_name = (
                 f"juju-{self.model.name}-{self.model.app.name}-service-{sanitized_protocol}"
             )
-            routers[f"juju-{self.model.name}-{self.model.app.name}-{sanitized_protocol}"] = {
+            routers[router_name] = {
                 "entryPoints": [sanitized_protocol],
                 "service": service_name,
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
+            if sanitized_protocol == "syslog-tls":
+                routers[router_name]["tls"] = {}
             services[service_name] = {
                 "loadBalancer": {
                     "servers": [{"address": f"{self.hostname}:{port}"}],
