@@ -97,12 +97,15 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
 
-    def _configure_installation(self) -> None:
-        """Configure the Wazuh installation."""
+    def _configure_installation(self, container: ops.Container) -> None:
+        """Configure the Wazuh installation.
+
+        Args:
+            container: the container to configure Wazuh for.
+        """
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        container = self.unit.containers.get(wazuh.CONTAINER_NAME)
         wazuh.install_certificates(
             container=container,
             private_key=self.certificates.private_key,
@@ -192,7 +195,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        self._configure_installation()
+        self._configure_installation(container)
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         # Reload since the service might not have been restarted

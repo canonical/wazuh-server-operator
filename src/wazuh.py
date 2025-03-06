@@ -114,9 +114,8 @@ def _update_wazuh_configuration(
         _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
     )
     elements[0].append(new_cluster)
-    for element in _generate_syslog_snippets(local_ip):
-        node = etree.fromstring(element)
-        elements[0].append(node)
+    node = etree.fromstring(_generate_syslog_snippet())
+    elements[0].append(node)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
@@ -390,33 +389,18 @@ def _generate_cluster_snippet(
     """
 
 
-def _generate_syslog_snippets(local_ip: str) -> list[str]:
+def _generate_syslog_snippet() -> str:
     """Generate the snippet for syslog configuration.
-
-    Args:
-        local_ip: the workload local IP.
 
     Returns: the list of nodes for the Wazuh configuration.
     """
-    return [
-        f"""
-        <remote>
-            <connection>syslog</connection>
-            <port>514</port>
-            <protocol>tcp</protocol>
-            <allowed-ips>0.0.0.0/0</allowed-ips>
-            <local_ip>{local_ip}</local_ip>
-        </remote>
-
-        """,
-        """
+    return """
         <localfile>
             <log_format>syslog</log_format>
             <location>/var/ossec/logs/archives/archives.log</location>
         </localfile>
 
-        """,
-    ]
+        """
 
 
 def authenticate_user(username: str, password: str) -> str:

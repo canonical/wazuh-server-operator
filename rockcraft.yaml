@@ -92,3 +92,12 @@ parts:
         owner: 2000
         group: 2000
         mode: "755"
+  rsyslog:
+    plugin: dump
+    source: ./rock/rsyslog.conf
+    stage-packages:
+      - gnutls-bin
+      - rsyslog
+      - rsyslog-gnutls
+    organize:
+      rsyslog.conf: etc/rsyslog.conf
