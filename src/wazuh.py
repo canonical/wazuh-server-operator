@@ -23,14 +23,15 @@ import yaml
 from lxml import etree  # nosec
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 CONTAINER_NAME = "wazuh-server"
+FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 LOGS_PATH = Path("/var/ossec/logs")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
+SYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
 API_PORT = 55000
 AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
 WAZUH_GROUP = "wazuh"
@@ -74,14 +75,12 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
 
 
 # Won't sacrify cohesion and readability to make pylint happier
-# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
-def _update_wazuh_configuration(
+def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     container: ops.Container,
     ip_ports: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
-    local_ip: str,
 ) -> None:
     """Update Wazuh configuration.
 
@@ -91,7 +90,6 @@ def _update_wazuh_configuration(
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
-        local_ip: the local IP of the workload.
     """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
@@ -114,22 +112,19 @@ def _update_wazuh_configuration(
         _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
     )
     elements[0].append(new_cluster)
-    for element in _generate_syslog_snippets(local_ip):
-        node = etree.fromstring(element)
-        elements[0].append(node)
+    node = etree.fromstring(_generate_syslog_snippet())
+    elements[0].append(node)
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
 
 
-# Won't sacrify cohesion and readability to make pylint happier
-def update_configuration(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def update_configuration(
     container: ops.Container,
     indexer_ips: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
-    local_ip: str,
 ) -> None:
     """Update the workload configuration.
 
@@ -139,13 +134,10 @@ def update_configuration(  # pylint: disable=too-many-arguments,too-many-positio
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
-        local_ip: the local IP of the workload.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(
-        container, ip_ports, master_address, unit_name, cluster_key, local_ip
-    )
+    _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
 
 
 def reload_configuration(container: ops.Container) -> None:
@@ -165,23 +157,20 @@ def reload_configuration(container: ops.Container) -> None:
 
 
 def install_certificates(
-    container: ops.Container, public_key: str, private_key: str, root_ca: str
+    container: ops.Container, path: Path, public_key: str, private_key: str, root_ca: str
 ) -> None:
-    """Update Wazuh filebeat certificates.
+    """Update TLS certificates.
 
     Arguments:
         container: the container for which to update the configuration.
+        path: the path in which to copy the certificates.
         public_key: the certificate's public key.
         private_key: the certificate's private key.
         root_ca: the certifciate's CA public key.
     """
-    container.push(
-        CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True, permissions=0o400
-    )
-    container.push(
-        CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True, permissions=0o400
-    )
-    container.push(CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
+    container.push(path / "certificate.pem", public_key, make_dirs=True, permissions=0o400)
+    container.push(path / "certificate.key", private_key, make_dirs=True, permissions=0o400)
+    container.push(path / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
 
 
 def configure_agent_password(container: ops.Container, password: str) -> None:
@@ -390,33 +379,18 @@ def _generate_cluster_snippet(
     """
 
 
-def _generate_syslog_snippets(local_ip: str) -> list[str]:
+def _generate_syslog_snippet() -> str:
     """Generate the snippet for syslog configuration.
-
-    Args:
-        local_ip: the workload local IP.
 
     Returns: the list of nodes for the Wazuh configuration.
     """
-    return [
-        f"""
-        <remote>
-            <connection>syslog</connection>
-            <port>514</port>
-            <protocol>tcp</protocol>
-            <allowed-ips>0.0.0.0/0</allowed-ips>
-            <local_ip>{local_ip}</local_ip>
-        </remote>
-
-        """,
-        """
+    return """
         <localfile>
             <log_format>syslog</log_format>
             <location>/var/ossec/logs/archives/archives.log</location>
         </localfile>
 
-        """,
-    ]
+        """
 
 
 def authenticate_user(username: str, password: str) -> str:
