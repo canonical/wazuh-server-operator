@@ -109,8 +109,9 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        wazuh.install_filebeat_certificates(
+        wazuh.install_certificates(
             container=container,
+            path=wazuh.FILEBEAT_CERTIFICATES_PATH,
             private_key=self.certificates.private_key,
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,

@@ -155,24 +155,21 @@ def reload_configuration(container: ops.Container) -> None:
         raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
 
 
-def install_filebeat_certificates(
-    container: ops.Container, public_key: str, private_key: str, root_ca: str
+def install_certificates(
+    container: ops.Container, path: Path, public_key: str, private_key: str, root_ca: str
 ) -> None:
-    """Update Wazuh filebeat certificates.
+    """Update TLS certificates.
 
     Arguments:
         container: the container for which to update the configuration.
+        path: the path in which to copy the certificates.
         public_key: the certificate's public key.
         private_key: the certificate's private key.
         root_ca: the certifciate's CA public key.
     """
-    container.push(
-        FILEBEAT_CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True, permissions=0o400
-    )
-    container.push(
-        FILEBEAT_CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True, permissions=0o400
-    )
-    container.push(FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
+    container.push(path / "certificate.pem", public_key, make_dirs=True, permissions=0o400)
+    container.push(path / "certificate-key.pem", private_key, make_dirs=True, permissions=0o400)
+    container.push(path / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
 
 
 def configure_agent_password(container: ops.Container, password: str) -> None:
