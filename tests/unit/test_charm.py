@@ -66,6 +66,8 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
 @patch.object(CertificatesObserver, "get_filebeat_csr")
 @patch.object(CertificatesObserver, "get_syslog_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
+    syslog_csr_mock,
+    filebeat_csr_mock,
     get_version_mock,
     wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
@@ -113,6 +115,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         custom_config_ssh_key="somekey",
     )
     get_version_mock.return_value = "v4.9.2"
+    filebeat_csr_mock.return_value = b""
+    syslog_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
     harness.begin()
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
@@ -171,6 +175,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(CertificatesObserver, "get_filebeat_csr")
 @patch.object(CertificatesObserver, "get_syslog_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
+    syslog_csr_mock,
+    filebeat_csr_mock,
     get_version_mock,
     wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
@@ -214,6 +220,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         custom_config_ssh_key=None,
     )
     get_version_mock.return_value = "v4.9.2"
+    filebeat_csr_mock.return_value = b""
+    syslog_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
     harness.begin()
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
