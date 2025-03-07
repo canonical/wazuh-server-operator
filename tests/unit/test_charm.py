@@ -1,9 +1,11 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+# pylint: disable=duplicate-code,too-many-locals
+
 """Charm unit tests."""
 import secrets
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, call, patch
 
 import ops
 import pytest
@@ -126,19 +128,23 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 
     harness.charm.reconcile(None)
 
-    wazuh_install_certificates_mock.assert_called_with(
-        container=container,
-        path=wazuh.FILEBEAT_CERTIFICATES_PATH,
-        private_key=ANY,
-        public_key="filebeat_cert",
-        root_ca="filebeat_root_ca",
-    )
-    wazuh_install_certificates_mock.assert_called_with(
-        container=container,
-        path=wazuh.SYSLOG_CERTIFICATES_PATH,
-        private_key=ANY,
-        public_key="syslog_cert",
-        root_ca="syslog_root_ca",
+    wazuh_install_certificates_mock.assert_has_calls(
+        [
+            call(
+                container=container,
+                path=wazuh.FILEBEAT_CERTIFICATES_PATH,
+                private_key=ANY,
+                public_key="filebeat_cert",
+                root_ca="filebeat_root_ca",
+            ),
+            call(
+                container=container,
+                path=wazuh.SYSLOG_CERTIFICATES_PATH,
+                private_key=ANY,
+                public_key="syslog_cert",
+                root_ca="syslog_root_ca",
+            ),
+        ]
     )
     wazuh_update_configuration_mock.assert_called_with(
         container,
@@ -231,19 +237,23 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
 
     harness.charm.reconcile(None)
 
-    wazuh_install_certificates_mock.assert_called_with(
-        container=container,
-        path=wazuh.FILEBEAT_CERTIFICATES_PATH,
-        private_key=ANY,
-        public_key="filebeat_cert",
-        root_ca="filebeat_root_ca",
-    )
-    wazuh_install_certificates_mock.assert_called_with(
-        container=container,
-        path=wazuh.SYSLOG_CERTIFICATES_PATH,
-        private_key=ANY,
-        public_key="syslog_cert",
-        root_ca="syslog_root_ca",
+    wazuh_install_certificates_mock.assert_has_calls(
+        [
+            call(
+                container=container,
+                path=wazuh.FILEBEAT_CERTIFICATES_PATH,
+                private_key=ANY,
+                public_key="filebeat_cert",
+                root_ca="filebeat_root_ca",
+            ),
+            call(
+                container=container,
+                path=wazuh.SYSLOG_CERTIFICATES_PATH,
+                private_key=ANY,
+                public_key="syslog_cert",
+                root_ca="syslog_root_ca",
+            ),
+        ]
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_not_called()

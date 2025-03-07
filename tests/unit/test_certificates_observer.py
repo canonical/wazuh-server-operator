@@ -1,19 +1,19 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+# pylint: disable=duplicate-code,too-many-locals
+
 """Certificates observer unit tests."""
 
-
 import secrets
-import unittest
-import unittest.mock
+from unittest.mock import MagicMock, Mock, call
 
 import ops
 import pytest
 from ops.testing import Harness
 
-import certificates_observer
 import state
+from certificates_observer import RELATION_NAME, CertificatesObserver
 
 REQUIRER_METADATA = """
 name: observer-charm
@@ -23,7 +23,7 @@ requires:
 """
 
 
-class ObservedCharm(state.CharmBaseWithState):  # pylint: disable=duplicate-code
+class ObservedCharm(state.CharmBaseWithState):
     """Class for requirer charm testing.
 
     Attrs:
@@ -37,7 +37,8 @@ class ObservedCharm(state.CharmBaseWithState):  # pylint: disable=duplicate-code
             args: Variable list of positional arguments passed to the parent constructor.
         """
         super().__init__(*args)
-        self.certificates = certificates_observer.CertificatesObserver(self)
+        certificates = CertificatesObserver(self)
+        self.certificates = certificates
         self.count = 0
 
     def reconcile(self, _: ops.HookEvent) -> None:
@@ -58,9 +59,9 @@ class ObservedCharm(state.CharmBaseWithState):  # pylint: disable=duplicate-code
             agent_password=None,
             api_credentials=api_credentials,
             cluster_key=cluster_key,
-            filebeat_certificate="filebeat_cert",
+            filebeat_certificate="filebeat_certificate",
             filebeat_root_ca="filebeat_root_ca",
-            syslog_certificate="syslog_cert",
+            syslog_certificate="syslog_certificate",
             syslog_root_ca="syslog_root_ca",
             external_hostname="test.hostname",
             indexer_ips=["10.0.0.1"],
@@ -83,16 +84,23 @@ def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> Non
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
-    harness.add_relation(certificates_observer.RELATION_NAME, "certificates-provider")
-    relation = harness.charm.framework.model.get_relation(certificates_observer.RELATION_NAME, 0)
-    mock = unittest.mock.Mock()
+    harness.add_relation(RELATION_NAME, "certificates-provider")
+    relation = harness.charm.framework.model.get_relation(RELATION_NAME, 0)
+    mock = Mock()
     monkeypatch.setattr(
         harness.charm.certificates.certificates, "request_certificate_creation", mock
     )
+    monkeypatch.setattr(harness.charm.certificates, "get_filebeat_csr", lambda: "filebeat_csr")
+    monkeypatch.setattr(harness.charm.certificates, "get_syslog_csr", lambda: "syslog_csr")
 
     harness.charm.on.certificates_relation_joined.emit(relation)
 
-    mock.assert_called_once()
+    mock.assert_has_calls(
+        [
+            call(certificate_signing_request="filebeat_csr"),
+            call(certificate_signing_request="syslog_csr"),
+        ]
+    )
     assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
@@ -105,7 +113,7 @@ def test_on_certificate_available() -> None:
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
-    harness.add_relation(certificates_observer.RELATION_NAME, "certificates-provider")
+    harness.add_relation(RELATION_NAME, "certificates-provider")
 
     harness.charm.certificates.certificates.on.certificate_available.emit(
         certificate_signing_request="csr",
@@ -117,7 +125,7 @@ def test_on_certificate_available() -> None:
     assert harness.charm.count == 1
 
 
-def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_on_filebeat_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
     act: integrate the charm leveraging the certicicates integration and trigger an expired
@@ -126,20 +134,44 @@ def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
-    harness.add_relation(certificates_observer.RELATION_NAME, "certificates-provider")
-    mock = unittest.mock.Mock()
+    harness.add_relation(RELATION_NAME, "certificates-provider")
+    mock = Mock()
     monkeypatch.setattr(
         harness.charm.certificates.certificates, "request_certificate_creation", mock
     )
+    monkeypatch.setattr(harness.charm.certificates, "get_filebeat_csr", lambda: "filebeat_csr")
 
     harness.charm.certificates.certificates.on.certificate_expiring.emit(
-        certificate="certificate", expiry="2024-04-04"
+        certificate="filebeat_certificate", expiry="2024-04-04"
     )
 
-    mock.assert_called_once()
+    mock.assert_called_once_with(certificate_signing_request="filebeat_csr")
 
 
-def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_on_syslog_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    arrange: instantiate a charm implementing the certificates relation.
+    act: integrate the charm leveraging the certicicates integration and trigger an expired
+        certificate event.
+    assert: a new certificate unit is requested and the charms reaches waiting status
+    """
+    harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
+    harness.begin_with_initial_hooks()
+    harness.add_relation(RELATION_NAME, "certificates-provider")
+    mock = Mock()
+    monkeypatch.setattr(
+        harness.charm.certificates.certificates, "request_certificate_creation", mock
+    )
+    monkeypatch.setattr(harness.charm.certificates, "get_syslog_csr", lambda: "syslog_csr")
+
+    harness.charm.certificates.certificates.on.certificate_expiring.emit(
+        certificate="syslog_certificate", expiry="2024-04-04"
+    )
+
+    mock.assert_called_once_with(certificate_signing_request="syslog_csr")
+
+
+def test_on_filebeat_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
     act: integrate the charm leveraging the certicicates integration and trigger an invalidated
@@ -149,21 +181,67 @@ def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
 
-    harness.add_relation(certificates_observer.RELATION_NAME, "certificates-provider")
-    mock = unittest.mock.Mock()
+    harness.add_relation(RELATION_NAME, "certificates-provider")
+    mock = Mock()
     monkeypatch.setattr(
         harness.charm.certificates.certificates, "request_certificate_renewal", mock
     )
-    secret_mock = unittest.mock.MagicMock()
+    secret_mock = MagicMock()
     monkeypatch.setattr(harness.charm.model, "get_secret", secret_mock)
+    monkeypatch.setattr(
+        harness.charm.certificates,
+        "get_filebeat_csr",
+        lambda renew=False: "filebeat_csr" if renew else "old_filebeat_csr",
+    )
 
     harness.charm.certificates.certificates.on.certificate_invalidated.emit(
         reason="revoked",
-        certificate_signing_request="csr",
-        certificate="certificate",
+        certificate_signing_request="filebeat_csr",
+        certificate="filebeat_certificate",
         ca="ca",
         chain=[],
     )
 
-    mock.assert_called_once()
+    mock.assert_called_once_with(
+        old_certificate_signing_request="old_filebeat_csr",
+        new_certificate_signing_request="filebeat_csr",
+    )
+    assert ops.WaitingStatus.name == harness.charm.unit.status.name
+
+
+def test_on_syslog_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    arrange: instantiate a charm implementing the certificates relation.
+    act: integrate the charm leveraging the certicicates integration and trigger an invalidated
+        certificate event.
+    assert: a new certificate unit is requested and the charms reaches waiting status
+    """
+    harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
+    harness.begin_with_initial_hooks()
+
+    harness.add_relation(RELATION_NAME, "certificates-provider")
+    mock = Mock()
+    monkeypatch.setattr(
+        harness.charm.certificates.certificates, "request_certificate_renewal", mock
+    )
+    secret_mock = MagicMock()
+    monkeypatch.setattr(harness.charm.model, "get_secret", secret_mock)
+    monkeypatch.setattr(
+        harness.charm.certificates,
+        "get_syslog_csr",
+        lambda renew=False: "syslog_csr" if renew else "old_syslog_csr",
+    )
+
+    harness.charm.certificates.certificates.on.certificate_invalidated.emit(
+        reason="revoked",
+        certificate_signing_request="syslog_csr",
+        certificate="syslog_certificate",
+        ca="ca",
+        chain=[],
+    )
+
+    mock.assert_called_once_with(
+        old_certificate_signing_request="old_syslog_csr",
+        new_certificate_signing_request="syslog_csr",
+    )
     assert ops.WaitingStatus.name == harness.charm.unit.status.name
