@@ -99,8 +99,5 @@ parts:
       - gnutls-bin
       - rsyslog
       - rsyslog-gnutls
-    override-stage: |
-      craftctl default
-      cat etc/rsyslog.conf
     organize:
       wazuh.conf: etc/rsyslog.d//wazuh.conf

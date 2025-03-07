@@ -31,6 +31,7 @@ LOGS_PATH = Path("/var/ossec/logs")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
+SYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
 API_PORT = 55000
 AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
 WAZUH_GROUP = "wazuh"
@@ -168,7 +169,7 @@ def install_certificates(
         root_ca: the certifciate's CA public key.
     """
     container.push(path / "certificate.pem", public_key, make_dirs=True, permissions=0o400)
-    container.push(path / "certificate-key.pem", private_key, make_dirs=True, permissions=0o400)
+    container.push(path / "certificate.key", private_key, make_dirs=True, permissions=0o400)
     container.push(path / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
 
 

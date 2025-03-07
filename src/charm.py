@@ -86,7 +86,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 self.traefik_route.traefik_route.external_host,
                 opensearch_relation_data,
                 certificates,
-                self.certificates.csr.decode("utf-8"),
+                self.certificates.filebeat_csr.decode("utf-8"),
             )
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
@@ -112,7 +112,7 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh.install_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
-            private_key=self.certificates.private_key,
+            private_key=self.certificates.filebeat_private_key,
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
         )

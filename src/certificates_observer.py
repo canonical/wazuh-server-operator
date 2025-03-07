@@ -19,8 +19,8 @@ class CertificatesObserver(Object):
     """The Certificates relation observer.
 
     Attributes:
-        private_key: the private key for the certificates.
-        csr: the certificate signing request.
+        filebeat_private_key: the private key for the certificates.
+        filebeat_csr: the certificate signing request.
     """
 
     def __init__(self, charm: CharmBaseWithState):
@@ -44,13 +44,22 @@ class CertificatesObserver(Object):
         )
 
     @property
-    def private_key(self) -> str:
+    def filebeat_private_key(self) -> str:
         """Fetch the private key.
 
         Returns: the private key.
         """
+        return self._get_private_key("certificate-private-key")
+
+    def _get_private_key(self, label: str) -> str:
+        """Fetch the private key.
+
+        Attrs:
+            label: the label identifying the private key.
+
+        Returns: the private key.
+        """
         private_key = None
-        label = "certificate-private-key"
         try:
             secret = self._charm.model.get_secret(label=label)
             private_key = secret.get_content().get("key")
@@ -61,37 +70,49 @@ class CertificatesObserver(Object):
         return private_key
 
     @property
-    def csr(self) -> bytes:
+    def filebeat_csr(self) -> bytes:
         """Fetch the certificate signing request.
 
         Returns: the certificate signing request.
         """
+        return self._get_certificate_signing_request("certificate-csr")
+
+    def _get_certificate_signing_request(self, label: str) -> bytes:
+        """Fetch a certificate signing request.
+
+        Attrs:
+            label: the label identifying the certificate signing request.
+
+        Returns: the certificate signing request.
+        """
         csr = None
-        label = "certificate-csr"
         try:
             secret = self._charm.model.get_secret(label=label)
             csr = secret.get_content().get("csr").encode("utf-8")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
             csr = certificates.generate_csr(
-                private_key=self.private_key.encode(), subject=self._charm.unit.name
+                private_key=self.filebeat_private_key.encode(), subject=self._charm.unit.name
             )
             self._charm.app.add_secret(content={"csr": csr.decode("utf-8")}, label=label)
         return csr
 
     def _request_certificate(self) -> None:
         """Send a certificate request."""
-        self.certificates.request_certificate_creation(certificate_signing_request=self.csr)
+        self.certificates.request_certificate_creation(
+            certificate_signing_request=self.filebeat_csr
+        )
 
     def _renew_certificate(self) -> None:
         """Send a certificate renewal request."""
-        old_csr = self.csr
+        old_csr = self.filebeat_csr
         secret = self._charm.model.get_secret(label="certificate-csr")
         secret.remove_all_revisions()
         secret = self._charm.model.get_secret(label="certificate-private-key")
         secret.remove_all_revisions()
         self.certificates.request_certificate_renewal(
-            old_certificate_signing_request=old_csr, new_certificate_signing_request=self.csr
+            old_certificate_signing_request=old_csr,
+            new_certificate_signing_request=self.filebeat_csr,
         )
 
     def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:

@@ -146,7 +146,7 @@ def test_install_certificates() -> None:
     assert (
         "private_key"
         == container.pull(
-            wazuh.FILEBEAT_CERTIFICATES_PATH / "certificate-key.pem", encoding="utf-8"
+            wazuh.FILEBEAT_CERTIFICATES_PATH / "certificate.key", encoding="utf-8"
         ).read()
     )
     assert (
