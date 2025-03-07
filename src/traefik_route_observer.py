@@ -16,7 +16,7 @@ RELATION_NAME = "ingress"
 
 
 PORTS: dict[str, int] = {
-    "syslog_tls": 514,
+    "syslog_tcp": 514,
     "conn_tcp": 1514,
     "enrole_tcp": 1515,
     "api_tcp": 55000,
@@ -87,8 +87,6 @@ class TraefikRouteObserver(Object):
                 "service": service_name,
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
-            if sanitized_protocol == "syslog-tls":
-                routers[router_name]["tls"] = {}
             services[service_name] = {
                 "loadBalancer": {
                     "servers": [{"address": f"{self.hostname}:{port}"}],

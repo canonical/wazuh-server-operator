@@ -54,7 +54,7 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "configure_agent_password")
-@patch.object(wazuh, "install_certificates")
+@patch.object(wazuh, "install_filebeat_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
 @patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
@@ -62,7 +62,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     get_version_mock,
     wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
-    wazuh_install_certificates_mock,
+    wazuh_install_filebeat_certificates_mock,
     wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
@@ -96,6 +96,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
+        external_hostname="test.hostname",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
@@ -112,7 +113,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 
     harness.charm.reconcile(None)
 
-    wazuh_install_certificates_mock.assert_called_with(
+    wazuh_install_filebeat_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
     )
     wazuh_update_configuration_mock.assert_called_with(
@@ -121,7 +122,6 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
-        harness.charm.local_ip,
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_called_with(
@@ -144,7 +144,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "configure_agent_password")
-@patch.object(wazuh, "install_certificates")
+@patch.object(wazuh, "install_filebeat_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
 @patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
@@ -152,7 +152,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     get_version_mock,
     wazuh_reload_configuration_mock,
     configure_filebeat_user_mock,
-    wazuh_install_certificates_mock,
+    wazuh_install_filebeat_certificates_mock,
     wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
@@ -178,6 +178,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         cluster_key=cluster_key,
         certificate="somecert",
         root_ca="root_ca",
+        external_hostname="test.hostname",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
@@ -198,7 +199,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
 
     harness.charm.reconcile(None)
 
-    wazuh_install_certificates_mock.assert_called_with(
+    wazuh_install_filebeat_certificates_mock.assert_called_with(
         container=container, private_key=ANY, public_key="somecert", root_ca="root_ca"
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
@@ -211,7 +212,6 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
-        harness.charm.local_ip,
     )
     wazuh_reload_configuration_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)

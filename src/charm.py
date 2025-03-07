@@ -38,7 +38,6 @@ class WazuhServerCharm(CharmBaseWithState):
 
     Attributes:
         master_fqdn: the FQDN for unit 0.
-        local_ip: the local IP.
         state: the charm state.
     """
 
@@ -83,7 +82,11 @@ class WazuhServerCharm(CharmBaseWithState):
             )
             certificates = self.certificates.certificates.get_provider_certificates()
             return State.from_charm(
-                self, opensearch_relation_data, certificates, self.certificates.csr.decode("utf-8")
+                self,
+                self.traefik_route.traefik_route.external_host,
+                opensearch_relation_data,
+                certificates,
+                self.certificates.csr.decode("utf-8"),
             )
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
@@ -106,7 +109,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        wazuh.install_certificates(
+        wazuh.install_filebeat_certificates(
             container=container,
             private_key=self.certificates.private_key,
             public_key=self.state.certificate,
@@ -130,7 +133,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.master_fqdn,
             self.unit.name,
             self.state.cluster_key,
-            self.local_ip,
         )
 
     # It doesn't make sense to split the logic further
@@ -325,15 +327,6 @@ class WazuhServerCharm(CharmBaseWithState):
         unit_name = f"{self.unit.name.split('/')[0]}-0"
         app_name = self.app.name
         return f"{unit_name}.{app_name}-endpoints"
-
-    @property
-    def local_ip(self) -> str:
-        """Fetch the local IP.
-
-        Returns: the local IP address.
-        """
-        binding = self.model.get_binding(WAZUH_PEER_RELATION_NAME)
-        return str(binding.network.bind_address)
 
 
 if __name__ == "__main__":  # pragma: nocover

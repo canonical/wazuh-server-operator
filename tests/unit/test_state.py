@@ -45,9 +45,11 @@ def test_state_invalid_relation_data(opensearch_relation_data):
     ]
 
     with pytest.raises(state.InvalidStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, "1")
+        state.State.from_charm(
+            mock_charm, "test.hostname", opensearch_relation_data, provider_certificates, "1"
+        )
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, [], "1")
+        state.State.from_charm(mock_charm, "test.hostname", opensearch_relation_data, [], "1")
 
 
 def test_state_without_proxy():
@@ -76,6 +78,7 @@ def test_state_without_proxy():
         "value": value,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -89,12 +92,13 @@ def test_state_without_proxy():
         )
     ]
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, provider_certificates, csr
+        mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
     )
 
     assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
+    assert charm_state.external_hostname == hostname
     assert charm_state.indexer_ips == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
@@ -134,6 +138,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
         "value": value,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -151,11 +156,12 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "localhost")
 
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, provider_certificates, csr
+        mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
     )
     assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
+    assert charm_state.external_hostname == hostname
     assert charm_state.indexer_ips == endpoints
     assert charm_state.certificate == certificate
     assert charm_state.root_ca == root_ca
@@ -197,6 +203,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
         "value": value,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -210,7 +217,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
         )
     ]
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, provider_certificates, csr
+        mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
     )
     with pytest.raises(state.RecoverableStateError):
         charm_state.proxy  # pylint: disable=pointless-statement
@@ -250,6 +257,7 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         "password": password,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -263,7 +271,9 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         )
     ]
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
+        state.State.from_charm(
+            mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
+        )
 
 
 def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPatch):
@@ -299,6 +309,7 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
         "password": password,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -312,7 +323,9 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
         )
     ]
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
+        state.State.from_charm(
+            mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
+        )
 
 
 def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
@@ -349,6 +362,7 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         "password": password,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -363,7 +377,9 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     ]
 
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
+        state.State.from_charm(
+            mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
+        )
 
 
 def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
@@ -399,6 +415,7 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         "password": password,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -413,9 +430,12 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     ]
 
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, provider_certificates, csr)
+        state.State.from_charm(
+            mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
+        )
 
 
+# pylint: disable=too-many-locals
 def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: given a secret for the repositorywith valid content.
@@ -454,6 +474,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
         "value": value,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -467,10 +488,11 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
         )
     ]
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, provider_certificates, csr
+        mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
     )
 
     assert charm_state.cluster_key == value
+    assert charm_state.external_hostname == hostname
     assert charm_state.indexer_ips == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
@@ -518,6 +540,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
         "value": value,
     }
     csr = "1"
+    hostname = "test.hostname"
     provider_certificates = [
         certificates.ProviderCertificate(
             relation_id="certificates-provider/1",
@@ -531,10 +554,11 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
         )
     ]
     charm_state = state.State.from_charm(
-        mock_charm, opensearch_relation_data, provider_certificates, csr
+        mock_charm, hostname, opensearch_relation_data, provider_certificates, csr
     )
 
     assert charm_state.cluster_key == value
+    assert charm_state.external_hostname == hostname
     assert charm_state.indexer_ips == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password

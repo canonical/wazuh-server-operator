@@ -239,6 +239,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the agent password.
         api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
+        external_hostname: Wazuh manager external hostname.
         indexer_ips: list of Wazuh indexer IPs.
         unconfigured_api_users: if any default API password is in use.
         filebeat_username: the filebeat username.
@@ -253,6 +254,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     agent_password: str | None = None
     api_credentials: dict[str, str]
     cluster_key: str = Field(min_length=32, max_length=32)
+    external_hostname: str = Field(min_length=1)
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
@@ -266,6 +268,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: str | None,
         api_credentials: dict[str, str],
         cluster_key: str,
+        external_hostname: str,
         indexer_ips: list[str],
         filebeat_username: str,
         filebeat_password: str,
@@ -280,6 +283,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password: the agent password.
             api_credentials: a map ccontaining the API credentials.
             cluster_key: the Wazuh key for the cluster nodes.
+            external_hostname: Wazuh manager external hostname.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
@@ -292,6 +296,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password=agent_password,
             api_credentials=api_credentials,
             cluster_key=cluster_key,
+            external_hostname=external_hostname,
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
@@ -324,9 +329,11 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             raise RecoverableStateError("Invalid proxy configuration.") from exc
 
     @classmethod
-    def from_charm(  # pylint: disable=too-many-locals
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+    def from_charm(
         cls,
         charm: ops.CharmBase,
+        external_hostname: str,
         indexer_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
         certitificate_signing_request: str,
@@ -335,6 +342,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             charm: the root charm.
+            external_hostname: Wazuh manager external hostname.
             indexer_relation_data: the Wazuh indexer app relation data.
             provider_certificates: the provider certificates.
             certitificate_signing_request: the certificate signing request.
@@ -373,6 +381,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     agent_password=agent_password,
                     api_credentials=api_credentials,
                     cluster_key=cluster_key,
+                    external_hostname=external_hostname,
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,

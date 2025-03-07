@@ -74,14 +74,12 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
 
 
 # Won't sacrify cohesion and readability to make pylint happier
-# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
-def _update_wazuh_configuration(
+def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     container: ops.Container,
     ip_ports: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
-    local_ip: str,
 ) -> None:
     """Update Wazuh configuration.
 
@@ -91,7 +89,6 @@ def _update_wazuh_configuration(
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
-        local_ip: the local IP of the workload.
     """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
@@ -121,14 +118,12 @@ def _update_wazuh_configuration(
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
 
 
-# Won't sacrify cohesion and readability to make pylint happier
-def update_configuration(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def update_configuration(
     container: ops.Container,
     indexer_ips: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
-    local_ip: str,
 ) -> None:
     """Update the workload configuration.
 
@@ -138,13 +133,10 @@ def update_configuration(  # pylint: disable=too-many-arguments,too-many-positio
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
-        local_ip: the local IP of the workload.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(
-        container, ip_ports, master_address, unit_name, cluster_key, local_ip
-    )
+    _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
 
 
 def reload_configuration(container: ops.Container) -> None:
@@ -163,7 +155,7 @@ def reload_configuration(container: ops.Container) -> None:
         raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
 
 
-def install_certificates(
+def install_filebeat_certificates(
     container: ops.Container, public_key: str, private_key: str, root_ca: str
 ) -> None:
     """Update Wazuh filebeat certificates.
