@@ -141,15 +141,15 @@ def test_install_filebeat_certificates() -> None:
 
     assert (
         "private_key"
-        == container.pull(wazuh.CERTIFICATES_PATH / "filebeat-key.pem", encoding="utf-8").read()
+        == container.pull(wazuh.FILEBEAT_CERTIFICATES_PATH / "filebeat-key.pem", encoding="utf-8").read()
     )
     assert (
         "public_key"
-        == container.pull(wazuh.CERTIFICATES_PATH / "filebeat.pem", encoding="utf-8").read()
+        == container.pull(wazuh.FILEBEAT_CERTIFICATES_PATH / "filebeat.pem", encoding="utf-8").read()
     )
     assert (
         "root_ca"
-        == container.pull(wazuh.CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8").read()
+        == container.pull(wazuh.FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8").read()
     )
 
 

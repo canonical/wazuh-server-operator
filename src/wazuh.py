@@ -23,8 +23,8 @@ import yaml
 from lxml import etree  # nosec
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 CONTAINER_NAME = "wazuh-server"
+FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 LOGS_PATH = Path("/var/ossec/logs")
@@ -167,12 +167,12 @@ def install_filebeat_certificates(
         root_ca: the certifciate's CA public key.
     """
     container.push(
-        CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True, permissions=0o400
+        FILEBEAT_CERTIFICATES_PATH / "filebeat.pem", public_key, make_dirs=True, permissions=0o400
     )
     container.push(
-        CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True, permissions=0o400
+        FILEBEAT_CERTIFICATES_PATH / "filebeat-key.pem", private_key, make_dirs=True, permissions=0o400
     )
-    container.push(CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
+    container.push(FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
 
 
 def configure_agent_password(container: ops.Container, password: str) -> None:
