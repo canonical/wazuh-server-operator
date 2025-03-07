@@ -4,6 +4,7 @@
 """Certificates observer unit tests."""
 
 
+import secrets
 import unittest
 import unittest.mock
 
@@ -12,6 +13,7 @@ import pytest
 from ops.testing import Harness
 
 import certificates_observer
+import state
 
 REQUIRER_METADATA = """
 name: observer-charm
@@ -21,8 +23,12 @@ requires:
 """
 
 
-class ObservedCharm(ops.CharmBase):
-    """Class for requirer charm testing."""
+class ObservedCharm(state.CharmBaseWithState):  # pylint: disable=duplicate-code
+    """Class for requirer charm testing.
+
+    Attrs:
+        state: the charm state.
+    """
 
     def __init__(self, *args):
         """Construct.
@@ -37,6 +43,36 @@ class ObservedCharm(ops.CharmBase):
     def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile the configuration with charm state."""
         self.count = self.count + 1
+
+    @property
+    def state(self) -> state.State | None:
+        """The charm state."""
+        password = secrets.token_hex()
+        api_credentials = {
+            "wazuh": secrets.token_hex(),
+            "wazuh-wui": secrets.token_hex(),
+            "prometheus": secrets.token_hex(),
+        }
+        cluster_key = secrets.token_hex(16)
+        return state.State(
+            agent_password=None,
+            api_credentials=api_credentials,
+            cluster_key=cluster_key,
+            filebeat_certificate="filebeat_cert",
+            filebeat_root_ca="filebeat_root_ca",
+            syslog_certificate="syslog_cert",
+            syslog_root_ca="syslog_root_ca",
+            external_hostname="test.hostname",
+            indexer_ips=["10.0.0.1"],
+            filebeat_username="user1",
+            filebeat_password=password,
+            wazuh_config=state.WazuhConfig(
+                api_credentials=api_credentials,
+                custom_config_repository=None,
+                custom_config_ssh_key=None,
+            ),
+            custom_config_ssh_key=None,
+        )
 
 
 def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> None:

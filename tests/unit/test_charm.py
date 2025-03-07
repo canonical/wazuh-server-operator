@@ -10,12 +10,15 @@ import pytest
 from ops.testing import Harness
 
 import wazuh
+from certificates_observer import CertificatesObserver
 from charm import WAZUH_PEER_RELATION_NAME, WazuhServerCharm
 from state import InvalidStateError, RecoverableStateError, State, WazuhConfig
 
 
 @patch.object(State, "from_charm")
-def test_invalid_state_reaches_error_status(state_from_charm_mock):
+@patch.object(CertificatesObserver, "get_filebeat_csr")
+@patch.object(CertificatesObserver, "get_syslog_csr")
+def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
     """
     arrange: mock State.from_charm so that it raises and InvalidStateError.
     act: instantiate a charm.
@@ -31,7 +34,9 @@ def test_invalid_state_reaches_error_status(state_from_charm_mock):
 
 
 @patch.object(State, "from_charm")
-def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
+@patch.object(CertificatesObserver, "get_filebeat_csr")
+@patch.object(CertificatesObserver, "get_syslog_csr")
+def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
     """
     arrange: mock State.from_charm so that it raises and RecoverableStateError.
     act: instantiate a charm.
@@ -58,6 +63,8 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock):
 @patch.object(wazuh, "configure_filebeat_user")
 @patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
+@patch.object(CertificatesObserver, "get_filebeat_csr")
+@patch.object(CertificatesObserver, "get_syslog_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
     get_version_mock,
     wazuh_reload_configuration_mock,
@@ -94,8 +101,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         agent_password=agent_password,
         api_credentials=api_credentials,
         cluster_key=cluster_key,
-        certificate="somecert",
-        root_ca="root_ca",
+        filebeat_certificate="filebeat_cert",
+        filebeat_root_ca="filebeat_root_ca",
+        syslog_certificate="syslog_cert",
+        syslog_root_ca="syslog_root_ca",
         external_hostname="test.hostname",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
@@ -117,8 +126,15 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         container=container,
         path=wazuh.FILEBEAT_CERTIFICATES_PATH,
         private_key=ANY,
-        public_key="somecert",
-        root_ca="root_ca",
+        public_key="filebeat_cert",
+        root_ca="filebeat_root_ca",
+    )
+    wazuh_install_certificates_mock.assert_called_with(
+        container=container,
+        path=wazuh.SYSLOG_CERTIFICATES_PATH,
+        private_key=ANY,
+        public_key="syslog_cert",
+        root_ca="syslog_root_ca",
     )
     wazuh_update_configuration_mock.assert_called_with(
         container,
@@ -152,6 +168,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_filebeat_user")
 @patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
+@patch.object(CertificatesObserver, "get_filebeat_csr")
+@patch.object(CertificatesObserver, "get_syslog_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
     get_version_mock,
     wazuh_reload_configuration_mock,
@@ -180,8 +198,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         agent_password=None,
         api_credentials=api_credentials,
         cluster_key=cluster_key,
-        certificate="somecert",
-        root_ca="root_ca",
+        filebeat_certificate="filebeat_cert",
+        filebeat_root_ca="filebeat_root_ca",
+        syslog_certificate="syslog_cert",
+        syslog_root_ca="syslog_root_ca",
         external_hostname="test.hostname",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
@@ -207,8 +227,15 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         container=container,
         path=wazuh.FILEBEAT_CERTIFICATES_PATH,
         private_key=ANY,
-        public_key="somecert",
-        root_ca="root_ca",
+        public_key="filebeat_cert",
+        root_ca="filebeat_root_ca",
+    )
+    wazuh_install_certificates_mock.assert_called_with(
+        container=container,
+        path=wazuh.SYSLOG_CERTIFICATES_PATH,
+        private_key=ANY,
+        public_key="syslog_cert",
+        root_ca="syslog_root_ca",
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     wazuh_configure_agent_password_mock.assert_not_called()
@@ -244,7 +271,9 @@ def test_reconcile_reaches_waiting_status_when_cant_connect():
 
 
 @patch.object(State, "from_charm")
-def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock):
+@patch.object(CertificatesObserver, "get_filebeat_csr")
+@patch.object(CertificatesObserver, "get_syslog_csr")
+def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock, *_):
     """
     arrange: mock the state to raise an exception.
     act: call reconcile.
