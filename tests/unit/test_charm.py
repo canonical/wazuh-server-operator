@@ -1,6 +1,7 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+# pylint detects the patches states as duplicate code
 # pylint: disable=duplicate-code,too-many-locals
 
 """Charm unit tests."""

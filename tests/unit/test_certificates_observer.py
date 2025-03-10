@@ -1,7 +1,6 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# pylint: disable=duplicate-code,too-many-locals
 
 """Certificates observer unit tests."""
 
