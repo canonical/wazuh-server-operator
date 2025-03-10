@@ -90,7 +90,7 @@ class CertificatesObserver(Object):
         Returns: the certificate signing request.
         """
         return self._get_certificate_signing_request(
-            label="filebeat-csr", subject=self._charm.unit.name, renew=renew
+            label="filebeat-csr", subject=self._charm.state.external_hostname, renew=renew
         )
 
     def get_syslog_csr(self, renew: bool = False) -> bytes:
