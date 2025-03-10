@@ -13,6 +13,8 @@ import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
+import traefik_route_observer
+
 logger = logging.getLogger(__name__)
 
 
@@ -425,6 +427,7 @@ class CharmBaseWithState(ops.CharmBase, ABC):
 
     Attrs:
         state: the charm state.
+        traefik_route: the traefik route observer.
     """
 
     @abstractmethod
@@ -435,3 +438,7 @@ class CharmBaseWithState(ops.CharmBase, ABC):
     @abstractmethod
     def state(self) -> State | None:
         """The charm state."""
+
+    @property
+    def traefik_route(self) -> traefik_route_observer.TraefikRouteObserver:
+        """The traefik route observer."""

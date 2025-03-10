@@ -90,7 +90,9 @@ class CertificatesObserver(Object):
         Returns: the certificate signing request.
         """
         return self._get_certificate_signing_request(
-            label="filebeat-csr", subject=self._charm.state.external_hostname, renew=renew
+            label="filebeat-csr",
+            subject=self._charm.traefik_route.traefik_route.external_host,
+            renew=renew,
         )
 
     def get_syslog_csr(self, renew: bool = False) -> bytes:
@@ -102,7 +104,9 @@ class CertificatesObserver(Object):
         Returns: the certificate signing request.
         """
         return self._get_certificate_signing_request(
-            label="syslog-csr", subject=self._charm.state.external_hostname, renew=renew
+            label="syslog-csr",
+            subject=self._charm.traefik_route.traefik_route.external_host,
+            renew=renew,
         )
 
     def _get_certificate_signing_request(self, subject: str, label: str, renew: bool) -> bytes:

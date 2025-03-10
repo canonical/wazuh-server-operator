@@ -39,6 +39,7 @@ class WazuhServerCharm(CharmBaseWithState):
     Attributes:
         master_fqdn: the FQDN for unit 0.
         state: the charm state.
+        traefik_route: the traefik route observer.
     """
 
     def __init__(self, *args: typing.Any):
@@ -49,7 +50,7 @@ class WazuhServerCharm(CharmBaseWithState):
         """
         super().__init__(*args)
         self.certificates = certificates_observer.CertificatesObserver(self)
-        self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
+        self.traefik_route_observer = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self._observability = observability.Observability(self)
 
@@ -100,6 +101,11 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
+
+    @property
+    def traefik_route(self) -> traefik_route_observer.TraefikRouteObserver:
+        """The traefik route observer."""
+        return self.traefik_route_observer
 
     def _configure_installation(self, container: ops.Container) -> None:
         """Configure the Wazuh installation.
