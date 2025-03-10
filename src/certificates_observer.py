@@ -141,7 +141,7 @@ class CertificatesObserver(Object):
             certificate_signing_request=self.get_syslog_csr()
         )
         self._charm.unit.status = ops.WaitingStatus(
-            "Certificates do not exist. Waiting for a new certificates to be issued."
+            "Certificates do not exist. Waiting for new certificates to be issued."
         )
 
     def _on_certificate_expiring(self, event: certificates.CertificateExpiringEvent) -> None:
@@ -180,5 +180,5 @@ class CertificatesObserver(Object):
             )
             logger.debug("Syslog certificate invalidated.")
         self._charm.unit.status = ops.WaitingStatus(
-            "Certificate invalidated. Waiting for a new certificate to be issued."
+            "Certificate invalidated. Waiting for new certificate to be issued."
         )
