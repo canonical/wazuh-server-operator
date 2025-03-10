@@ -170,13 +170,13 @@ class CertificatesObserver(Object):
         if event.certificate == self._charm.state.filebeat_certificate:
             self.certificates.request_certificate_renewal(
                 old_certificate_signing_request=self.get_filebeat_csr(),
-                new_certificate_signing_request=self.get_filebeat_csr(True),
+                new_certificate_signing_request=self.get_filebeat_csr(renew=True),
             )
             logger.debug("Filebat certificate invalidated.")
         elif event.certificate == self._charm.state.syslog_certificate:
             self.certificates.request_certificate_renewal(
                 old_certificate_signing_request=self.get_syslog_csr(),
-                new_certificate_signing_request=self.get_syslog_csr(True),
+                new_certificate_signing_request=self.get_syslog_csr(renew=True),
             )
             logger.debug("Syslog certificate invalidated.")
         self._charm.unit.status = ops.WaitingStatus(
