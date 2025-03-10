@@ -100,4 +100,4 @@ parts:
       - rsyslog
       - rsyslog-gnutls
     organize:
-      wazuh.conf: etc/rsyslog.d//wazuh.conf
+      wazuh.conf: etc/rsyslog.d/wazuh.conf
