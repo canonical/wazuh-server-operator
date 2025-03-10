@@ -383,7 +383,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             provider_certificates, syslog_certificate_signing_request
         )
         try:
-            if filebeat_matching_certificates:
+            if filebeat_matching_certificates and syslog_matching_certificates:
                 return cls(
                     agent_password=agent_password,
                     api_credentials=api_credentials,
