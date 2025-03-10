@@ -46,8 +46,7 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     key = secrets.token_hex(32)
-    ip = "192.0.0.1"
-    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/0", key, ip)
+    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/0", key)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
@@ -64,7 +63,6 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     assert "master" == tree.xpath("/root/ossec_config/cluster/node_type")[0].text
     address = tree.xpath("/root/ossec_config/cluster/nodes/node")[0]
     assert address.text == master_ip
-    assert "syslog" == tree.xpath("/root/ossec_config/remote/connection")[0].text
 
 
 def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -88,8 +86,7 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     key = secrets.token_hex(32)
-    ip = "192.0.0.1"
-    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/1", key, ip)
+    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/1", key)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
@@ -106,7 +103,6 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     assert "worker" == tree.xpath("/root/ossec_config/cluster/node_type")[0].text
     address = tree.xpath("/root/ossec_config/cluster/nodes/node")[0]
     assert address.text == master_ip
-    assert "syslog" == tree.xpath("/root/ossec_config/remote/connection")[0].text
 
 
 def test_reload_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -140,20 +136,30 @@ def test_install_certificates() -> None:
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     wazuh.install_certificates(
-        container, private_key="private_key", public_key="public_key", root_ca="root_ca"
+        container,
+        path=wazuh.FILEBEAT_CERTIFICATES_PATH,
+        private_key="private_key",
+        public_key="public_key",
+        root_ca="root_ca",
     )
 
     assert (
         "private_key"
-        == container.pull(wazuh.CERTIFICATES_PATH / "filebeat-key.pem", encoding="utf-8").read()
+        == container.pull(
+            wazuh.FILEBEAT_CERTIFICATES_PATH / "certificate.key", encoding="utf-8"
+        ).read()
     )
     assert (
         "public_key"
-        == container.pull(wazuh.CERTIFICATES_PATH / "filebeat.pem", encoding="utf-8").read()
+        == container.pull(
+            wazuh.FILEBEAT_CERTIFICATES_PATH / "certificate.pem", encoding="utf-8"
+        ).read()
     )
     assert (
         "root_ca"
-        == container.pull(wazuh.CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8").read()
+        == container.pull(
+            wazuh.FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8"
+        ).read()
     )
 
 

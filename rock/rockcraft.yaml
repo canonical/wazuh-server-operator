@@ -92,3 +92,12 @@ parts:
         owner: 2000
         group: 2000
         mode: "755"
+  rsyslog:
+    plugin: nil
+    source: .
+    stage-packages:
+      - gnutls-bin
+      - rsyslog
+      - rsyslog-gnutls
+    organize:
+      wazuh.conf: etc/rsyslog.d/wazuh.conf

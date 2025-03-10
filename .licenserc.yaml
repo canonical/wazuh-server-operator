@@ -24,6 +24,7 @@ header:
     - '.trivyignore'
     - 'zap_rules.tsv'
     - 'lib/**'
+    - 'rock/wazuh.conf'
     - 'src/prometheus_alert_rules/**'
     - 'tests/unit/resources/**'
   comment: on-failure
