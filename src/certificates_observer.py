@@ -123,8 +123,11 @@ class CertificatesObserver(Object):
         try:
             secret = self._charm.model.get_secret(label=label)
             if renew:
-                secret.remove_all_revisions()
-                secret = self._charm.model.get_secret(label=label)
+                csr = certificates.generate_csr(
+                    private_key=self._get_private_key(label=label, renew=renew).encode(),
+                    subject=subject,
+                )
+                secret.set_content(content={"csr": csr.decode("utf-8")})
             csr = secret.get_content().get("csr").encode("utf-8")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
