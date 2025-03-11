@@ -67,13 +67,12 @@ class CertificatesObserver(Object):
 
         Returns: the private key.
         """
-        if renew:
-            secret = self._charm.model.get_secret(label=label)
-            secret.remove_all_revisions()
-
         private_key = None
         try:
             secret = self._charm.model.get_secret(label=label)
+            if renew:
+                private_key = certificates.generate_private_key().decode()
+                secret.set_content(content={"key": private_key})
             private_key = secret.get_content().get("key")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
