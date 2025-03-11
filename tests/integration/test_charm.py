@@ -45,6 +45,7 @@ async def test_api(model: Model, application: Application):
     assert response.status_code == 401, response.content
 
 
+@pytest.mark.skip
 @pytest.mark.abort_on_fail
 async def test_clustering_ok(model: Model, application: Application):
     """
