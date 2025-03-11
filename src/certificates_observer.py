@@ -46,7 +46,7 @@ class CertificatesObserver(Object):
 
         Returns: the private key.
         """
-        return self._get_private_key(label="filebeat-private-key", renew=renew)
+        return self._get_private_key(label="filebeat-secret", renew=renew)
 
     def get_syslog_private_key(self, renew: bool = False) -> str:
         """Fetch the private key for syslog.
@@ -56,7 +56,7 @@ class CertificatesObserver(Object):
 
         Returns: the private key.
         """
-        return self._get_private_key(label="syslog-private-key", renew=renew)
+        return self._get_private_key(label="syslog-secret", renew=renew)
 
     def _get_private_key(self, label: str, renew: bool) -> str:
         """Fetch the private key.
@@ -70,9 +70,11 @@ class CertificatesObserver(Object):
         private_key = None
         try:
             secret = self._charm.model.get_secret(label=label)
-            if renew:
+            content = secret.get_content()
+            if not content or renew:
                 private_key = certificates.generate_private_key().decode()
-                secret.set_content(content={"key": private_key})
+                content["key"] = private_key
+                secret.set_content(content=content)
             private_key = secret.get_content().get("key")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
@@ -89,7 +91,7 @@ class CertificatesObserver(Object):
         Returns: the certificate signing request.
         """
         return self._get_certificate_signing_request(
-            label="filebeat-csr",
+            label="filebeat-secret",
             subject=self._charm.traefik_route.hostname,
             renew=renew,
         )
@@ -103,7 +105,7 @@ class CertificatesObserver(Object):
         Returns: the certificate signing request.
         """
         return self._get_certificate_signing_request(
-            label="syslog-csr",
+            label="syslog-secret",
             subject=self._charm.traefik_route.hostname,
             renew=renew,
         )
@@ -121,12 +123,14 @@ class CertificatesObserver(Object):
         csr = None
         try:
             secret = self._charm.model.get_secret(label=label)
-            if renew:
+            content = secret.get_content()
+            if "csr" not in content or renew:
                 csr = certificates.generate_csr(
                     private_key=self._get_private_key(label=label, renew=renew).encode(),
                     subject=subject,
                 )
-                secret.set_content(content={"csr": csr.decode("utf-8")})
+                content["csr"] = csr.decode("utf-8")
+                secret.set_content(content=content)
             csr = secret.get_content().get("csr").encode("utf-8")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
