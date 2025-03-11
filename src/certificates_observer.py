@@ -129,16 +129,19 @@ class CertificatesObserver(Object):
                     private_key=self._get_private_key(label=label, renew=renew).encode(),
                     subject=subject,
                 )
-                content["csr"] = csr.decode("utf-8")
-                secret.set_content(content=content)
-            csr = secret.get_content().get("csr").encode("utf-8")
+            else:
+                csr = content.get("csr").encode("utf-8")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
             csr = certificates.generate_csr(
                 private_key=self._get_private_key(label=label, renew=renew).encode(),
                 subject=subject,
             )
-            self._charm.app.add_secret(content={"csr": csr.decode("utf-8")}, label=label)
+        # Private key generation will add the secret when called by the first time
+        secret = self._charm.model.get_secret(label=label)
+        content = secret.get_content()
+        content["csr"] = csr.decode("utf-8")
+        secret.set_content(content=content)
         return csr
 
     def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:
