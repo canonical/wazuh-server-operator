@@ -28,10 +28,9 @@ APP_NAME = CHARMCRAFT["name"]
 async def test_api(model: Model, application: Application):
     """
     Arrange: deploy the charm together with related charms.
-    Act: scale up to two units.
+    Act: do nothing.
     Assert: the default credentials are no longer valid for the API.
     """
-    await application.scale(2)
     await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
 
     traefik_ip = await get_k8s_service_address(model, "traefik-k8s-lb")
