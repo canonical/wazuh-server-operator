@@ -15,15 +15,21 @@ from ops.testing import Harness
 import wazuh
 from certificates_observer import CertificatesObserver
 from charm import WAZUH_PEER_RELATION_NAME, WazuhServerCharm
-from state import InvalidStateError, RecoverableStateError, State, WazuhConfig
+from state import (
+    IncompleteStateError,
+    InvalidStateError,
+    RecoverableStateError,
+    State,
+    WazuhConfig,
+)
 
 
-@patch.object(State, "from_charm")
 @patch.object(CertificatesObserver, "get_filebeat_csr")
 @patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(State, "from_charm")
 def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
     """
-    arrange: mock State.from_charm so that it raises and InvalidStateError.
+    arrange: mock State.from_charm so that it raises an InvalidStateError.
     act: instantiate a charm.
     assert: the charm reaches error status when the state is fetched.
     """
@@ -36,12 +42,12 @@ def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
         harness.charm.state  # pylint: disable=pointless-statement
 
 
-@patch.object(State, "from_charm")
 @patch.object(CertificatesObserver, "get_filebeat_csr")
 @patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(State, "from_charm")
 def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
     """
-    arrange: mock State.from_charm so that it raises and RecoverableStateError.
+    arrange: mock State.from_charm so that it raises a RecoverableStateError.
     act: instantiate a charm.
     assert: the charm reaches blocked status when the state is fetched.
     """
@@ -52,6 +58,24 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
 
     assert harness.charm.state is None
     assert harness.model.unit.status.name == ops.BlockedStatus().name
+
+
+@patch.object(CertificatesObserver, "get_filebeat_csr")
+@patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(State, "from_charm")
+def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
+    """
+    arrange: mock State.from_charm so that it raises an IncompleteStateError.
+    act: instantiate a charm.
+    assert: the charm reaches blocked status when the state is fetched.
+    """
+    state_from_charm_mock.side_effect = IncompleteStateError()
+
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+
+    assert harness.charm.state is None
+    assert harness.model.unit.status.name == ops.WaitingStatus().name
 
 
 # pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments

@@ -84,7 +84,7 @@ class WazuhServerCharm(CharmBaseWithState):
             certificates = self.certificates.certificates.get_provider_certificates()
             return State.from_charm(
                 self,
-                self.traefik_route.traefik_route.external_host,
+                self.traefik_route.hostname,
                 opensearch_relation_data,
                 certificates,
                 self.certificates.get_filebeat_csr().decode("utf-8"),
@@ -105,6 +105,9 @@ class WazuhServerCharm(CharmBaseWithState):
     @property
     def traefik_route(self) -> traefik_route_observer.TraefikRouteObserver:
         """The traefik route observer."""
+        if not self.traefik_route_observer.hostname:
+            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
+            raise IncompleteStateError("Missing external hostname configuration.")
         return self.traefik_route_observer
 
     def _configure_installation(self, container: ops.Container) -> None:
