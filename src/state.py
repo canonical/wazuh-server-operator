@@ -13,6 +13,8 @@ import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
+import traefik_route_observer
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,14 +36,6 @@ WAZUH_USERS = {
         "default": False,
     },
 }
-
-
-class CharmBaseWithState(ops.CharmBase, ABC):
-    """CharmBase than can build a CharmState."""
-
-    @abstractmethod
-    def reconcile(self, _: ops.HookEvent) -> None:
-        """Reconcile configuration."""
 
 
 class InvalidStateError(Exception):
@@ -115,13 +109,13 @@ def _fetch_filebeat_configuration(
 
 def _fetch_matching_certificates(
     provider_certificates: list[certificates.ProviderCertificate],
-    certitificate_signing_request: str,
+    certificate_signing_request: str,
 ) -> list[certificates.ProviderCertificate]:
     """Fetch the certificates matching the CSR from the relation data.
 
     Args:
         provider_certificates: the provider certificates.
-        certitificate_signing_request: the certificate signing request.
+        certificate_signing_request: the certificate signing request.
 
     Returns:
         the certificates matching the CSR.
@@ -129,7 +123,7 @@ def _fetch_matching_certificates(
     return [
         certificate
         for certificate in provider_certificates
-        if certificate.csr.replace("\n", "") == certitificate_signing_request.replace("\n", "")
+        if certificate.csr.replace("\n", "") == certificate_signing_request.replace("\n", "")
         and not certificate.revoked
     ]
 
@@ -239,12 +233,15 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the agent password.
         api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
+        external_hostname: Wazuh manager external hostname.
         indexer_ips: list of Wazuh indexer IPs.
         unconfigured_api_users: if any default API password is in use.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
-        certificate: the TLS certificate.
-        root_ca: the CA certificate.
+        filebeat_certificate: the TLS certificate for filebeat.
+        filebeat_root_ca: the CA certificate for filebeat.
+        syslog_certificate: the TLS certificate for syslog.
+        syslog_root_ca: the CA certificate for syslog.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
@@ -253,11 +250,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     agent_password: str | None = None
     api_credentials: dict[str, str]
     cluster_key: str = Field(min_length=32, max_length=32)
+    external_hostname: str = Field(min_length=1)
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
-    certificate: str = Field(..., min_length=1)
-    root_ca: str = Field(..., min_length=1)
+    filebeat_certificate: str = Field(..., min_length=1)
+    filebeat_root_ca: str = Field(..., min_length=1)
+    syslog_certificate: str = Field(..., min_length=1)
+    syslog_root_ca: str = Field(..., min_length=1)
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
 
@@ -266,11 +266,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: str | None,
         api_credentials: dict[str, str],
         cluster_key: str,
+        external_hostname: str,
         indexer_ips: list[str],
         filebeat_username: str,
         filebeat_password: str,
-        certificate: str,
-        root_ca: str,
+        filebeat_certificate: str,
+        filebeat_root_ca: str,
+        syslog_certificate: str,
+        syslog_root_ca: str,
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: str | None,
     ):
@@ -280,11 +283,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password: the agent password.
             api_credentials: a map ccontaining the API credentials.
             cluster_key: the Wazuh key for the cluster nodes.
+            external_hostname: Wazuh manager external hostname.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
-            certificate: the TLS certificate.
-            root_ca: the CA certificate.
+            filebeat_certificate: the TLS certificate for filebeat.
+            filebeat_root_ca: the CA certificate for filebeat.
+            syslog_certificate: the TLS certificate for syslog.
+            syslog_root_ca: the CA certificate for syslog.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
         """
@@ -292,11 +298,14 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password=agent_password,
             api_credentials=api_credentials,
             cluster_key=cluster_key,
+            external_hostname=external_hostname,
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
-            certificate=certificate,
-            root_ca=root_ca,
+            filebeat_certificate=filebeat_certificate,
+            filebeat_root_ca=filebeat_root_ca,
+            syslog_certificate=syslog_certificate,
+            syslog_root_ca=syslog_root_ca,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
         )
@@ -324,20 +333,25 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             raise RecoverableStateError("Invalid proxy configuration.") from exc
 
     @classmethod
-    def from_charm(  # pylint: disable=too-many-locals
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+    def from_charm(
         cls,
         charm: ops.CharmBase,
+        external_hostname: str,
         indexer_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
-        certitificate_signing_request: str,
+        filebeat_certificate_signing_request: str,
+        syslog_certificate_signing_request: str,
     ) -> "State":
         """Initialize the state from charm.
 
         Args:
             charm: the root charm.
+            external_hostname: Wazuh manager external hostname.
             indexer_relation_data: the Wazuh indexer app relation data.
             provider_certificates: the provider certificates.
-            certitificate_signing_request: the certificate signing request.
+            filebeat_certificate_signing_request: the filebeat certificate signing request.
+            syslog_certificate_signing_request: the syslog certificate signing request.
 
         Returns:
             Current state of the charm.
@@ -364,20 +378,26 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password = _fetch_password(charm.model, valid_config.agent_password)
         api_credentials = _fetch_api_credentials(charm.model)
         cluster_key = _fetch_cluster_key(charm.model)
-        matching_certificates = _fetch_matching_certificates(
-            provider_certificates, certitificate_signing_request
+        filebeat_matching_certificates = _fetch_matching_certificates(
+            provider_certificates, filebeat_certificate_signing_request
+        )
+        syslog_matching_certificates = _fetch_matching_certificates(
+            provider_certificates, syslog_certificate_signing_request
         )
         try:
-            if matching_certificates:
+            if filebeat_matching_certificates and syslog_matching_certificates:
                 return cls(
                     agent_password=agent_password,
                     api_credentials=api_credentials,
                     cluster_key=cluster_key,
+                    external_hostname=external_hostname,
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,
-                    certificate=matching_certificates[0].certificate,
-                    root_ca=matching_certificates[0].ca,
+                    filebeat_certificate=filebeat_matching_certificates[0].certificate,
+                    filebeat_root_ca=filebeat_matching_certificates[0].ca,
+                    syslog_certificate=syslog_matching_certificates[0].certificate,
+                    syslog_root_ca=syslog_matching_certificates[0].ca,
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key,
                 )
@@ -400,3 +420,25 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             for username, details in WAZUH_USERS.items()
             if self.api_credentials[username] == str(details["default_password"])
         }
+
+
+class CharmBaseWithState(ops.CharmBase, ABC):
+    """CharmBase than can build a CharmState.
+
+    Attrs:
+        state: the charm state.
+        traefik_route: the traefik route observer.
+    """
+
+    @abstractmethod
+    def reconcile(self, _: ops.HookEvent) -> None:
+        """Reconcile configuration."""
+
+    @property
+    @abstractmethod
+    def state(self) -> State | None:
+        """The charm state."""
+
+    @property
+    def traefik_route(self) -> traefik_route_observer.TraefikRouteObserver:
+        """The traefik route observer."""
