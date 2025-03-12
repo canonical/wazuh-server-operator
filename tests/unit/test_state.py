@@ -22,9 +22,9 @@ import state
         ({"endpoints": "10.0.0.1", "secret-user": f"secret:{secrets.token_hex()}"}),
     ],
 )
-def test_state_invalid_relation_data(opensearch_relation_data):
+def test_state_invalid_opensearch_relation_data(opensearch_relation_data):
     """
-    arrange: given an empty relation data.
+    arrange: given an invalid opensearch relation data.
     act: when state is initialized through from_charm method.
     assert: a InvalidStateError is raised.
     """
@@ -67,6 +67,54 @@ def test_state_invalid_relation_data(opensearch_relation_data):
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
             mock_charm, opensearch_relation_data, traefik_relation_data, [], "1", "2"
+        )
+
+
+def test_state_invalid_traefik_route_relation_data():
+    """
+    arrange: given an empty traefik route relation data.
+    act: when state is initialized through from_charm method.
+    assert: a IncompleteStateError is raised.
+    """
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.config = {"wazuh-api-credentials": secret_id}
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr="1",
+            certificate="filebeat_cert",
+            ca="filebeat_root_ca",
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        ),
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr="2",
+            certificate="syslog_cert",
+            ca="syslog_root_ca",
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        ),
+    ]
+
+    with pytest.raises(state.IncompleteStateError):
+        state.State.from_charm(
+            mock_charm,
+            opensearch_relation_data,
+            {},
+            provider_certificates,
+            "1",
+            "2",
         )
 
 
