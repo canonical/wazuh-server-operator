@@ -233,7 +233,7 @@ def _fetch_external_hostname(traefik_route_relation_data: dict[str, str]) -> str
     Returns: the external hostname.
 
     Raises:
-        IncompleteStateError: if the secret has not yet been passed.
+        IncompleteStateError: if the data is not yet available in the relation.
     """
     external_hostname = traefik_route_relation_data.get("external_host")
     if not external_hostname:
