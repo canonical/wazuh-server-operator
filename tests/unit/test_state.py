@@ -53,13 +53,21 @@ def test_state_invalid_relation_data(opensearch_relation_data):
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": "test.hostname"}
 
     with pytest.raises(state.InvalidStateError):
         state.State.from_charm(
-            mock_charm, "test.hostname", opensearch_relation_data, provider_certificates, "1", "2"
+            mock_charm,
+            opensearch_relation_data,
+            traefik_relation_data,
+            provider_certificates,
+            "1",
+            "2",
         )
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, "test.hostname", opensearch_relation_data, [], "1", "2")
+        state.State.from_charm(
+            mock_charm, opensearch_relation_data, traefik_relation_data, [], "1", "2"
+        )
 
 
 def test_state_without_proxy():
@@ -108,8 +116,15 @@ def test_state_without_proxy():
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
+
     charm_state = state.State.from_charm(
-        mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+        mock_charm,
+        opensearch_relation_data,
+        traefik_relation_data,
+        provider_certificates,
+        "1",
+        "2",
     )
 
     assert charm_state.api_credentials
@@ -180,9 +195,15 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://squid.proxy:3228/")
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "https://squid.proxy:3228/")
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "localhost")
+    traefik_relation_data = {"external_host": hostname}
 
     charm_state = state.State.from_charm(
-        mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+        mock_charm,
+        opensearch_relation_data,
+        traefik_relation_data,
+        provider_certificates,
+        "1",
+        "2",
     )
     assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
@@ -251,8 +272,15 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
+
     charm_state = state.State.from_charm(
-        mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+        mock_charm,
+        opensearch_relation_data,
+        traefik_relation_data,
+        provider_certificates,
+        "1",
+        "2",
     )
     with pytest.raises(state.RecoverableStateError):
         charm_state.proxy  # pylint: disable=pointless-statement
@@ -312,9 +340,16 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
+
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
-            mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+            mock_charm,
+            opensearch_relation_data,
+            traefik_relation_data,
+            provider_certificates,
+            "1",
+            "2",
         )
 
 
@@ -371,9 +406,16 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
+
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
-            mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+            mock_charm,
+            opensearch_relation_data,
+            traefik_relation_data,
+            provider_certificates,
+            "1",
+            "2",
         )
 
 
@@ -431,10 +473,16 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
 
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
-            mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+            mock_charm,
+            opensearch_relation_data,
+            traefik_relation_data,
+            provider_certificates,
+            "1",
+            "2",
         )
 
 
@@ -491,10 +539,16 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
 
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
-            mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+            mock_charm,
+            opensearch_relation_data,
+            traefik_relation_data,
+            provider_certificates,
+            "1",
+            "2",
         )
 
 
@@ -556,8 +610,15 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
+
     charm_state = state.State.from_charm(
-        mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+        mock_charm,
+        opensearch_relation_data,
+        traefik_relation_data,
+        provider_certificates,
+        "1",
+        "2",
     )
 
     assert charm_state.cluster_key == value
@@ -631,8 +692,15 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
             expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
         ),
     ]
+    traefik_relation_data = {"external_host": hostname}
+
     charm_state = state.State.from_charm(
-        mock_charm, hostname, opensearch_relation_data, provider_certificates, "1", "2"
+        mock_charm,
+        opensearch_relation_data,
+        traefik_relation_data,
+        provider_certificates,
+        "1",
+        "2",
     )
 
     assert charm_state.cluster_key == value

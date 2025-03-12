@@ -13,8 +13,6 @@ import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
-import traefik_route_observer
-
 logger = logging.getLogger(__name__)
 
 
@@ -226,6 +224,23 @@ def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
         return default_credentials
 
 
+def _fetch_external_hostname(traefik_route_relation_data: dict[str, str]) -> str:
+    """Fetch the external hostname configuration from the relation data.
+
+    Args:
+        traefik_route_relation_data: the Traefik app relation data.
+
+    Returns: the external hostname.
+
+    Raises:
+        IncompleteStateError: if the secret has not yet been passed.
+    """
+    external_hostname = traefik_route_relation_data.get("external_host")
+    if not external_hostname:
+        raise IncompleteStateError("External hostname not yet in relation.")
+    return external_hostname
+
+
 class State(BaseModel):  # pylint: disable=too-few-public-methods
     """The Wazuh Server charm state.
 
@@ -337,8 +352,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     def from_charm(
         cls,
         charm: ops.CharmBase,
-        external_hostname: str,
         indexer_relation_data: dict[str, str],
+        traefik_route_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
         filebeat_certificate_signing_request: str,
         syslog_certificate_signing_request: str,
@@ -347,8 +362,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             charm: the root charm.
-            external_hostname: Wazuh manager external hostname.
             indexer_relation_data: the Wazuh indexer app relation data.
+            traefik_route_relation_data: the Traefik route relation data.
             provider_certificates: the provider certificates.
             filebeat_certificate_signing_request: the filebeat certificate signing request.
             syslog_certificate_signing_request: the syslog certificate signing request.
@@ -384,6 +399,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         syslog_matching_certificates = _fetch_matching_certificates(
             provider_certificates, syslog_certificate_signing_request
         )
+        external_hostname = _fetch_external_hostname(traefik_route_relation_data)
         try:
             if filebeat_matching_certificates and syslog_matching_certificates:
                 return cls(
@@ -427,7 +443,6 @@ class CharmBaseWithState(ops.CharmBase, ABC):
 
     Attrs:
         state: the charm state.
-        traefik_route: the traefik route observer.
     """
 
     @abstractmethod
@@ -438,7 +453,3 @@ class CharmBaseWithState(ops.CharmBase, ABC):
     @abstractmethod
     def state(self) -> State | None:
         """The charm state."""
-
-    @property
-    def traefik_route(self) -> traefik_route_observer.TraefikRouteObserver:
-        """The traefik route observer."""
