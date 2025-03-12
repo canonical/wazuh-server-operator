@@ -13,8 +13,6 @@ import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
-import traefik_route_observer
-
 logger = logging.getLogger(__name__)
 
 
@@ -233,7 +231,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the agent password.
         api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
-        external_hostname: Wazuh manager external hostname.
         indexer_ips: list of Wazuh indexer IPs.
         unconfigured_api_users: if any default API password is in use.
         filebeat_username: the filebeat username.
@@ -250,7 +247,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     agent_password: str | None = None
     api_credentials: dict[str, str]
     cluster_key: str = Field(min_length=32, max_length=32)
-    external_hostname: str = Field(min_length=1)
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
@@ -266,7 +262,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: str | None,
         api_credentials: dict[str, str],
         cluster_key: str,
-        external_hostname: str,
         indexer_ips: list[str],
         filebeat_username: str,
         filebeat_password: str,
@@ -283,7 +278,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password: the agent password.
             api_credentials: a map ccontaining the API credentials.
             cluster_key: the Wazuh key for the cluster nodes.
-            external_hostname: Wazuh manager external hostname.
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
@@ -298,7 +292,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password=agent_password,
             api_credentials=api_credentials,
             cluster_key=cluster_key,
-            external_hostname=external_hostname,
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
@@ -337,7 +330,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     def from_charm(
         cls,
         charm: ops.CharmBase,
-        external_hostname: str,
         indexer_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
         filebeat_certificate_signing_request: str,
@@ -347,7 +339,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             charm: the root charm.
-            external_hostname: Wazuh manager external hostname.
             indexer_relation_data: the Wazuh indexer app relation data.
             provider_certificates: the provider certificates.
             filebeat_certificate_signing_request: the filebeat certificate signing request.
@@ -390,7 +381,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     agent_password=agent_password,
                     api_credentials=api_credentials,
                     cluster_key=cluster_key,
-                    external_hostname=external_hostname,
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,
@@ -427,7 +417,6 @@ class CharmBaseWithState(ops.CharmBase, ABC):
 
     Attrs:
         state: the charm state.
-        traefik_route: the traefik route observer.
     """
 
     @abstractmethod
@@ -438,7 +427,3 @@ class CharmBaseWithState(ops.CharmBase, ABC):
     @abstractmethod
     def state(self) -> State | None:
         """The charm state."""
-
-    @property
-    def traefik_route(self) -> traefik_route_observer.TraefikRouteObserver:
-        """The traefik route observer."""
