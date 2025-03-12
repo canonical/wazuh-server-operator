@@ -39,6 +39,7 @@ class WazuhServerCharm(CharmBaseWithState):
     Attributes:
         master_fqdn: the FQDN for unit 0.
         state: the charm state.
+        external_hostname: the external hostname.
     """
 
     def __init__(self, *args: typing.Any):
@@ -81,16 +82,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
             )
             certificates = self.certificates.certificates.get_provider_certificates()
-            traefik_route_relation = self.model.get_relation(traefik_route_observer.RELATION_NAME)
-            traefik_route_relation_data = (
-                traefik_route_relation.data[traefik_route_relation.app]
-                if traefik_route_relation
-                else {}
-            )
             return State.from_charm(
                 self,
                 opensearch_relation_data,
-                traefik_route_relation_data,
                 certificates,
                 self.certificates.get_filebeat_csr().decode("utf-8"),
                 self.certificates.get_syslog_csr().decode("utf-8"),
@@ -106,6 +100,21 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
+
+    @property
+    def external_hostname(self) -> str:
+        """The external hostname."""
+        traefik_route_relation = self.model.get_relation(traefik_route_observer.RELATION_NAME)
+        traefik_route_relation_data = (
+            traefik_route_relation.data[traefik_route_relation.app]
+            if traefik_route_relation
+            else {}
+        )
+        external_hostname = traefik_route_relation_data.get("external_host")
+        if not external_hostname:
+            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
+            raise IncompleteStateError("Missing external hostname configuration.")
+        return external_hostname
 
     def _configure_installation(self, container: ops.Container) -> None:
         """Configure the Wazuh installation.

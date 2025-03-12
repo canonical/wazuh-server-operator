@@ -62,7 +62,6 @@ class ObservedCharm(state.CharmBaseWithState):
             filebeat_root_ca="filebeat_root_ca",
             syslog_certificate="syslog_certificate",
             syslog_root_ca="syslog_root_ca",
-            external_hostname="test.hostname",
             indexer_ips=["10.0.0.1"],
             filebeat_username="user1",
             filebeat_password=password,
