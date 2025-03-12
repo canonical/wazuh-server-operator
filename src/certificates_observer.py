@@ -92,7 +92,7 @@ class CertificatesObserver(Object):
         """
         return self._get_certificate_signing_request(
             label="filebeat-secret",
-            subject=self._charm.traefik_route.hostname,
+            subject=self._charm.external_hostname,
             renew=renew,
         )
 
@@ -106,7 +106,7 @@ class CertificatesObserver(Object):
         """
         return self._get_certificate_signing_request(
             label="syslog-secret",
-            subject=self._charm.traefik_route.hostname,
+            subject=self._charm.external_hostname,
             renew=renew,
         )
 
