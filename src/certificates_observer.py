@@ -16,12 +16,7 @@ RELATION_NAME = "certificates"
 
 
 class CertificatesObserver(Object):
-    """The Certificates relation observer.
-
-    Attributes:
-        private_key: the private key for the certificates.
-        csr: the certificate signing request.
-    """
+    """The Certificates relation observer."""
 
     def __init__(self, charm: CharmBaseWithState):
         """Initialize the observer and register event handlers.
@@ -43,16 +38,43 @@ class CertificatesObserver(Object):
             self.certificates.on.certificate_invalidated, self._on_certificate_invalidated
         )
 
-    @property
-    def private_key(self) -> str:
+    def get_filebeat_private_key(self, renew: bool = False) -> str:
+        """Fetch the private key for filebeat.
+
+        Args:
+            renew: whether to generate a new private key.
+
+        Returns: the private key.
+        """
+        return self._get_private_key(label="filebeat-secret", renew=renew)
+
+    def get_syslog_private_key(self, renew: bool = False) -> str:
+        """Fetch the private key for syslog.
+
+        Args:
+            renew: whether to generate a new private key.
+
+        Returns: the private key.
+        """
+        return self._get_private_key(label="syslog-secret", renew=renew)
+
+    def _get_private_key(self, label: str, renew: bool) -> str:
         """Fetch the private key.
+
+        Args:
+            label: the label identifying the private key.
+            renew: whether to generate a new private key.
 
         Returns: the private key.
         """
         private_key = None
-        label = "certificate-private-key"
         try:
             secret = self._charm.model.get_secret(label=label)
+            content = secret.get_content()
+            if not content or renew:
+                private_key = certificates.generate_private_key().decode()
+                content["key"] = private_key
+                secret.set_content(content=content)
             private_key = secret.get_content().get("key")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
@@ -60,56 +82,115 @@ class CertificatesObserver(Object):
             self._charm.app.add_secret(content={"key": private_key}, label=label)
         return private_key
 
-    @property
-    def csr(self) -> bytes:
-        """Fetch the certificate signing request.
+    def get_filebeat_csr(self, renew: bool = False) -> bytes:
+        """Fetch the certificate signing request for filebeat.
+
+        Args:
+            renew: whether to generate a new certificate signing request.
+
+        Returns: the certificate signing request.
+        """
+        return self._get_certificate_signing_request(
+            label="filebeat-secret",
+            subject=self._charm.traefik_route.hostname,
+            renew=renew,
+        )
+
+    def get_syslog_csr(self, renew: bool = False) -> bytes:
+        """Fetch the certificate signing request for syslog.
+
+        Args:
+            renew: whether to generate a new certificate signing request.
+
+        Returns: the certificate signing request.
+        """
+        return self._get_certificate_signing_request(
+            label="syslog-secret",
+            subject=self._charm.traefik_route.hostname,
+            renew=renew,
+        )
+
+    def _get_certificate_signing_request(self, subject: str, label: str, renew: bool) -> bytes:
+        """Fetch a certificate signing request.
+
+        Args:
+            subject: the subject for the certificate signing request.
+            label: the label identifying the certificate signing request.
+            renew: whether to generate a new certificate signing request.
 
         Returns: the certificate signing request.
         """
         csr = None
-        label = "certificate-csr"
         try:
             secret = self._charm.model.get_secret(label=label)
-            csr = secret.get_content().get("csr").encode("utf-8")
+            content = secret.get_content()
+            if "csr" not in content or renew:
+                csr = certificates.generate_csr(
+                    private_key=self._get_private_key(label=label, renew=renew).encode(),
+                    subject=subject,
+                )
+            else:
+                csr = content.get("csr").encode("utf-8")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
             csr = certificates.generate_csr(
-                private_key=self.private_key.encode(), subject=self._charm.unit.name
+                private_key=self._get_private_key(label=label, renew=renew).encode(),
+                subject=subject,
             )
-            self._charm.app.add_secret(content={"csr": csr.decode("utf-8")}, label=label)
+        # Private key generation will add the secret when called by the first time
+        secret = self._charm.model.get_secret(label=label)
+        content = secret.get_content()
+        content["csr"] = csr.decode("utf-8")
+        secret.set_content(content=content)
         return csr
-
-    def _request_certificate(self) -> None:
-        """Send a certificate request."""
-        self.certificates.request_certificate_creation(certificate_signing_request=self.csr)
-
-    def _renew_certificate(self) -> None:
-        """Send a certificate renewal request."""
-        old_csr = self.csr
-        secret = self._charm.model.get_secret(label="certificate-csr")
-        secret.remove_all_revisions()
-        secret = self._charm.model.get_secret(label="certificate-private-key")
-        secret.remove_all_revisions()
-        self.certificates.request_certificate_renewal(
-            old_certificate_signing_request=old_csr, new_certificate_signing_request=self.csr
-        )
 
     def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:
         """Relation joined event handler."""
-        self._request_certificate()
+        self.certificates.request_certificate_creation(
+            certificate_signing_request=self.get_filebeat_csr()
+        )
+        self.certificates.request_certificate_creation(
+            certificate_signing_request=self.get_syslog_csr()
+        )
         self._charm.unit.status = ops.WaitingStatus(
-            "Certificate does not exist. Waiting for a new certificate to be issued."
+            "Certificates do not exist. Waiting for new certificates to be issued."
         )
 
-    def _on_certificate_expiring(self, _: certificates.CertificateExpiringEvent) -> None:
-        """Certificate expiring event handler."""
-        self._request_certificate()
-        logger.debug("Certificate expiring. Requested new certificate.")
+    def _on_certificate_expiring(self, event: certificates.CertificateExpiringEvent) -> None:
+        """Certificate expiring event handler.
 
-    def _on_certificate_invalidated(self, _: certificates.CertificateInvalidatedEvent) -> None:
-        """Certificate invalidated event handler."""
-        self._renew_certificate()
-        logger.debug("Certificate invalidated.")
+        Args:
+            event: the event triggering the handler.
+        """
+        if event.certificate == self._charm.state.filebeat_certificate:
+            self.certificates.request_certificate_creation(
+                certificate_signing_request=self.get_filebeat_csr()
+            )
+            logger.debug("Filebat certificate expiring. Requested new certificate.")
+        elif event.certificate == self._charm.state.syslog_certificate:
+            self.certificates.request_certificate_creation(
+                certificate_signing_request=self.get_syslog_csr()
+            )
+            logger.debug("Syslog certificate expiring. Requested new certificate.")
+
+    def _on_certificate_invalidated(self, event: certificates.CertificateInvalidatedEvent) -> None:
+        """Certificate invalidated event handler.
+
+        Args:
+            event: the event triggering the handler.
+        """
+        if event.certificate == self._charm.state.filebeat_certificate:
+            self.certificates.request_certificate_renewal(
+                old_certificate_signing_request=self.get_filebeat_csr(),
+                new_certificate_signing_request=self.get_filebeat_csr(renew=True),
+            )
+            logger.debug("Filebat certificate invalidated.")
+        elif event.certificate == self._charm.state.syslog_certificate:
+            self.certificates.request_certificate_renewal(
+                old_certificate_signing_request=self.get_syslog_csr(),
+                new_certificate_signing_request=self.get_syslog_csr(renew=True),
+            )
+            logger.debug("Syslog certificate invalidated.")
         self._charm.unit.status = ops.WaitingStatus(
-            "Certificate invalidated. Waiting for a new certificate to be issued."
+            "Certificate invalidated. Waiting for new certificate to be issued."
         )

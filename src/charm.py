@@ -38,8 +38,8 @@ class WazuhServerCharm(CharmBaseWithState):
 
     Attributes:
         master_fqdn: the FQDN for unit 0.
-        local_ip: the local IP.
         state: the charm state.
+        traefik_route: the traefik route observer.
     """
 
     def __init__(self, *args: typing.Any):
@@ -50,7 +50,7 @@ class WazuhServerCharm(CharmBaseWithState):
         """
         super().__init__(*args)
         self.certificates = certificates_observer.CertificatesObserver(self)
-        self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
+        self.traefik_route_observer = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self._observability = observability.Observability(self)
 
@@ -83,7 +83,12 @@ class WazuhServerCharm(CharmBaseWithState):
             )
             certificates = self.certificates.certificates.get_provider_certificates()
             return State.from_charm(
-                self, opensearch_relation_data, certificates, self.certificates.csr.decode("utf-8")
+                self,
+                self.traefik_route.hostname,
+                opensearch_relation_data,
+                certificates,
+                self.certificates.get_filebeat_csr().decode("utf-8"),
+                self.certificates.get_syslog_csr().decode("utf-8"),
             )
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
@@ -97,17 +102,36 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
             return None
 
-    def _configure_installation(self) -> None:
-        """Configure the Wazuh installation."""
+    @property
+    def traefik_route(self) -> traefik_route_observer.TraefikRouteObserver:
+        """The traefik route observer."""
+        if not self.traefik_route_observer.hostname:
+            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
+            raise IncompleteStateError("Missing external hostname configuration.")
+        return self.traefik_route_observer
+
+    def _configure_installation(self, container: ops.Container) -> None:
+        """Configure the Wazuh installation.
+
+        Args:
+            container: the container to configure Wazuh for.
+        """
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        container = self.unit.containers.get(wazuh.CONTAINER_NAME)
         wazuh.install_certificates(
             container=container,
-            private_key=self.certificates.private_key,
-            public_key=self.state.certificate,
-            root_ca=self.state.root_ca,
+            path=wazuh.FILEBEAT_CERTIFICATES_PATH,
+            private_key=self.certificates.get_filebeat_private_key(),
+            public_key=self.state.filebeat_certificate,
+            root_ca=self.state.filebeat_root_ca,
+        )
+        wazuh.install_certificates(
+            container=container,
+            path=wazuh.SYSLOG_CERTIFICATES_PATH,
+            private_key=self.certificates.get_syslog_private_key(),
+            public_key=self.state.syslog_certificate,
+            root_ca=self.state.syslog_root_ca,
         )
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
@@ -127,7 +151,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.master_fqdn,
             self.unit.name,
             self.state.cluster_key,
-            self.local_ip,
         )
 
     # It doesn't make sense to split the logic further
@@ -192,7 +215,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        self._configure_installation()
+        self._configure_installation(container)
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         # Reload since the service might not have been restarted
@@ -322,15 +345,6 @@ class WazuhServerCharm(CharmBaseWithState):
         unit_name = f"{self.unit.name.split('/')[0]}-0"
         app_name = self.app.name
         return f"{unit_name}.{app_name}-endpoints"
-
-    @property
-    def local_ip(self) -> str:
-        """Fetch the local IP.
-
-        Returns: the local IP address.
-        """
-        binding = self.model.get_binding(WAZUH_PEER_RELATION_NAME)
-        return str(binding.network.bind_address)
 
 
 if __name__ == "__main__":  # pragma: nocover
