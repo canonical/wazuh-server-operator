@@ -118,6 +118,9 @@ def _fetch_matching_certificates(
     Returns:
         the certificates matching the CSR.
     """
+    logger.debug(
+        "Matching CSR %s for certificates %s", certificate_signing_request, provider_certificates
+    )
     return [
         certificate
         for certificate in provider_certificates
