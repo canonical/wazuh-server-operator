@@ -5,7 +5,7 @@
 """Certificates observer unit tests."""
 
 import secrets
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import MagicMock, Mock
 
 import ops
 import pytest
@@ -58,10 +58,8 @@ class ObservedCharm(state.CharmBaseWithState):
             agent_password=None,
             api_credentials=api_credentials,
             cluster_key=cluster_key,
-            filebeat_certificate="filebeat_certificate",
-            filebeat_root_ca="filebeat_root_ca",
-            syslog_certificate="syslog_certificate",
-            syslog_root_ca="syslog_root_ca",
+            certificate="certificate",
+            root_ca="root_ca",
             indexer_ips=["10.0.0.1"],
             filebeat_username="user1",
             filebeat_password=password,
@@ -88,17 +86,11 @@ def test_on_certificates_relation_joined(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(
         harness.charm.certificates.certificates, "request_certificate_creation", mock
     )
-    monkeypatch.setattr(harness.charm.certificates, "get_filebeat_csr", lambda: "filebeat_csr")
-    monkeypatch.setattr(harness.charm.certificates, "get_syslog_csr", lambda: "syslog_csr")
+    monkeypatch.setattr(harness.charm.certificates, "get_csr", lambda: "csr")
 
     harness.charm.on.certificates_relation_joined.emit(relation)
 
-    mock.assert_has_calls(
-        [
-            call(certificate_signing_request="filebeat_csr"),
-            call(certificate_signing_request="syslog_csr"),
-        ]
-    )
+    mock.assert_called_once_with(certificate_signing_request="csr")
     assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
@@ -123,16 +115,7 @@ def test_on_certificate_available() -> None:
     assert harness.charm.count == 1
 
 
-@pytest.mark.parametrize(
-    "csr_method, csr, certificate",
-    [
-        ("get_syslog_csr", "syslog_csr", "syslog_certificate"),
-        ("get_filebeat_csr", "filebeat_csr", "filebeat_certificate"),
-    ],
-)
-def test_on_certificate_expired(
-    csr_method, csr, certificate, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
     act: integrate the charm leveraging the certicicates integration and trigger an expired
@@ -146,25 +129,16 @@ def test_on_certificate_expired(
     monkeypatch.setattr(
         harness.charm.certificates.certificates, "request_certificate_creation", mock
     )
-    monkeypatch.setattr(harness.charm.certificates, csr_method, lambda: csr)
+    monkeypatch.setattr(harness.charm.certificates, "get_csr", lambda: "csr")
 
     harness.charm.certificates.certificates.on.certificate_expiring.emit(
-        certificate=certificate, expiry="2024-04-04"
+        certificate="certificate", expiry="2024-04-04"
     )
 
-    mock.assert_called_once_with(certificate_signing_request=csr)
+    mock.assert_called_once_with(certificate_signing_request="csr")
 
 
-@pytest.mark.parametrize(
-    "csr_method, csr, old_csr, certificate",
-    [
-        ("get_syslog_csr", "syslog_csr", "old_syslog_csr", "syslog_certificate"),
-        ("get_filebeat_csr", "filebeat_csr", "old_filebeat_csr", "filebeat_certificate"),
-    ],
-)
-def test_on_certificate_invalidated(
-    csr_method, csr, old_csr, certificate, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
     act: integrate the charm leveraging the certicicates integration and trigger an invalidated
@@ -183,20 +157,20 @@ def test_on_certificate_invalidated(
     monkeypatch.setattr(harness.charm.model, "get_secret", secret_mock)
     monkeypatch.setattr(
         harness.charm.certificates,
-        csr_method,
-        lambda renew=False: csr if renew else old_csr,
+        "get_csr",
+        lambda renew=False: "csr" if renew else "old_csr",
     )
 
     harness.charm.certificates.certificates.on.certificate_invalidated.emit(
         reason="revoked",
-        certificate_signing_request=csr,
-        certificate=certificate,
+        certificate_signing_request="csr",
+        certificate="certificate",
         ca="ca",
         chain=[],
     )
 
     mock.assert_called_once_with(
-        old_certificate_signing_request=old_csr,
-        new_certificate_signing_request=csr,
+        old_certificate_signing_request="old_csr",
+        new_certificate_signing_request="csr",
     )
     assert ops.WaitingStatus.name == harness.charm.unit.status.name

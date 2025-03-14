@@ -86,8 +86,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 self,
                 opensearch_relation_data,
                 certificates,
-                self.certificates.get_filebeat_csr().decode("utf-8"),
-                self.certificates.get_syslog_csr().decode("utf-8"),
+                self.certificates.get_csr().decode("utf-8"),
             )
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
@@ -128,16 +127,16 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh.install_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
-            private_key=self.certificates.get_filebeat_private_key(),
-            public_key=self.state.filebeat_certificate,
-            root_ca=self.state.filebeat_root_ca,
+            private_key=self.certificates.get_private_key(),
+            public_key=self.state.certificate,
+            root_ca=self.state.root_ca,
         )
         wazuh.install_certificates(
             container=container,
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
-            private_key=self.certificates.get_syslog_private_key(),
-            public_key=self.state.syslog_certificate,
-            root_ca=self.state.syslog_root_ca,
+            private_key=self.certificates.get_private_key(),
+            public_key=self.state.certificate,
+            root_ca=self.state.root_ca,
         )
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
