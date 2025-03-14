@@ -24,8 +24,7 @@ from state import (
 )
 
 
-@patch.object(CertificatesObserver, "get_filebeat_csr")
-@patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
     """
@@ -42,8 +41,7 @@ def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
         harness.charm.state  # pylint: disable=pointless-statement
 
 
-@patch.object(CertificatesObserver, "get_filebeat_csr")
-@patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
     """
@@ -60,8 +58,7 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
     assert harness.model.unit.status.name == ops.BlockedStatus().name
 
 
-@patch.object(CertificatesObserver, "get_filebeat_csr")
-@patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
     """
@@ -90,10 +87,8 @@ def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
 @patch.object(wazuh, "configure_filebeat_user")
 @patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
-@patch.object(CertificatesObserver, "get_filebeat_csr")
-@patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
-    syslog_csr_mock,
     filebeat_csr_mock,
     get_version_mock,
     wazuh_reload_configuration_mock,
@@ -130,10 +125,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         agent_password=agent_password,
         api_credentials=api_credentials,
         cluster_key=cluster_key,
-        filebeat_certificate="filebeat_cert",
-        filebeat_root_ca="filebeat_root_ca",
-        syslog_certificate="syslog_cert",
-        syslog_root_ca="syslog_root_ca",
+        certificate="certificate",
+        root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
@@ -142,7 +135,6 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     )
     get_version_mock.return_value = "v4.9.2"
     filebeat_csr_mock.return_value = b""
-    syslog_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
     harness.begin()
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
@@ -158,15 +150,15 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 container=container,
                 path=wazuh.FILEBEAT_CERTIFICATES_PATH,
                 private_key=ANY,
-                public_key="filebeat_cert",
-                root_ca="filebeat_root_ca",
+                public_key="certificate",
+                root_ca="root_ca",
             ),
             call(
                 container=container,
                 path=wazuh.SYSLOG_CERTIFICATES_PATH,
                 private_key=ANY,
-                public_key="syslog_cert",
-                root_ca="syslog_root_ca",
+                public_key="certificate",
+                root_ca="root_ca",
             ),
         ]
     )
@@ -202,10 +194,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_filebeat_user")
 @patch.object(wazuh, "reload_configuration")
 @patch.object(wazuh, "get_version")
-@patch.object(CertificatesObserver, "get_filebeat_csr")
-@patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
-    syslog_csr_mock,
     filebeat_csr_mock,
     get_version_mock,
     wazuh_reload_configuration_mock,
@@ -234,10 +224,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         agent_password=None,
         api_credentials=api_credentials,
         cluster_key=cluster_key,
-        filebeat_certificate="filebeat_cert",
-        filebeat_root_ca="filebeat_root_ca",
-        syslog_certificate="syslog_cert",
-        syslog_root_ca="syslog_root_ca",
+        certificate="certificate",
+        root_ca="root_ca",
         indexer_ips=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
@@ -250,7 +238,6 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     )
     get_version_mock.return_value = "v4.9.2"
     filebeat_csr_mock.return_value = b""
-    syslog_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
     harness.begin()
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
@@ -266,15 +253,15 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 container=container,
                 path=wazuh.FILEBEAT_CERTIFICATES_PATH,
                 private_key=ANY,
-                public_key="filebeat_cert",
-                root_ca="filebeat_root_ca",
+                public_key="certificate",
+                root_ca="root_ca",
             ),
             call(
                 container=container,
                 path=wazuh.SYSLOG_CERTIFICATES_PATH,
                 private_key=ANY,
-                public_key="syslog_cert",
-                root_ca="syslog_root_ca",
+                public_key="certificate",
+                root_ca="root_ca",
             ),
         ]
     )
@@ -312,8 +299,7 @@ def test_reconcile_reaches_waiting_status_when_cant_connect():
 
 
 @patch.object(State, "from_charm")
-@patch.object(CertificatesObserver, "get_filebeat_csr")
-@patch.object(CertificatesObserver, "get_syslog_csr")
+@patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock, *_):
     """
     arrange: mock the state to raise an exception.

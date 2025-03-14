@@ -38,7 +38,7 @@ class CertificatesObserver(Object):
             self.certificates.on.certificate_invalidated, self._on_certificate_invalidated
         )
 
-    def get_filebeat_private_key(self, renew: bool = False) -> str:
+    def get_private_key(self, renew: bool = False) -> str:
         """Fetch the private key for filebeat.
 
         Args:
@@ -46,17 +46,7 @@ class CertificatesObserver(Object):
 
         Returns: the private key.
         """
-        return self._get_private_key(label="filebeat-secret", renew=renew)
-
-    def get_syslog_private_key(self, renew: bool = False) -> str:
-        """Fetch the private key for syslog.
-
-        Args:
-            renew: whether to generate a new private key.
-
-        Returns: the private key.
-        """
-        return self._get_private_key(label="syslog-secret", renew=renew)
+        return self._get_private_key(label="certificates-secret", renew=renew)
 
     def _get_private_key(self, label: str, renew: bool) -> str:
         """Fetch the private key.
@@ -82,7 +72,7 @@ class CertificatesObserver(Object):
             self._charm.app.add_secret(content={"key": private_key}, label=label)
         return private_key
 
-    def get_filebeat_csr(self, renew: bool = False) -> bytes:
+    def get_csr(self, renew: bool = False) -> bytes:
         """Fetch the certificate signing request for filebeat.
 
         Args:
@@ -91,21 +81,7 @@ class CertificatesObserver(Object):
         Returns: the certificate signing request.
         """
         return self._get_certificate_signing_request(
-            label="filebeat-secret",
-            subject=self._charm.external_hostname,
-            renew=renew,
-        )
-
-    def get_syslog_csr(self, renew: bool = False) -> bytes:
-        """Fetch the certificate signing request for syslog.
-
-        Args:
-            renew: whether to generate a new certificate signing request.
-
-        Returns: the certificate signing request.
-        """
-        return self._get_certificate_signing_request(
-            label="syslog-secret",
+            label="certificates-secret",
             subject=self._charm.external_hostname,
             renew=renew,
         )
@@ -146,12 +122,7 @@ class CertificatesObserver(Object):
 
     def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:
         """Relation joined event handler."""
-        self.certificates.request_certificate_creation(
-            certificate_signing_request=self.get_filebeat_csr()
-        )
-        self.certificates.request_certificate_creation(
-            certificate_signing_request=self.get_syslog_csr()
-        )
+        self.certificates.request_certificate_creation(certificate_signing_request=self.get_csr())
         self._charm.unit.status = ops.WaitingStatus(
             "Certificates do not exist. Waiting for new certificates to be issued."
         )
@@ -162,16 +133,11 @@ class CertificatesObserver(Object):
         Args:
             event: the event triggering the handler.
         """
-        if event.certificate == self._charm.state.filebeat_certificate:
+        if event.certificate == self._charm.state.certificate:
             self.certificates.request_certificate_creation(
-                certificate_signing_request=self.get_filebeat_csr()
+                certificate_signing_request=self.get_csr()
             )
-            logger.debug("Filebat certificate expiring. Requested new certificate.")
-        elif event.certificate == self._charm.state.syslog_certificate:
-            self.certificates.request_certificate_creation(
-                certificate_signing_request=self.get_syslog_csr()
-            )
-            logger.debug("Syslog certificate expiring. Requested new certificate.")
+            logger.debug("TLS certificate expiring. Requested new certificate.")
 
     def _on_certificate_invalidated(self, event: certificates.CertificateInvalidatedEvent) -> None:
         """Certificate invalidated event handler.
@@ -179,18 +145,12 @@ class CertificatesObserver(Object):
         Args:
             event: the event triggering the handler.
         """
-        if event.certificate == self._charm.state.filebeat_certificate:
+        if event.certificate == self._charm.state.certificate:
             self.certificates.request_certificate_renewal(
-                old_certificate_signing_request=self.get_filebeat_csr(),
-                new_certificate_signing_request=self.get_filebeat_csr(renew=True),
+                old_certificate_signing_request=self.get_csr(),
+                new_certificate_signing_request=self.get_csr(renew=True),
             )
-            logger.debug("Filebat certificate invalidated.")
-        elif event.certificate == self._charm.state.syslog_certificate:
-            self.certificates.request_certificate_renewal(
-                old_certificate_signing_request=self.get_syslog_csr(),
-                new_certificate_signing_request=self.get_syslog_csr(renew=True),
-            )
-            logger.debug("Syslog certificate invalidated.")
+            logger.debug("TLS certificate invalidated.")
         self._charm.unit.status = ops.WaitingStatus(
             "Certificate invalidated. Waiting for new certificate to be issued."
         )

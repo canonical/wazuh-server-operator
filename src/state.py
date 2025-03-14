@@ -235,10 +235,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         unconfigured_api_users: if any default API password is in use.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
-        filebeat_certificate: the TLS certificate for filebeat.
-        filebeat_root_ca: the CA certificate for filebeat.
-        syslog_certificate: the TLS certificate for syslog.
-        syslog_root_ca: the CA certificate for syslog.
+        certificate: the TLS certificate for filebeat.
+        root_ca: the CA certificate for filebeat.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
@@ -250,10 +248,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
-    filebeat_certificate: str = Field(..., min_length=1)
-    filebeat_root_ca: str = Field(..., min_length=1)
-    syslog_certificate: str = Field(..., min_length=1)
-    syslog_root_ca: str = Field(..., min_length=1)
+    certificate: str = Field(..., min_length=1)
+    root_ca: str = Field(..., min_length=1)
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
 
@@ -265,10 +261,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         indexer_ips: list[str],
         filebeat_username: str,
         filebeat_password: str,
-        filebeat_certificate: str,
-        filebeat_root_ca: str,
-        syslog_certificate: str,
-        syslog_root_ca: str,
+        certificate: str,
+        root_ca: str,
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: str | None,
     ):
@@ -281,10 +275,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             indexer_ips: list of Wazuh indexer IPs.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
-            filebeat_certificate: the TLS certificate for filebeat.
-            filebeat_root_ca: the CA certificate for filebeat.
-            syslog_certificate: the TLS certificate for syslog.
-            syslog_root_ca: the CA certificate for syslog.
+            certificate: the TLS certificate for filebeat.
+            root_ca: the CA certificate for filebeat.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
         """
@@ -295,10 +287,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             indexer_ips=indexer_ips,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
-            filebeat_certificate=filebeat_certificate,
-            filebeat_root_ca=filebeat_root_ca,
-            syslog_certificate=syslog_certificate,
-            syslog_root_ca=syslog_root_ca,
+            certificate=certificate,
+            root_ca=root_ca,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
         )
@@ -332,8 +322,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         charm: ops.CharmBase,
         indexer_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
-        filebeat_certificate_signing_request: str,
-        syslog_certificate_signing_request: str,
+        certificate_signing_request: str,
     ) -> "State":
         """Initialize the state from charm.
 
@@ -341,8 +330,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             charm: the root charm.
             indexer_relation_data: the Wazuh indexer app relation data.
             provider_certificates: the provider certificates.
-            filebeat_certificate_signing_request: the filebeat certificate signing request.
-            syslog_certificate_signing_request: the syslog certificate signing request.
+            certificate_signing_request: the TLS certificate signing request.
 
         Returns:
             Current state of the charm.
@@ -369,14 +357,11 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password = _fetch_password(charm.model, valid_config.agent_password)
         api_credentials = _fetch_api_credentials(charm.model)
         cluster_key = _fetch_cluster_key(charm.model)
-        filebeat_matching_certificates = _fetch_matching_certificates(
-            provider_certificates, filebeat_certificate_signing_request
-        )
-        syslog_matching_certificates = _fetch_matching_certificates(
-            provider_certificates, syslog_certificate_signing_request
+        matching_certificates = _fetch_matching_certificates(
+            provider_certificates, certificate_signing_request
         )
         try:
-            if filebeat_matching_certificates and syslog_matching_certificates:
+            if matching_certificates:
                 return cls(
                     agent_password=agent_password,
                     api_credentials=api_credentials,
@@ -384,10 +369,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     indexer_ips=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,
-                    filebeat_certificate=filebeat_matching_certificates[0].certificate,
-                    filebeat_root_ca=filebeat_matching_certificates[0].ca,
-                    syslog_certificate=syslog_matching_certificates[0].certificate,
-                    syslog_root_ca=syslog_matching_certificates[0].ca,
+                    certificate=matching_certificates[0].certificate,
+                    root_ca=matching_certificates[0].ca,
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key,
                 )
