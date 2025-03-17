@@ -244,7 +244,7 @@ def configure_git(
     if custom_config_ssh_key:
         container.push(
             RSA_PATH,
-            custom_config_ssh_key,
+            f"{custom_config_ssh_key}\n",
             encoding="utf-8",
             make_dirs=True,
             user=WAZUH_USER,
