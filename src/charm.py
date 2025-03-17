@@ -270,6 +270,7 @@ class WazuhServerCharm(CharmBaseWithState):
                         "--path.data /var/lib/filebeat --path.logs /var/log/filebeat'"
                     ),
                     "startup": "enabled",
+                    "environment": environment,
                 },
             },
             "checks": {
