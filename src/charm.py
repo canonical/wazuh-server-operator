@@ -272,6 +272,12 @@ class WazuhServerCharm(CharmBaseWithState):
                     "startup": "enabled",
                     "environment": environment,
                 },
+                "rsyslog": {
+                    "override": "replace",
+                    "summary": "rsyslog",
+                    "command": "rsyslogd -n -f /etc/rsyslog.d/wazuh.conf",
+                    "startup": "enabled",
+                },
             },
             "checks": {
                 "wazuh-alive": {

@@ -217,7 +217,7 @@ def test_configure_git_when_branch_specified() -> None:
     custom_config_ssh_key = "somekey"
     wazuh.configure_git(container, custom_config_repository, custom_config_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
-    assert "somekey" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
+    assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
 
 def test_configure_git_when_no_branch_specified() -> None:
@@ -257,7 +257,7 @@ def test_configure_git_when_no_branch_specified() -> None:
     custom_config_ssh_key = "somekey"
     wazuh.configure_git(container, custom_config_repository, custom_config_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
-    assert "somekey" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
+    assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
 
 def test_configure_git_when_no_key_no_repository_specified() -> None:

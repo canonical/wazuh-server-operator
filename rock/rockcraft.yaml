@@ -20,12 +20,14 @@ license: Apache-2.0
 platforms:
   amd64:
 parts:
-  add-user:
+  add-users:
     plugin: nil
     overlay-script: |
       chmod 755 $CRAFT_OVERLAY/etc
       groupadd -R $CRAFT_OVERLAY --gid 2000 prometheus
       useradd -R $CRAFT_OVERLAY --system --gid 2000 --uid 2000 --home /srv/prometheus prometheus
+      groupadd -R $CRAFT_OVERLAY --gid 2001 syslog
+      useradd -R $CRAFT_OVERLAY --system --gid 2001 --uid 2001 --home /home/syslog syslog
   utils:
     plugin: nil
     stage-packages:
@@ -96,10 +98,14 @@ parts:
         mode: "755"
   rsyslog:
     plugin: nil
-    source: .
     stage-packages:
       - gnutls-bin
       - rsyslog
       - rsyslog-gnutls
+  rsyslog-config:
+    plugin: dump
+    source: .
     organize:
       wazuh.conf: etc/rsyslog.d/wazuh.conf
+    prime:
+      - etc/rsyslog.d/wazuh.conf
