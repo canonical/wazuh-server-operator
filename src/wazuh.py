@@ -151,22 +151,8 @@ def update_configuration(
     _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
 
 
-def reload_configuration(container: ops.Container) -> None:
-    """Reload the workload configuration.
-
-    Arguments:
-        container: the container for which to update the configuration.
-
-    Raises:
-        WazuhInstallationError: if an error occurs while installing.
-    """
-    proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"], timeout=1)
-    try:
-        proc.wait_output()
-    except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
-        raise WazuhInstallationError("Error reloading the wazuh daemon.") from exc
-
-
+    
+    
 def install_certificates(
     container: ops.Container, path: Path, public_key: str, private_key: str, root_ca: str
 ) -> None:
