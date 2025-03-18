@@ -151,8 +151,6 @@ def update_configuration(
     _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
 
 
-    
-    
 def install_certificates(
     container: ops.Container, path: Path, public_key: str, private_key: str, root_ca: str
 ) -> None:
