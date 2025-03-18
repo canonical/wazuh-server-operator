@@ -263,12 +263,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "filebeat": {
                     "override": "replace",
                     "summary": "filebeat",
-                    "command": (
-                        "sh -c 'sleep 1; "
-                        "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
-                        "--path.home /usr/share/filebeat --path.config /etc/filebeat "
-                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat'"
-                    ),
+                    "command": f"sh -c 'sleep 1; {' '.join(wazuh.FILEBEAT_CMD)}'",
                     "startup": "enabled",
                 },
                 "rsyslog": {
