@@ -160,7 +160,7 @@ def reload_configuration(container: ops.Container) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while installing.
     """
-    proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"])
+    proc = container.exec(["/var/ossec/bin/wazuh-control", "reload"], timeout=1)
     try:
         proc.wait_output()
     except (ops.pebble.ChangeError, ops.pebble.ExecError) as exc:
@@ -211,7 +211,7 @@ def _get_current_configuration_url(container: ops.Container) -> str:
         The repository URL.
     """
     process = container.exec(
-        ["git", "-C", REPOSITORY_PATH, "config", "--get", "remote.origin.url"]
+        ["git", "-C", REPOSITORY_PATH, "config", "--get", "remote.origin.url"], timeout=1
     )
     remote_url = ""
     try:
@@ -230,7 +230,9 @@ def _get_current_configuration_url_branch(container: ops.Container) -> str:
     Returns:
         The repository branch.
     """
-    process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"])
+    process = container.exec(
+        ["git", "-C", REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"], timeout=1
+    )
     branch = ""
     try:
         branch, _ = process.wait_output()
@@ -270,7 +272,7 @@ def configure_git(
         path_parts = url.path.split("@")
         branch = path_parts[1] if len(path_parts) > 1 else None
         base_url = urlunsplit(url._replace(path=path_parts[0]))
-        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)])
+        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=1)
         output, _ = process.wait_output()
         container.push(
             KNOWN_HOSTS_PATH,
@@ -285,7 +287,7 @@ def configure_git(
         _get_current_configuration_url(container) != base_url
         or _get_current_configuration_url_branch(container) != branch
     ):
-        process = container.exec(["rm", "-rf", f"{REPOSITORY_PATH}/*"])
+        process = container.exec(["rm", "-rf", f"{REPOSITORY_PATH}/*"], timeout=1)
         process.wait_output()
 
         if base_url:
@@ -293,7 +295,7 @@ def configure_git(
             if branch:
                 command = command + ["--branch", branch]
             command = command + [base_url, REPOSITORY_PATH]
-            process = container.exec(command)
+            process = container.exec(command, timeout=1)
             process.wait_output()
 
 
@@ -307,7 +309,9 @@ def pull_configuration_files(container: ops.Container) -> None:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
     try:
-        process = container.exec(["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"])
+        process = container.exec(
+            ["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"], timeout=1
+        )
         process.wait_output()
         process = container.exec(
             [
@@ -325,7 +329,8 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "--exclude='*'",
                 "/root/repository/var/ossec/",
                 "/var/ossec",
-            ]
+            ],
+            timeout=1,
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:
@@ -347,11 +352,13 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
         process = container.exec(
             FILEBEAT_CMD + ["keystore", "add", "username", "--stdin", "--force"],
             stdin=username,
+            timeout=1,
         )
         process.wait_output()
         process = container.exec(
             FILEBEAT_CMD + ["keystore", "add", "password", "--stdin", "--force"],
             stdin=password,
+            timeout=1,
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:
@@ -569,7 +576,7 @@ def get_version(container: ops.Container) -> str:
 
     Returns: the Wazuh version number.
     """
-    process = container.exec(["/var/ossec/bin/wazuh-control", "info"])
+    process = container.exec(["/var/ossec/bin/wazuh-control", "info"], timeout=1)
     version_string, _ = process.wait_output()
     version = re.search('^WAZUH_VERSION="(.*)"', version_string)
     return version.group(1) if version else ""
