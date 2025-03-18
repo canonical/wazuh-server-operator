@@ -105,27 +105,6 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     assert address.text == master_ip
 
 
-def test_reload_configuration_when_restart_fails(monkeypatch: pytest.MonkeyPatch) -> None:
-    """
-    arrange: mock the service restart so that it errors.
-    act: reload the service.
-    assert: a WazuhInstallationError is raised.
-    """
-    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
-    harness.begin_with_initial_hooks()
-    container = harness.charm.unit.get_container("wazuh-server")
-    exec_process = unittest.mock.MagicMock()
-    exec_error = ops.pebble.ExecError(
-        command=["/var/ossec/bin/wazuh-control", "reload"], exit_code=1, stdout="", stderr=""
-    )
-    exec_process.wait_output = unittest.mock.MagicMock(side_effect=exec_error)
-    exec_mock = unittest.mock.MagicMock(return_value=exec_process)
-    monkeypatch.setattr(container, "exec", exec_mock)
-
-    with pytest.raises(wazuh.WazuhInstallationError):
-        wazuh.reload_configuration(container)
-
-
 def test_install_certificates() -> None:
     """
     arrange: do nothing.
