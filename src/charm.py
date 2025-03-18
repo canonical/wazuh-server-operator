@@ -270,7 +270,6 @@ class WazuhServerCharm(CharmBaseWithState):
                         "--path.data /var/lib/filebeat --path.logs /var/log/filebeat'"
                     ),
                     "startup": "enabled",
-                    "environment": environment,
                 },
                 "rsyslog": {
                     "override": "replace",
@@ -288,7 +287,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
-                    "period": "20s",
+                    "period": "60s",
                     "threshold": 10,
                     "exec": {
                         "command": (
