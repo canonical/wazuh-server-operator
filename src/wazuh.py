@@ -25,6 +25,17 @@ from lxml import etree  # nosec
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 CONTAINER_NAME = "wazuh-server"
 FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
+FILEBEAT_CMD = [
+    "/usr/share/filebeat/bin/filebeat",
+    "--path.home",
+    "/usr/share/filebeat",
+    "--path.config",
+    "/etc/filebeat",
+    "--path.data",
+    "/var/lib/filebeat",
+    "--path.logs",
+    "/var/log/filebeat'",
+]
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 LOGS_PATH = Path("/var/ossec/logs")
@@ -334,12 +345,12 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
     """
     try:
         process = container.exec(
-            ["filebeat", "keystore", "add", "username", "--stdin", "--force"],
+            FILEBEAT_CMD + ["keystore", "add", "username", "--stdin", "--force"],
             stdin=username,
         )
         process.wait_output()
         process = container.exec(
-            ["filebeat", "keystore", "add", "password", "--stdin", "--force"],
+            FILEBEAT_CMD + ["keystore", "add", "password", "--stdin", "--force"],
             stdin=password,
         )
         process.wait_output()
