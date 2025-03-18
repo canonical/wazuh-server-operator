@@ -34,7 +34,7 @@ FILEBEAT_CMD = [
     "--path.data",
     "/var/lib/filebeat",
     "--path.logs",
-    "/var/log/filebeat'",
+    "/var/log/filebeat",
 ]
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
