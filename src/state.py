@@ -235,7 +235,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_ips: list of Wazuh indexer IPs.
-        unconfigured_api_users: if any default API password is in use.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
         certificate: the TLS certificate for filebeat.
@@ -384,18 +383,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             )
             error_field_str = " ".join(f"{f}" for f in error_fields)
             raise InvalidStateError(f"Invalid charm configuration {error_field_str}") from exc
-
-    @property
-    def unconfigured_api_users(self) -> dict[str, dict[str, object]]:
-        """List unconfigured usernames.
-
-        Returns: a map containing the unconfigured users and their details.
-        """
-        return {
-            username: details
-            for username, details in WAZUH_USERS.items()
-            if self.api_credentials[username] == str(details["default_password"])
-        }
 
 
 class CharmBaseWithState(ops.CharmBase, ABC):
