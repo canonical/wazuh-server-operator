@@ -101,7 +101,7 @@ class WazuhServerCharm(CharmBaseWithState):
             return None
 
     @property
-    def external_hostname(self) -> str:
+    def external_hostname(self) -> str | None:
         """The external hostname."""
         traefik_route_relation = self.model.get_relation(traefik_route_observer.RELATION_NAME)
         traefik_route_relation_data = (
@@ -109,11 +109,7 @@ class WazuhServerCharm(CharmBaseWithState):
             if traefik_route_relation
             else {}
         )
-        external_hostname = traefik_route_relation_data.get("external_host")
-        if not external_hostname:
-            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
-            raise IncompleteStateError("Missing external hostname configuration.")
-        return external_hostname
+        return traefik_route_relation_data.get("external_host")
 
     def _configure_installation(self, container: ops.Container) -> None:
         """Configure the Wazuh installation.
@@ -165,12 +161,12 @@ class WazuhServerCharm(CharmBaseWithState):
         # The prometheus exporter requires the users to be set up
         if not self.state:
             return
-        logger.debug("Unconfigured API users %s", self.state.unconfigured_api_users)
         for username, details in state.WAZUH_USERS.items():
             token = None
             # The user has already been created when installing
             credentials = self.state.api_credentials
             if details["default"]:
+                logger.debug("Configuring default user %s", username)
                 try:
                     token = wazuh.authenticate_user(username, details["default_password"])
                     password = (
@@ -184,6 +180,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 except wazuh.WazuhAuthenticationError:
                     logger.debug("Could not authenticate user %s with default password.", username)
             else:
+                logger.debug("Configuring non-default user %s", username)
                 try:
                     token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
                     password = credentials[username]
@@ -325,17 +322,15 @@ class WazuhServerCharm(CharmBaseWithState):
             "checks": {
                 "prometheus-alive": {
                     "override": "replace",
-                    "period": "20s",
-                    "threshold": 10,
                     "level": "alive",
                     "tcp": {"port": 5000},
                 },
                 "prometheus-ready": {
                     "override": "replace",
                     "period": "20s",
-                    "threshold": 10,
+                    "threshold": 3,
                     "level": "alive",
-                    "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics'"},
+                    "exec": {"command": "sh -c 'sleep 1; curl http://localhost:5000/metrics'"},
                 },
             },
         }

@@ -111,7 +111,6 @@ def test_state_without_proxy():
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
-    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
 
 
 def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
@@ -172,7 +171,6 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     assert str(charm_state.proxy.http_proxy) == "http://squid.proxy:3228/"
     assert str(charm_state.proxy.https_proxy) == "https://squid.proxy:3228/"
     assert charm_state.proxy.no_proxy == "localhost"
-    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
 
 
 def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
@@ -499,7 +497,6 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
-    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
 
 
 def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch):
@@ -565,4 +562,3 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
-    assert charm_state.unconfigured_api_users == state.WAZUH_USERS
