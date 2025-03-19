@@ -26,8 +26,7 @@ parts:
       chmod 755 $CRAFT_OVERLAY/etc
       groupadd -R $CRAFT_OVERLAY --gid 2000 prometheus
       useradd -R $CRAFT_OVERLAY --system --gid 2000 --uid 2000 --home /srv/prometheus prometheus
-      groupadd -R $CRAFT_OVERLAY --gid 2001 syslog
-      useradd -R $CRAFT_OVERLAY --system --gid 2001 --uid 2001 --home /home/syslog syslog
+      useradd -R $CRAFT_OVERLAY --system --gid adm --uid 2001 --home /home/syslog syslog
   utils:
     plugin: nil
     stage-packages:
@@ -62,7 +61,6 @@ parts:
     build-packages:
       - apt-transport-https
       - gnupg
-      - filebeat
     overlay-script: |
       mount /etc/resolv.conf $CRAFT_OVERLAY/etc/resolv.conf --bind
       mount proc $CRAFT_OVERLAY/proc -t proc
@@ -72,7 +70,7 @@ parts:
       curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:${CRAFT_OVERLAY}/usr/share/keyrings/wazuh.gpg --import && chmod 644 ${CRAFT_OVERLAY}/usr/share/keyrings/wazuh.gpg
       chroot $CRAFT_OVERLAY bash -c 'echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list'
       chroot $CRAFT_OVERLAY apt-get update
-      chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install wazuh-manager=4.9.2-1 filebeat --yes"
+      chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install wazuh-manager=4.9.2-1 --yes"
       umount --recursive $CRAFT_OVERLAY/dev
       umount $CRAFT_OVERLAY/proc
       umount $CRAFT_OVERLAY/etc/resolv.conf

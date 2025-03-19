@@ -223,8 +223,6 @@ class WazuhServerCharm(CharmBaseWithState):
         self._configure_installation(container)
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
-        # Reload since the service might not have been restarted
-        wazuh.reload_configuration(container)
         self._configure_users()
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
@@ -263,14 +261,8 @@ class WazuhServerCharm(CharmBaseWithState):
                 "filebeat": {
                     "override": "replace",
                     "summary": "filebeat",
-                    "command": (
-                        "sh -c 'sleep 1; "
-                        "/usr/share/filebeat/bin/filebeat -c /etc/filebeat/filebeat.yml "
-                        "--path.home /usr/share/filebeat --path.config /etc/filebeat "
-                        "--path.data /var/lib/filebeat --path.logs /var/log/filebeat'"
-                    ),
+                    "command": f"sh -c 'sleep 1; {' '.join(wazuh.FILEBEAT_CMD)}'",
                     "startup": "enabled",
-                    "environment": environment,
                 },
                 "rsyslog": {
                     "override": "replace",
@@ -288,7 +280,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
-                    "period": "20s",
+                    "period": "60s",
                     "threshold": 10,
                     "exec": {
                         "command": (
