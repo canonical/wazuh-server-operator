@@ -332,7 +332,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "period": "20s",
                     "threshold": 10,
                     "level": "alive",
-                    "exec": {"command": "sh -c 'sleep 1; curl -k https://localhost:5000/metrics'"},
+                    "exec": {"command": "sh -c 'sleep 1; curl http://localhost:5000/metrics'"},
                 },
             },
         }
