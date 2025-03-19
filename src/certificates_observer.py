@@ -9,7 +9,7 @@ import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
 from ops.framework import Object
 
-from state import CharmBaseWithState
+from state import CharmBaseWithState, IncompleteStateError
 
 logger = logging.getLogger(__name__)
 RELATION_NAME = "certificates"
@@ -79,10 +79,16 @@ class CertificatesObserver(Object):
             renew: whether to generate a new certificate signing request.
 
         Returns: the certificate signing request.
+
+        Raises:
+            IncompleteStateError: if the external hostname is not yet available.
         """
+        subject = self._charm.external_hostname
+        if not subject:
+            raise IncompleteStateError("External hostname is not yet present.")
         return self._get_certificate_signing_request(
             label="certificates-secret",
-            subject=self._charm.external_hostname,
+            subject=subject,
             renew=renew,
         )
 
@@ -120,12 +126,18 @@ class CertificatesObserver(Object):
         secret.set_content(content=content)
         return csr
 
-    def _on_certificates_relation_joined(self, _: ops.RelationJoinedEvent) -> None:
+    def _on_certificates_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
         """Relation joined event handler."""
-        self.certificates.request_certificate_creation(certificate_signing_request=self.get_csr())
-        self._charm.unit.status = ops.WaitingStatus(
-            "Certificates do not exist. Waiting for new certificates to be issued."
-        )
+        try:
+            self.certificates.request_certificate_creation(
+                certificate_signing_request=self.get_csr()
+            )
+            self._charm.unit.status = ops.WaitingStatus(
+                "Certificates do not exist. Waiting for new certificates to be issued."
+            )
+        except IncompleteStateError:
+            self._charm.unit.status = ops.WaitingStatus("Charm not ready to make a CSR.")
+            event.defer()
 
     def _on_certificate_expiring(self, event: certificates.CertificateExpiringEvent) -> None:
         """Certificate expiring event handler.
@@ -134,10 +146,16 @@ class CertificatesObserver(Object):
             event: the event triggering the handler.
         """
         if event.certificate == self._charm.state.certificate:
-            self.certificates.request_certificate_creation(
-                certificate_signing_request=self.get_csr()
-            )
-            logger.debug("TLS certificate expiring. Requested new certificate.")
+            try:
+                self.certificates.request_certificate_creation(
+                    certificate_signing_request=self.get_csr()
+                )
+                logger.debug("TLS certificate expiring. Requested new certificate.")
+            except IncompleteStateError:
+                self._charm.unit.status = ops.WaitingStatus(
+                    "Charm not ready to renew expired certificate."
+                )
+                event.defer()
 
     def _on_certificate_invalidated(self, event: certificates.CertificateInvalidatedEvent) -> None:
         """Certificate invalidated event handler.
@@ -146,11 +164,17 @@ class CertificatesObserver(Object):
             event: the event triggering the handler.
         """
         if event.certificate == self._charm.state.certificate:
-            self.certificates.request_certificate_renewal(
-                old_certificate_signing_request=self.get_csr(),
-                new_certificate_signing_request=self.get_csr(renew=True),
-            )
-            logger.debug("TLS certificate invalidated.")
-        self._charm.unit.status = ops.WaitingStatus(
-            "Certificate invalidated. Waiting for new certificate to be issued."
-        )
+            try:
+                self.certificates.request_certificate_renewal(
+                    old_certificate_signing_request=self.get_csr(),
+                    new_certificate_signing_request=self.get_csr(renew=True),
+                )
+                logger.debug("TLS certificate invalidated.")
+                self._charm.unit.status = ops.WaitingStatus(
+                    "Certificate invalidated. Waiting for new certificate to be issued."
+                )
+            except IncompleteStateError:
+                self._charm.unit.status = ops.WaitingStatus(
+                    "Charm not ready to renew the certificate."
+                )
+                event.defer()
