@@ -256,7 +256,7 @@ def configure_git(
         path_parts = url.path.split("@")
         branch = path_parts[1] if len(path_parts) > 1 else None
         base_url = urlunsplit(url._replace(path=path_parts[0]))
-        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=1)
+        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=5)
         output, _ = process.wait_output()
         container.push(
             KNOWN_HOSTS_PATH,
@@ -279,7 +279,7 @@ def configure_git(
             if branch:
                 command = command + ["--branch", branch]
             command = command + [base_url, REPOSITORY_PATH]
-            process = container.exec(command, timeout=1)
+            process = container.exec(command, timeout=10)
             process.wait_output()
 
 
@@ -294,7 +294,7 @@ def pull_configuration_files(container: ops.Container) -> None:
     """
     try:
         process = container.exec(
-            ["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"], timeout=1
+            ["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"], timeout=10
         )
         process.wait_output()
         process = container.exec(
