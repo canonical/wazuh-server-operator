@@ -182,7 +182,7 @@ class WazuhServerCharm(CharmBaseWithState):
             else:
                 logger.debug("Configuring non-default user %s", username)
                 try:
-                    token = wazuh.authenticate_user("wazuh", self.state.api_credentials["wazuh"])
+                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
                     password = credentials[username]
                     if not password:
                         password = wazuh.generate_api_password()
@@ -277,7 +277,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-ready": {
                     "override": "replace",
                     "level": "ready",
-                    "period": "60s",
+                    "period": "30s",
                     "threshold": 10,
                     "exec": {
                         "command": (
@@ -327,8 +327,8 @@ class WazuhServerCharm(CharmBaseWithState):
                 },
                 "prometheus-ready": {
                     "override": "replace",
-                    "period": "20s",
-                    "threshold": 3,
+                    "period": "30s",
+                    "threshold": 10,
                     "level": "alive",
                     "exec": {"command": "sh -c 'sleep 1; curl http://localhost:5000/metrics'"},
                 },

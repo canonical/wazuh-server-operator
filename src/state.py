@@ -8,6 +8,7 @@ import logging
 import os
 import typing
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 
 import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
@@ -19,21 +20,23 @@ logger = logging.getLogger(__name__)
 WAZUH_API_CREDENTIALS = "wazuh-api-credentials"
 # Bandit mistakenly thinks this is a password
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
-WAZUH_USERS = {
-    "wazuh": {
-        "default_password": "wazuh",
-        "default": True,
-    },
-    "wazuh-wui": {
-        "default_password": "wazuh-wui",
-        "default": True,
-    },
-    # This user will be created by the charm
-    "prometheus": {
-        "default_password": "",
-        "default": False,
-    },
-}
+WAZUH_USERS = OrderedDict(
+    {
+        "wazuh": {
+            "default_password": "wazuh",
+            "default": True,
+        },
+        "wazuh-wui": {
+            "default_password": "wazuh-wui",
+            "default": True,
+        },
+        # This user will be created by the charm
+        "prometheus": {
+            "default_password": "",
+            "default": False,
+        },
+    }
+)
 
 
 class InvalidStateError(Exception):
