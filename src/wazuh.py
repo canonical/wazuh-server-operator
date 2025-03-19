@@ -279,7 +279,7 @@ def configure_git(
             if branch:
                 command = command + ["--branch", branch]
             command = command + [base_url, REPOSITORY_PATH]
-            process = container.exec(command, timeout=1)
+            process = container.exec(command, timeout=10)
             process.wait_output()
 
 
