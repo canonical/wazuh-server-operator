@@ -281,10 +281,10 @@ class WazuhServerCharm(CharmBaseWithState):
                     "threshold": 10,
                     "exec": {
                         "command": (
-                            "sh -c 'sleep 1; "
+                            "sh -c \"sleep 1; "
                             "curl -k "
                             f"--user wazuh:{shlex.quote(self.state.api_credentials['wazuh'])} "
-                            f"{wazuh.AUTH_ENDPOINT}'"
+                            f"{wazuh.AUTH_ENDPOINT}\""
                         )
                     },
                 },
