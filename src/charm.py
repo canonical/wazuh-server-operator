@@ -261,7 +261,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "rsyslog": {
                     "override": "replace",
                     "summary": "rsyslog",
-                    "command": "rsyslogd -n -f /etc/rsyslog.d/wazuh.conf",
+                    "command": "rsyslogd -n -f /etc/rsyslog.conf",
                     "startup": "enabled",
                 },
             },
