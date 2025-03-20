@@ -126,6 +126,8 @@ class WazuhServerCharm(CharmBaseWithState):
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
+            user=wazuh.FILEBEAT_USER,
+            group=wazuh.FILEBEAT_USER,
         )
         wazuh.install_certificates(
             container=container,
@@ -133,6 +135,8 @@ class WazuhServerCharm(CharmBaseWithState):
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
+            user=wazuh.SYSLOG_USER,
+            group=wazuh.SYSLOG_USER,
         )
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password

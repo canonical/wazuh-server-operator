@@ -25,6 +25,7 @@ from lxml import etree  # nosec
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 CONTAINER_NAME = "wazuh-server"
 FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
+FILEBEAT_USER = "root"
 FILEBEAT_CMD = [
     "/usr/share/filebeat/bin/filebeat",
     "--path.home",
@@ -43,6 +44,7 @@ OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
 SYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
+SYSLOG_USER = "syslog"
 API_PORT = 55000
 AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
 WAZUH_GROUP = "wazuh"
@@ -151,8 +153,14 @@ def update_configuration(
     _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
 
 
-def install_certificates(
-    container: ops.Container, path: Path, public_key: str, private_key: str, root_ca: str
+def install_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    container: ops.Container,
+    path: Path,
+    public_key: str,
+    private_key: str,
+    root_ca: str,
+    user: str,
+    group: str,
 ) -> None:
     """Update TLS certificates.
 
@@ -162,10 +170,28 @@ def install_certificates(
         public_key: the certificate's public key.
         private_key: the certificate's private key.
         root_ca: the certifciate's CA public key.
+        user: the usesr owning the files.
+        group: the group owning the files.
     """
-    container.push(path / "certificate.pem", public_key, make_dirs=True, permissions=0o400)
-    container.push(path / "certificate.key", private_key, make_dirs=True, permissions=0o400)
-    container.push(path / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400)
+    container.push(
+        path / "certificate.pem",
+        public_key,
+        make_dirs=True,
+        permissions=0o400,
+        user=user,
+        group=group,
+    )
+    container.push(
+        path / "certificate.key",
+        private_key,
+        make_dirs=True,
+        permissions=0o400,
+        user=user,
+        group=group,
+    )
+    container.push(
+        path / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400, user=user, group=group
+    )
 
 
 def configure_agent_password(container: ops.Container, password: str) -> None:
