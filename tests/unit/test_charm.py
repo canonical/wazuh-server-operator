@@ -151,6 +151,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="root",
+                group="root",
             ),
             call(
                 container=container,
@@ -158,6 +160,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="syslog",
+                group="syslog",
             ),
         ]
     )
@@ -252,6 +256,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="root",
+                group="root",
             ),
             call(
                 container=container,
@@ -259,6 +265,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="syslog",
+                group="syslog",
             ),
         ]
     )
