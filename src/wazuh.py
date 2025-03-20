@@ -405,7 +405,8 @@ def authenticate_user(username: str, password: str) -> str:
     Returns: the JWT token
 
     Raises:
-        WazuhAuthenticationError: if an authentication error occurs.
+        WazuhAuthenticationError: if the user can't authenticate.
+        WazuhInstallationError: if any error occurs.
     .
     """
     # The certificates might be self signed and there's no security hardening in
@@ -424,10 +425,10 @@ def authenticate_user(username: str, password: str) -> str:
         response.raise_for_status()
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
-            raise WazuhAuthenticationError(f"Response for {username} does not contain token.")
+            raise WazuhInstallationError(f"Response for {username} does not contain token.")
         return token
     except requests.exceptions.RequestException as exc:
-        raise WazuhAuthenticationError from exc
+        raise WazuhInstallationError from exc
 
 
 def change_api_password(username: str, password: str, token: str) -> None:
