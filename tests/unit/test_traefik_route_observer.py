@@ -81,25 +81,25 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                     "juju-testing-observer-charm-service-syslog-tcp": {
                         "loadBalancer": {
                             "servers": [{"address": "wazuh-server.local:6514"}],
-                            "terminationDelay": 1000,
+                            "terminationDelay": -1,
                         }
                     },
                     "juju-testing-observer-charm-service-conn-tcp": {
                         "loadBalancer": {
                             "servers": [{"address": "wazuh-server.local:1514"}],
-                            "terminationDelay": 1000,
+                            "terminationDelay": -1,
                         }
                     },
                     "juju-testing-observer-charm-service-enrole-tcp": {
                         "loadBalancer": {
                             "servers": [{"address": "wazuh-server.local:1515"}],
-                            "terminationDelay": 1000,
+                            "terminationDelay": -1,
                         }
                     },
                     "juju-testing-observer-charm-service-api-tcp": {
                         "loadBalancer": {
                             "servers": [{"address": "wazuh-server.local:55000"}],
-                            "terminationDelay": 1000,
+                            "terminationDelay": -1,
                         }
                     },
                 },

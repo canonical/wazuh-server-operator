@@ -90,7 +90,7 @@ class TraefikRouteObserver(Object):
             services[service_name] = {
                 "loadBalancer": {
                     "servers": [{"address": f"{self.hostname}:{port}"}],
-                    "terminationDelay": 1000,
+                    "terminationDelay": -1,
                 }
             }
         return {
