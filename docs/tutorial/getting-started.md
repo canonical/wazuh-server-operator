@@ -11,7 +11,7 @@
 * A working station, e.g., a laptop, with amd64 architecture.
 * Juju 3 installed and bootstrapped to a MicroK8s and to an LXD controller. You can accomplish
 this process by using a [Multipass](https://multipass.run/) VM as outlined in this guide: [Set up / Tear down your test environment](https://juju.is/docs/juju/set-up--tear-down-your-test-environment)
-* A deployed Wazij Indexer. For instructions to deploy the Wazuh Indexer, check [its documentation](https://charmhub.io/wazuh-indexer).
+* A deployed Wazuh Indexer. For instructions to deploy the Wazuh Indexer, check [its documentation](https://charmhub.io/wazuh-indexer).
 
 :warning: When using a Multipass VM, make sure to replace IP addresses with the
 VM IP in steps that assume you're running locally. To get the IP address of the
