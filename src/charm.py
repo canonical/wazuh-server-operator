@@ -126,6 +126,8 @@ class WazuhServerCharm(CharmBaseWithState):
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
+            user=wazuh.FILEBEAT_USER,
+            group=wazuh.FILEBEAT_USER,
         )
         wazuh.install_certificates(
             container=container,
@@ -133,6 +135,8 @@ class WazuhServerCharm(CharmBaseWithState):
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
             root_ca=self.state.root_ca,
+            user=wazuh.SYSLOG_USER,
+            group=wazuh.SYSLOG_USER,
         )
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
@@ -181,16 +185,13 @@ class WazuhServerCharm(CharmBaseWithState):
                     logger.debug("Could not authenticate user %s with default password.", username)
             else:
                 logger.debug("Configuring non-default user %s", username)
-                try:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
-                    password = credentials[username]
-                    if not password:
-                        password = wazuh.generate_api_password()
-                    wazuh.create_readonly_api_user(username, password, token)
-                    credentials[username] = password
-                    logger.debug("Created API user %s", username)
-                except wazuh.WazuhInstallationError:
-                    logger.debug("Could not add user %s.", username)
+                token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                password = credentials[username]
+                if not password:
+                    password = wazuh.generate_api_password()
+                wazuh.create_readonly_api_user(username, password, token)
+                credentials[username] = password
+                logger.debug("Created API user %s", username)
             # Store the new credentials alongside the existing ones
             try:
                 secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
@@ -264,7 +265,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "rsyslog": {
                     "override": "replace",
                     "summary": "rsyslog",
-                    "command": "rsyslogd -n -f /etc/rsyslog.d/wazuh.conf",
+                    "command": "rsyslogd -n -f /etc/rsyslog.conf",
                     "startup": "enabled",
                 },
             },

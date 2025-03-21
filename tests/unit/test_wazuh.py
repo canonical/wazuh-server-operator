@@ -120,6 +120,8 @@ def test_install_certificates() -> None:
         private_key="private_key",
         public_key="public_key",
         root_ca="root_ca",
+        user="root",
+        group="root",
     )
 
     assert (

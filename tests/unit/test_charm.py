@@ -76,6 +76,7 @@ def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
 
 
 # pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
+@patch.object(wazuh, "create_readonly_api_user")
 @patch.object(wazuh, "authenticate_user")
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
@@ -150,6 +151,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="root",
+                group="root",
             ),
             call(
                 container=container,
@@ -157,6 +160,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="syslog",
+                group="syslog",
             ),
         ]
     )
@@ -180,6 +185,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+@patch.object(wazuh, "create_readonly_api_user")
 @patch.object(wazuh, "authenticate_user")
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
@@ -250,6 +256,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="root",
+                group="root",
             ),
             call(
                 container=container,
@@ -257,6 +265,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="root_ca",
+                user="syslog",
+                group="syslog",
             ),
         ]
     )
