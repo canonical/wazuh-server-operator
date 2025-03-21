@@ -282,7 +282,7 @@ def configure_git(
         path_parts = url.path.split("@")
         branch = path_parts[1] if len(path_parts) > 1 else None
         base_url = urlunsplit(url._replace(path=path_parts[0]))
-        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=5)
+        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=10)
         output, _ = process.wait_output()
         container.push(
             KNOWN_HOSTS_PATH,
