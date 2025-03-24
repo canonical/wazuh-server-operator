@@ -84,7 +84,9 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
     filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
     filebeat_config_yaml["output.elasticsearch"]["hosts"] = ip_ports
-    container.push(FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml), encoding="utf-8")
+    container.push(
+        FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml, sort_keys=False), encoding="utf-8"
+    )
 
 
 # Won't sacrify cohesion and readability to make pylint happier
