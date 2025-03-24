@@ -42,7 +42,6 @@ parts:
     build-packages:
       - yq
     stage-packages:
-      - filebeat
       - net-tools
     override-stage: |
       mkdir -p $CRAFT_PART_INSTALL/etc/filebeat/certs
