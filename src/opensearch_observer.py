@@ -25,7 +25,9 @@ class OpenSearchObserver(Object):
         """
         super().__init__(charm, RELATION_NAME)
         self._charm = charm
-        self.opensearch = OpenSearchRequires(charm, RELATION_NAME, "placeholder")
+        self.opensearch = OpenSearchRequires(
+            charm, RELATION_NAME, "placeholder", extra_user_roles="admin"
+        )
 
         self.framework.observe(
             self._charm.on.opensearch_client_relation_changed, self._charm.reconcile
