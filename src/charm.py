@@ -7,7 +7,6 @@
 
 import logging
 import secrets
-import shlex
 import typing
 
 import ops
@@ -275,20 +274,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     "level": "alive",
                     "tcp": {"port": wazuh.API_PORT},
                 },
-                "wazuh-ready": {
-                    "override": "replace",
-                    "level": "ready",
-                    "period": "30s",
-                    "threshold": 10,
-                    "exec": {
-                        "command": (
-                            'sh -c "sleep 1; '
-                            "curl -k "
-                            f"--user wazuh:{shlex.quote(self.state.api_credentials['wazuh'])} "
-                            f'{wazuh.AUTH_ENDPOINT}"'
-                        )
-                    },
-                },
             },
         }
 
@@ -319,20 +304,6 @@ class WazuhServerCharm(CharmBaseWithState):
                         "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
                     },
                 }
-            },
-            "checks": {
-                "prometheus-alive": {
-                    "override": "replace",
-                    "level": "alive",
-                    "tcp": {"port": 5000},
-                },
-                "prometheus-ready": {
-                    "override": "replace",
-                    "period": "30s",
-                    "threshold": 10,
-                    "level": "alive",
-                    "exec": {"command": "sh -c 'sleep 1; curl http://localhost:5000/metrics'"},
-                },
             },
         }
 

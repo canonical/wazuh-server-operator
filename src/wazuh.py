@@ -84,7 +84,9 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
     filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
     filebeat_config_yaml["output.elasticsearch"]["hosts"] = ip_ports
-    container.push(FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml), encoding="utf-8")
+    container.push(
+        FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml, sort_keys=False), encoding="utf-8"
+    )
 
 
 # Won't sacrify cohesion and readability to make pylint happier
@@ -282,7 +284,7 @@ def configure_git(
         path_parts = url.path.split("@")
         branch = path_parts[1] if len(path_parts) > 1 else None
         base_url = urlunsplit(url._replace(path=path_parts[0]))
-        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=5)
+        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=10)
         output, _ = process.wait_output()
         container.push(
             KNOWN_HOSTS_PATH,

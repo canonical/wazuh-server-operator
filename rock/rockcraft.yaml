@@ -27,7 +27,7 @@ parts:
       groupadd -R $CRAFT_OVERLAY --gid 2000 prometheus
       useradd -R $CRAFT_OVERLAY --system --gid 2000 --uid 2000 --home /srv/prometheus prometheus
       groupadd -R $CRAFT_OVERLAY --gid 2001 syslog
-      useradd -R $CRAFT_OVERLAY --system --gid 2001 --uid 2001 --home /home/syslog syslog
+      useradd -R $CRAFT_OVERLAY --system --gid 2001 --uid 2001 syslog
   utils:
     plugin: nil
     stage-packages:
@@ -101,6 +101,10 @@ parts:
       - gnutls-bin
       - rsyslog
       - rsyslog-gnutls
+    override-stage: |
+      # Disable reading logs from the kernel module
+      sed -i '/imklog/s/^/#/' $CRAFT_PART_INSTALL/etc/rsyslog.conf
+      craftctl default
   rsyslog-config:
     plugin: dump
     source: .
