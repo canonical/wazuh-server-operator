@@ -132,7 +132,7 @@ resource "juju_application" "sysconfig" {
 }
 
 module "wazuh-indexer" {
-  source      = "git::https://github.com/canonical/wazuh-indexer-operator//terraform"
+  source      = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/charm"
   app_name    = var.wazuh_indexer.app_name
   channel     = var.wazuh_indexer.channel
   config      = var.wazuh_indexer.config
@@ -175,7 +175,7 @@ resource "juju_integration" "wazuh_indexer_sysconfig" {
 }
 
 module "wazuh-dashboard" {
-  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform"
+  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm"
   app_name    = var.wazuh_dashboard.app_name
   channel     = var.wazuh_dashboard.channel
   config      = var.wazuh_dashboard.config

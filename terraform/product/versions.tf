@@ -6,6 +6,7 @@ terraform {
     juju = {
       source  = "juju/juju"
       version = ">= 0.17.1"
+      configuration_aliases = [juju.wazuh_indexer]
     }
   }
 }
