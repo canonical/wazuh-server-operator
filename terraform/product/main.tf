@@ -100,8 +100,7 @@ resource "juju_integration" "wazuh_server_certificates" {
   }
 
   application {
-    name     = juju_offer.self_signed_certificates.name
-    endpoint = juju_offer.self_signed_certificates.url
+    offer_url = juju_offer.self_signed_certificates.url
   }
 }
 
@@ -280,7 +279,6 @@ resource "juju_integration" "wazuh_server_indexer" {
   }
 
   application {
-    name     = juju_offer.wazuh_indexer.name
-    endpoint = juju_offer.wazuh_indexer.url
+    offer_url = juju_offer.wazuh_indexer.url
   }
 }
