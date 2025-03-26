@@ -100,8 +100,8 @@ resource "juju_integration" "wazuh_server_certificates" {
   }
 
   application {
-    name     = juju_offer.self_signed_certificates.app_name
-    endpoint = juju_offer.self_signed_certificates.provides.certificates
+    name     = juju_offer.self_signed_certificates.name
+    endpoint = juju_offer.self_signed_certificates.url
   }
 }
 
@@ -204,8 +204,8 @@ resource "juju_integration" "wazuh_indexer_certificates" {
   }
 
   application {
-    name     = juju_offer.self_signed_certificates.app_name
-    endpoint = juju_offer.self_signed_certificates.provides.certificates
+    name     = juju_offer.self_signed_certificates.name
+    endpoint = juju_offer.self_signed_certificates.url
   }
 
   provider = juju.wazuh_indexer
@@ -219,8 +219,8 @@ resource "juju_integration" "wazuh_dashboard_certificates" {
     endpoint = module.wazuh_dashboard.requires.certificates
   }
   application {
-    name     = juju_offer.self_signed_certificates.app_name
-    endpoint = juju_offer.self_signed_certificates.provides.certificates
+    name     = juju_offer.self_signed_certificates.name
+    endpoint = juju_offer.self_signed_certificates.url
   }
 
   provider = juju.wazuh_indexer
