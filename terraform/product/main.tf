@@ -140,6 +140,16 @@ module "wazuh_indexer" {
   }
 }
 
+resource "juju_offer" "wazuh_indexer" {
+  model = data.juju_model.wazuh_indexer.name
+
+  name             = "wazuh-indexer"
+  application_name = module.wazuh_indexer.app_name
+  endpoint         = module.wazuh_indexer.provides.opensearch-client
+
+  provider = juju.wazuh_indexer
+}
+
 resource "juju_access_offer" "wazuh_indexer" {
   offer_url = juju_offer.wazuh_indexer.url
   admin     = [data.juju_model.wazuh_indexer.name]
@@ -270,7 +280,7 @@ resource "juju_integration" "wazuh_server_indexer" {
   }
 
   application {
-    name     = juju_offer.wazuh_indexer.app_name
-    endpoint = juju_offer.wazuh_indexer.provides.opensearch_client
+    name     = juju_offer.wazuh_indexer.name
+    endpoint = juju_offer.wazuh_indexer.url
   }
 }
