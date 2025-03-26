@@ -25,7 +25,7 @@ data "juju_model" "my_model" {
   name = var.model
 }
 
-module "wazuh-server" {
+module "wazuh_server" {
   source = "git::https://github.com/canonical/wazuh-server-operator//terraform"
   
   model = juju_model.my_model.name
@@ -39,8 +39,8 @@ Create integrations, for instance:
 resource "juju_integration" "wazuh-server-traefik" {
   model = juju_model.my_model.name
   application {
-    name     = module.wazuh-server.app_name
-    endpoint = module.wazuh-server.requires.ingress
+    name     = module.wazuh_server.app_name
+    endpoint = module.wazuh_server.requires.ingress
   }
   application {
     name     = "traefik-k8s"
