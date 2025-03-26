@@ -33,7 +33,7 @@ module "wazuh_server" {
 }
 
 module "traefik_k8s" {
-  source      = "git::https://github.com/canonical/traefik-k8s-operator//terraform"
+  source      = "git::https://github.com/canonical/traefik-k8s-operator//terraform?ref=rev236"
   app_name    = var.traefik_k8s.app_name
   channel     = var.traefik_k8s.channel
   config      = var.traefik_k8s.config
