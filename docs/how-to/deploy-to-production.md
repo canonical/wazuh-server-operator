@@ -14,7 +14,7 @@ Open network accesses:
 - To the `wazuh-server` through port `6514`
   - For the rsyslog server who will send their logs to Wazuh.
 - To the `wazuh-indexer` through port `9200`
-  - For the `wazuh-server` to interact with `opensearch`
+  - For `wazuh-server` to interact with `opensearch`
 
 ## Deploy the project
 
