@@ -58,7 +58,7 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
 }
 
 module "self_signed_certificates" {
-  source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform"
+  source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform?ref=rev281"
   app_name    = var.self_signed_certificates.app_name
   channel     = var.self_signed_certificates.channel
   config      = var.self_signed_certificates.config
