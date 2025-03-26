@@ -135,7 +135,9 @@ module "wazuh-indexer" {
   base        = var.wazuh_indexer.base
   units       = var.wazuh_indexer.units
 
-  provider = juju.wazuh_indexer
+  providers = {
+    juju = juju.wazuh_indexer
+  }
 }
 
 resource "juju_access_offer" "wazuh_indexer" {
