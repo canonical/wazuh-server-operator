@@ -38,9 +38,8 @@ module "traefik_k8s" {
   channel     = var.traefik_k8s.channel
   config      = var.traefik_k8s.config
   constraints = var.traefik_k8s.constraints
-  model       = data.juju_model.wazuh_server.name
+  model_name  = data.juju_model.wazuh_server.name
   revision    = var.traefik_k8s.revision
-  base        = var.traefik_k8s.base
   units       = var.traefik_k8s.units
 }
 
