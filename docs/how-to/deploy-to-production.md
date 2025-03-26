@@ -10,7 +10,7 @@ Create the two required models:
 
 Open network accesses:
 - To the `wazuh-dashboard` through `https`
-  - For the users who will need to access it.
+  - For the users who will need to access the dashboard.
 - To the `wazuh-server` through port `6514`
   - For the rsyslog server who will send their logs to Wazuh.
 - To the `wazuh-indexer` through port `9200`
