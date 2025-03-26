@@ -6,7 +6,7 @@ This page describes a typical deployment to production.
 
 Create the two required models:
 - `wazuh-indexer`: a machine model
-- `wazuh-server`: a kubernetes model
+- `wazuh-server`: a Kubernetes model
 
 Open network accesses:
 - To the `wazuh-dashboard` through `https`
