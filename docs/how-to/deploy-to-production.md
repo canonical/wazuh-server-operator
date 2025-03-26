@@ -20,7 +20,7 @@ Open network accesses:
 
 The full stack can be deployed using the terraform module hosted at [https://github.com/canonical/wazuh-server-operator/terraform/product/]()
 
-A typical deployment whould be configured like this:
+A typical deployment would be configured like this:
 ```
 locals {
   juju_indexer_model_name = "wazuh-indexer"
