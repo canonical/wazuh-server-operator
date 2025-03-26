@@ -80,9 +80,7 @@ resource "juju_offer" "self_signed_certificates" {
   application_name = module.self_signed_certificates.app_name
   endpoint         = module.self_signed_certificates.provides.certificates
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_access_offer" "self_signed_certificates" {
@@ -90,9 +88,7 @@ resource "juju_access_offer" "self_signed_certificates" {
   admin     = [data.juju_model.wazuh_indexer.name]
   consume   = [data.juju_model.wazuh_server.name]
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_integration" "wazuh_server_certificates" {
@@ -125,9 +121,7 @@ resource "juju_application" "sysconfig" {
     sysctl = "{vm.max_map_count: 262144, vm.swappiness: 0, net.ipv4.tcp_retries2: 5, fs.file-max: 1048576}"
   }
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 module "wazuh-indexer" {
@@ -141,9 +135,7 @@ module "wazuh-indexer" {
   base        = var.wazuh_indexer.base
   units       = var.wazuh_indexer.units
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_access_offer" "wazuh_indexer" {
@@ -151,9 +143,7 @@ resource "juju_access_offer" "wazuh_indexer" {
   admin     = [data.juju_model.wazuh_indexer.name]
   consume   = [data.juju_model.wazuh_server.name]
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_integration" "wazuh_indexer_sysconfig" {
@@ -168,9 +158,7 @@ resource "juju_integration" "wazuh_indexer_sysconfig" {
     endpoint = "juju-info"
   }
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 module "wazuh-dashboard" {
@@ -202,9 +190,7 @@ resource "juju_integration" "wazuh_indexer_dashboard" {
     endpoint = module.wazuh_dashboard.requires.opensearch_client
   }
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_integration" "wazuh_indexer_certificates" {
@@ -220,9 +206,7 @@ resource "juju_integration" "wazuh_indexer_certificates" {
     endpoint = juju_offer.self_signed_certificates.provides.certificates
   }
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_integration" "wazuh_dashboard_certificates" {
@@ -237,9 +221,7 @@ resource "juju_integration" "wazuh_dashboard_certificates" {
     endpoint = juju_offer.self_signed_certificates.provides.certificates
   }
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_application" "data_integrator" {
@@ -259,9 +241,7 @@ resource "juju_application" "data_integrator" {
     index-name       = "placeholder"
   }
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_integration" "wazuh_indexer_data_integrator" {
@@ -276,9 +256,7 @@ resource "juju_integration" "wazuh_indexer_data_integrator" {
     endpoint = "opensearch"
   }
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_integration" "wazuh_server_indexer" {
