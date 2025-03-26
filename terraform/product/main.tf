@@ -53,11 +53,11 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
 
   application {
     name     = module.traefik_k8s.app_name
-    endpoint = module.traefik_k8s.provides.traefik_route
+    endpoint = module.traefik_k8s.endpoints.traefik_route
   }
 }
 
-module "self-signed-certificates" {
+module "self_signed_certificates" {
   source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform"
   app_name    = var.self_signed_certificates.app_name
   channel     = var.self_signed_certificates.channel
@@ -124,7 +124,7 @@ resource "juju_application" "sysconfig" {
   provider = juju.wazuh_indexer
 }
 
-module "wazuh-indexer" {
+module "wazuh_indexer" {
   source      = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/charm"
   app_name    = var.wazuh_indexer.app_name
   channel     = var.wazuh_indexer.channel
@@ -163,7 +163,7 @@ resource "juju_integration" "wazuh_indexer_sysconfig" {
   provider = juju.wazuh_indexer
 }
 
-module "wazuh-dashboard" {
+module "wazuh_dashboard" {
   source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm"
   app_name    = var.wazuh_dashboard.app_name
   channel     = var.wazuh_dashboard.channel
