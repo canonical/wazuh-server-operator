@@ -1,6 +1,6 @@
 # How to deploy to production
 
-This page describes how a typical deployment to production could look like.
+This page describes a typical deployment to production.
 
 ## Prerequisites
 
