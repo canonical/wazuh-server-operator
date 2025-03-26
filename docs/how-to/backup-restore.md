@@ -1,4 +1,4 @@
-# Backup and restore
+# How to back up and restore
 
 All persisted data are stored in the "Wazuh Indexer".
 
