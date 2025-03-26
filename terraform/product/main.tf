@@ -276,7 +276,7 @@ resource "juju_integration" "wazuh_server_indexer" {
 
   application {
     name     = module.wazuh_server.app_name
-    endpoint = module.wazuh_server.requires.opensearch_client
+    endpoint = module.wazuh_server.requires.opensearch-client
   }
 
   application {
