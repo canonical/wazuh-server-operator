@@ -18,7 +18,7 @@ Container_Boundary(wazuh-dashboard, "Wazuh Dashboard Charm") {
 
 
 Container_Boundary(synapse, "Wazuh Server Charm") {
-  Component(wazuh-server, "Wazuh Server", "", "Analyzing logs and events")
+  Component(wazuh-server, "Wazuh Server", "", "Analyzes logs and events")
   Component(wazuh-filebeat, "Wazuh Filebeat", "", "Forwarding logs")
   ComponentDb(filesystem, "Ephemeral storage", "", "Log files on filesystem")
   Component(wazuh-rsyslog, "Wazuh Rsyslog server", "", "Collecting logs")
