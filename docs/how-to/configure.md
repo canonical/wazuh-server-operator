@@ -31,7 +31,7 @@ All files in the following sub-folders will be copied to the Wazuh server:
 - `etc/shared/**/*.conf`
 - `integrations/` recursively
 
-## How to deploy a new configuration
+## Deploy a new configuration
 
 The Wazuh Server charm is not watching the repository for changes.
 
