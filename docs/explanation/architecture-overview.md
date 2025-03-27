@@ -33,7 +33,7 @@ Container_Boundary(wazuh-indexer, "Wazuh Indexer Charm") {
 
 
 Container_Boundary(endpoints, "Endpoints") {
-    Component(endpoint-rsyslog, "Endpoint rsyslog", "","Forwarding log to Wazuh.")
+    Component(endpoint-rsyslog, "Endpoint rsyslog", "","Forwards logs to Wazuh")
 }
 
 
