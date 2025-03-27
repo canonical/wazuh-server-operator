@@ -16,7 +16,7 @@ For the Wazuh server to be able to retrieve the configuration, we're using the c
 1. Create a SSH key pair.
 2. Add the private key as a Juju secret and retrieve the secret ID: `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`.
 3. Configure your deployment to reference this secret with the `custom-config-ssh-key` option.
-4. Deploy the public key on your Git server. On Github, this can be done in your project's `Settings > Security > Deploy Keys`.
+4. Deploy the public key on your Git server. On GitHub, this can be done in your project's `Settings > Security > Deploy Keys`.
 
 ## Set up repository content
 
