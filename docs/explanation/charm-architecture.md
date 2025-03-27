@@ -34,7 +34,7 @@ This is done by publishing a resource to Charmhub as described in the
 
 Wazuh Server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
 
-Wazuh Server listens on ports:
+The Wazuh Server listens on ports:
 - 1514 and 1515: for the Wazuh agents to connect;
 - 6514: for remote servers to send logs over TLS;
 - 55000: to access Wazuh's API.
