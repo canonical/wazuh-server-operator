@@ -24,7 +24,7 @@ juju grant-secret my-custom-config-ssh-key wazuh-server
 
 ## Set up repository content
 
-You repository should mimic the layout of the Wazuh server configuration with a `var/ossec` folder.
+Your repository should mimic the layout of the Wazuh server configuration with a `var/ossec` folder.
 
 All files in the following sub-folders will be copied to the Wazuh server:
 
