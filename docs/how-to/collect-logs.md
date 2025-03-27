@@ -19,27 +19,25 @@ Deploy the server CA on the client so that the client can trust the server:
 - Retrieve the CA from self-signed-certificates with `juju run certificates/0 get-ca-certificate`
 - Store it on the client, for instance in `/etc/rsyslog.d/wazuh-ca.pem`
 
-Configure `rsyslog` to send logs over a TLS connection:
+Add the following configuration to `rsyslog` to support mutual TLS:
 
 ```text
-template(name="TraditionalFormat" type="string"
-         string="%TIMESTAMP% %HOSTNAME% %syslogtag%%msg%\n")
-
-$ActionFileDefaultTemplate TraditionalFormat
-
 $DefaultNetstreamDriver gtls
 $DefaultNetstreamDriverCAFile /etc/rsyslog.d/wazuh-ca.pem
 $DefaultNetstreamDriverCertFile /etc/rsyslog.d/client-cert.pem
 $DefaultNetstreamDriverKeyFile /etc/rsyslog.d/client-key.pem
+```
 
+Add the following configuration to send all logs over the TLS connection:
+```
 *.* action(
-type="omfwd"
-target="<WAZUH_SERVER_IP>”
-port="6514"
-protocol="tcp"
-template=”TraditionalFormat”
-streamDriver="gtls"
-streamDriverMode="1"
-streamDriverAuthMode="x509/certvalid"
+    type="omfwd"
+    target="<WAZUH_SERVER_IP>”
+    port="6514"
+    protocol="tcp"
+    template=”TraditionalFormat”
+    streamDriver="gtls"
+    streamDriverMode="1"
+    streamDriverAuthMode="x509/certvalid"
 )
 ```
