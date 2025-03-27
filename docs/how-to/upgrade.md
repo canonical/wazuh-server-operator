@@ -11,7 +11,7 @@ The workload's versions are pinned in the charms. No automatic upgrades will hap
 The Wazuh server has a stateless workload, and can safely be upgradaed through `juju refresh`.
 
 ```{note}
-While the workload is stateless, some data are temporarily stored on disk before being sent to Wazuh Indexer. So you should not destroy/recreate the application and/or the units.
+While the workload is stateless, some data are temporarily stored on disk before being sent to Wazuh Indexer. So you should not destroy or recreate the application and/or the units.
 ```
 
 ## Wazuh Dashboards
