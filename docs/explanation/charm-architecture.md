@@ -5,7 +5,7 @@ with [Pebble](https://juju.is/docs/sdk/pebble) running as the workload
 container’s entrypoint.
 
 If you run `kubectl get pods` on a namespace named for the Juju
-model you've deployed the Wazuh Server charm into, you'll see something like the
+model you've deployed the Wazuh server charm into, you'll see something like the
 following:
 
 ```bash
@@ -14,32 +14,33 @@ wazuh-server-0                    2/2     Running   0         6h4m
 ```
 
 This shows there are 2 containers:
-1. A [Wazuh Server](https://www.nginx.com/) container, which
-has Wazuh Server installed and configured.
+
+1. A [Wazuh server](https://wazuh.com/) container, which
+has Wazuh server installed and configured.
 2. A sidecar containing Pebble: a lightweight, API-driven process supervisor that is responsible for
 configuring processes to run in the workload container and controlling those processes
 throughout the workload lifecycle.
 
-
 ## OCI images
 
 We use [Rockcraft](https://canonical-rockcraft.readthedocs-hosted.com/en/latest/)
-to build OCI Image for Wazuh Server.
-The image is defined in [Wazuh Server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) and is published to [Charmhub](https://charmhub.io/), the official repository
+to build OCI Image for Wazuh server.
+The image is defined in [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) and is published to [Charmhub](https://charmhub.io/), the official repository
 of charms.
 This is done by publishing a resource to Charmhub as described in the
 [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
-### Wazuh Server
+### Wazuh server
 
-Wazuh Server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
+Wazuh server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
 
-The Wazuh Server listens on ports:
+The Wazuh server listens on ports:
+
 - 1514 and 1515: for the Wazuh agents to connect;
 - 6514: for remote servers to send logs over TLS;
 - 55000: to access Wazuh's API.
 
-The workload that this container is running is defined in the [Wazuh Server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
+The workload that this container is running is defined in the [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
 
 ## Charm code overview
 
@@ -57,14 +58,18 @@ its operation and handles them.
 Take, for example, when a configuration is changed by using the CLI.
 
 1. User runs the command
-```bash
-juju config wazuh-server custom-config-repository=git+hhtp://github.com/sample-repository.git
-```
+
+  ```bash
+  juju config wazuh-server custom-config-repository=git+hhtp://github.com/sample-repository.git
+  ```
+
 2. A `config-changed` event is emitted
 3. Event handlers are defined in the charm's framework observers. An example looks like the following:
+
 ```python
 self.framework.observe(self.on.config_changed, self._on_config_changed)
 ```
+
 4. The method `_on_config_changed` will take the necessary actions. 
 The actions include waiting for all the relations to be ready and then configuring
 the container.

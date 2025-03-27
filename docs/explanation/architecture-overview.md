@@ -1,9 +1,8 @@
 # Architecture overview
 
-Wazuh is a security platform that provides unified XDR and SIEM protection for endpoints and cloud workloads. The solution is composed of a single universal agent and three central components: the Wazuh Server, the Wazuh indexer, and the Wazuh dashboard.
+Wazuh is a security platform that provides unified XDR and SIEM protection for endpoints and cloud workloads. The solution is composed of a single universal agent and three central components: the Wazuh server, the Wazuh indexer, and the Wazuh dashboard.
 
 The universal agent is not yet available in the charmed Wazuh ecosystem. Logs are collected through an agentless architecture relying on `rsyslog`.
-
 
 ```mermaid
 C4Context
@@ -12,23 +11,23 @@ title Wazuh architecture overview
 Person(security-analyst, "Security Analyst", "")
 Rel(security-analyst, wazuh-dashboard, "")
 
-Container_Boundary(wazuh-dashboard, "Wazuh Dashboard Charm") {
+Container_Boundary(wazuh-dashboard, "Wazuh dashboard charm") {
     Component(wazuh-dashboard, "Wazuh Dashboard Snap", "","A customized OpenSearch dashboard")
 }
 
 
-Container_Boundary(synapse, "Wazuh Server Charm") {
-  Component(wazuh-server, "Wazuh Server", "", "Analyzes logs and events")
-  Component(wazuh-filebeat, "Wazuh Filebeat", "", "Forwards logs")
+Container_Boundary(synapse, "Wazuh server charm") {
+  Component(wazuh-server, "Wazuh server", "", "Analyzes logs and events")
+  Component(wazuh-filebeat, "Wazuh filebeat", "", "Forwards logs")
   ComponentDb(filesystem, "Ephemeral storage", "", "Logs files on filesystem")
-  Component(wazuh-rsyslog, "Wazuh Rsyslog server", "", "Collects logs")
+  Component(wazuh-rsyslog, "Wazuh rsyslog server", "", "Collects logs")
   Rel(wazuh-rsyslog, filesystem,"")
   Rel(wazuh-filebeat, filesystem,"")
 }
 Rel(wazuh-filebeat, wazuh-indexer,"Store logs")
 
-Container_Boundary(wazuh-indexer, "Wazuh Indexer Charm") {
-    Component(wazuh-indexer, "Wazuh Indexer Snap", "","A customized OpenSearch to store logs, events, alerts")
+Container_Boundary(wazuh-indexer, "Wazuh indexer charm") {
+    Component(wazuh-indexer, "Wazuh indexer snap", "","A customized OpenSearch to store logs, events, alerts")
 }
 
 
