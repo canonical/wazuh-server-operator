@@ -14,7 +14,7 @@ Provide the certification authority (CA) certificate used to sign the client cer
 
 Generate a certificate for the client with your certification authority (the same one you configured in the previous section). It will be used to authenticate the client when sending logs to the server.
 
-Deploy the server certification (CA) authority on the client so that the client can trust the server:
+Deploy the server CA on the client so that the client can trust the server:
 
 - Retrieve the CA from self-signed-certificates with `juju run certificates/0 get-ca-certificate`
 - Store it on the client, for instance in `/etc/rsyslog.d/wazuh-ca.pem`
