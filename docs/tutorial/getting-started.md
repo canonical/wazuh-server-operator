@@ -3,7 +3,7 @@
 ## What you’ll do
 - Deploy the Wazuh Server charm.
 - Integrate with the Wazuh Indexer charm.
-- Integrate with the elf Signed X.509 Certificates charm.
+- Integrate with the self Signed X.509 Certificates charm.
 - Integrate with the Traefik charm.
 
 ## Requirements
@@ -27,7 +27,8 @@ juju add-model wazuh-tutorial
 ```
 
 ## Deploy the Wazuh Server charm
-Synapse requires connections to Wazuh indexer, Traefik and a charm implementing the TLS certificates relation.
+
+Wazuh requires connections to Wazuh indexer, Traefik and a charm implementing the TLS certificates relation.
 For this tutorial we will be using Self Signed X.509 Certificates.
 
 ### Deploy and integrate the charms
@@ -38,6 +39,7 @@ juju deploy self-signed-certificates
 juju deploy traefik-k8s --trust
 ```
 
+<!--
 To connect the agents, you'll need to configure the agent password. For that,
 create a secret and set it in the Wazuh server configuration:
 ```bash
@@ -46,6 +48,7 @@ juju grant-secret agent-password wazuh-server
 juju config wazuh-server agent-password=<secret-id>
 ```
 where `<agent-password>` is the password you want to configure and`<secret-id>` is the ID of the secret containing the password.
+-->
 
 Run `juju status` to see the current status of the deployment. Wazuh server unit should be in `waiting status`.
 
