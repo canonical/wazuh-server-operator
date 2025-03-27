@@ -2,7 +2,7 @@
 
 The configuration of Wazuh is described in the [User Manual](https://documentation.wazuh.com/current/user-manual/).
 
-To customize the configuration of your charmed Wazuh, you can use the `custom-config-repository` configuration option to reference the repository where your configuration is stored.
+To customize the configuration of your charmed Wazuh, use the `custom-config-repository` configuration option to reference the repository where your configuration is stored.
 
 ## Configure a custom configuration repository
 
