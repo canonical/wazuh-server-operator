@@ -24,7 +24,7 @@ throughout the workload lifecycle.
 ## OCI images
 
 We use [Rockcraft](https://canonical-rockcraft.readthedocs-hosted.com/en/latest/)
-to build OCI Image for Wazuh server.
+to build the OCI image for Wazuh server.
 The image is defined in [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) and is published to [Charmhub](https://charmhub.io/), the official repository
 of charms.
 This is done by publishing a resource to Charmhub as described in the
