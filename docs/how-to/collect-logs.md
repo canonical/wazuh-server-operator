@@ -4,7 +4,7 @@ This charmed version of Wazuh is configured to support logs collection from remo
 
 Logs are sent from remote servers to Wazuh over a mutual TLS connection on port 6514.
 
-The mutual TLS connection ensures that both the client and the server are identified to each other (no man in the middle-attack, nor unauthorized clients).
+The mutual TLS connection ensures that both the client and the server are identified to each other (no machine in the middle-attack, nor unauthorized clients).
 
 ## Configure the server
 
