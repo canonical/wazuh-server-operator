@@ -29,7 +29,7 @@ $DefaultNetstreamDriverKeyFile /etc/rsyslog.d/client-key.pem
 ```
 
 Add the following configuration to send all logs over the TLS connection:
-```
+```text
 *.* action(
     type="omfwd"
     target="<WAZUH_SERVER_IP>”
