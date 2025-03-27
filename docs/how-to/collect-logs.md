@@ -12,7 +12,7 @@ Provide the certification authority (CA) certificate used to sign the client cer
 
 ## Configure the clients
 
-Generate a certificate for the client with your certification authority (the same as the one configured in the server in the previous section). It will be used to authenticate the client when sending logs to the server.
+Generate a certificate for the client with your certification authority (the same one you configured in the previous section). It will be used to authenticate the client when sending logs to the server.
 
 Deploy the server certification (CA) authority on the client so that the client can trust the server:
 
