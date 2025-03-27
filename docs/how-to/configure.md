@@ -18,7 +18,7 @@ For the Wazuh server to be able to retrieve the configuration, we're using the c
 3. Configure your deployment to reference this secret with the `custom-config-ssh-key` option.
 4. Deploy the public key on your Git server. On Github, this can be done in your project's `Settings > Security > Deploy Keys`.
 
-## Repository content
+## Set up repository content
 
 You repository should mimic the layout of the Wazuh Server configuration with a `var/ossec` folder.
 
