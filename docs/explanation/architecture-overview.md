@@ -42,5 +42,8 @@ Rel(wazuh-dashboard, wazuh-indexer, "Access events")
 Rel(wazuh-dashboard, wazuh-server, "")
 Rel(endpoint-rsyslog, wazuh-rsyslog, "")
 
+UpdateRelStyle(wazuh-server, wazuh-indexer, $offsetX="-120", $offsetY="200")
+UpdateRelStyle(wazuh-filebeat, wazuh-indexer, $offsetX="75", $offsetY="-80")
+
 UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="2")
 ```
