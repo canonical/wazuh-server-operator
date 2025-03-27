@@ -2,9 +2,9 @@
 
 This charmed version of Wazuh is configured to support logs collection from remote systems.
 
-Logs are sent from remote servers to Wazuh over a mutual TLS connexion on port 6514.
+Logs are sent from remote servers to Wazuh over a mutual TLS connection on port 6514.
 
-The mutual TLS connexion ensures that both the client and the server are identified to each other (no man in the middle-attack, nor unauthorized clients).
+The mutual TLS connection ensures that both the client and the server are identified to each other (no man in the middle-attack, nor unauthorized clients).
 
 ## Configure the server
 
@@ -19,7 +19,7 @@ Deploy the server certification (CA) authority on the client so that the client 
 - Retrieve the CA from self-signed-certificates with `juju run certificates/0 get-ca-certificate`
 - Store it on the client, for instance in `/etc/rsyslog.d/wazuh-ca.pem`
 
-Configure `rsyslog` to send logs over a TLS connexion:
+Configure `rsyslog` to send logs over a TLS connection:
 
 ```text
 template(name="TraditionalFormat" type="string"
