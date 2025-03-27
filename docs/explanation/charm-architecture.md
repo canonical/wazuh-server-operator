@@ -1,23 +1,10 @@
 # Charm architecture
 
-Wazuh is a security platform that provides unified XDR and SIEM protection for endpoints and cloud workloads. The solution is composed of a single universal agent and three central components: the Wazuh Server, the Wazuh indexer, and the Wazuh dashboard. This charm corresponds to the Wazuh Server.
-
 The charm design leverages the [sidecar](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/#example-1-sidecar-containers) pattern to allow multiple containers in each pod
 with [Pebble](https://juju.is/docs/sdk/pebble) running as the workload
 container’s entrypoint.
 
-Pebble is a lightweight, API-driven process supervisor that is responsible for
-configuring processes to run in a container and controlling those processes
-throughout the workload lifecycle.
-
-Pebble `services` are configured through [layers](https://github.com/canonical/pebble#layer-specification),
-and the following containers each represent a layer that forms the effective
-Pebble configuration, or `plan`:
-
-1. A [Wazuh Server](https://www.nginx.com/) container itself, which
-has Wazuh Server installed and configured.
-
-As a result, if you run `kubectl get pods` on a namespace named for the Juju
+If you run `kubectl get pods` on a namespace named for the Juju
 model you've deployed the Wazuh Server charm into, you'll see something like the
 following:
 
@@ -26,8 +13,13 @@ NAME                             READY   STATUS    RESTARTS   AGE
 wazuh-server-0                    2/2     Running   0         6h4m
 ```
 
-This shows there are 2 containers - the one named above, as well as a container
-for the charm code itself.
+This shows there are 2 containers:
+1. A [Wazuh Server](https://www.nginx.com/) container, which
+has Wazuh Server installed and configured.
+2. A sidecar containing Pebble: a lightweight, API-driven process supervisor that is responsible for
+configuring processes to run in the workload container and controlling those processes
+throughout the workload lifecycle.
+
 
 ## OCI images
 
@@ -42,7 +34,10 @@ This is done by publishing a resource to Charmhub as described in the
 
 Wazuh Server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
 
-Wazuh Server listens on ports 514, 1514, 1515 and 55000; the first exposing a rsyslog service over TLS; the next two, the services for the agents to connect, and the last one serving the API.
+Wazuh Server listens on ports:
+- 1514 and 1515: for the Wazuh agents to connect;
+- 6514: for remote servers to send logs over TLS;
+- 55000: to access Wazuh's API.
 
 The workload that this container is running is defined in the [Wazuh Server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
 
