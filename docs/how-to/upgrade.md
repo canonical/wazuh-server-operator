@@ -3,7 +3,7 @@
 **Example**: Wazuh 4.9 -> Wazuh 4.10.
 
 ```{important}
-Workload's versions are pinned in the charms. Not automatic upgrades will happen if not triggered at the charm level.
+The workload's versions are pinned in the charms. No automatic upgrades will happen if they're not triggered at the charm level.
 ```
 
 ## Wazuh Server
