@@ -28,7 +28,7 @@ to build the OCI image for Wazuh server.
 The image is defined in [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) and is published to [Charmhub](https://charmhub.io/), the official repository
 of charms.
 This is done by publishing a resource to Charmhub as described in the
-[Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
+[Charmcraft how-to guides](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/howto/manage-charms/#publish-a-charm-on-charmhub).
 
 ### Wazuh server
 
