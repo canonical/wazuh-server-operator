@@ -28,7 +28,7 @@ Container_Boundary(synapse, "Wazuh Server Charm") {
 Rel(wazuh-filebeat, wazuh-indexer,"Store logs")
 
 Container_Boundary(wazuh-indexer, "Wazuh Indexer Charm") {
-    Component(wazuh-indexer, "Wazuh Indexer Snap", "","A cutomized opensearch to store logs, events, alerts..")
+    Component(wazuh-indexer, "Wazuh Indexer Snap", "","A customized OpenSearch to store logs, events, alerts")
 }
 
 
