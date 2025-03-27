@@ -13,7 +13,7 @@ Person(security-analyst, "Security Analyst", "")
 Rel(security-analyst, wazuh-dashboard, "")
 
 Container_Boundary(wazuh-dashboard, "Wazuh Dashboard Charm") {
-    Component(wazuh-dashboard, "Wazuh Dashboard Snap", "","A customized opensearch dashboard.")
+    Component(wazuh-dashboard, "Wazuh Dashboard Snap", "","A customized OpenSearch dashboard")
 }
 
 
