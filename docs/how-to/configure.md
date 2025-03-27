@@ -20,7 +20,7 @@ For the Wazuh server to be able to retrieve the configuration, we're using the c
 
 ## Set up repository content
 
-You repository should mimic the layout of the Wazuh Server configuration with a `var/ossec` folder.
+You repository should mimic the layout of the Wazuh server configuration with a `var/ossec` folder.
 
 All files in the following sub-folders will be copied to the Wazuh server:
 
@@ -33,11 +33,15 @@ All files in the following sub-folders will be copied to the Wazuh server:
 
 ## Deploy a new configuration
 
-The Wazuh Server charm is not watching the repository for changes.
+The Wazuh server charm is not watching the repository for changes.
 
 The recommended way to enforce a configuration update on the server is to update the `custom-config-repository` with the new Git reference to use.
 
 ```{note}
-While Wazuh Server is not watching the repository for changes, it may pull the repository on specific events, such as a restarts.
-That's why it's recommended to refer to an fixed Git reference to avoid unexpected configuration changes on your deployment.
-``
+While Wazuh server is not watching the repository for changes,
+it may pull the repository on specific events, such as a restarts.
+
+That's why it's recommended to refer to an fixed Git reference
+to avoid unexpected configuration changes on your deployment.
+```
+
