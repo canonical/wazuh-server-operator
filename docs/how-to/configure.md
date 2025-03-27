@@ -40,4 +40,4 @@ The recommended way to enforce a configuration update on the server is to update
 ```{note}
 While Wazuh Server is not watching the repository for changes, it may pull the repository on specific events, such as a restarts.
 That's why is recommended to refer to an fixed Git reference to avoid unexpected configuration changes on your deployment.
-```
+``
