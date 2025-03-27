@@ -22,7 +22,7 @@ For the Wazuh server to be able to retrieve the configuration, we're using the c
 
 You repository should mimic the layout of the Wazuh Server configuration with a `var/ossec` folder.
 
-Every files in the following sub-folders will be copied to the Wazuh server:
+All files in the following sub-folders will be copied to the Wazuh server:
 
 - `etc/*.conf`
 - `etc/decoders/` recursively
