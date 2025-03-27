@@ -11,7 +11,7 @@ The URL of this repository should be in the form `git+http://yourepo?ref=yourref
 - `yourrepo` is the address of your repository.
 - `yourref` is a Git reference, typically a tag, to specify the version you want to deploy.
 
-For the Wazuh server to be able to retrieve the configuration, we're using the concept of "deploy key":
+For the Wazuh server to be able to retrieve the configuration, we're using the concept of a deploy key:
 
 1. Create a SSH key pair:
 2. Add the private key as a Juju secret and retrieve the secret ID: `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`.
