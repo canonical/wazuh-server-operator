@@ -4,13 +4,15 @@
 # opensearch to be configured in a specific way.
 #
 
+set -euo pipefail
+
 if ! juju show-application wazuh-indexer &>/dev/null; then
 	echo "No wazuh-indexer found (are you on the right model?)"
 	exit 1
 fi
 
 echo "Fetching admin password through secrets as the get-password action would fail if the charm is blocked"
-PASSWORD=$(for secret in $(juju secrets | tail +2 | awk '{print $1}'); do juju show-secret $secret --reveal | grep 'admin-password:'; done | awk '{print $2}')
+PASSWORD=$(for secret in $(juju secrets | tail +2 | awk '{print $1}'); do juju show-secret $secret --reveal; done | awk '/admin-password:/{print $2}')
 CREDS="admin:$PASSWORD"
 
 echo "Retrieving unit IP"
