@@ -156,31 +156,25 @@ async def application_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
-    no_deploy = pytestconfig.getoption("--no-deploy")
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
     wazuh_server_app = "wazuh-server"
-    if no_deploy and wazuh_server_app in model.applications:
+    if pytestconfig.getoption("--no-deploy") and wazuh_server_app in model.applications:
         logger.warning("Using existing application: %s", wazuh_server_app)
-        application = model.applications[wazuh_server_app]
-    else:
-        application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+        yield model.applications[wazuh_server_app]
+        return
 
-    relations = [r.key for r in model.relations]
-    if "wazuh-server:opensearch-client wazuh-indexer:opensearch-client" not in relations:
-        await model.integrate(
-            f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
-            application.name,
-        )
-    if "wazuh-server:certificates self-signed-certificates:certificates" not in relations:
-        await model.integrate(
-            f"localhost:admin/{self_signed_certificates.model.name}.{self_signed_certificates.name}",
-            application.name,
-        )
-    if "wazuh-server:ingress traefik-k8s:traefik-route" not in relations:
-        await model.integrate(traefik.name, application.name)
-
+    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+    await model.integrate(
+        f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
+        application.name,
+    )
+    await model.integrate(
+        f"localhost:admin/{self_signed_certificates.model.name}.{self_signed_certificates.name}",
+        application.name,
+    )
+    await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
         apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
     )
