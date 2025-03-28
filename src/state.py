@@ -72,11 +72,13 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the secret key corresponding to the agent secret.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the secret key corresponding to the SSH key for the git repository.
+        logs_certification_authority: the CA used to authenticate rsyslog clients
     """
 
     agent_password: str | None = None
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
+    logs_certification_authority: str | None = None
 
 
 def _fetch_filebeat_configuration(

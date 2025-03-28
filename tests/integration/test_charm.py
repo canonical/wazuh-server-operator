@@ -7,6 +7,8 @@
 
 import logging
 from pathlib import Path
+import secrets
+import ssl
 
 import pytest
 import requests
@@ -16,7 +18,13 @@ from juju.model import Model
 
 import state
 import wazuh
-from tests.integration.helpers import get_k8s_service_address
+from tests.integration.helpers import (
+    get_k8s_service_address,
+    send_syslog_over_tls,
+    get_ca_certificate,
+    get_wazuh_ip,
+    found_in_logs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,3 +85,50 @@ async def test_clustering_ok(model: Model, application: Application):
     assert code == 0, f"cluster test for unit 0 failed with code {code}: {stderr or stdout}"
     assert "connected nodes (1)" in stdout, stdout
     assert "wazuh-server-1" in stdout, stdout
+
+
+@pytest.mark.abort_on_fail
+async def test_rsyslog_server_ok_client_ko():
+    """
+    Arrange: a working Wazuh deployment with a CA matching the client CA
+    Act: send a syslog message over tls
+    Assert: the message is sent
+    """
+    ca_cert = await get_ca_certificate()
+    wazuh_ip = await get_wazuh_ip()
+
+    needle = secrets.token_hex()
+    sent = await send_syslog_over_tls(needle, host=wazuh_ip, server_ca=ca_cert)
+    assert sent
+
+    found = await found_in_logs(needle)
+    assert not found
+
+
+@pytest.mark.abort_on_fail
+async def test_rsyslog_server_ko():
+    """
+    Arrange: a working Wazuh deployment with a CA not matching the client CA
+    Act: send a syslog message over tls
+    Assert: the client raises an error
+    """
+    ca_cert = await get_ca_certificate()
+    ca_cert = ca_cert.replace("e", "a")
+
+    wazuh_ip = await get_wazuh_ip()
+
+    with pytest.raises(ssl.SSLCertVerificationError):
+        await send_syslog_over_tls("test", host=wazuh_ip, server_ca=ca_cert)
+
+
+@pytest.mark.abort_on_fail
+async def test_rsyslog_server_ok_and_client_ok():
+    """
+    Arrange: a working Wazuh deployment with a CA not matching the client CA
+    Act: send a syslog message over tls
+    Assert: the client raises an error
+    """
+    ca_cert = await get_ca_certificate()
+    ca_cert = ca_cert.replace("e", "a")
+
+    wazuh_ip = await get_wazuh_ip()
