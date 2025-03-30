@@ -24,7 +24,7 @@ curl -k -u $CREDS -X PUT https://$IP:9200/_index_template/default-replicas -H "C
 echo
 
 echo "Updating existing indices"
-for index in $(curl -k -u $CREDS https://10.14.1.206:9200/_cat/indices  | awk '{print $3}' | grep -v .opendistro_security); do
+for index in $(curl -k -u $CREDS https://$IP:9200/_cat/indices  | awk '{print $3}' | grep -v .opendistro_security); do
 	echo $index
 	curl -k -u $CREDS -X PUT https://$IP:9200/$index/_settings -H "Content-Type: application/json" -d '{ "index": { "number_of_replicas": 0 } }'
 	echo
