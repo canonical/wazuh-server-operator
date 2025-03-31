@@ -1,3 +1,6 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 #!/bin/bash
 #
 # When run with --single-index-node parameter, integration tests need 
