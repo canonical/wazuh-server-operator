@@ -119,6 +119,11 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
+
+        if not self.state.logs_certification_authority:
+            self.unit.status = ops.WaitingStatus("logs-certification-authority must be set.")
+            return
+
         wazuh.install_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
