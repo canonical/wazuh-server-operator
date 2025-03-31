@@ -116,6 +116,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         api_credentials=api_credentials,
         custom_config_repository=custom_config_repository,
         custom_config_ssh_key=secret_id,
+        logs_certification_authority="logs_ca",
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
@@ -159,7 +160,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 path=wazuh.SYSLOG_CERTIFICATES_PATH,
                 private_key=ANY,
                 public_key="certificate",
-                root_ca="root_ca",
+                root_ca="logs_ca",
                 user="syslog",
                 group="syslog",
             ),
@@ -234,6 +235,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
             api_credentials=api_credentials,
             custom_config_repository=None,
             custom_config_ssh_key=None,
+            logs_certification_authority="logs_ca",
         ),
         custom_config_ssh_key=None,
     )
@@ -264,7 +266,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 path=wazuh.SYSLOG_CERTIFICATES_PATH,
                 private_key=ANY,
                 public_key="certificate",
-                root_ca="root_ca",
+                root_ca="logs_ca",
                 user="syslog",
                 group="syslog",
             ),

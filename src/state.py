@@ -247,6 +247,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
+        logs_certification_authority: the CA to authenticate rssyslog clients.
     """
 
     agent_password: str | None = None
@@ -259,6 +260,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     root_ca: str = Field(..., min_length=1)
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
+    logs_certification_authority: str | None = None
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
@@ -298,6 +300,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             root_ca=root_ca,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
+            logs_certification_authority=wazuh_config.logs_certification_authority,
         )
 
     @property

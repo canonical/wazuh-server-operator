@@ -133,7 +133,7 @@ class WazuhServerCharm(CharmBaseWithState):
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
-            root_ca=self.state.root_ca,
+            root_ca=self.state.logs_certification_authority,
             user=wazuh.SYSLOG_USER,
             group=wazuh.SYSLOG_USER,
         )

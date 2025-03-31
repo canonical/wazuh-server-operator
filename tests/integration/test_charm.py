@@ -6,9 +6,9 @@
 """Integration tests."""
 
 import logging
-from pathlib import Path
 import secrets
 import ssl
+from pathlib import Path
 
 import pytest
 import requests
@@ -19,11 +19,11 @@ from juju.model import Model
 import state
 import wazuh
 from tests.integration.helpers import (
-    get_k8s_service_address,
-    send_syslog_over_tls,
-    get_ca_certificate,
-    get_wazuh_ip,
     found_in_logs,
+    get_ca_certificate,
+    get_k8s_service_address,
+    get_wazuh_ip,
+    send_syslog_over_tls,
 )
 
 logger = logging.getLogger(__name__)
@@ -88,47 +88,44 @@ async def test_clustering_ok(model: Model, application: Application):
 
 
 @pytest.mark.abort_on_fail
-async def test_rsyslog_server_ok_client_ko():
-    """
-    Arrange: a working Wazuh deployment with a CA matching the client CA
-    Act: send a syslog message over tls
-    Assert: the message is sent
-    """
-    ca_cert = await get_ca_certificate()
-    wazuh_ip = await get_wazuh_ip()
-
-    needle = secrets.token_hex()
-    sent = await send_syslog_over_tls(needle, host=wazuh_ip, server_ca=ca_cert)
-    assert sent
-
-    found = await found_in_logs(needle)
-    assert not found
-
-
-@pytest.mark.abort_on_fail
-async def test_rsyslog_server_ko():
+async def test_rsyslog_invalid_server_ca(application: Application):
     """
     Arrange: a working Wazuh deployment with a CA not matching the client CA
     Act: send a syslog message over tls
     Assert: the client raises an error
     """
-    ca_cert = await get_ca_certificate()
-    ca_cert = ca_cert.replace("e", "a")
+    assert application
+    ca_cert = (Path(__file__).parent / "certs/ca.crt").read_text()
 
     wazuh_ip = await get_wazuh_ip()
 
     with pytest.raises(ssl.SSLCertVerificationError):
-        await send_syslog_over_tls("test", host=wazuh_ip, server_ca=ca_cert)
+        await send_syslog_over_tls("test", host=wazuh_ip, server_ca=ca_cert, valid_cn=True)
 
 
-@pytest.mark.abort_on_fail
-async def test_rsyslog_server_ok_and_client_ok():
+@pytest.mark.parametrize(
+    ["valid_cn", "expect_logs"],
+    [
+        pytest.param(True, True, id="valid"),
+        pytest.param(False, False, id="invalid"),
+    ],
+)
+async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expect_logs: bool):
     """
-    Arrange: a working Wazuh deployment with a CA not matching the client CA
-    Act: send a syslog message over tls
-    Assert: the client raises an error
+    Arrange: a working Wazuh deployment with a log-certification-authority configured
+    Act: send a syslog message over tls (with or without a valid CN)
+    Assert: the message appears in the log only if the CN is valid
     """
-    ca_cert = await get_ca_certificate()
-    ca_cert = ca_cert.replace("e", "a")
-
+    assert application
+    server_ca_cert = await get_ca_certificate()
     wazuh_ip = await get_wazuh_ip()
+
+    needle = secrets.token_hex()
+    sent = await send_syslog_over_tls(
+        needle, host=wazuh_ip, server_ca=server_ca_cert, valid_cn=valid_cn
+    )
+    assert sent, "Log was not sent."
+
+    found = await found_in_logs(needle)
+
+    assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
