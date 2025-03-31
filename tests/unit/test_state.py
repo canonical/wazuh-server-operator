@@ -108,7 +108,7 @@ def test_state_without_proxy():
     assert charm_state.root_ca == "root_ca"
     assert charm_state.custom_config_repository is None
     assert charm_state.custom_config_ssh_key is None
-    assert charm_state.logs_certification_authority is None
+    assert charm_state.logs_ca_cert is None
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
@@ -565,7 +565,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     assert charm_state.proxy.no_proxy is None
 
 
-def test_state_when_logs_certification_authority_valid(monkeypatch: pytest.MonkeyPatch):
+def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
     """
     arrange: TODO
     act: when charm state is initialized.
@@ -576,7 +576,7 @@ def test_state_when_logs_certification_authority_valid(monkeypatch: pytest.Monke
         mock_charm,
         "config",
         {
-            "logs-certification-authority": "my secret authority",
+            "logs-ca-cert": "my secret authority",
         },
     )
 
@@ -623,7 +623,7 @@ def test_state_when_logs_certification_authority_valid(monkeypatch: pytest.Monke
     # assert charm_state.agent_password == value
     assert charm_state.custom_config_repository is None
     assert charm_state.custom_config_ssh_key is None
-    assert charm_state.logs_certification_authority == "my secret authority"
+    assert charm_state.logs_ca_cert == "my secret authority"
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None

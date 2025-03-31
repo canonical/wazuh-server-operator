@@ -168,9 +168,7 @@ async def application_fixture(
 
     application = await model.deploy(
         f"./{charm}",
-        config={
-            "logs-certification-authority": (Path(__file__).parent / "certs/ca.crt").read_text()
-        },
+        config={"logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text()},
         resources=resources,
         trust=True,
     )

@@ -120,8 +120,8 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
 
-        if not self.state.logs_certification_authority:
-            self.unit.status = ops.WaitingStatus("logs-certification-authority must be set.")
+        if not self.state.logs_ca_cert:
+            self.unit.status = ops.WaitingStatus("logs-ca-cert must be set.")
             return
 
         wazuh.install_certificates(
@@ -138,7 +138,7 @@ class WazuhServerCharm(CharmBaseWithState):
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
-            root_ca=self.state.logs_certification_authority,
+            root_ca=self.state.logs_ca_cert,
             user=wazuh.SYSLOG_USER,
             group=wazuh.SYSLOG_USER,
         )

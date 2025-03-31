@@ -116,7 +116,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         api_credentials=api_credentials,
         custom_config_repository=custom_config_repository,
         custom_config_ssh_key=secret_id,
-        logs_certification_authority="logs_ca",
+        logs_ca_cert="logs_ca",
     )
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
@@ -235,7 +235,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
             api_credentials=api_credentials,
             custom_config_repository=None,
             custom_config_ssh_key=None,
-            logs_certification_authority="logs_ca",
+            logs_ca_cert="logs_ca",
         ),
         custom_config_ssh_key=None,
     )
