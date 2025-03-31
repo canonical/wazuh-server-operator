@@ -22,7 +22,7 @@ Container_Boundary(synapse, "Wazuh server charm") {
   ComponentDb(filesystem, "Ephemeral storage", "", "Logs files on filesystem")
   Component(wazuh-rsyslog, "Wazuh rsyslog server", "", "Collects logs")
   Rel(wazuh-rsyslog, filesystem,"")
-  Rel(wazuh-filebeat, filesystem,"")
+  Rel(filesystem, wazuh-filebeat, "")
 }
 Rel(wazuh-filebeat, wazuh-indexer,"Store logs")
 
