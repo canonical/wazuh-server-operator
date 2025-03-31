@@ -75,8 +75,10 @@ async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn
 
     with socket.create_connection((host, 6514)) as sock:
         with context.wrap_socket(sock, server_hostname=host) as tls_sock:
-            syslog_message = f"{message}\n"
+            syslog_message = f"test-client testlogger: {message}\n"
             tls_sock.sendall(syslog_message.encode("utf-8"))
+            tls_sock.shutdown(socket.SHUT_RDWR)
+            tls_sock.close()
             return True
 
     return False

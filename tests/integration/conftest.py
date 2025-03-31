@@ -7,6 +7,7 @@ import logging
 import os.path
 import secrets
 import typing
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -165,7 +166,14 @@ async def application_fixture(
         yield model.applications[wazuh_server_app]
         return
 
-    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+    application = await model.deploy(
+        f"./{charm}",
+        config={
+            "logs-certification-authority": (Path(__file__).parent / "certs/ca.crt").read_text()
+        },
+        resources=resources,
+        trust=True,
+    )
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
