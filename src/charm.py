@@ -18,6 +18,7 @@ import opensearch_observer
 import state
 import traefik_route_observer
 import wazuh
+from lib.charms.wazuh_server.v0 import wazuh_api
 from state import (
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     CharmBaseWithState,
@@ -200,6 +201,20 @@ class WazuhServerCharm(CharmBaseWithState):
                 if self.unit.is_leader():
                     secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
+        api_key_secret_content = {
+            "user": "wazuh-wui",
+            "password": self.state.api_credentials["wazuh_wui"],
+        }
+        try:
+            secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
+            secret.set_content(api_key_secret_content)
+            logger.debug("Updated secret %s with API credentials", secret.id)
+        except ops.SecretNotFoundError:
+            if self.unit.is_leader():
+                secret = self.app.add_secret(
+                    api_key_secret_content, label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL
+                )
+                logger.debug("Added secret %s with API credentials", secret.id)
 
     def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
         """Reconcile Wazuh configuration with charm state.
