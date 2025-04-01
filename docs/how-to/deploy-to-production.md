@@ -46,7 +46,6 @@ module "wazuh" {
 
   wazuh_server = {
     channel = "4.9/stable"
-    base = "ubuntu@22.04"
   }
 
   traefik_k8s = {
@@ -54,7 +53,6 @@ module "wazuh" {
 
   self_signed_certificates = {
     channel = "1/stable"
-    base = "ubuntu@24.04"
   }
 
   providers = {

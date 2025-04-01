@@ -42,7 +42,7 @@ variable "wazuh_server" {
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
-    base        = optional(string, "ubuntu@24.04")
+    base        = optional(string, "ubuntu@22.04")
     units       = optional(number, 1)
   })
 }
@@ -67,7 +67,7 @@ variable "self_signed_certificates" {
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
-    base        = optional(string, "ubuntu@20.04")
+    base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
     storage     = optional(map(string), {})
   })
