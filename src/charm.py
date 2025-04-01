@@ -162,8 +162,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.cluster_key,
         )
 
-        return
-
     # It doesn't make sense to split the logic further
     # Ignoring method too complex error from pflake8
     def _configure_users(self) -> None:  # noqa: C901
@@ -188,8 +186,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     credentials[username] = password
                     logger.debug("Changed password for API user %s", username)
                 except wazuh.WazuhAuthenticationError:
-                    logger.
-                    ("Could not authenticate user %s with default password.", username)
+                    logger.debug("Could not authenticate user %s with default password.", username)
             else:
                 logger.debug("Configuring non-default user %s", username)
                 token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
@@ -225,7 +222,6 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        logger.debug("Configure installation")
         self._configure_installation(container)
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()

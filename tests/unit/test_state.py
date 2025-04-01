@@ -567,9 +567,9 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
 
 def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
     """
-    arrange: TODO
+    arrange: a charm created with a logs-ca-cert-config
     act: when charm state is initialized.
-    assert: the state contains the secret value.
+    assert: the state contains the logs-ca-cert value.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     monkeypatch.setattr(
@@ -620,7 +620,6 @@ def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
     assert charm_state.filebeat_password == password
     assert charm_state.certificate == "certificate"
     assert charm_state.root_ca == "root_ca"
-    # assert charm_state.agent_password == value
     assert charm_state.custom_config_repository is None
     assert charm_state.custom_config_ssh_key is None
     assert charm_state.logs_ca_cert == "my secret authority"
