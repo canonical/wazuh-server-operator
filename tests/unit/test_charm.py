@@ -375,4 +375,6 @@ def test_invalid_logs_ca_cert(
     with pytest.raises(RecoverableStateError):
         harness.charm.reconcile(None)
 
-    assert harness.model.unit.status == ops.BlockedStatus("logs-ca-cert must be set.")
+    assert harness.model.unit.status == ops.BlockedStatus(
+        "Invalid charm configuration 'logs-ca-cert' is missing."
+    )
