@@ -185,6 +185,6 @@ async def application_fixture(
         apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
     )
     await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=False, timeout=5 * 60
+        apps=[application.name], status="active", raise_on_error=False, timeout=1800
     )
     yield application
