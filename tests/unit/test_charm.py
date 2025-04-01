@@ -321,3 +321,58 @@ def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock, *_)
 
     with pytest.raises(InvalidStateError):
         harness.charm.reconcile(None)
+
+
+@patch.object(wazuh, "create_readonly_api_user")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(State, "from_charm")
+@patch.object(wazuh, "get_version")
+@patch.object(CertificatesObserver, "get_csr")
+def test_invalid_logs_ca_cert(
+    filebeat_csr_mock,
+    get_version_mock,
+    state_from_charm_mock,
+    *_,
+):
+    """
+    arrange: a working charm without logs-ca-cert configured
+    act: instantiate a charm.
+    assert: the charm reaches blocked status
+    """
+    password = secrets.token_hex()
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
+    }
+    cluster_key = secrets.token_hex(16)
+    state_from_charm_mock.return_value = State(
+        agent_password=None,
+        api_credentials=api_credentials,
+        cluster_key=cluster_key,
+        certificate="certificate",
+        root_ca="root_ca",
+        indexer_ips=["10.0.0.1"],
+        filebeat_username="user1",
+        filebeat_password=password,
+        wazuh_config=WazuhConfig(
+            api_credentials=api_credentials,
+            custom_config_repository=None,
+            custom_config_ssh_key=None,
+        ),
+        custom_config_ssh_key=None,
+    )
+    get_version_mock.return_value = "v4.9.2"
+    filebeat_csr_mock.return_value = b""
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    with pytest.raises(RecoverableStateError):
+        harness.charm.reconcile(None)
+
+    assert harness.model.unit.status == ops.BlockedStatus("logs-ca-cert must be set.")
