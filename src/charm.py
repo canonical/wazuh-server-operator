@@ -203,7 +203,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     logger.debug("Added secret %s with credentials", secret.id)
         api_key_secret_content = {
             "user": "wazuh-wui",
-            "password": self.state.api_credentials["wazuh_wui"],
+            "password": self.state.api_credentials["wazuh-wui"],
         }
         try:
             secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
