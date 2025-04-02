@@ -19,7 +19,7 @@ import opensearch_observer
 import state
 import traefik_route_observer
 import wazuh
-from lib.charms.wazuh_server.v0 import wazuh_api
+from charms.wazuh_server.v0 import wazuh_api
 from state import (
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     CharmBaseWithState,
