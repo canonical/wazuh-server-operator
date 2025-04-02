@@ -8,6 +8,8 @@ import ops
 from charms.wazuh_server.v0 import wazuh_api
 from ops.testing import Harness
 
+import wazuh
+
 REQUIRER_METADATA = """
 name: wazuh-api-consumer
 requires:
@@ -23,7 +25,7 @@ provides:
 """
 
 SAMPLE_RELATION_DATA = {
-    "endpoint": "https://example.wazuh:55000/",
+    "endpoint": f"https://example.wazuh:{wazuh.API_PORT}/",
     "user_credentials_secret": (
         "secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0"
     ),

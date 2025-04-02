@@ -88,7 +88,9 @@ class WazuhServerCharm(CharmBaseWithState):
             try:
                 secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
                 relation_data = wazuh_api.WazuhApiRelationData(
-                    endpoint=pydantic.AnyHttpUrl(f"https://{self.external_hostname}:55000"),
+                    endpoint=pydantic.AnyHttpUrl(
+                        f"https://{self.external_hostname}:{wazuh.API_PORT}"
+                    ),
                     user="wazuh-wui",
                     password=self.state.api_credentials["wazuh-wui"],
                     user_credentials_secret=secret.id,
@@ -338,7 +340,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "on-failure": "restart",
                     "environment": {
                         "WAZUH_API_HOST": "localhost",
-                        "WAZUH_API_PORT": "55000",
+                        "WAZUH_API_PORT": f"{wazuh.API_PORT}",
                         "WAZUH_API_USERNAME": "prometheus",
                         "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
                     },
