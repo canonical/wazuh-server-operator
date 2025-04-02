@@ -18,7 +18,7 @@ class WazuhApiServerRequirerCharm(ops.CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
         self.wazuh_api = wazuh_api.WazuhApiServerRequires(self)
-        self.framework.observe(self.smtp.on.wazuh_api_data_available, self._handler)
+        self.framework.observe(self.wazuh_api.on.wazuh_api_data_available, self._handler)
         ...
 
     def _handler(self, events: WazuhApiDataAvailableEvent) -> None:
@@ -96,23 +96,23 @@ class WazuhApiRelationData(BaseModel):
         endpoint: The API endpoint.
         user: The user to authenticate against the API.
         password: TThe password to authenticate against the API.
-        secret_user: The secret ID containing the API credentials.
+        user_credentials_secret: The secret ID containing the API credentials.
     """
 
     endpoint: AnyHttpUrl
     user: str
     password: str
-    secret_user: str
+    user_credentials_secret: str
 
     def to_relation_data(self) -> Dict[str, str]:
-        """Convert an instance of SmtpRelationData to the relation representation.
+        """Convert an instance of WazuhApiRelationData to the relation representation.
 
         Returns:
             Dict containing the representation.
         """
         return {
             "endpoint": str(self.endpoint),
-            "secret_user": self.secret_user,
+            "user_credentials_secret": self.user_credentials_secret,
         }
 
 
@@ -137,13 +137,15 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
         assert self.relation.app
         relation_data = self.relation.data[self.relation.app]
         try:
-            credentials = self.framework.model.get_secret(id=relation_data.get("secret_user"))
+            credentials = self.framework.model.get_secret(
+                id=relation_data.get("user_credentials_secret")
+            )
             user = typing.cast(str, credentials.get_content().get("user"))
             password = typing.cast(str, credentials.get_content().get("password"))
             return (user, password)
         except ops.model.ModelError as exc:
             raise SecretError(
-                f'Could not consume secret {relation_data.get("secret_user")}'
+                f'Could not consume secret {relation_data.get("user_credentials_secret")}'
             ) from exc
 
     @property
@@ -217,20 +219,20 @@ class WazuhApiRequires(ops.Object):
         if not relation_data:
             return None
 
-        secret_id = typing.cast(str, relation_data.get("secret_user"))
+        secret_id = typing.cast(str, relation_data.get("user_credentials_secret"))
         try:
             credentials = self.model.get_secret(id=secret_id)
             user = typing.cast(str, credentials.get_content().get("user"))
             password = typing.cast(str, credentials.get_content().get("password"))
             return WazuhApiRelationData(
                 endpoint=AnyHttpUrl(typing.cast(str, relation_data.get("endpoint"))),
-                secret_user=secret_id,
+                user_credentials_secret=secret_id,
                 user=user,
                 password=password,
             )
         except ops.model.ModelError as exc:
             raise SecretError(
-                f'Could not consume secret {relation_data.get("secret_user")}'
+                f'Could not consume secret {relation_data.get("user_credentials_secret")}'
             ) from exc
 
     def _is_relation_data_valid(self, relation: ops.Relation) -> bool:

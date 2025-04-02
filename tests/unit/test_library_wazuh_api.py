@@ -24,7 +24,9 @@ provides:
 
 SAMPLE_RELATION_DATA = {
     "endpoint": "https://example.wazuh:55000/",
-    "secret_user": "secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0",
+    "user_credentials_secret": (
+        "secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0"
+    ),
 }
 
 
@@ -88,7 +90,7 @@ def test_wazuh_api_provider_update_relation_data():
 
     relation_data = wazuh_api.WazuhApiRelationData(
         endpoint=SAMPLE_RELATION_DATA["endpoint"],
-        secret_user=SAMPLE_RELATION_DATA["secret_user"],
+        user_credentials_secret=SAMPLE_RELATION_DATA["user_credentials_secret"],
         user="wazuh-wui",
         password=secrets.token_hex(),
     )
@@ -97,7 +99,7 @@ def test_wazuh_api_provider_update_relation_data():
     assert relation
     data = relation.data[harness.model.app]
     assert data["endpoint"] == str(relation_data.endpoint)
-    assert data["secret_user"] == relation_data.secret_user
+    assert data["user_credentials_secret"] == relation_data.user_credentials_secret
     assert "user" not in data
     assert "password" not in data
 
@@ -110,7 +112,7 @@ def test_wazuh_api_relation_data_to_relation_data():
     """
     relation_data = wazuh_api.WazuhApiRelationData(
         endpoint=SAMPLE_RELATION_DATA["endpoint"],
-        secret_user=SAMPLE_RELATION_DATA["secret_user"],
+        user_credentials_secret=SAMPLE_RELATION_DATA["user_credentials_secret"],
         user="wazuh-wui",
         password=secrets.token_hex(),
     )
@@ -131,13 +133,13 @@ def test_requirer_charm_with_valid_relation_data_emits_event():
     password = secrets.token_hex()
     secret_id = harness.add_user_secret({"user": "wazuh-wui", "password": password})
     harness.grant_secret(secret_id, "wazuh-api-consumer")
-    SAMPLE_RELATION_DATA["secret_user"] = secret_id
+    SAMPLE_RELATION_DATA["user_credentials_secret"] = secret_id
     harness.add_relation("wazuh-api", "wazuh-api-provider", app_data=SAMPLE_RELATION_DATA)
     relation_data = harness.charm.wazuh_api.get_relation_data()
 
     assert relation_data
     assert str(relation_data.endpoint) == SAMPLE_RELATION_DATA["endpoint"]
-    assert relation_data.secret_user == SAMPLE_RELATION_DATA["secret_user"]
+    assert relation_data.user_credentials_secret == SAMPLE_RELATION_DATA["user_credentials_secret"]
     assert relation_data.user == "wazuh-wui"
     assert relation_data.password == password
 

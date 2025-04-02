@@ -91,7 +91,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     endpoint=pydantic.AnyHttpUrl(f"https://{self.external_hostname}:55000"),
                     user="wazuh-wui",
                     password=self.state.api_credentials["wazuh-wui"],
-                    secret_user=secret.id,
+                    user_credentials_secret=secret.id,
                 )
                 self._wazuh_api.update_relation_data(event.relation, relation_data)
             except ops.SecretNotFoundError:
