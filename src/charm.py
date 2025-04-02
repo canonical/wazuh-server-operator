@@ -11,6 +11,7 @@ import typing
 
 import ops
 import pydantic
+from charms.wazuh_server.v0 import wazuh_api
 from ops import pebble
 
 import certificates_observer
@@ -19,7 +20,6 @@ import opensearch_observer
 import state
 import traefik_route_observer
 import wazuh
-from charms.wazuh_server.v0 import wazuh_api
 from state import (
     WAZUH_CLUSTER_KEY_SECRET_LABEL,
     CharmBaseWithState,
