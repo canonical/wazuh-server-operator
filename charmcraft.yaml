@@ -46,7 +46,6 @@ name: wazuh-server
 summary: A charm deploying the Wazuh Server.
 links:
   contact: https://launchpad.net/~canonical-is-devops
-  documentation: https://discourse.charmhub.io/t/wazuh-server-documentation-overview/16070
   issues: https://github.com/canonical/wazuh-server-operator/issues
   source: https://github.com/canonical/wazuh-server-operator
 description: |
