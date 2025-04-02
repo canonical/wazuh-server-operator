@@ -36,7 +36,7 @@ Following the previous example, this is an example of the provider charm.
 ```python
 from charms.wazuh_server.v0.wazuh_api import import WazuhApiProvides
 
-class WazuhApiPServerroviderCharm(ops.CharmBase):
+class WazuhApiProviderCharm(ops.CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
         self.wazuh_api = WazuhApiProvides(self)
