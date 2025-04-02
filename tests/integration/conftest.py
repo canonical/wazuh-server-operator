@@ -184,6 +184,9 @@ async def application_fixture(
         resources=resources,
         trust=True,
     )
+    await model.wait_for_idle(
+        apps=[application.name], status="waiting", raise_on_error=False, timeout=1800
+    )
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
