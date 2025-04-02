@@ -1,6 +1,11 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+variable "controller" {
+  description = "Reference to the Juju controller to deploy application to."
+  type        = string
+}
+
 variable "model" {
   description = "Reference to the k8s Juju model to deploy application to."
   type        = string
