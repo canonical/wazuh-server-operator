@@ -12,12 +12,12 @@ be shared via the integration.
 
 ```python
 
-from charms.wazuh_server.v0.wazuh_api import WazuhApiDataAvailableEvent, WazuhApiServerRequires
+from charms.wazuh_server.v0.wazuh_api import WazuhApiDataAvailableEvent, WazuhApiRequires
 
-class WazuhApiServerRequirerCharm(ops.CharmBase):
+class WazuhApiRequirerCharm(ops.CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
-        self.wazuh_api = wazuh_api.WazuhApiServerRequires(self)
+        self.wazuh_api = wazuh_api.WazuhApiRequires(self)
         self.framework.observe(self.wazuh_api.on.wazuh_api_data_available, self._handler)
         ...
 
@@ -34,21 +34,21 @@ which new Wazuh API data has been added or updated.
 Following the previous example, this is an example of the provider charm.
 
 ```python
-from charms.wazuh_server.v0.wazuh_api import import WazuhApiServerProvides
+from charms.wazuh_server.v0.wazuh_api import import WazuhApiProvides
 
 class WazuhApiPServerroviderCharm(ops.CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
-        self.wazuh_api = WazuhApiServerProvides(self)
+        self.wazuh_api = WazuhApiProvides(self)
         ...
 
 ```
-The WazuhApiServerProvides object wraps the list of relations into a `relations` property
+The WazuhApiProvides object wraps the list of relations into a `relations` property
 and provides an `update_relation_data` method to update the relation data by passing
 a `WazuhApiRelationData` data object.
 
 ```python
-class WazuhApiServerProviderCharm(ops.CharmBase):
+class WazuhApiProviderCharm(ops.CharmBase):
     ...
 
     def _on_config_changed(self, _) -> None:
