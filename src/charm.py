@@ -10,6 +10,7 @@ import secrets
 import typing
 
 import ops
+import pydantic
 from ops import pebble
 
 import certificates_observer
@@ -53,12 +54,16 @@ class WazuhServerCharm(CharmBaseWithState):
         self.traefik_route_observer = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self._observability = observability.Observability(self)
+        self._wazuh_api = wazuh_api.WazuhApiProvides(self)
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
         self.framework.observe(self.on.config_changed, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
+        self.framework.observe(
+            self.on[wazuh_api.RELATION_NAME].relation_created, self._on_wazuh_api_relation_created
+        )
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -72,6 +77,25 @@ class WazuhServerCharm(CharmBaseWithState):
                 self.app.add_secret(
                     {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
+
+    def _on_wazuh_api_relation_created(self, event: ops.RelationCreatedEvent) -> None:
+        """Wazuh client API relation created event handler."""
+        if self.unit.is_leader():
+            if not self.state:
+                self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
+                event.defer()
+                return
+            try:
+                secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
+                relation_data = wazuh_api.WazuhApiRelationData(
+                    endpoint=pydantic.AnyHttpUrl(f"https://{self.external_hostname}:55000"),
+                    user="wazuh-wui",
+                    password=self.state.api_credentials["wazuh-wui"],
+                    secret_user=secret.id,
+                )
+                self._wazuh_api.update_relation_data(event.relation, relation_data)
+            except ops.SecretNotFoundError:
+                event.defer()
 
     @property
     def state(self) -> State | None:
