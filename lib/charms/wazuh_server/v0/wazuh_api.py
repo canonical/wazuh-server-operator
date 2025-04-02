@@ -263,7 +263,9 @@ class WazuhApiRequires(ops.Object):
         relation_data = event.relation.data[event.relation.app]
         if relation_data:
             if self._is_relation_data_valid(event.relation):
-                self.on.smtp_data_available.emit(event.relation, app=event.app, unit=event.unit)
+                self.on.wazuh_api_data_available.emit(
+                    event.relation, app=event.app, unit=event.unit
+                )
 
 
 class WazuhApiProvides(ops.Object):
