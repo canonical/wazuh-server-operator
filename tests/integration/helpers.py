@@ -123,16 +123,14 @@ async def found_in_logs(pattern: str) -> bool:
         return False
 
 
-async def configure_single_node(machine_model_name: str, k8s_model_name: str) -> None:
+async def configure_single_node(machine_model_name: str) -> None:
     """Call the shell helper to configure wazuh-indexer for single node mode
 
     Args:
         machine_model_name: name of the machine model to initially switch to
-        k8s_model_name: name of the k8s model to switch back to
     """
     logger.info("Configure single node")
     sh.bash(  # pylint: disable=too-many-function-args
         Path(__file__).parent / "config_single_node_index.sh",
         machine_model_name,
-        k8s_model_name,
     )

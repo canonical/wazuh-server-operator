@@ -114,21 +114,13 @@ async def self_signed_certificates_fixture(
 
 @pytest_asyncio.fixture(scope="module", name="opensearch_provider")
 async def opensearch_provider_fixture(
-    model: Model,
     machine_model: Model,
     pytestconfig: pytest.Config,
     self_signed_certificates: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     app_name = "wazuh-indexer"
-
-    k8s_controller_name = (await model.get_controller()).controller_name
     machine_controller_name = (await machine_model.get_controller()).controller_name
-    logger.info(
-        "Machine controller: %s, k8s controller: %s",
-        machine_controller_name,
-        k8s_controller_name,
-    )
 
     if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
         logger.warning("Using existing application: %s", app_name)
@@ -148,7 +140,7 @@ async def opensearch_provider_fixture(
         apps=[app_name], status="active", raise_on_error=False, timeout=1800
     )
     if num_units == 1:
-        await configure_single_node(machine_controller_name, k8s_controller_name)
+        await configure_single_node(machine_controller_name)
 
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application

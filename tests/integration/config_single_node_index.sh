@@ -8,8 +8,9 @@
 #
 
 MACHINE_MODEL="$1"
-K8S_MODEL="$2"
 set -euo pipefail
+
+CURRENT_MODEL="$(juju switch)"
 
 date
 sleep 2
@@ -43,5 +44,5 @@ sleep 5
 curl -k -u "$CREDS" "https://$IP:9200/_cat/indices" -H "Content-Type: application/json"
 
 sleep 2
-juju switch "$K8S_MODEL"
+juju switch "$CURRENT_MODEL"
 date
