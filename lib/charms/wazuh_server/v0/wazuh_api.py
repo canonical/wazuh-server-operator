@@ -143,7 +143,7 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
             user = typing.cast(str, credentials.get_content().get("user"))
             password = typing.cast(str, credentials.get_content().get("password"))
             return (user, password)
-        except ops.model.ModelError as exc:
+        except ops.SecretNotFoundError as exc:
             raise SecretError(
                 f'Could not consume secret {relation_data.get("user_credentials_secret")}'
             ) from exc
