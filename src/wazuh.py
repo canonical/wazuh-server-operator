@@ -322,10 +322,6 @@ def pull_configuration_files(container: ops.Container) -> None:
     """
     try:
         process = container.exec(
-            ["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"], timeout=10
-        )
-        process.wait_output()
-        process = container.exec(
             [
                 "rsync",
                 "-a",
