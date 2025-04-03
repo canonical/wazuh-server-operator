@@ -313,6 +313,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-alive": {
                     "override": "replace",
                     "level": "alive",
+                    "threshold": 10,
                     "tcp": {"port": wazuh.API_PORT},
                 },
             },
