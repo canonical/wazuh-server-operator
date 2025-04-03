@@ -261,10 +261,10 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
         self._configure_installation(container)
-        self._populate_wazuh_api_relation_data()
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         self._configure_users()
+        self._populate_wazuh_api_relation_data()
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
