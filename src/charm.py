@@ -97,7 +97,8 @@ class WazuhServerCharm(CharmBaseWithState):
                     user_credentials_secret=secret.get_info().id,
                 )
                 relation = self.model.get_relation(wazuh_api.RELATION_NAME)
-                self._wazuh_api.update_relation_data(relation, relation_data)
+                if relation:
+                    self._wazuh_api.update_relation_data(relation, relation_data)
             except ops.SecretNotFoundError as exc:
                 raise InvalidStateError from exc
 
