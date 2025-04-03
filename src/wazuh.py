@@ -445,7 +445,7 @@ def authenticate_user(username: str, password: str) -> str:
         session = requests.Session()
         retries = requests.adapters.Retry(connect=10, backoff_factor=0.2)
         session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
-        response = requests.get(  # nosec
+        response = session.get(  # nosec
             AUTH_ENDPOINT,
             auth=(username, password),
             timeout=10,
