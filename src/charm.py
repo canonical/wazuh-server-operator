@@ -61,9 +61,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(self.on.config_changed, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
-        self.framework.observe(
-            self.on[wazuh_api.RELATION_NAME].relation_created, self._on_wazuh_api_relation_created
-        )
+        self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_created, self.reconcile)
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -78,13 +76,16 @@ class WazuhServerCharm(CharmBaseWithState):
                     {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
 
-    def _on_wazuh_api_relation_created(self, event: ops.RelationCreatedEvent) -> None:
-        """Wazuh client API relation created event handler."""
+    def _populate_wazuh_api_relation_data(self) -> None:
+        """Wazuh client API relation created event handler.
+
+        Raises:
+            InvalidStateError: if the secret doesn't exist.
+        """
+        if not self.state:
+            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
+            return
         if self.unit.is_leader():
-            if not self.state:
-                self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
-                event.defer()
-                return
             try:
                 secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
                 relation_data = wazuh_api.WazuhApiRelationData(
@@ -95,9 +96,10 @@ class WazuhServerCharm(CharmBaseWithState):
                     password=self.state.api_credentials["wazuh-wui"],
                     user_credentials_secret=secret.id,
                 )
-                self._wazuh_api.update_relation_data(event.relation, relation_data)
-            except ops.SecretNotFoundError:
-                event.defer()
+                relation = self.model.get_relation(wazuh_api.RELATION_NAME)
+                self._wazuh_api.update_relation_data(relation, relation_data)
+            except ops.SecretNotFoundError as exc:
+                raise InvalidStateError from exc
 
     @property
     def state(self) -> State | None:
@@ -259,6 +261,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
         self._configure_installation(container)
+        self._populate_wazuh_api_relation_data()
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         self._configure_users()
