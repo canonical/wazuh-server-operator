@@ -223,7 +223,8 @@ class WazuhServerCharm(CharmBaseWithState):
             # Store the new credentials alongside the existing ones
             try:
                 secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
-                secret.set_content(credentials)
+                if dict(secret.get_content(refresh=True)) != credentials:
+                    secret.set_content(credentials)
                 logger.debug("Updated secret %s with credentials", secret.id)
             except ops.SecretNotFoundError:
                 if self.unit.is_leader():
@@ -235,7 +236,8 @@ class WazuhServerCharm(CharmBaseWithState):
         }
         try:
             secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
-            secret.set_content(api_key_secret_content)
+            if dict(secret.get_content(refresh=True)) != api_key_secret_content:
+                secret.set_content(api_key_secret_content)
             logger.debug("Updated secret %s with API credentials", secret.id)
         except ops.SecretNotFoundError:
             if self.unit.is_leader():
