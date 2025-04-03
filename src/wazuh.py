@@ -443,7 +443,7 @@ def authenticate_user(username: str, password: str) -> str:
     # container filesystem is compromised
     try:
         session = requests.Session()
-        retries = requests.adapters.Retry(connect=10, backoff_factor=0.2)
+        retries = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
         session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
         response = session.get(  # nosec
             AUTH_ENDPOINT,
