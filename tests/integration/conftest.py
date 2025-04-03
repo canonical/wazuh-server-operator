@@ -84,7 +84,7 @@ async def traefik_fixture(
         app_name,
         application_name=app_name,
         channel="latest/edge",
-        revision="233",
+        revision=233,
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
