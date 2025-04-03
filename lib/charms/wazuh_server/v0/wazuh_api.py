@@ -212,7 +212,7 @@ class WazuhApiRequires(ops.Object):
             relation: the relation to retrieve the data from.
 
         Returns:
-            WazuhApiRelationData: the relation data.
+            WazuhApiRelationData: the relation data if found.
         """
         assert relation.app
         relation_data = relation.data[relation.app]
@@ -230,10 +230,9 @@ class WazuhApiRequires(ops.Object):
                 user=user,
                 password=password,
             )
-        except ops.model.ModelError as exc:
-            raise SecretError(
-                f'Could not consume secret {relation_data.get("user_credentials_secret")}'
-            ) from exc
+        except ops.model.ModelError:
+            logger.debug("Could not fetch secret %s", relation_data.get("user_credentials_secret"))
+            return None
 
     def _is_relation_data_valid(self, relation: ops.Relation) -> bool:
         """Validate the relation data.
