@@ -11,6 +11,7 @@ import pytest
 from ops.testing import Harness
 
 import traefik_route_observer
+import wazuh
 
 REQUIRER_METADATA = """
 name: observer-charm
@@ -98,7 +99,7 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                     },
                     "juju-testing-observer-charm-service-api-tcp": {
                         "loadBalancer": {
-                            "servers": [{"address": "wazuh-server.local:55000"}],
+                            "servers": [{"address": f"wazuh-server.local:{wazuh.API_PORT}"}],
                             "terminationDelay": -1,
                         }
                     },
@@ -110,7 +111,7 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                 "syslog-tcp": {"address": ":6514"},
                 "conn-tcp": {"address": ":1514"},
                 "enrole-tcp": {"address": ":1515"},
-                "api-tcp": {"address": ":55000"},
+                "api-tcp": {"address": f":{wazuh.API_PORT}"},
             }
         },
     )
