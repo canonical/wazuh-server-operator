@@ -88,6 +88,7 @@ async def traefik_fixture(
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
+    await model.wait_for_idle(apps=[app_name], status="active", raise_on_error=False, timeout=1800)
     yield application
 
 
