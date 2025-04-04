@@ -150,6 +150,13 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
+
+        if not self.state.logs_ca_cert:
+            self.unit.status = ops.BlockedStatus(
+                "Invalid charm configuration 'logs-ca-cert' is missing."
+            )
+            raise RecoverableStateError("Invalid charm configuration 'logs-ca-cert' is missing.")
+
         wazuh.install_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
@@ -164,7 +171,7 @@ class WazuhServerCharm(CharmBaseWithState):
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
-            root_ca=self.state.root_ca,
+            root_ca=self.state.logs_ca_cert,
             user=wazuh.SYSLOG_USER,
             group=wazuh.SYSLOG_USER,
         )

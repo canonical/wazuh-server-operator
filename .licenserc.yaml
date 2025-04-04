@@ -27,4 +27,5 @@ header:
     - 'rock/wazuh.conf'
     - 'src/prometheus_alert_rules/**'
     - 'tests/unit/resources/**'
+    - 'tests/integration/certs/**'
   comment: on-failure
