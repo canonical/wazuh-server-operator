@@ -92,6 +92,8 @@ provides:
     interface: grafana_dashboard
   metrics-endpoint:
     interface: prometheus_scrape
+  wazuh-api:
+    interface: wazuh_api_client
 requires:
   certificates:
     interface: tls-certificates
