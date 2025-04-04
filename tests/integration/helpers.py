@@ -41,7 +41,7 @@ async def get_ca_certificate() -> str:
         "self-signed-certificates/0",
         "get-ca-certificate",
         "--no-color",
-        model="localhost:test-w-machine",
+        model="localhost:testing-machine",
         format="yaml",
     )
     return yaml.safe_load(output)["self-signed-certificates/0"]["results"]["ca-certificate"]
