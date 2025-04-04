@@ -300,7 +300,7 @@ def configure_git(
         _get_current_configuration_url(container) != base_url
         or _get_current_configuration_url_branch(container) != branch
     ):
-        process = container.exec(["rm", "-rf", f"{REPOSITORY_PATH}/*"], timeout=1)
+        process = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1)
         process.wait_output()
 
         if base_url:
@@ -322,10 +322,6 @@ def pull_configuration_files(container: ops.Container) -> None:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
     try:
-        process = container.exec(
-            ["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"], timeout=10
-        )
-        process.wait_output()
         process = container.exec(
             [
                 "rsync",
