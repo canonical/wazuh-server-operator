@@ -16,6 +16,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import ops
 import requests
+import requests.adapters
 import yaml
 
 # Bandit classifies this import as vulnerable. For more details, see
@@ -441,7 +442,10 @@ def authenticate_user(username: str, password: str) -> str:
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
     try:
-        response = requests.get(  # nosec
+        session = requests.Session()
+        retries = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
+        session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+        response = session.get(  # nosec
             AUTH_ENDPOINT,
             auth=(username, password),
             timeout=10,
