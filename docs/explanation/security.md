@@ -32,9 +32,9 @@ You should limit who has access to the service (typically to your security team)
 
 You should pay attention to your backups.
 
-## Security related howtos
+## Security related how-to guides
 
-The following howtos cover security related topics:
+The following guides cover security related topics:
 
 - [How to backup and restore](../how-to/backup-restore.md)
 - [How to collect remote logs](../how-to/collect-logs.md)
