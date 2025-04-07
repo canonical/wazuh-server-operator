@@ -8,7 +8,7 @@ The mutual TLS connection ensures that both the client and the server are identi
 
 ## Configure the server
 
-Provide the certification authority (CA) certificate used to sign the client certificates to the charm with the `logs-certification-authority` configuration option. For instance: `juju config wazuh-server logs-certification-authority="$(cat ca.pem)"` where `ca.pem` contains your CA certificate.
+Provide the certification authority (CA) certificate used to sign the client certificates to the charm with the `logs-ca-cert` configuration option. For instance: `juju config wazuh-server logs-ca-cert="$(cat ca.pem)"` where `ca.pem` contains your CA certificate.
 
 ## Configure the clients
 
