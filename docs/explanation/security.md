@@ -14,7 +14,7 @@ For users to be able to access Wazuh dashboard without any warning, they must in
 
 1. Extract the certificate with the `juju run self-signed-certificates/leader get-ca-certificate` and save the content to a `PEM` file.
 2. Distribute the file to your users.
-3. For Chrome browser, users should go to "Settings > Privacy and security > Security > Manage certificates > Custom > Installed by you > Trusted Certificates > Import" and import the `PEM` file.
+3. Install the certificate in your browser. For Chrome, you should go to "Settings > Privacy and security > Security > Manage certificates > Custom > Installed by you > Trusted Certificates > Import" and import the `PEM` file.
 
 ### Restrict access
 
