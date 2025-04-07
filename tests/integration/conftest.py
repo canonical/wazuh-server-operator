@@ -223,11 +223,6 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(traefik.name, application.name)
-    await model.create_offer(f"{application.name}:wazuh-api", application.name)
-    await machine_model.integrate(
-        f"localhost:admin/{application.model.name}.{application.name}",
-        wazuh_dashboard.name,
-    )
     await model.wait_for_idle(
         apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
     )
