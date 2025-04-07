@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 data "juju_model" "wazuh_server" {
-  name = var.model
+  name = var.server_model
 }
 
 data "juju_model" "wazuh_indexer" {
@@ -30,6 +30,35 @@ module "wazuh_server" {
   revision    = var.wazuh_server.revision
   base        = var.wazuh_server.base
   units       = var.wazuh_server.units
+}
+
+resource "juju_offer" "wazuh_server_api" {
+  model = data.juju_model.wazuh_server.name
+
+  name             = "wazuh-server-api"
+  application_name = var.wazuh_server.app_name
+  endpoint         = module.wazuh_server.provides.wazuh_api
+}
+
+resource "juju_access_offer" "wazuh_server_api" {
+  offer_url = juju_offer.wazuh_server_api.url
+  admin     = [data.juju_model.wazuh_server_api.name]
+  consume   = [data.juju_model.wazuh_dashboard.name]
+}
+
+resource "juju_integration" "wazuh_server_api" {
+  provider = juju.wazuh_indexer
+  model = data.juju_model.wazuh_indexer.name
+
+  application {
+    name     = module.wazuh_dashboard.app_name
+    endpoint = module.wazuh_dashboard.requires.wazuh_api
+  }
+
+  application {
+    offer_url = "${var.server_controller}:${juju_offer.wazuh_server_api.url}"
+  }
+
 }
 
 module "traefik_k8s" {
@@ -100,7 +129,7 @@ resource "juju_integration" "wazuh_server_certificates" {
   }
 
   application {
-    offer_url = "${var.controller}:${juju_offer.self_signed_certificates.url}"
+    offer_url = "${var.indexer_controller}:${juju_offer.self_signed_certificates.url}"
   }
 }
 
@@ -279,6 +308,6 @@ resource "juju_integration" "wazuh_server_indexer" {
   }
 
   application {
-    offer_url = "${var.controller}:${juju_offer.wazuh_indexer.url}"
+    offer_url = "${var.indexer_controller}:${juju_offer.wazuh_indexer.url}"
   }
 }
