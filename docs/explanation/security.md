@@ -20,7 +20,7 @@ For users to be able to access Wazuh dashboard without any warning, they must in
 
 The charm exposes `wazuh-dashboard` directly to users with a local authentication system. It's recommended to keep this service private by restricting the access to known users (typically through a VPN).
 
-If you cannot restrict the access through a VPN, it's recommended to put a Web application firewall to restrict who can access the service.
+If you cannot restrict the access through a VPN, it's recommended to put a web application firewall to restrict who can access the service.
 
 ## Risks
 
