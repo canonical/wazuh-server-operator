@@ -24,8 +24,6 @@ If you cannot restrict the access through a VPN, it's recommended to put a web a
 
 ## Risks
 
-### Sensitive information
-
 Wazuh collects logs from different services, and these logs may contain sensitive information.
 
 You should limit who has access to the service (typically to your security team).
