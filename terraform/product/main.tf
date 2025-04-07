@@ -48,7 +48,7 @@ resource "juju_access_offer" "wazuh_server_api" {
 
 resource "juju_integration" "wazuh_server_api" {
   provider = juju.wazuh_indexer
-  model = data.juju_model.wazuh_indexer.name
+  model    = data.juju_model.wazuh_indexer.name
 
   application {
     name     = module.wazuh_dashboard.app_name
@@ -58,6 +58,10 @@ resource "juju_integration" "wazuh_server_api" {
   application {
     offer_url = "${var.server_controller}:${juju_offer.wazuh_server_api.url}"
   }
+
+  depends_on = [
+    juju_offer.wazuh_server_api
+  ]
 
 }
 
@@ -131,6 +135,10 @@ resource "juju_integration" "wazuh_server_certificates" {
   application {
     offer_url = "${var.indexer_controller}:${juju_offer.self_signed_certificates.url}"
   }
+
+  depends_on = [
+    juju_offer.self_signed_certificates
+  ]
 }
 
 resource "juju_application" "sysconfig" {
