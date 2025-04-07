@@ -219,10 +219,6 @@ async def application_fixture(
         application.name,
     )
     await model.integrate(
-        f"localhost:admin/{wazuh_dashboard.model.name}.{wazuh_dashboard.name}",
-        application.name,
-    )
-    await model.integrate(
         f"localhost:admin/{self_signed_certificates.model.name}.{self_signed_certificates.name}",
         application.name,
     )
