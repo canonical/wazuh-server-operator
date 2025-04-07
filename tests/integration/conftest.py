@@ -187,6 +187,7 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
 async def application_fixture(
     charm: str,
     model: Model,
+    machine_model: Model,
     self_signed_certificates: Application,
     opensearch_provider: Application,
     wazuh_dashboard: Application,
@@ -227,6 +228,10 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.create_offer(f"{application.name}:wazuh-api", application.name)
+    await machine_model.integrate(
+        f"localhost:admin/{application.model.name}.{application.name}",
+        wazuh_dashboard.name,
+    )
     await model.wait_for_idle(
         apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
     )
