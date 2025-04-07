@@ -187,10 +187,8 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
 async def application_fixture(
     charm: str,
     model: Model,
-    machine_model: Model,
     self_signed_certificates: Application,
     opensearch_provider: Application,
-    wazuh_dashboard: Application,
     pytestconfig: pytest.Config,
     traefik: Application,
 ) -> typing.AsyncGenerator[Application, None]:
