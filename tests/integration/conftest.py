@@ -7,12 +7,15 @@ import logging
 import os.path
 import secrets
 import typing
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
 from juju.application import Application
 from juju.model import Controller, Model
 from pytest_operator.plugin import OpsTest
+
+from tests.integration.helpers import configure_single_node
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +122,8 @@ async def opensearch_provider_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     app_name = "wazuh-indexer"
+    machine_controller_name = (await machine_model.get_controller()).controller_name
+
     if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
         logger.warning("Using existing application: %s", app_name)
         yield machine_model.applications[app_name]
@@ -130,7 +135,15 @@ async def opensearch_provider_fixture(
     application = await machine_model.deploy(
         app_name, application_name=app_name, channel="latest/edge", num_units=num_units
     )
+
     await machine_model.integrate(self_signed_certificates.name, application.name)
+
+    await machine_model.wait_for_idle(
+        apps=[app_name], status="active", raise_on_error=False, timeout=1800
+    )
+    if num_units == 1:
+        await configure_single_node(machine_controller_name)
+
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application
 
@@ -167,7 +180,15 @@ async def application_fixture(
         yield model.applications[wazuh_server_app]
         return
 
-    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+    application = await model.deploy(
+        f"./{charm}",
+        config={"logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text()},
+        resources=resources,
+        trust=True,
+    )
+    await model.wait_for_idle(
+        apps=[application.name], status="waiting", raise_on_error=False, timeout=1800
+    )
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -181,6 +202,6 @@ async def application_fixture(
         apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
     )
     await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=1800
+        apps=[application.name], status="active", raise_on_error=False, timeout=1800
     )
     yield application
