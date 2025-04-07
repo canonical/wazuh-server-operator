@@ -127,6 +127,11 @@ config:
         To create the secret, run the following command: 
         `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`,
         and use the secret ID output to configure this option.
+    logs-ca-cert:
+      type: string
+      description: >
+        The certification authority certificate used to sign client certificates that the server
+        should accept logs from.
 peers:
   wazuh-peers:
     interface: wazuh-instance
