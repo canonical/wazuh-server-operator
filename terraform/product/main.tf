@@ -60,7 +60,8 @@ resource "juju_integration" "wazuh_server_api" {
   }
 
   depends_on = [
-    juju_offer.wazuh_server_api
+    juju_offer.wazuh_server_api,
+    juju_access_offer.wazuh_server_api
   ]
 
 }
@@ -137,7 +138,8 @@ resource "juju_integration" "wazuh_server_certificates" {
   }
 
   depends_on = [
-    juju_offer.self_signed_certificates
+    juju_offer.self_signed_certificates,
+    juju_access_offer.self_signed_certificates
   ]
 }
 
