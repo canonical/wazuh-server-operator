@@ -85,7 +85,7 @@ variable "self_signed_certificates" {
 
 variable "wazuh_indexer_backup" {
   type = object({
-    app_name    = optional(string, "s3-integrator")
+    app_name    = optional(string, "wazuh_indexer_backup")
     channel     = optional(string, "latest/edge")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
