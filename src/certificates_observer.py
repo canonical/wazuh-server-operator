@@ -64,7 +64,8 @@ class CertificatesObserver(Object):
             if not content or renew:
                 private_key = certificates.generate_private_key().decode()
                 content["key"] = private_key
-                secret.set_content(content=content)
+                if dict(secret.get_content(refresh=True)) != content:
+                    secret.set_content(content=content)
             private_key = secret.get_content().get("key")
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
@@ -123,7 +124,8 @@ class CertificatesObserver(Object):
         secret = self._charm.model.get_secret(label=label)
         content = secret.get_content()
         content["csr"] = csr.decode("utf-8")
-        secret.set_content(content=content)
+        if dict(secret.get_content(refresh=True)) != content:
+            secret.set_content(content=content)
         return csr
 
     def _on_certificates_relation_joined(self, event: ops.RelationJoinedEvent) -> None:

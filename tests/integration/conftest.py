@@ -7,12 +7,15 @@ import logging
 import os.path
 import secrets
 import typing
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
 from juju.application import Application
 from juju.model import Controller, Model
 from pytest_operator.plugin import OpsTest
+
+from tests.integration.helpers import configure_single_node
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +50,19 @@ async def machine_controller_fixture() -> typing.AsyncGenerator[Controller, None
 @pytest_asyncio.fixture(scope="module", name="machine_model")
 async def machine_model_fixture(
     machine_controller: Controller,
+    pytestconfig: pytest.Config,
 ) -> typing.AsyncGenerator[Model, None]:
     """The machine model for OpenSearch charm."""
-    machine_model_name = f"machine-{secrets.token_hex(2)}"
-    model = await machine_controller.add_model(machine_model_name)
+    if model_name := pytestconfig.getoption("--model"):
+        machine_model_name = f"{model_name}-machine"
+    else:
+        machine_model_name = f"machine-{secrets.token_hex(2)}"
+    models = await machine_controller.list_models()
+    if machine_model_name in models:
+        logger.info("Using existing model %s", machine_model_name)
+        model = await machine_controller.get_model(machine_model_name)
+    else:
+        model = await machine_controller.add_model(machine_model_name)
     await model.connect(f"localhost:admin/{model.name}")
     await model.set_config(MACHINE_MODEL_CONFIG)
     yield model
@@ -58,26 +70,43 @@ async def machine_model_fixture(
 
 
 @pytest_asyncio.fixture(scope="module", name="traefik")
-async def traefik_fixture(model: Model) -> typing.AsyncGenerator[Application, None]:
+async def traefik_fixture(
+    model: Model, pytestconfig: pytest.Config
+) -> typing.AsyncGenerator[Application, None]:
     """Deploy the traefik charm."""
+    app_name = "traefik-k8s"
+    if pytestconfig.getoption("--no-deploy") and app_name in model.applications:
+        logger.warning("Using existing application: %s", app_name)
+        yield model.applications[app_name]
+        return
+
     application = await model.deploy(
-        "traefik-k8s",
-        application_name="traefik-k8s",
+        app_name,
+        application_name=app_name,
         channel="latest/edge",
+        revision=233,
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
+    await model.wait_for_idle(apps=[app_name], status="active", raise_on_error=False, timeout=1800)
     yield application
 
 
 @pytest_asyncio.fixture(scope="module", name="self_signed_certificates")
 async def self_signed_certificates_fixture(
     machine_model: Model,
+    pytestconfig: pytest.Config,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the self signed certificates charm."""
+    app_name = "self-signed-certificates"
+    if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
+        logger.warning("Using existing application: %s", app_name)
+        yield machine_model.applications[app_name]
+        return
+
     application = await machine_model.deploy(
-        "self-signed-certificates",
-        application_name="self-signed-certificates",
+        app_name,
+        application_name=app_name,
         channel="latest/stable",
         config={"ca-common-name": "Test CA"},
     )
@@ -88,13 +117,33 @@ async def self_signed_certificates_fixture(
 @pytest_asyncio.fixture(scope="module", name="opensearch_provider")
 async def opensearch_provider_fixture(
     machine_model: Model,
+    pytestconfig: pytest.Config,
     self_signed_certificates: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
+    app_name = "wazuh-indexer"
+    machine_controller_name = (await machine_model.get_controller()).controller_name
+
+    if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
+        logger.warning("Using existing application: %s", app_name)
+        yield machine_model.applications[app_name]
+        return
+
+    num_units = 3
+    if pytestconfig.getoption("--single-node-indexer"):
+        num_units = 1
     application = await machine_model.deploy(
-        "wazuh-indexer", application_name="wazuh-indexer", channel="latest/edge", num_units=3
+        app_name, application_name=app_name, channel="latest/edge", num_units=num_units
     )
+
     await machine_model.integrate(self_signed_certificates.name, application.name)
+
+    await machine_model.wait_for_idle(
+        apps=[app_name], status="active", raise_on_error=False, timeout=1800
+    )
+    if num_units == 1:
+        await configure_single_node(machine_controller_name)
+
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application
 
@@ -125,7 +174,21 @@ async def application_fixture(
     resources = {
         "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
     }
-    application = await model.deploy(f"./{charm}", resources=resources, trust=True)
+    wazuh_server_app = "wazuh-server"
+    if pytestconfig.getoption("--no-deploy") and wazuh_server_app in model.applications:
+        logger.warning("Using existing application: %s", wazuh_server_app)
+        yield model.applications[wazuh_server_app]
+        return
+
+    application = await model.deploy(
+        f"./{charm}",
+        config={"logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text()},
+        resources=resources,
+        trust=True,
+    )
+    await model.wait_for_idle(
+        apps=[application.name], status="waiting", raise_on_error=False, timeout=1800
+    )
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -139,6 +202,6 @@ async def application_fixture(
         apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
     )
     await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=1800
+        apps=[application.name], status="active", raise_on_error=False, timeout=1800
     )
     yield application
