@@ -1,6 +1,11 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+variable "controller" {
+  description = "Reference to the Juju controller to deploy application to."
+  type        = string
+}
+
 variable "model" {
   description = "Reference to the k8s Juju model to deploy application to."
   type        = string
@@ -42,7 +47,7 @@ variable "wazuh_server" {
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
-    base        = optional(string, "ubuntu@24.04")
+    base        = optional(string, "ubuntu@22.04")
     units       = optional(number, 1)
   })
 }
@@ -67,7 +72,7 @@ variable "self_signed_certificates" {
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
-    base        = optional(string, "ubuntu@20.04")
+    base        = optional(string, "ubuntu@24.04")
     units       = optional(number, 1)
     storage     = optional(map(string), {})
   })

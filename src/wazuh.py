@@ -16,6 +16,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import ops
 import requests
+import requests.adapters
 import yaml
 
 # Bandit classifies this import as vulnerable. For more details, see
@@ -299,7 +300,7 @@ def configure_git(
         _get_current_configuration_url(container) != base_url
         or _get_current_configuration_url_branch(container) != branch
     ):
-        process = container.exec(["rm", "-rf", f"{REPOSITORY_PATH}/*"], timeout=1)
+        process = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1)
         process.wait_output()
 
         if base_url:
@@ -321,10 +322,6 @@ def pull_configuration_files(container: ops.Container) -> None:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
     try:
-        process = container.exec(
-            ["git", "--git-dir", f"{REPOSITORY_PATH}/.git", "pull"], timeout=10
-        )
-        process.wait_output()
         process = container.exec(
             [
                 "rsync",
@@ -441,7 +438,10 @@ def authenticate_user(username: str, password: str) -> str:
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
     try:
-        response = requests.get(  # nosec
+        session = requests.Session()
+        retries = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
+        session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+        response = session.get(  # nosec
             AUTH_ENDPOINT,
             auth=(username, password),
             timeout=10,
