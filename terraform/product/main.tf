@@ -324,11 +324,12 @@ resource "juju_integration" "wazuh_server_indexer" {
 
 module "wazuh_indexer_backup" {
   source      = "./modules/s3-integrator"
+  model       = data.juju_model.juju_indexer.name
+
   app_name    = var.wazuh_indexer_backup.app_name
   channel     = var.wazuh_indexer_backup.channel
   config      = var.wazuh_indexer_backup.config
   constraints = var.wazuh_indexer_backup.constraints
-  model       = data.juju_model.opencti.name
   revision    = var.wazuh_indexer_backup.revision
   base        = var.wazuh_indexer_backup.base
   units       = var.wazuh_indexer_backup.units
