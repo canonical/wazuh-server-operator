@@ -82,3 +82,15 @@ variable "self_signed_certificates" {
     storage     = optional(map(string), {})
   })
 }
+
+variable "wazuh_indexer_backup" {
+  type = object({
+    app_name    = optional(string, "s3-integrator")
+    channel     = optional(string, "latest/edge")
+    config      = optional(map(string), {})
+    constraints = optional(string, "arch=amd64")
+    revision    = optional(number)
+    base        = optional(string, "ubuntu@22.04")
+    units       = optional(number, 1)
+  })
+}
