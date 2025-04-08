@@ -10,6 +10,8 @@ import secrets
 import typing
 
 import ops
+import pydantic
+from charms.wazuh_server.v0 import wazuh_api
 from ops import pebble
 
 import certificates_observer
@@ -52,12 +54,14 @@ class WazuhServerCharm(CharmBaseWithState):
         self.traefik_route_observer = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self._observability = observability.Observability(self)
+        self._wazuh_api = wazuh_api.WazuhApiProvides(self)
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
         self.framework.observe(self.on.config_changed, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
+        self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_created, self.reconcile)
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -71,6 +75,33 @@ class WazuhServerCharm(CharmBaseWithState):
                 self.app.add_secret(
                     {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
+
+    def _populate_wazuh_api_relation_data(self) -> None:
+        """Wazuh client API relation created event handler.
+
+        Raises:
+            InvalidStateError: if the secret doesn't exist.
+        """
+        if not self.state:
+            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
+            return
+        if self.unit.is_leader():
+            try:
+                secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
+                relation_data = wazuh_api.WazuhApiRelationData(
+                    endpoint=pydantic.AnyHttpUrl(
+                        f"https://{self.external_hostname}:{wazuh.API_PORT}"
+                    ),
+                    user="wazuh-wui",
+                    password=self.state.api_credentials["wazuh-wui"],
+                    user_credentials_secret=secret.get_info().id,
+                )
+                relation = self.model.get_relation(wazuh_api.RELATION_NAME)
+                if relation:
+                    self._wazuh_api.update_relation_data(relation, relation_data)
+                    secret.grant(relation)
+            except ops.SecretNotFoundError as exc:
+                raise InvalidStateError from exc
 
     @property
     def state(self) -> State | None:
@@ -119,6 +150,13 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
+
+        if not self.state.logs_ca_cert:
+            self.unit.status = ops.BlockedStatus(
+                "Invalid charm configuration 'logs-ca-cert' is missing."
+            )
+            raise RecoverableStateError("Invalid charm configuration 'logs-ca-cert' is missing.")
+
         wazuh.install_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
@@ -133,7 +171,7 @@ class WazuhServerCharm(CharmBaseWithState):
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
-            root_ca=self.state.root_ca,
+            root_ca=self.state.logs_ca_cert,
             user=wazuh.SYSLOG_USER,
             group=wazuh.SYSLOG_USER,
         )
@@ -194,12 +232,28 @@ class WazuhServerCharm(CharmBaseWithState):
             # Store the new credentials alongside the existing ones
             try:
                 secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
-                secret.set_content(credentials)
+                if dict(secret.get_content(refresh=True)) != credentials:
+                    secret.set_content(credentials)
                 logger.debug("Updated secret %s with credentials", secret.id)
             except ops.SecretNotFoundError:
                 if self.unit.is_leader():
                     secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
+        api_key_secret_content = {
+            "user": "wazuh-wui",
+            "password": self.state.api_credentials["wazuh-wui"],
+        }
+        try:
+            secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
+            if dict(secret.get_content(refresh=True)) != api_key_secret_content:
+                secret.set_content(api_key_secret_content)
+            logger.debug("Updated secret %s with API credentials", secret.id)
+        except ops.SecretNotFoundError:
+            if self.unit.is_leader():
+                secret = self.app.add_secret(
+                    api_key_secret_content, label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL
+                )
+                logger.debug("Added secret %s with API credentials", secret.id)
 
     def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
         """Reconcile Wazuh configuration with charm state.
@@ -221,10 +275,12 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         self._configure_users()
+        self._populate_wazuh_api_relation_data()
         # Fetch the new wazuh layer, which has different env vars
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
+        logger.error(self._prometheus_pebble_layer)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
@@ -272,6 +328,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 "wazuh-alive": {
                     "override": "replace",
                     "level": "alive",
+                    "threshold": 10,
                     "tcp": {"port": wazuh.API_PORT},
                 },
             },
@@ -299,7 +356,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "on-failure": "restart",
                     "environment": {
                         "WAZUH_API_HOST": "localhost",
-                        "WAZUH_API_PORT": "55000",
+                        "WAZUH_API_PORT": f"{wazuh.API_PORT}",
                         "WAZUH_API_USERNAME": "prometheus",
                         "WAZUH_API_PASSWORD": self.state.api_credentials["prometheus"],
                     },

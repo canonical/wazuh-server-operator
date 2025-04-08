@@ -11,6 +11,8 @@ import ops
 from charms.traefik_k8s.v0.traefik_route import TraefikRouteRequirer
 from ops.framework import Object
 
+import wazuh
+
 logger = logging.getLogger(__name__)
 RELATION_NAME = "ingress"
 
@@ -19,7 +21,7 @@ PORTS: dict[str, int] = {
     "syslog_tcp": 6514,
     "conn_tcp": 1514,
     "enrole_tcp": 1515,
-    "api_tcp": 55000,
+    "api_tcp": wazuh.API_PORT,
 }
 
 
