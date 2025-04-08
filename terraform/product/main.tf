@@ -326,7 +326,7 @@ module "wazuh_indexer_backup" {
   source      = "./modules/s3-integrator"
   model       = data.juju_model.wazuh_indexer.name
 
-  app_name    = var.wazuh_indexer_backup.app_name
+  app_name    = "wazuh-indexer-backup"
   channel     = var.wazuh_indexer_backup.channel
   config      = var.wazuh_indexer_backup.config
   constraints = var.wazuh_indexer_backup.constraints
