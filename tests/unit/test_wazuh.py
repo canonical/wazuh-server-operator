@@ -186,6 +186,8 @@ def test_configure_git_when_branch_specified() -> None:
         [
             "git",
             "clone",
+            "--depth",
+            "1",
             "--branch",
             "main",
             "git+ssh://user1@git.server/repo_name",
@@ -228,6 +230,8 @@ def test_configure_git_when_no_branch_specified() -> None:
         [
             "git",
             "clone",
+            "--depth",
+            "1",
             "git+ssh://user1@git.server/repo_name",
             "/root/repository",
         ],

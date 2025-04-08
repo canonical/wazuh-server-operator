@@ -19,5 +19,6 @@ output "provides" {
   value = {
     grafana_dashboard = "grafana-dashboard"
     metrics_endpoint  = "metrics-endpoint"
+    wazuh_api         = "wazuh-api"
   }
 }
