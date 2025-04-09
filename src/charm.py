@@ -155,7 +155,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.BlockedStatus(
                 "Invalid charm configuration 'logs-ca-cert' is missing."
             )
-            raise RecoverableStateError("Invalid charm configuration 'logs-ca-cert' is missing.")
+            return
 
         wazuh.install_certificates(
             container=container,

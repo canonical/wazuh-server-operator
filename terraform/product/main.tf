@@ -325,8 +325,8 @@ resource "juju_integration" "wazuh_server_indexer" {
 }
 
 module "wazuh_indexer_backup" {
-  source      = "./modules/s3-integrator"
-  model       = data.juju_model.wazuh_indexer.name
+  source = "./modules/s3-integrator"
+  model  = data.juju_model.wazuh_indexer.name
 
   app_name    = "wazuh-indexer-backup"
   channel     = var.wazuh_indexer_backup.channel
@@ -339,6 +339,10 @@ module "wazuh_indexer_backup" {
   providers = {
     juju = juju.wazuh_indexer
   }
+
+  depends_on = [
+    juju_access_offer.wazuh_indexer
+  ]
 }
 
 resource "juju_integration" "wazuh_indexer_backup" {

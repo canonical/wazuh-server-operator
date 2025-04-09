@@ -78,7 +78,7 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
     agent_password: str | None = None
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
-    logs_ca_cert: str | None = None
+    logs_ca_cert: str
 
 
 def _fetch_filebeat_configuration(
