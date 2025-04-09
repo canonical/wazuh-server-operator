@@ -323,3 +323,40 @@ resource "juju_integration" "wazuh_server_indexer" {
     juju_access_offer.wazuh_indexer
   ]
 }
+
+module "wazuh_indexer_backup" {
+  source = "./modules/s3-integrator"
+  model  = data.juju_model.wazuh_indexer.name
+
+  app_name    = "wazuh-indexer-backup"
+  channel     = var.wazuh_indexer_backup.channel
+  config      = var.wazuh_indexer_backup.config
+  constraints = var.wazuh_indexer_backup.constraints
+  revision    = var.wazuh_indexer_backup.revision
+  base        = var.wazuh_indexer_backup.base
+  units       = var.wazuh_indexer_backup.units
+
+  providers = {
+    juju = juju.wazuh_indexer
+  }
+
+  depends_on = [
+    juju_access_offer.wazuh_indexer
+  ]
+}
+
+resource "juju_integration" "wazuh_indexer_backup" {
+  model = data.juju_model.wazuh_indexer.name
+
+  application {
+    name     = module.wazuh_indexer.app_name
+    endpoint = module.wazuh_indexer.requires.s3_credentials
+  }
+
+  application {
+    name     = module.wazuh_indexer_backup.app_name
+    endpoint = module.wazuh_indexer_backup.provides.s3_credentials
+  }
+
+  provider = juju.wazuh_indexer
+}
