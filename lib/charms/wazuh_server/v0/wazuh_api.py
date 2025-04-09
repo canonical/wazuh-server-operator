@@ -82,7 +82,7 @@ from pydantic import AnyHttpUrl, BaseModel, ValidationError
 logger = logging.getLogger(__name__)
 
 RELATION_NAME = "wazuh-api"
-WAZUH_API_KEY_SECRET_LABEL = "wazuh-api-credentials-relation"
+WAZUH_API_KEY_SECRET_LABEL = "wazuh-api-remote-credentials"
 
 
 class SecretError(Exception):
