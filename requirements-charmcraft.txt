@@ -4,5 +4,5 @@ jsonschema==4.23.0
 ops==2.20.0
 pydantic==2.10.6
 requests==2.32.3
-rpds-py==0.23.1
+rpds-py==0.24.0
 wheel==0.45.1
