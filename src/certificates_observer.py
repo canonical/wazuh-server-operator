@@ -86,7 +86,6 @@ class CertificatesObserver(Object):
         """
         subject = self._charm.external_hostname
         if not subject:
-            logger.warning("External hostname is not yet present.")
             raise IncompleteStateError("External hostname is not yet present.")
         return self._get_certificate_signing_request(
             label="certificates-secret",
