@@ -495,6 +495,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as exc:
+        logger.error("Could not change API password for user %s.", username)
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
 

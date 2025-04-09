@@ -219,7 +219,9 @@ class WazuhServerCharm(CharmBaseWithState):
                     credentials[username] = password
                     logger.debug("Changed password for API user %s", username)
                 except wazuh.WazuhAuthenticationError:
-                    logger.debug("Could not authenticate user %s with default password.", username)
+                    logger.warning(
+                        "Could not authenticate user %s with default password.", username
+                    )
             else:
                 logger.debug("Configuring non-default user %s", username)
                 token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
