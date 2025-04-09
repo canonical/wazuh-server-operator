@@ -67,7 +67,7 @@ class ObservedCharm(state.CharmBaseWithState):
                 api_credentials=api_credentials,
                 custom_config_repository=None,
                 custom_config_ssh_key=None,
-                logs_ca_cert=None,
+                logs_ca_cert="fakeca",
             ),
             custom_config_ssh_key=None,
         )
