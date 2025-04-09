@@ -22,6 +22,8 @@ parts:
       - python3-dev
     build-snaps:
       - rustup
+    charm-python-packages:
+      - wheel==0.45.1
     charm-requirements:
       - requirements-charmcraft.txt
     override-build: |
