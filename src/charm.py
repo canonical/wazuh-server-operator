@@ -280,7 +280,6 @@ class WazuhServerCharm(CharmBaseWithState):
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-        logger.error(self._prometheus_pebble_layer)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
