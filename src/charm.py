@@ -61,7 +61,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(self.on.config_changed, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
-        self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_created, self.reconcile)
+        self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_changed, self.reconcile)
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -280,7 +280,6 @@ class WazuhServerCharm(CharmBaseWithState):
         logger.debug("Reconfiguring pebble layers")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-        logger.error(self._prometheus_pebble_layer)
         container.replan()
         self.unit.set_workload_version(wazuh.get_version(container))
         self.unit.status = ops.ActiveStatus()
