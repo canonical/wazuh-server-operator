@@ -5,7 +5,6 @@ variable "server_controller" {
   description = "Reference to the Juju controller where Wazuh server is deployed."
   type        = string
 }
-
 variable "indexer_controller" {
   description = "Reference to the Juju controller where Wazuh indexer is deploy."
   type        = string
