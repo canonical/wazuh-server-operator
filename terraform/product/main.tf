@@ -11,6 +11,12 @@ data "juju_model" "wazuh_indexer" {
   provider = juju.wazuh_indexer
 }
 
+data "juju_model" "wazuh_dashboard" {
+  name = var.dashboard_model
+
+  provider = juju.wazuh_dashboard
+}
+
 # resource "juju_secret" "agent_password" {
 #   model = local.juju_model_name
 #   name  = "agent_password"
@@ -209,38 +215,6 @@ resource "juju_integration" "wazuh_indexer_sysconfig" {
   provider = juju.wazuh_indexer
 }
 
-module "wazuh_dashboard" {
-  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm"
-  app_name    = var.wazuh_dashboard.app_name
-  channel     = var.wazuh_dashboard.channel
-  config      = var.wazuh_dashboard.config
-  constraints = var.wazuh_dashboard.constraints
-  model       = data.juju_model.wazuh_indexer.name
-  revision    = var.wazuh_dashboard.revision
-  base        = var.wazuh_dashboard.base
-  units       = var.wazuh_dashboard.units
-
-  providers = {
-    juju = juju.wazuh_indexer
-  }
-}
-
-resource "juju_integration" "wazuh_indexer_dashboard" {
-  model = data.juju_model.wazuh_indexer.name
-
-  application {
-    name     = module.wazuh_indexer.app_name
-    endpoint = module.wazuh_indexer.provides.opensearch_client
-  }
-
-  application {
-    name     = module.wazuh_dashboard.app_name
-    endpoint = module.wazuh_dashboard.requires.opensearch_client
-  }
-
-  provider = juju.wazuh_indexer
-}
-
 resource "juju_integration" "wazuh_indexer_certificates" {
   model = data.juju_model.wazuh_indexer.name
 
@@ -249,21 +223,6 @@ resource "juju_integration" "wazuh_indexer_certificates" {
     endpoint = module.wazuh_indexer.requires.certificates
   }
 
-  application {
-    name     = module.self_signed_certificates.app_name
-    endpoint = module.self_signed_certificates.provides.certificates
-  }
-
-  provider = juju.wazuh_indexer
-}
-
-resource "juju_integration" "wazuh_dashboard_certificates" {
-  model = data.juju_model.wazuh_indexer.name
-
-  application {
-    name     = module.wazuh_dashboard.app_name
-    endpoint = module.wazuh_dashboard.requires.certificates
-  }
   application {
     name     = module.self_signed_certificates.app_name
     endpoint = module.self_signed_certificates.provides.certificates
@@ -307,23 +266,6 @@ resource "juju_integration" "wazuh_indexer_data_integrator" {
   provider = juju.wazuh_indexer
 }
 
-resource "juju_integration" "wazuh_server_indexer" {
-  model = data.juju_model.wazuh_server.name
-
-  application {
-    name     = module.wazuh_server.app_name
-    endpoint = module.wazuh_server.requires.opensearch-client
-  }
-
-  application {
-    offer_url = "${var.indexer_controller}:${juju_offer.wazuh_indexer.url}"
-  }
-
-  depends_on = [
-    juju_access_offer.wazuh_indexer
-  ]
-}
-
 module "wazuh_indexer_backup" {
   source = "./modules/s3-integrator"
   model  = data.juju_model.wazuh_indexer.name
@@ -359,4 +301,66 @@ resource "juju_integration" "wazuh_indexer_backup" {
   }
 
   provider = juju.wazuh_indexer
+}
+
+module "wazuh_dashboard" {
+  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm"
+  app_name    = var.wazuh_dashboard.app_name
+  channel     = var.wazuh_dashboard.channel
+  config      = var.wazuh_dashboard.config
+  constraints = var.wazuh_dashboard.constraints
+  model       = data.juju_model.wazuh_dashboard.name
+  revision    = var.wazuh_dashboard.revision
+  base        = var.wazuh_dashboard.base
+  units       = var.wazuh_dashboard.units
+
+  providers = {
+    juju = juju.wazuh_dashboard
+  }
+}
+
+resource "juju_integration" "wazuh_indexer_dashboard" {
+  model = data.juju_model.wazuh_dashboard.name
+
+  application {
+    name     = module.wazuh_dashboard.app_name
+    endpoint = module.wazuh_dashboard.requires.opensearch_client
+  }
+
+  application {
+    offer_url = "${var.indexer_controller}:${juju_offer.wazuh_indexer.url}"
+  }
+
+  provider = juju.wazuh_dashboard
+}
+
+resource "juju_integration" "wazuh_dashboard_certificates" {
+  model = data.juju_model.wazuh_dashboard.name
+
+  application {
+    name     = module.wazuh_dashboard.app_name
+    endpoint = module.wazuh_dashboard.requires.certificates
+  }
+  application {
+    offer_url = "${var.indexer_controller}:${juju_offer.self_signed_certificates.url}"
+  }
+
+  provider = juju.wazuh_dashboard
+}
+
+resource "juju_integration" "wazuh_server_indexer" {
+  model = data.juju_model.wazuh_server.name
+
+  application {
+    name     = module.wazuh_server.app_name
+    endpoint = module.wazuh_server.requires.opensearch-client
+  }
+
+  application {
+    offer_url = "${var.indexer_controller}:${juju_offer.wazuh_indexer.url}"
+  }
+
+  depends_on = [
+    juju_access_offer.wazuh_indexer
+  ]
 }
