@@ -17,7 +17,12 @@ variable "server_model" {
 }
 
 variable "indexer_model" {
-  description = "Reference to the VM Juju model to deploy the indexer and dashboard charms to."
+  description = "Reference to the VM Juju model to deploy the indexer charms to."
+  type        = string
+}
+
+variable "dashboard_model" {
+  description = "Reference to the VM Juju model to deploy the dashboard charms to."
   type        = string
 }
 
