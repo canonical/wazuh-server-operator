@@ -125,7 +125,7 @@ resource "juju_offer" "self_signed_certificates" {
 resource "juju_access_offer" "self_signed_certificates" {
   offer_url = juju_offer.self_signed_certificates.url
   admin     = [data.juju_model.wazuh_indexer.name]
-  consume   = [data.juju_model.wazuh_server.name]
+  consume   = [data.juju_model.wazuh_server.name, data.juju_model.wazuh_dashboard.name]
 
   provider = juju.wazuh_indexer
 }
@@ -304,7 +304,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm?ref=fix-deployment&depth=1"
+  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm?ref=main&depth=1"
   app_name    = var.wazuh_dashboard.app_name
   channel     = var.wazuh_dashboard.channel
   config      = var.wazuh_dashboard.config
