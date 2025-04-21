@@ -167,7 +167,7 @@ resource "juju_application" "sysconfig" {
 }
 
 module "wazuh_indexer" {
-  source      = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/charm"
+  source      = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/charm?ref=rev1&depth=1"
   app_name    = var.wazuh_indexer.app_name
   channel     = var.wazuh_indexer.channel
   config      = var.wazuh_indexer.config
