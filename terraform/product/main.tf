@@ -304,12 +304,12 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm"
+  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm?ref=rev5&depth=1"
   app_name    = var.wazuh_dashboard.app_name
   channel     = var.wazuh_dashboard.channel
   config      = var.wazuh_dashboard.config
   constraints = var.wazuh_dashboard.constraints
-  model       = data.juju_model.wazuh_dashboard.name
+  model       = "stg-wazuh-dashboard-dev" #data.juju_model.wazuh_dashboard.name
   revision    = var.wazuh_dashboard.revision
   base        = var.wazuh_dashboard.base
   units       = var.wazuh_dashboard.units
