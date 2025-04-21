@@ -304,7 +304,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm?ref=rev5&depth=1"
+  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm?ref=rfix-deployment&depth=1"
   app_name    = var.wazuh_dashboard.app_name
   channel     = var.wazuh_dashboard.channel
   config      = var.wazuh_dashboard.config
