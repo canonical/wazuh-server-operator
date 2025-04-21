@@ -72,7 +72,7 @@ resource "juju_integration" "wazuh_server_api" {
 }
 
 module "traefik_k8s" {
-  source      = "git::https://github.com/canonical/traefik-k8s-operator//terraform?ref=rev236"
+  source      = "git::https://github.com/canonical/traefik-k8s-operator//terraform?ref=rev236&depth=1"
   app_name    = var.traefik_k8s.app_name
   channel     = var.traefik_k8s.channel
   config      = var.traefik_k8s.config
@@ -97,7 +97,7 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
 }
 
 module "self_signed_certificates" {
-  source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform?ref=rev281"
+  source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform?ref=rev281&depth=1"
   app_name    = var.self_signed_certificates.app_name
   channel     = var.self_signed_certificates.channel
   config      = var.self_signed_certificates.config
