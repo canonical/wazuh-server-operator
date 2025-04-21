@@ -24,6 +24,7 @@ header:
     - '.trivyignore'
     - 'zap_rules.tsv'
     - 'lib/**'
+    - 'rock/logrotate.conf'
     - 'rock/wazuh.conf'
     - 'src/prometheus_alert_rules/**'
     - 'tests/unit/resources/**'
