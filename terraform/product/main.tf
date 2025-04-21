@@ -125,7 +125,7 @@ resource "juju_offer" "self_signed_certificates" {
 resource "juju_access_offer" "self_signed_certificates" {
   offer_url = juju_offer.self_signed_certificates.url
   admin     = [data.juju_model.wazuh_indexer.name]
-  consume   = [data.juju_model.wazuh_server.name]
+  consume   = [data.juju_model.wazuh_server.name, data.juju_model.wazuh_dashboard.name]
 
   provider = juju.wazuh_indexer
 }
