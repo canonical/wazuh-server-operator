@@ -49,12 +49,12 @@ resource "juju_offer" "wazuh_server_api" {
 resource "juju_access_offer" "wazuh_server_api" {
   offer_url = juju_offer.wazuh_server_api.url
   admin     = [data.juju_model.wazuh_server.name]
-  consume   = [data.juju_model.wazuh_indexer.name]
+  consume   = [data.juju_model.wazuh_dashboard.name]
 }
 
 resource "juju_integration" "wazuh_server_api" {
-  provider = juju.wazuh_indexer
-  model    = data.juju_model.wazuh_indexer.name
+  provider = juju.wazuh_dashboard
+  model    = data.juju_model.wazuh_dashboard.name
 
   application {
     name     = module.wazuh_dashboard.app_name
