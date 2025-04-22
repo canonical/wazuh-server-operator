@@ -27,7 +27,7 @@ juju grant-secret my-custom-config-ssh-key wazuh-server
 
 Your repository should mimic the layout of the Wazuh server configuration with a `var/ossec` folder.
 
-All files in the following sub-folders will be copied to the Wazuh server. Files matching the patterns but not present in the repository will be removed:
+All files in the following sub-folders will be mirrored to the Wazuh server (new files will be copied to the server, deleted files will be removed from the server):
 
 - `etc/*.conf`
 - `etc/decoders/` recursively
