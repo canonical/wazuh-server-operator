@@ -66,7 +66,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 1
+LIBPATCH = 2
 
 PYDEPS = ["pydantic>=2"]
 
@@ -77,7 +77,7 @@ import typing
 from typing import Dict, Optional
 
 import ops
-from pydantic import AnyHttpUrl, BaseModel, ValidationError
+from pydantic import AnyHttpUrl, BaseModel, TypeAdapter, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,9 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     def endpoint(self) -> AnyHttpUrl:
         """Fetch the endpoint from the relation."""
         assert self.relation.app
-        return AnyHttpUrl(typing.cast(str, self.relation.data[self.relation.app].get("endpoint")))
+        return TypeAdapter(AnyHttpUrl).validate_python(
+            typing.cast(str, self.relation.data[self.relation.app].get("endpoint"))
+        )
 
     @property
     def _credentials(self) -> tuple[str, str]:
@@ -224,8 +226,11 @@ class WazuhApiRequires(ops.Object):
             credentials = self.model.get_secret(id=secret_id)
             user = typing.cast(str, credentials.get_content().get("user"))
             password = typing.cast(str, credentials.get_content().get("password"))
+            endpoint = TypeAdapter(AnyHttpUrl).validate_python(
+                typing.cast(str, relation_data.get("endpoint"))
+            )
             return WazuhApiRelationData(
-                endpoint=AnyHttpUrl(typing.cast(str, relation_data.get("endpoint"))),
+                endpoint=endpoint,
                 user_credentials_secret=secret_id,
                 user=user,
                 password=password,
