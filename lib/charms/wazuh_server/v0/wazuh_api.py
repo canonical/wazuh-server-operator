@@ -66,7 +66,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 2
+LIBPATCH = 3
 
 PYDEPS = ["pydantic>=2"]
 
@@ -77,7 +77,15 @@ import typing
 from typing import Dict, Optional
 
 import ops
-from pydantic import AnyHttpUrl, BaseModel, TypeAdapter, ValidationError
+from pydantic import AnyHttpUrl, BaseModel, ValidationError
+
+# The wazuh dashboard charm dependencies require pydantic<2
+# Disable used-before-assignment as parse_obj_as will not be recognized pylint
+# pylint: disable=used-before-assignment
+try:
+    from pydantic import TypeAdapter
+except ImportError:
+    from pydantic import parse_obj_as
 
 logger = logging.getLogger(__name__)
 
@@ -129,9 +137,11 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     def endpoint(self) -> AnyHttpUrl:
         """Fetch the endpoint from the relation."""
         assert self.relation.app
-        return TypeAdapter(AnyHttpUrl).validate_python(
-            typing.cast(str, self.relation.data[self.relation.app].get("endpoint"))
-        )
+        url = typing.cast(str, self.relation.data[self.relation.app].get("endpoint"))
+        try:
+            return TypeAdapter(AnyHttpUrl).validate_python(url)
+        except NameError:
+            return parse_obj_as(AnyHttpUrl, url)
 
     @property
     def _credentials(self) -> tuple[str, str]:
@@ -226,9 +236,11 @@ class WazuhApiRequires(ops.Object):
             credentials = self.model.get_secret(id=secret_id)
             user = typing.cast(str, credentials.get_content().get("user"))
             password = typing.cast(str, credentials.get_content().get("password"))
-            endpoint = TypeAdapter(AnyHttpUrl).validate_python(
-                typing.cast(str, relation_data.get("endpoint"))
-            )
+            url = typing.cast(str, relation_data.get("endpoint"))
+            try:
+                endpoint = TypeAdapter(AnyHttpUrl).validate_python(url)
+            except NameError:
+                endpoint = parse_obj_as(AnyHttpUrl, url)
             return WazuhApiRelationData(
                 endpoint=endpoint,
                 user_credentials_secret=secret_id,
