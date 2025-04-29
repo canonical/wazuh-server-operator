@@ -68,7 +68,6 @@ resource "juju_integration" "wazuh_server_api" {
   depends_on = [
     juju_access_offer.wazuh_server_api
   ]
-
 }
 
 resource "juju_application" "traefik" {
@@ -98,15 +97,19 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
   }
 }
 
-module "self_signed_certificates" {
-  source      = "git::https://github.com/canonical/self-signed-certificates-operator//terraform?ref=rev281&depth=1"
-  app_name    = var.self_signed_certificates.app_name
-  channel     = var.self_signed_certificates.channel
+resource "juju_application" "self-signed-certificates" {
+  name  = var.self_signed_certificates.app_name
+  model = data.juju_model.wazuh_indexer.name
+
+  charm {
+    name     = "self-signed-certificates"
+    channel  = var.self_signed_certificates.channel
+    revision = var.self_signed_certificates.revision
+    base     = ar.self_signed_certificates.base
+  }
+
   config      = var.self_signed_certificates.config
   constraints = var.self_signed_certificates.constraints
-  model       = data.juju_model.wazuh_indexer.name
-  revision    = var.self_signed_certificates.revision
-  base        = var.self_signed_certificates.base
   units       = var.self_signed_certificates.units
 
   providers = {
@@ -118,8 +121,8 @@ resource "juju_offer" "self_signed_certificates" {
   model = data.juju_model.wazuh_indexer.name
 
   name             = "self-signed-certificates"
-  application_name = module.self_signed_certificates.app_name
-  endpoint         = module.self_signed_certificates.provides.certificates
+  application_name = juju_application.self_signed_certificates.app_name
+  endpoint         = juju_application.self_signed_certificates.provides.certificates
 
   provider = juju.wazuh_indexer
 }
