@@ -120,7 +120,7 @@ resource "juju_offer" "self_signed_certificates" {
 
   name             = "self-signed-certificates"
   application_name = juju_application.self_signed_certificates.app_name
-  endpoint         = juju_application.self_signed_certificates.provides.certificates
+  endpoint         = "certificates"
 
   provider = juju.wazuh_indexer
 }
@@ -210,7 +210,7 @@ resource "juju_integration" "wazuh_indexer_certificates" {
 
   application {
     name     = juju_application.self_signed_certificates.name
-    endpoint = juju_application.self_signed_certificates.provides.certificates
+    endpoint = "certificates"
   }
 
   provider = juju.wazuh_indexer
@@ -241,7 +241,7 @@ resource "juju_integration" "wazuh_indexer_data_integrator" {
 
   application {
     name     = module.wazuh_indexer.app_name
-    endpoint = module.wazuh_indexer.provides.opensearch_client
+    endpoint = module.wazuh_indexer.wazuh_indexer_provides.opensearch_client
   }
   application {
     name     = juju_application.data_integrator.name
