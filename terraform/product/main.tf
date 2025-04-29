@@ -155,17 +155,17 @@ resource "juju_integration" "wazuh_server_certificates" {
 module "wazuh_indexer" {
   source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=fix-tf&depth=1"
 
+  model = data.juju_model.wazuh_indexer.name
+  
   grafana_agent = {
     app_name = var.wazuh_indexer_grafana_agent.app_name
     channel  = var.wazuh_indexer_grafana_agent.channel
-    model    = data.juju_model.wazuh_indexer.name
     revision = var.wazuh_indexer_grafana_agent.revision
   }
 
   sysconfig = {
     app_name = var.sysconfig.app_name
     channel  = var.sysconfig.channel
-    model    = data.juju_model.wazuh_indexer.name
     revision = var.sysconfig.revision
   }
 
@@ -174,7 +174,6 @@ module "wazuh_indexer" {
     channel     = var.wazuh_indexer.channel
     config      = var.wazuh_indexer.config
     constraints = var.wazuh_indexer.constraints
-    model       = data.juju_model.wazuh_indexer.name
     revision    = var.wazuh_indexer.revision
     base        = var.wazuh_indexer.base
     units       = var.wazuh_indexer.units
@@ -294,10 +293,11 @@ resource "juju_integration" "wazuh_indexer_backup" {
 module "wazuh_dashboard" {
   source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=fix-tf&depth=1"
 
+  model = data.juju_model.wazuh_dashboard.name
+
   grafana_agent = {
     app_name = var.wazuh_dashboard_grafana_agent.app_name
     channel  = var.wazuh_dashboard_grafana_agent.channel
-    model    = data.juju_model.wazuh_dashboard.name
     revision = var.wazuh_dashboard_grafana_agent.revision
   }
 
@@ -306,7 +306,6 @@ module "wazuh_dashboard" {
     channel     = var.wazuh_dashboard.channel
     config      = var.wazuh_dashboard.config
     constraints = var.wazuh_dashboard.constraints
-    model       = data.juju_model.wazuh_dashboard.name
     revision    = var.wazuh_dashboard.revision
     base        = var.wazuh_dashboard.base
     units       = var.wazuh_dashboard.units
