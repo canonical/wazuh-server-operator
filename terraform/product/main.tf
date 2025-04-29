@@ -156,7 +156,7 @@ module "wazuh_indexer" {
   source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=fix-tf&depth=1"
 
   model = data.juju_model.wazuh_indexer.name
-  
+
   grafana_agent = {
     app_name = var.wazuh_indexer_grafana_agent.app_name
     channel  = var.wazuh_indexer_grafana_agent.channel
