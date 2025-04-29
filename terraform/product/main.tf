@@ -112,9 +112,7 @@ resource "juju_application" "self_signed_certificates" {
   constraints = var.self_signed_certificates.constraints
   units       = var.self_signed_certificates.units
 
-  providers = {
-    juju = juju.wazuh_indexer
-  }
+  provider = juju.wazuh_indexer
 }
 
 resource "juju_offer" "self_signed_certificates" {
