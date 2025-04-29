@@ -205,7 +205,7 @@ resource "juju_integration" "wazuh_indexer_certificates" {
 
   application {
     name     = module.wazuh_indexer.app_name
-    endpoint = module.wazuh_indexer.requires.certificates
+    endpoint = module.wazuh_indexer.wazuh_indexer_requires.certificates
   }
 
   application {
@@ -277,7 +277,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 
   application {
     name     = module.wazuh_indexer.app_name
-    endpoint = module.wazuh_indexer.requires.s3_credentials
+    endpoint = module.wazuh_indexer.wazuh_indexer_requires.s3_credentials
   }
 
   application {
