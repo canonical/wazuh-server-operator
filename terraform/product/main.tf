@@ -119,7 +119,7 @@ resource "juju_offer" "self_signed_certificates" {
   model = data.juju_model.wazuh_indexer.name
 
   name             = "self-signed-certificates"
-  application_name = juju_application.self_signed_certificates.app_name
+  application_name = juju_application.self_signed_certificates.name
   endpoint         = "certificates"
 
   provider = juju.wazuh_indexer
