@@ -93,7 +93,7 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
 
   application {
     name     = juju_application.traefik_k8s.name
-    endpoint = juju_application.traefik_k8s.endpoints.traefik_route
+    endpoint = "traefik-route"
   }
 }
 
