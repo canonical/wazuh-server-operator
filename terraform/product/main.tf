@@ -212,7 +212,7 @@ resource "juju_integration" "wazuh_indexer_certificates" {
 
   application {
     name     = module.self_signed_certificates.app_name
-    endpoint = module.self_signed_certificates.provides.certificates
+    endpoint = juju_application.self_signed_certificates.provides.certificates
   }
 
   provider = juju.wazuh_indexer
