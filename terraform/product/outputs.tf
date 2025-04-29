@@ -21,7 +21,7 @@ output "wazuh_server_provides" {
 
 output "traefik_name" {
   description = "Name of the deployed Traefik application."
-  value       = module.traefik_k8s.app_name
+  value       = juju_application.traefik_k8s.app_name
 }
 
 output "traefik_requires" {
