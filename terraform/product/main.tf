@@ -70,7 +70,7 @@ resource "juju_integration" "wazuh_server_api" {
   ]
 }
 
-resource "juju_application" "traefik" {
+resource "juju_application" "traefik_k8s" {
   name  = var.traefik_k8s.app_name
   model = data.juju_model.wazuh_server.name
   trust = true
