@@ -42,10 +42,12 @@ output "wazuh_indexer_name" {
   value       = module.wazuh_indexer.app_name
 }
 
-output "wazuh_indexer_provides" {
-  value = {
-    cos_agent = "cos-agent"
-  }
+output "wazuh_indexer_grafana_agent_requires" {
+  value = module.wazuh_indexer.requires
+}
+
+output "wazuh_indexer_grafana_agent_provides" {
+  value = module.wazuh_indexer.provider
 }
 
 output "wazuh_dashboard_name" {
@@ -53,8 +55,10 @@ output "wazuh_dashboard_name" {
   value       = module.wazuh_dashboard.app_name
 }
 
-output "wazuh_dashboard_provides" {
-  value = {
-    cos_agent = "cos-agent"
-  }
+output "wazuh_dashboard_grafana_agent_requires" {
+  value = module.wazuh_dashboard.requires
+}
+
+output "wazuh_dashboard_grafana_agent_provides" {
+  value = module.wazuh_dashboard.provides
 }

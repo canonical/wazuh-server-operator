@@ -147,35 +147,33 @@ resource "juju_integration" "wazuh_server_certificates" {
   ]
 }
 
-resource "juju_application" "sysconfig" {
-  name  = "sysconfig"
-  model = data.juju_model.wazuh_indexer.name
-  units = 0
-
-  charm {
-    name     = "sysconfig"
-    revision = 33
-    channel  = "latest/stable"
-    base     = "ubuntu@22.04"
-  }
-
-  config = {
-    sysctl = "{vm.max_map_count: 262144, vm.swappiness: 0, net.ipv4.tcp_retries2: 5, fs.file-max: 1048576}"
-  }
-
-  provider = juju.wazuh_indexer
-}
-
 module "wazuh_indexer" {
-  source      = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/charm?ref=main&depth=1"
-  app_name    = var.wazuh_indexer.app_name
-  channel     = var.wazuh_indexer.channel
-  config      = var.wazuh_indexer.config
-  constraints = var.wazuh_indexer.constraints
-  model       = data.juju_model.wazuh_indexer.name
-  revision    = var.wazuh_indexer.revision
-  base        = var.wazuh_indexer.base
-  units       = var.wazuh_indexer.units
+  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev6&depth=1"
+
+  grafana_agent = {
+    app_name = var.wazuh_indexer_grafana_agent.app_name
+    channel  = var.wazuh_indexer_grafana_agent.channel
+    model    = data.juju_model.wazuh_indexer.name
+    revision = var.wazuh_indexer_grafana_agent.revision
+  }
+
+  sysconfig = {
+    app_name = var.sysconfig.app_name
+    channel  = var.sysconfig.channel
+    model    = data.juju_model.wazuh_indexer.name
+    revision = var.sysconfig.revision
+  }
+
+  wazuh_indexer = {
+    app_name    = var.wazuh_indexer.app_name
+    channel     = var.wazuh_indexer.channel
+    config      = var.wazuh_indexer.config
+    constraints = var.wazuh_indexer.constraints
+    model       = data.juju_model.wazuh_indexer.name
+    revision    = var.wazuh_indexer.revision
+    base        = var.wazuh_indexer.base
+    units       = var.wazuh_indexer.units
+  }
 
   providers = {
     juju = juju.wazuh_indexer
@@ -196,21 +194,6 @@ resource "juju_access_offer" "wazuh_indexer" {
   offer_url = juju_offer.wazuh_indexer.url
   admin     = [data.juju_model.wazuh_indexer.name]
   consume   = [data.juju_model.wazuh_server.name, data.juju_model.wazuh_dashboard.name]
-
-  provider = juju.wazuh_indexer
-}
-
-resource "juju_integration" "wazuh_indexer_sysconfig" {
-  model = data.juju_model.wazuh_indexer.name
-
-  application {
-    name     = module.wazuh_indexer.app_name
-    endpoint = "juju-info"
-  }
-  application {
-    name     = juju_application.sysconfig.name
-    endpoint = "juju-info"
-  }
 
   provider = juju.wazuh_indexer
 }
@@ -304,15 +287,25 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source      = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/charm?ref=rev5&depth=1"
-  app_name    = var.wazuh_dashboard.app_name
-  channel     = var.wazuh_dashboard.channel
-  config      = var.wazuh_dashboard.config
-  constraints = var.wazuh_dashboard.constraints
-  model       = data.juju_model.wazuh_dashboard.name
-  revision    = var.wazuh_dashboard.revision
-  base        = var.wazuh_dashboard.base
-  units       = var.wazuh_dashboard.units
+  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev6&depth=1"
+
+  grafana_agent = {
+    app_name = var.wazuh_dashboard_grafana_agent.app_name
+    channel  = var.wazuh_dashboard_grafana_agent.channel
+    model    = data.juju_model.wazuh_dashboard.name
+    revision = var.wazuh_dashboard_grafana_agent.revision
+  }
+
+  wazuh_dashboard = {
+    app_name    = var.wazuh_dashboard.app_name
+    channel     = var.wazuh_dashboard.channel
+    config      = var.wazuh_dashboard.config
+    constraints = var.wazuh_dashboard.constraints
+    model       = data.juju_model.wazuh_dashboard.name
+    revision    = var.wazuh_dashboard.revision
+    base        = var.wazuh_dashboard.base
+    units       = var.wazuh_dashboard.units
+  }
 
   providers = {
     juju = juju.wazuh_dashboard

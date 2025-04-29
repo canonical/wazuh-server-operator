@@ -37,6 +37,23 @@ variable "wazuh_indexer" {
   })
 }
 
+variable "wazuh_indexer_grafana_agent" {
+  type = object({
+    app_name = optional(string, "grafana-agent")
+    channel  = optional(string, "latest/stable")
+    config   = optional(map(string), {})
+    revision = optional(number)
+  })
+}
+
+variable "sysconfig" {
+  type = object({
+    app_name = optional(string, "sysconfig")
+    channel  = optional(string, "latest/stable")
+    revision = optional(number)
+  })
+}
+
 variable "wazuh_dashboard" {
   type = object({
     app_name    = optional(string, "wazuh-dashboard")
@@ -46,6 +63,15 @@ variable "wazuh_dashboard" {
     revision    = optional(number)
     base        = optional(string, "ubuntu@22.04")
     units       = optional(number, 3)
+  })
+}
+
+variable "wazuh_dashboard_grafana_agent" {
+  type = object({
+    app_name = optional(string, "grafana-agent")
+    channel  = optional(string, "latest/stable")
+    config   = optional(map(string), {})
+    revision = optional(number)
   })
 }
 
