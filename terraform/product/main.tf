@@ -97,7 +97,7 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
   }
 }
 
-resource "juju_application" "self-signed-certificates" {
+resource "juju_application" "self_signed_certificates" {
   name  = var.self_signed_certificates.app_name
   model = data.juju_model.wazuh_indexer.name
 
