@@ -71,15 +71,17 @@ resource "juju_integration" "wazuh_server_api" {
 
 }
 
-module "traefik_k8s" {
-  source      = "git::https://github.com/canonical/traefik-k8s-operator//terraform?ref=rev236&depth=1"
-  app_name    = var.traefik_k8s.app_name
-  channel     = var.traefik_k8s.channel
-  config      = var.traefik_k8s.config
-  constraints = var.traefik_k8s.constraints
-  model_name  = data.juju_model.wazuh_server.name
-  revision    = var.traefik_k8s.revision
-  units       = var.traefik_k8s.units
+resource "juju_application" "traefik" {
+  name  = var.traefik_k8s.app_name
+  model = data.juju_model.wazuh_server.name
+  trust = true
+  charm {
+    name     = "traefik-k8s"
+    channel  = var.traefik_k8s.channel
+    revision = var.traefik_k8s.revision
+  }
+  units  = var.traefik_k8s.units
+  config = var.traefik_k8s.config
 }
 
 resource "juju_integration" "wazuh_server_traefik_ingress" {
@@ -91,8 +93,8 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
   }
 
   application {
-    name     = module.traefik_k8s.app_name
-    endpoint = module.traefik_k8s.endpoints.traefik_route
+    name     = juju_application.traefik_k8s.app_name
+    endpoint = juju_application.traefik_k8s.endpoints.traefik_route
   }
 }
 
