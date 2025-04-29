@@ -187,7 +187,7 @@ resource "juju_offer" "wazuh_indexer" {
 
   name             = "wazuh-indexer"
   application_name = module.wazuh_indexer.app_name
-  endpoint         = module.wazuh_indexer.provides.opensearch_client
+  endpoint         = module.wazuh_indexer.wazuh_indexer_provides.opensearch_client
 
   provider = juju.wazuh_indexer
 }
