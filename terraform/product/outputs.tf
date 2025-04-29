@@ -43,11 +43,11 @@ output "wazuh_indexer_name" {
 }
 
 output "wazuh_indexer_grafana_agent_requires" {
-  value = module.wazuh_indexer.requires
+  value = module.wazuh_indexer.grafana_agent_requires
 }
 
 output "wazuh_indexer_grafana_agent_provides" {
-  value = module.wazuh_indexer.provides
+  value = module.wazuh_indexer.grafana_agent_provides
 }
 
 output "wazuh_dashboard_name" {
@@ -60,5 +60,5 @@ output "wazuh_dashboard_grafana_agent_requires" {
 }
 
 output "wazuh_dashboard_grafana_agent_provides" {
-  value = module.wazuh_dashboard.provides
+  value = module.wazuh_dashboard.grafana_agent_provides
 }
