@@ -58,7 +58,7 @@ resource "juju_integration" "wazuh_server_api" {
 
   application {
     name     = module.wazuh_dashboard.app_name
-    endpoint = module.wazuh_dashboard.requires.wazuh_api
+    endpoint = module.wazuh_dashboard.wazuh_dashboard_requires.wazuh_api
   }
 
   application {
@@ -319,7 +319,7 @@ resource "juju_integration" "wazuh_indexer_dashboard" {
 
   application {
     name     = module.wazuh_dashboard.app_name
-    endpoint = module.wazuh_dashboard.requires.opensearch_client
+    endpoint = module.wazuh_dashboard.wazuh_dashboard_requires.opensearch_client
   }
 
   application {
@@ -334,7 +334,7 @@ resource "juju_integration" "wazuh_dashboard_certificates" {
 
   application {
     name     = module.wazuh_dashboard.app_name
-    endpoint = module.wazuh_dashboard.requires.certificates
+    endpoint = module.wazuh_dashboard.wazuh_dashboard_requires.certificates
   }
   application {
     offer_url = "${var.indexer_controller}:${juju_offer.self_signed_certificates.url}"
