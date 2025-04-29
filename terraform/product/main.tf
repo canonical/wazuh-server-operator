@@ -105,7 +105,7 @@ resource "juju_application" "self-signed-certificates" {
     name     = "self-signed-certificates"
     channel  = var.self_signed_certificates.channel
     revision = var.self_signed_certificates.revision
-    base     = ar.self_signed_certificates.base
+    base     = var.self_signed_certificates.base
   }
 
   config      = var.self_signed_certificates.config
