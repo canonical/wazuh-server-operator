@@ -287,7 +287,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev6&depth=1"
+  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev9&depth=1"
 
   grafana_agent = {
     app_name = var.wazuh_dashboard_grafana_agent.app_name
