@@ -87,12 +87,12 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
   model = data.juju_model.wazuh_server.name
 
   application {
-    name     = module.wazuh_server.app_name
+    name     = module.wazuh_server.name
     endpoint = module.wazuh_server.requires.ingress
   }
 
   application {
-    name     = juju_application.traefik_k8s.app_name
+    name     = juju_application.traefik_k8s.name
     endpoint = juju_application.traefik_k8s.endpoints.traefik_route
   }
 }
