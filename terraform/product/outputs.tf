@@ -21,7 +21,7 @@ output "wazuh_server_provides" {
 
 output "traefik_name" {
   description = "Name of the deployed Traefik application."
-  value       = module.traefik_k8s.app_name
+  value       = juju_application.traefik_k8s.name
 }
 
 output "traefik_requires" {
@@ -42,10 +42,12 @@ output "wazuh_indexer_name" {
   value       = module.wazuh_indexer.app_name
 }
 
-output "wazuh_indexer_provides" {
-  value = {
-    cos_agent = "cos-agent"
-  }
+output "wazuh_indexer_grafana_agent_requires" {
+  value = module.wazuh_indexer.grafana_agent_requires
+}
+
+output "wazuh_indexer_grafana_agent_provides" {
+  value = module.wazuh_indexer.grafana_agent_provides
 }
 
 output "wazuh_dashboard_name" {
@@ -53,8 +55,10 @@ output "wazuh_dashboard_name" {
   value       = module.wazuh_dashboard.app_name
 }
 
-output "wazuh_dashboard_provides" {
-  value = {
-    cos_agent = "cos-agent"
-  }
+output "wazuh_dashboard_grafana_agent_requires" {
+  value = module.wazuh_dashboard.grafana_agent_requires
+}
+
+output "wazuh_dashboard_grafana_agent_provides" {
+  value = module.wazuh_dashboard.grafana_agent_provides
 }
