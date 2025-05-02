@@ -42,6 +42,11 @@ output "wazuh_indexer_name" {
   value       = module.wazuh_indexer.app_name
 }
 
+output "wazuh_indexer_grafana_agent_name" {
+  description = "Name of the deployed Grafana agent for the Wazuh indexer application."
+  value       = module.wazuh_indexer.grafana_agent_app_name
+}
+
 output "wazuh_indexer_grafana_agent_requires" {
   value = module.wazuh_indexer.grafana_agent_requires
 }
@@ -53,6 +58,11 @@ output "wazuh_indexer_grafana_agent_provides" {
 output "wazuh_dashboard_name" {
   description = "Name of the deployed Wazuh dashboard application."
   value       = module.wazuh_dashboard.app_name
+}
+
+output "wazuh_dashboard_grafana_agent_name" {
+  description = "Name of the deployed Grafana agent for the Wazuh dashboard application."
+  value       = module.wazuh_dashboard.grafana_agent_app_name
 }
 
 output "wazuh_dashboard_grafana_agent_requires" {
