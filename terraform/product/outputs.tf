@@ -60,7 +60,7 @@ output "wazuh_dashboard_name" {
   value       = module.wazuh_dashboard.app_name
 }
 
-output "wazuh_indexer_grafana_agent_name" {
+output "wazuh_dashboard_grafana_agent_name" {
   description = "Name of the deployed Grafana agent for the Wazuh dashboard application."
   value       = module.wazuh_dashboard.grafana_agent_app_name
 }
