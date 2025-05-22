@@ -1,4 +1,4 @@
-cosl ==0.1.0
+cosl ==1.0.0
 cryptography==45.0.2
 jsonschema==4.23.0
 ops==2.21.1
