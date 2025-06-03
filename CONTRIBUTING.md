@@ -64,7 +64,7 @@ Note that the MicroK8s registry needs to be enabled using `microk8s enable regis
 To add the image to the registry:
 
 ```shell
-    skopeo --insecure-policy copy oci-archive:wazuh_server_1.0_amd64.rock docker-daemon:localhost:32000/wazuh-server:latest
+    skopeo --insecure-policy copy oci-archive:wazuh-server_1.0_amd64.rock docker-daemon:localhost:32000/wazuh-server:latest
 ```
 
 #### Run the integration tests
