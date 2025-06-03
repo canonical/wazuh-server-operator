@@ -65,7 +65,6 @@ To add the image to the registry:
 
 ```shell
     skopeo --insecure-policy copy oci-archive:wazuh_server_1.0_amd64.rock docker-daemon:localhost:32000/wazuh-server:latest
-    docker push localhost:32000/wazuh-server:latest
 ```
 
 #### Run the integration tests
