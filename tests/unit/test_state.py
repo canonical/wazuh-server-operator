@@ -48,11 +48,12 @@ def test_state_invalid_opensearch_relation_data(opensearch_relation_data):
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, [], "1")
+        state.State.from_charm(mock_charm, opensearch_relation_data, {}, [], "1")
 
 
 def test_state_without_proxy():
@@ -94,6 +95,7 @@ def test_state_without_proxy():
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -156,6 +158,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -215,6 +218,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -270,6 +274,7 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -322,6 +327,7 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -376,6 +382,7 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -428,6 +435,7 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -485,6 +493,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -550,6 +559,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -613,6 +623,7 @@ def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -671,6 +682,7 @@ def test_state_without_logs_ca_cert():
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )

@@ -28,7 +28,7 @@ class OpenCTIObserver(Object):
         super().__init__(charm, RELATION_NAME)
         self._charm = charm
         self.framework.observe(
-            self.on.opencti_connector_relation_joined, self._on_opencti_relation_joined
+            self._charm.on.opencti_connector_relation_joined, self._on_opencti_relation_joined
         )
         self.framework.observe(
             self._charm.on.opencti_connector_relation_changed, self._charm.reconcile

@@ -101,6 +101,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
     master_address: str,
     unit_name: str,
     cluster_key: str,
+    *,
     opencti_token: str | None = None,
     opencti_url: str | None = None,
 ) -> None:
@@ -168,7 +169,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
 
 
-def update_configuration(  # pylint: disable=too-many-arguments
+def update_configuration(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     container: ops.Container,
     indexer_ips: list[str],
     master_address: str,
@@ -191,7 +192,13 @@ def update_configuration(  # pylint: disable=too-many-arguments
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
     _update_wazuh_configuration(
-        container, ip_ports, master_address, unit_name, cluster_key, opencti_token, opencti_url
+        container,
+        ip_ports,
+        master_address,
+        unit_name,
+        cluster_key,
+        opencti_token=opencti_token,
+        opencti_url=opencti_url,
     )
 
 
