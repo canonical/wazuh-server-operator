@@ -49,8 +49,6 @@
     "wazuh",
     "wazuh-server"
   ],
-  "templating": {
-  },
   "time": {
     "from": "now-2d",
     "to": "now"
