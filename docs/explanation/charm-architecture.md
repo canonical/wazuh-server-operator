@@ -45,7 +45,7 @@ The workload that this container is running is defined in the [Wazuh server rock
 
 ### Storage
 
-The Wazuh server charm mounts a [filesystem type storage](https://documentation.ubuntu.com/juju/3.6/reference/storage/#defining-storage) to store the incoming rsyslog logs and any other data that requires persistence across container restarts..
+The Wazuh server charm mounts a [filesystem type storage](https://documentation.ubuntu.com/juju/3.6/reference/storage/#defining-storage) to store the incoming rsyslog logs and any other data that requires persistence across container restarts.
 
 ## Charm code overview
 
