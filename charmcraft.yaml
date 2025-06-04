@@ -135,3 +135,7 @@ config:
 peers:
   wazuh-peers:
     interface: wazuh-instance
+storage:
+  data:
+    type: filesystem
+    location: /tmp/data
