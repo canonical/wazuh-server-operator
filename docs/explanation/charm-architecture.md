@@ -30,7 +30,7 @@ of charms.
 This is done by publishing a resource to Charmhub as described in the
 [Charmcraft how-to guides](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/howto/manage-charms/#publish-a-charm-on-charmhub).
 
-### Wazuh server
+## Wazuh server
 
 Wazuh server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
 
@@ -43,7 +43,7 @@ The Wazuh server listens on ports:
 The workload that this container is running is defined in the [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
 
 
-### Storage
+## Storage
 
 The Wazuh server charm mounts a [filesystem type storage](https://documentation.ubuntu.com/juju/3.6/reference/storage/#defining-storage) to store the incoming rsyslog logs and any other data that requires persistence across container restarts.
 
