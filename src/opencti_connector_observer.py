@@ -35,7 +35,11 @@ class OpenCTIObserver(Object):
         )
 
     def _on_opencti_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
-        """Handle OpenCTI relation joined event."""
+        """Handle OpenCTI relation joined event.
+
+        Args:
+            event: The relation joined event.
+        """
         if not self._charm.unit.is_leader():
             return
         relation = event.relation
