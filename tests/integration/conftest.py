@@ -246,9 +246,9 @@ async def opencti_any_charm_fixture(
         class AnyCharm(AnyCharmBase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                self.framework.observe(self.on.opencti_connector_relation_joined, self._reconcile)
-                self.framework.observe(self.on.opencti_connector_relation_changed, self._reconcile)
-            def _reconcile(self, event: ops.EventBase) -> None:
+                self.framework.observe(self.on.provide_opencti_connector_relation_joined, self._reconcile)
+                self.framework.observe(self.on.provide_opencti_connector_relation_changed, self._reconcile)
+            def _reconcile(self, event) -> None:
                 relation = event.relation
                 relation.data[self.app][
                     "opencti_url"
