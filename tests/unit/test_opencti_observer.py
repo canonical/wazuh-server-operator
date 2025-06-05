@@ -77,6 +77,6 @@ def test_relation_changed_calls_reconcile() -> None:
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     rel_id = harness.add_relation(RELATION_NAME, "opencti-connector")
-    harness.update_relation_data(rel_id, "opencti-connector", {"dummy": "value"})
+    harness.update_relation_data(rel_id, "opencti-connector", {"token": "abcd1234"})
 
     assert harness.charm.count == 1
