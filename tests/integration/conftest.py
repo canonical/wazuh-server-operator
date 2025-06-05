@@ -142,7 +142,7 @@ async def opensearch_provider_fixture(
         apps=[app_name], status="active", raise_on_error=False, timeout=1800
     )
     if num_units == 1:
-        await configure_single_node(machine_controller_name)
+        await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
 
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application
