@@ -261,8 +261,8 @@ async def opencti_any_charm_fixture(
                     relation.data[self.app]["opencti_token"] = str(secret.id)
                 else:
                     secret = self.model.get_secret(id=opencti_token_id)
-                    if secret.get_content(refresh=True)["token"] != api_token:
-                        secret.set_content({"token": api_token})
+                    if secret.get_content(refresh=True)["token"] != sample_token:
+                        secret.set_content({"token": sample_token})
         """
         ),
     }
