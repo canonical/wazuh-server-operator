@@ -12,7 +12,7 @@ REQUIRER_METADATA = """
 name: observer-charm
 requires:
   opencti-connector:
-    interface: opencti-connectors
+    interface: opencti-connector
 """
 
 

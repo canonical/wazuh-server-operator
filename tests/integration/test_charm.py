@@ -15,6 +15,7 @@ import requests
 import yaml
 from juju.application import Application
 from juju.model import Model
+from juju.relation import Relation
 
 import state
 import wazuh
@@ -129,3 +130,20 @@ async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expec
     found = await found_in_logs(needle)
 
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
+
+
+async def test_opencti_integration(any_opencti: Application, application: Application):
+    """
+    Arrange: a working Wazuh deployment integrated with OpenCTI any-charm.
+    Act: do nothing.
+    Assert: the opencti-connector relation is established and the required data is present.
+    """
+    assert any_opencti
+    assert application
+
+    relation: Relation = await application.relations["opencti-connector"]
+
+    assert relation
+    app_data = relation.data[application]
+    for key in ["connector_charm_name", "connector_type", "opencti_url", "opencti_token"]:
+        assert key in app_data, f"Missing key in app data: {key}"

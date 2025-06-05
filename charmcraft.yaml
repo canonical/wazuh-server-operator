@@ -107,7 +107,7 @@ requires:
     interface: opensearch_client
     limit: 1
   opencti-connector:
-    interface: opencti-connectors
+    interface: opencti-connector
     limit: 1
     required: false
 config:
