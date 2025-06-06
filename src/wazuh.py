@@ -357,7 +357,12 @@ def set_filesystem_permissions(container: ops.Container) -> None:
     """
     try:
         process = container.exec(
-            ["chmod", "+wt", str(COLLLECTORS_LOG_PATH)],
+            ["chmod", "o-rx", str(COLLLECTORS_LOG_PATH)],
+            timeout=1,
+        )
+        process.wait_output()
+        process = container.exec(
+            ["chmown", "syslog:wazuh", str(COLLLECTORS_LOG_PATH)],
             timeout=1,
         )
         process.wait_output()
