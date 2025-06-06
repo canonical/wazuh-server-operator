@@ -96,6 +96,10 @@ provides:
     interface: prometheus_scrape
   wazuh-api:
     interface: wazuh_api_client
+  opencti-connector:
+    interface: opencti_connector
+    limit: 1
+    required: false
 requires:
   certificates:
     interface: tls-certificates
@@ -109,10 +113,6 @@ requires:
   opensearch-client:
     interface: opensearch_client
     limit: 1
-  opencti-connector:
-    interface: opencti-connector
-    limit: 1
-    required: false
 config:
   options:
     agent-password:

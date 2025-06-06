@@ -235,6 +235,7 @@ async def application_fixture(
 @pytest_asyncio.fixture(scope="module", name="any_opencti")
 async def opencti_any_charm_fixture(
     model: Model,
+    pytestconfig: pytest.Config,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy OpenCTI any-charm and integrate with Wazuh Server."""
     any_app_name = "any-opencti"
@@ -246,8 +247,12 @@ async def opencti_any_charm_fixture(
         class AnyCharm(AnyCharmBase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                self.framework.observe(self.on.provide_opencti_connector_relation_joined, self._reconcile)
-                self.framework.observe(self.on.provide_opencti_connector_relation_changed, self._reconcile)
+                self.framework.observe(
+                    self.on.require_opencti_connector_relation_joined, self._reconcile
+                )
+                self.framework.observe(
+                    self.on.require_opencti_connector_relation_changed, self._reconcile
+                )
             def _reconcile(self, event) -> None:
                 relation = event.relation
                 relation.data[self.app][
@@ -266,6 +271,10 @@ async def opencti_any_charm_fixture(
         """
         ),
     }
+    if pytestconfig.getoption("--no-deploy") and any_app_name in model.applications:
+        logger.warning("Using existing application: %s", any_app_name)
+        yield model.applications[any_app_name]
+        return
     any_app: Application = await model.deploy(
         "any-charm",
         application_name=any_app_name,

@@ -15,7 +15,7 @@ import requests
 import yaml
 from juju.application import Application
 from juju.model import Model
-from juju.relation import Relation
+from pytest_operator.plugin import OpsTest
 
 import state
 import wazuh
@@ -132,7 +132,11 @@ async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expec
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
 
-async def test_opencti_integration(any_opencti: Application, application: Application):
+async def test_opencti_integration(
+    any_opencti: Application,
+    application: Application,
+    ops_test: OpsTest,
+):
     """
     Arrange: a working Wazuh deployment integrated with OpenCTI any-charm.
     Act: do nothing.
@@ -141,9 +145,31 @@ async def test_opencti_integration(any_opencti: Application, application: Applic
     assert any_opencti
     assert application
 
-    relation: Relation = await application.relations["opencti-connector"]
+    unit_name = any_opencti.units[0].name
+    result = await ops_test.juju("show-unit", unit_name)
+    print(f"{unit_name} show-unit result: ", result)
 
-    assert relation
-    app_data = relation.data[application]
+    unit_name = application.units[0].name
+    result = await ops_test.juju("show-unit", unit_name)
+    print(f"{unit_name} show-unit result: ", result)
+    show_unit = yaml.safe_load(result.stdout)
+    print("Show unit: ", show_unit)
+
+    unit_info = show_unit[unit_name]
+    relation_info = unit_info.get("relation-info", [])
+    print("Relation info: ", relation_info)
+
+    for rel in relation_info:
+        if rel.get("endpoint") == "opencti-connector":
+            app_data = rel.get("application-data", {})
+            related_units = rel.get("related-units", {})
+
+            for unit, unit_data in related_units.items():
+                print(f"Unit: {unit}")
+                print(f"nit databag: {unit_data.get('data', {})}")
+            break
+    else:
+        pytest.fail("No relation found between wazuh:opencti and opencti:connector")
+
     for key in ["connector_charm_name", "connector_type", "opencti_url", "opencti_token"]:
         assert key in app_data, f"Missing key in app data: {key}"
