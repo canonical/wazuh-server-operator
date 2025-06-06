@@ -138,38 +138,28 @@ async def test_opencti_integration(
     ops_test: OpsTest,
 ):
     """
-    Arrange: a working Wazuh deployment integrated with OpenCTI any-charm.
-    Act: do nothing.
-    Assert: the opencti-connector relation is established and the required data is present.
+    Arrange: A working Wazuh deployment integrated with OpenCTI any-charm.
+    Act: Get the unit data for both wazuh-server and any-opencti charms.
+    Assert: The required opencti data is present.
     """
     assert any_opencti
     assert application
 
-    unit_name = any_opencti.units[0].name
-    result = await ops_test.juju("show-unit", unit_name)
-    print(f"{unit_name} show-unit result: ", result)
+    app_data = {}
+    any_opencti_name = any_opencti.units[0].name
+    _, result, _ = await ops_test.juju("show-unit", any_opencti_name)
+    opencti_unit_data = yaml.safe_load(result)
+    for relation in opencti_unit_data[any_opencti_name]["relation-info"]:
+        if relation["endpoint"] == "require-opencti-connector":
+            app_data = relation["application-data"]
+    for key in ["connector_charm_name", "connector_type"]:
+        assert key in app_data, f"Missing key in app data: {key}"
 
-    unit_name = application.units[0].name
-    result = await ops_test.juju("show-unit", unit_name)
-    print(f"{unit_name} show-unit result: ", result)
-    show_unit = yaml.safe_load(result.stdout)
-    print("Show unit: ", show_unit)
-
-    unit_info = show_unit[unit_name]
-    relation_info = unit_info.get("relation-info", [])
-    print("Relation info: ", relation_info)
-
-    for rel in relation_info:
-        if rel.get("endpoint") == "opencti-connector":
-            app_data = rel.get("application-data", {})
-            related_units = rel.get("related-units", {})
-
-            for unit, unit_data in related_units.items():
-                print(f"Unit: {unit}")
-                print(f"nit databag: {unit_data.get('data', {})}")
-            break
-    else:
-        pytest.fail("No relation found between wazuh:opencti and opencti:connector")
-
-    for key in ["connector_charm_name", "connector_type", "opencti_url", "opencti_token"]:
+    wazuh_server_name = application.units[0].name
+    _, result, _ = await ops_test.juju("show-unit", wazuh_server_name)
+    wazuh_server_unit_data = yaml.safe_load(result)
+    for relation in wazuh_server_unit_data[wazuh_server_name]["relation-info"]:
+        if relation["endpoint"] == "opencti-connector":
+            app_data = relation["application-data"]
+    for key in ["opencti_url", "opencti_token"]:
         assert key in app_data, f"Missing key in app data: {key}"

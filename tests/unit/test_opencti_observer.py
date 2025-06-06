@@ -10,9 +10,9 @@ from opencti_connector_observer import CONNECTOR_TYPE, RELATION_NAME, OpenCTIObs
 
 REQUIRER_METADATA = """
 name: observer-charm
-requires:
+provides:
   opencti-connector:
-    interface: opencti-connector
+    interface: opencti_connector
 """
 
 
@@ -43,8 +43,8 @@ def test_relation_joined_sets_data() -> None:
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.set_leader(True)
-    rel_id = harness.add_relation(RELATION_NAME, "opencti-connector")
-    harness.add_relation_unit(rel_id, "opencti-connector/0")
+    rel_id = harness.add_relation(RELATION_NAME, "opencti")
+    harness.add_relation_unit(rel_id, "opencti/0")
 
     app_data = harness.get_relation_data(rel_id, harness.charm.app.name)
     assert app_data["connector_charm_name"] == harness.charm.meta.name
@@ -60,8 +60,8 @@ def test_relation_joined_does_nothing_if_not_leader() -> None:
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.set_leader(False)
-    rel_id = harness.add_relation(RELATION_NAME, "opencti-connector")
-    harness.add_relation_unit(rel_id, "opencti-connector/0")
+    rel_id = harness.add_relation(RELATION_NAME, "opencti")
+    harness.add_relation_unit(rel_id, "opencti/0")
 
     app_data = harness.get_relation_data(rel_id, harness.charm.app.name)
     assert "connector_charm_name" not in app_data
@@ -76,7 +76,7 @@ def test_relation_changed_calls_reconcile() -> None:
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
-    rel_id = harness.add_relation(RELATION_NAME, "opencti-connector")
-    harness.update_relation_data(rel_id, "opencti-connector", {"token": "abcd1234"})
+    rel_id = harness.add_relation(RELATION_NAME, "opencti")
+    harness.update_relation_data(rel_id, "opencti", {"token": "abcd1234"})
 
     assert harness.charm.count == 1
