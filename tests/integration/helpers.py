@@ -116,7 +116,7 @@ async def found_in_logs(pattern: str) -> bool:
         sh.juju.ssh(  # pylint: disable=no-member
             "--container=wazuh-server",
             "wazuh-server/0",
-            f"grep {pattern} /var/log/collectors/rsyslog.log",
+            f"grep {pattern} /var/log/collectors/rsyslog/rsyslog.log",
         )
         return True
     except sh.ErrorReturnCode_1:  # pylint: disable=no-member
