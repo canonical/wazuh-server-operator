@@ -185,6 +185,7 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
         )
+        wazuh.set_filesystem_permissions(container)
         if self.state.agent_password:
             wazuh.configure_agent_password(container=container, password=self.state.agent_password)
         if self.state.custom_config_repository:

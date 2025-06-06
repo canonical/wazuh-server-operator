@@ -86,11 +86,13 @@ def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "set_filesystem_permissions")
 @patch.object(wazuh, "get_version")
 @patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
     filebeat_csr_mock,
     get_version_mock,
+    set_filesystem_permissions_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -180,6 +182,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         opencti_token,
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
+    set_filesystem_permissions_mock.assert_called_with(container)
     wazuh_configure_agent_password_mock.assert_called_with(
         container=container, password=agent_password
     )
@@ -202,11 +205,13 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
 @patch.object(wazuh, "configure_filebeat_user")
+@patch.object(wazuh, "set_filesystem_permissions")
 @patch.object(wazuh, "get_version")
 @patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
     filebeat_csr_mock,
     get_version_mock,
+    set_filesystem_permissions_mock,
     configure_filebeat_user_mock,
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
@@ -279,6 +284,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         ]
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
+    set_filesystem_permissions_mock.assert_called_with(container)
     wazuh_configure_agent_password_mock.assert_not_called()
     configure_git_mock.assert_not_called()
     pull_configuration_files_mock.assert_not_called()
