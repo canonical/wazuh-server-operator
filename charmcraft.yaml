@@ -96,6 +96,10 @@ provides:
     interface: prometheus_scrape
   wazuh-api:
     interface: wazuh_api_client
+  opencti-connector:
+    interface: opencti_connector
+    limit: 1
+    required: false
 requires:
   certificates:
     interface: tls-certificates
@@ -125,7 +129,7 @@ config:
     custom-config-ssh-key:
       type: secret
       description: >
-        The Juju secret ID corresponding to the private key for SSH authentication.
+        The Juju secret ID corresponding to the private key for SSH authentication to the git repository.
         The secret should contain a single key, "value", which maps to the actual SSH key. 
         To create the secret, run the following command: 
         `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`,

@@ -3,9 +3,11 @@
 
 """General configuration module for integration tests."""
 
+import json
 import logging
 import os.path
 import secrets
+import textwrap
 import typing
 from pathlib import Path
 
@@ -228,3 +230,58 @@ async def application_fixture(
         apps=[application.name], status="active", raise_on_error=True, timeout=1800
     )
     yield application
+
+
+@pytest_asyncio.fixture(scope="module", name="any_opencti")
+async def opencti_any_charm_fixture(
+    model: Model,
+    pytestconfig: pytest.Config,
+) -> typing.AsyncGenerator[Application, None]:
+    """Deploy OpenCTI any-charm and integrate with Wazuh Server."""
+    any_app_name = "any-opencti"
+    any_charm_src_overwrite = {
+        "any_charm.py": textwrap.dedent(
+            """\
+        import jwt
+        from any_charm_base import AnyCharmBase
+        class AnyCharm(AnyCharmBase):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.framework.observe(
+                    self.on.require_opencti_connector_relation_joined, self._reconcile
+                )
+                self.framework.observe(
+                    self.on.require_opencti_connector_relation_changed, self._reconcile
+                )
+            def _reconcile(self, event) -> None:
+                relation = event.relation
+                relation.data[self.app][
+                    "opencti_url"
+                ] = f"http://{self.app.name}-endpoints.{self.model.name}.svc:8080"
+                sample_token = jwt.encode({'sub': 'sample-user'}, 'sample-key', algorithm='HS256')
+                opencti_token_id = relation.data[self.app].get("opencti_token")
+                if not opencti_token_id:
+                    secret = self.app.add_secret(content={"token": sample_token})
+                    secret.grant(relation)
+                    relation.data[self.app]["opencti_token"] = str(secret.id)
+                else:
+                    secret = self.model.get_secret(id=opencti_token_id)
+                    if secret.get_content(refresh=True)["token"] != sample_token:
+                        secret.set_content({"token": sample_token})
+        """
+        ),
+    }
+    if pytestconfig.getoption("--no-deploy") and any_app_name in model.applications:
+        logger.warning("Using existing application: %s", any_app_name)
+        yield model.applications[any_app_name]
+        return
+    any_app: Application = await model.deploy(
+        "any-charm",
+        application_name=any_app_name,
+        channel="beta",
+        config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "PyJWT"},
+    )
+
+    await model.add_relation(any_app.name, "wazuh-server:opencti-connector")
+    await model.wait_for_idle(status="active", timeout=1800)
+    yield any_app

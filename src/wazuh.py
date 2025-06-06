@@ -65,6 +65,10 @@ class WazuhAuthenticationError(Exception):
     """Wazuh authentication errors."""
 
 
+class WazuhConfigurationError(WazuhInstallationError):
+    """Wazuh configuration errors."""
+
+
 class NodeType(Enum):
     """Enum for the Wazuh node types.
 
@@ -93,12 +97,15 @@ def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]
 
 
 # Won't sacrify cohesion and readability to make pylint happier
-def _update_wazuh_configuration(  # pylint: disable=too-many-locals
+def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-arguments
     container: ops.Container,
     ip_ports: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
+    *,
+    opencti_token: str | None = None,
+    opencti_url: str | None = None,
 ) -> None:
     """Update Wazuh configuration.
 
@@ -108,11 +115,18 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
+        opencti_token: OpenCTI API token.
+        opencti_url: OpenCTI URL.
+
+    Raises:
+        WazuhConfigurationError: if the configuration is invalid or missing required elements.
     """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
     ossec_config_tree = etree.fromstring(f"<root>{ossec_config}</root>")
     hosts = ossec_config_tree.xpath("/root/ossec_config/indexer/hosts")
+    if not hosts:
+        raise WazuhConfigurationError("No indexer hosts found in the configuration.")
     hosts[0].clear()
     for ip_port in ip_ports:
         new_host = etree.Element("host")
@@ -131,16 +145,40 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals
     )
     elements[0].append(new_cluster)
 
+    integrations = ossec_config_tree.xpath(".//integration[starts-with(name, 'custom-opencti-')]")
+    if integrations and (not opencti_token or not opencti_url):
+        raise WazuhConfigurationError(
+            "Missing OpenCTI token or url for custom-opencti integrations. "
+            "Ensure OpenCTI is integrated with Wazuh."
+        )
+
+    for integration in integrations:
+        api_key = integration.find("api_key")
+        if api_key is None:
+            raise WazuhConfigurationError(
+                f"Missing API key in {etree.tostring(integration, pretty_print=True).decode()}."
+            )
+        api_key.text = opencti_token
+
+        hook_url = integration.find("hook_url")
+        if hook_url is None:
+            raise WazuhConfigurationError(
+                f"Missing hook_url in {etree.tostring(integration, pretty_print=True).decode()}."
+            )
+        hook_url.text = f"{opencti_url}/graphql"
+
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
 
 
-def update_configuration(
+def update_configuration(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     container: ops.Container,
     indexer_ips: list[str],
     master_address: str,
     unit_name: str,
     cluster_key: str,
+    opencti_url: str | None = None,
+    opencti_token: str | None = None,
 ) -> None:
     """Update the workload configuration.
 
@@ -150,10 +188,20 @@ def update_configuration(
         master_address: the master unit addresses.
         unit_name: the unit's name.
         cluster_key: the Wazuh key for the cluster nodes.
+        opencti_url: the URL used for OpenCTI APIs.
+        opencti_token: OpenCTI API token.
     """
     ip_ports = [f"{ip}" for ip in indexer_ips]
     _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(container, ip_ports, master_address, unit_name, cluster_key)
+    _update_wazuh_configuration(
+        container,
+        ip_ports,
+        master_address,
+        unit_name,
+        cluster_key,
+        opencti_token=opencti_token,
+        opencti_url=opencti_url,
+    )
 
 
 def install_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments

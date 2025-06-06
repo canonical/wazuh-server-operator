@@ -6,6 +6,7 @@
 import datetime
 import secrets
 import unittest
+import unittest.mock
 
 import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
@@ -48,11 +49,12 @@ def test_state_invalid_opensearch_relation_data(opensearch_relation_data):
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, [], "1")
+        state.State.from_charm(mock_charm, opensearch_relation_data, {}, [], "1")
 
 
 def test_state_without_proxy():
@@ -65,13 +67,14 @@ def test_state_without_proxy():
     secret_id = f"secret:{secrets.token_hex()}"
     mock_charm.config = {"wazuh-api-credentials": secret_id, "logs-ca-cert": "fakeca"}
     endpoints = ["10.0.0.1", "10.0.0.2"]
-    username = "user1"
-    password = secrets.token_hex()
+    secret_id = f"secret:{secrets.token_hex()}"
     opensearch_relation_data = {
         "endpoints": ",".join(endpoints),
-        "secret-user": f"secret:{secrets.token_hex()}",
+        "secret-user": secret_id,
     }
-    secret_id = f"secret:{secrets.token_hex()}"
+
+    username = "user1"
+    password = secrets.token_hex()
     value = secrets.token_hex(16)
     mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
         "username": username,
@@ -94,6 +97,7 @@ def test_state_without_proxy():
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -156,6 +160,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -215,6 +220,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -270,6 +276,7 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -322,6 +329,7 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -376,6 +384,7 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -428,6 +437,7 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -485,6 +495,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -550,6 +561,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -613,6 +625,7 @@ def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
     charm_state = state.State.from_charm(
         mock_charm,
         opensearch_relation_data,
+        {},
         provider_certificates,
         "1",
     )
@@ -671,6 +684,7 @@ def test_state_without_logs_ca_cert():
         state.State.from_charm(
             mock_charm,
             opensearch_relation_data,
+            {},
             provider_certificates,
             "1",
         )
@@ -678,3 +692,62 @@ def test_state_without_logs_ca_cert():
     assert str(exc.value) == str(
         state.RecoverableStateError("Invalid charm configuration logs_ca_cert")
     )
+
+
+def test_state_with_opencti_relation_data():
+    """
+    arrange: given valid OpenCTI relation data.
+    act: when state is initialized through from_charm method.
+    assert: the state contains the OpenCTI relation data.
+    """
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.config = {"wazuh-api-credentials": secret_id, "logs-ca-cert": "fakeca"}
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    secret_id = f"secret:{secrets.token_hex()}"
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": secret_id,
+    }
+
+    username = "user1"
+    password = secrets.token_hex()
+    value = secrets.token_hex(16)
+    opencti_token = secrets.token_hex()
+    mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
+        "username": username,
+        "password": password,
+        "value": value,
+        "token": opencti_token,
+    }
+
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr="1",
+            certificate="certificate",
+            ca="root_ca",
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
+
+    opencti_url = "http://opencti.local"
+    opencti_token_secret_id = f"secret:{secrets.token_hex()}"
+    opencti_relation_data = {
+        "opencti_url": opencti_url,
+        "opencti_token": opencti_token_secret_id,
+    }
+
+    charm_state = state.State.from_charm(
+        mock_charm,
+        opensearch_relation_data,
+        opencti_relation_data,
+        provider_certificates,
+        "1",
+    )
+
+    assert charm_state.opencti_url == opencti_url
+    assert charm_state.opencti_token == opencti_token

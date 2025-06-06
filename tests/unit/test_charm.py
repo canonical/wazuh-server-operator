@@ -123,6 +123,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     password = secrets.token_hex()
     agent_password = secrets.token_hex()
     cluster_key = secrets.token_hex(16)
+    opencti_token = secrets.token_hex(16)
+    opencti_url = "https://opencti.example.com"
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
         api_credentials=api_credentials,
@@ -134,6 +136,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         filebeat_password=password,
         wazuh_config=wazuh_config,
         custom_config_ssh_key="somekey",
+        opencti_token=opencti_token,
+        opencti_url=opencti_url,
     )
     get_version_mock.return_value = "v4.9.2"
     filebeat_csr_mock.return_value = b""
@@ -174,6 +178,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
+        opencti_url,
+        opencti_token,
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     set_filesystem_permissions_mock.assert_called_with(container)
@@ -288,6 +294,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
+        None,
+        None,
     )
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
