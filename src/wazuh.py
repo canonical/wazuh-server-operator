@@ -24,8 +24,8 @@ import yaml
 from lxml import etree  # nosec
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-COLLLECTORS_LOG_PATH = Path("/var/log/collectors")
-COLLLECTORS_RSYSLOG_LOG_PATH = COLLLECTORS_LOG_PATH / "rsyslog"
+COLLECTORS_LOG_PATH = Path("/var/log/collectors")
+COLLECTORS_RSYSLOG_LOG_PATH = COLLECTORS_LOG_PATH / "rsyslog"
 CONTAINER_NAME = "wazuh-server"
 FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_USER = "root"
@@ -358,12 +358,12 @@ def set_filesystem_permissions(container: ops.Container) -> None:
     """
     try:
         process = container.exec(
-            ["chmod", "o-rx", str(COLLLECTORS_RSYSLOG_LOG_PATH)],
+            ["  ", "o-rx", str(COLLECTORS_RSYSLOG_LOG_PATH)],
             timeout=1,
         )
         process.wait_output()
         process = container.exec(
-            ["chown", "syslog:wazuh", str(COLLLECTORS_RSYSLOG_LOG_PATH / "rsyslog")],
+            ["chown", "syslog:wazuh", str(COLLECTORS_RSYSLOG_LOG_PATH)],
             timeout=1,
         )
         process.wait_output()
