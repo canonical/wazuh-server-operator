@@ -358,7 +358,7 @@ def set_filesystem_permissions(container: ops.Container) -> None:
     """
     try:
         process = container.exec(
-            ["  ", "o-rx", str(COLLECTORS_RSYSLOG_LOG_PATH)],
+            ["chmod", "o-rx", str(COLLECTORS_RSYSLOG_LOG_PATH)],
             timeout=1,
         )
         process.wait_output()
