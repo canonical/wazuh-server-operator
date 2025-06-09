@@ -14,7 +14,7 @@ Each revision is versioned by the date of the revision.
 
 ### Updated
 
-- `CODEOWNERS` file to only have the `/docs` directory monitored by the TAs.
+- `CODEOWNERS` file to only have the `/docs` directory monitored by the technical authors.
 
 ### Added
 
