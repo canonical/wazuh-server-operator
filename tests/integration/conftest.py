@@ -7,7 +7,6 @@ import json
 import logging
 import os.path
 import secrets
-import textwrap
 import typing
 from pathlib import Path
 
@@ -239,38 +238,8 @@ async def opencti_any_charm_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy OpenCTI any-charm and integrate with Wazuh Server."""
     any_app_name = "any-opencti"
-    any_charm_src_overwrite = {
-        "any_charm.py": textwrap.dedent(
-            """\
-        import jwt
-        from any_charm_base import AnyCharmBase
-        class AnyCharm(AnyCharmBase):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.framework.observe(
-                    self.on.require_opencti_connector_relation_joined, self._reconcile
-                )
-                self.framework.observe(
-                    self.on.require_opencti_connector_relation_changed, self._reconcile
-                )
-            def _reconcile(self, event) -> None:
-                relation = event.relation
-                relation.data[self.app][
-                    "opencti_url"
-                ] = f"http://{self.app.name}-endpoints.{self.model.name}.svc:8080"
-                sample_token = jwt.encode({'sub': 'sample-user'}, 'sample-key', algorithm='HS256')
-                opencti_token_id = relation.data[self.app].get("opencti_token")
-                if not opencti_token_id:
-                    secret = self.app.add_secret(content={"token": sample_token})
-                    secret.grant(relation)
-                    relation.data[self.app]["opencti_token"] = str(secret.id)
-                else:
-                    secret = self.model.get_secret(id=opencti_token_id)
-                    if secret.get_content(refresh=True)["token"] != sample_token:
-                        secret.set_content({"token": sample_token})
-        """
-        ),
-    }
+    any_charm_script = Path("tests/integration/any_charm.py").read_text(encoding="utf-8")
+    any_charm_src_overwrite = {"any_charm.py": any_charm_script}
     if pytestconfig.getoption("--no-deploy") and any_app_name in model.applications:
         logger.warning("Using existing application: %s", any_app_name)
         yield model.applications[any_app_name]
