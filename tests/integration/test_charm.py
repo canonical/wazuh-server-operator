@@ -15,6 +15,7 @@ import requests
 import yaml
 from juju.application import Application
 from juju.model import Model
+from pytest_operator.plugin import OpsTest
 
 import state
 import wazuh
@@ -129,3 +130,36 @@ async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expec
     found = await found_in_logs(needle)
 
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
+
+
+async def test_opencti_integration(
+    any_opencti: Application,
+    application: Application,
+    ops_test: OpsTest,
+):
+    """
+    Arrange: A working Wazuh deployment integrated with OpenCTI any-charm.
+    Act: Get the unit data for both wazuh-server and any-opencti charms.
+    Assert: The required opencti data is present.
+    """
+    assert any_opencti
+    assert application
+
+    app_data = {}
+    any_opencti_name = any_opencti.units[0].name
+    _, result, _ = await ops_test.juju("show-unit", any_opencti_name)
+    opencti_unit_data = yaml.safe_load(result)
+    for relation in opencti_unit_data[any_opencti_name]["relation-info"]:
+        if relation["endpoint"] == "require-opencti-connector":
+            app_data = relation["application-data"]
+    for key in ["connector_charm_name", "connector_type"]:
+        assert key in app_data, f"Missing key in app data: {key}"
+
+    wazuh_server_name = application.units[0].name
+    _, result, _ = await ops_test.juju("show-unit", wazuh_server_name)
+    wazuh_server_unit_data = yaml.safe_load(result)
+    for relation in wazuh_server_unit_data[wazuh_server_name]["relation-info"]:
+        if relation["endpoint"] == "opencti-connector":
+            app_data = relation["application-data"]
+    for key in ["opencti_url", "opencti_token"]:
+        assert key in app_data, f"Missing key in app data: {key}"

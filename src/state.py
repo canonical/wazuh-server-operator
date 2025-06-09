@@ -72,7 +72,7 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the secret key corresponding to the agent secret.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the secret key corresponding to the SSH key for the git repository.
-        logs_ca_cert: the CA used to authenticate rsyslog clients
+        logs_ca_cert: the CA used to authenticate rsyslog clients.
     """
 
     agent_password: str | None = None
@@ -108,6 +108,30 @@ def _fetch_filebeat_configuration(
     endpoint_data = indexer_relation_data.get("endpoints")
     endpoints = list(endpoint_data.split(",")) if endpoint_data else []
     return filebeat_username, filebeat_password, endpoints
+
+
+def _fetch_opencti_details(
+    model: ops.Model,
+    opencti_relation_data: dict[str, str],
+) -> tuple[str, str] | tuple[None, None]:
+    """Fetch the OpenCTI details from the relation data.
+
+    Args:
+        model: the Juju model.
+        opencti_relation_data: the OpenCTI relation data.
+
+    Returns: a tuple with the OpenCTI URL and token.
+    """
+    opencti_url = opencti_relation_data.get("opencti_url")
+    opencti_token_id = opencti_relation_data.get("opencti_token")
+    opencti_token = (
+        model.get_secret(id=opencti_token_id).get_content().get("token")
+        if opencti_token_id
+        else None
+    )
+    if opencti_token is None or opencti_url is None:
+        return (None, None)
+    return (opencti_url, opencti_token)
 
 
 def _fetch_matching_certificates(
@@ -248,6 +272,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
         logs_ca_cert: the CA to authenticate rssyslog clients.
+        opencti_url: the OpenCTI URL.
+        opencti_token: the OpenCTI token.
     """
 
     agent_password: str | None = None
@@ -261,6 +287,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
     logs_ca_cert: str | None = None
+    opencti_url: str | None = None
+    opencti_token: str | None = None
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
@@ -274,6 +302,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         root_ca: str,
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: str | None,
+        opencti_url: str | None = None,
+        opencti_token: str | None = None,
     ):
         """Initialize a new instance of the CharmState class.
 
@@ -288,6 +318,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             root_ca: the CA certificate for filebeat.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
+            opencti_url: the OpenCTI URL.
+            opencti_token: the OpenCTI token.
         """
         super().__init__(
             agent_password=agent_password,
@@ -301,6 +333,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
             logs_ca_cert=wazuh_config.logs_ca_cert,
+            opencti_url=opencti_url,
+            opencti_token=opencti_token,
         )
 
     @property
@@ -331,6 +365,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         cls,
         charm: ops.CharmBase,
         indexer_relation_data: dict[str, str],
+        opencti_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
         certificate_signing_request: str,
     ) -> "State":
@@ -339,6 +374,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         Args:
             charm: the root charm.
             indexer_relation_data: the Wazuh indexer app relation data.
+            opencti_relation_data: the OpenCTI relation data.
             provider_certificates: the provider certificates.
             certificate_signing_request: the TLS certificate signing request.
 
@@ -370,6 +406,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         matching_certificates = _fetch_matching_certificates(
             provider_certificates, certificate_signing_request
         )
+        opencti_url, opencti_token = _fetch_opencti_details(charm.model, opencti_relation_data)
         try:
             if matching_certificates:
                 return cls(
@@ -383,6 +420,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     root_ca=matching_certificates[0].ca,
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key,
+                    opencti_url=opencti_url,
+                    opencti_token=opencti_token,
                 )
             raise RecoverableStateError("Certificate is empty.")
         except ValidationError as exc:

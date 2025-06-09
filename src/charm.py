@@ -16,6 +16,7 @@ from ops import pebble
 
 import certificates_observer
 import observability
+import opencti_connector_observer
 import opensearch_observer
 import state
 import traefik_route_observer
@@ -55,6 +56,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self._observability = observability.Observability(self)
         self._wazuh_api = wazuh_api.WazuhApiProvides(self)
+        self._opencti_observer = opencti_connector_observer.OpenCTIObserver(self)
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
@@ -111,10 +113,15 @@ class WazuhServerCharm(CharmBaseWithState):
             opensearch_relation_data = (
                 opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
             )
+            opencti_relation = self.model.get_relation(opencti_connector_observer.RELATION_NAME)
+            opencti_relation_data = (
+                opencti_relation.data[opencti_relation.app] if opencti_relation else {}
+            )
             certificates = self.certificates.certificates.get_provider_certificates()
             return State.from_charm(
                 self,
                 opensearch_relation_data,
+                opencti_relation_data,
                 certificates,
                 self.certificates.get_csr().decode("utf-8"),
             )
@@ -194,6 +201,8 @@ class WazuhServerCharm(CharmBaseWithState):
             self.master_fqdn,
             self.unit.name,
             self.state.cluster_key,
+            self.state.opencti_url,
+            self.state.opencti_token,
         )
 
     # It doesn't make sense to split the logic further
