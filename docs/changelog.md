@@ -8,6 +8,14 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-06-06
 
+### Removed
+
+- All references to `src-docs`.
+
+### Updated
+
+- `CODEOWNERS` file to only have the `/docs` directory monitored by the TAs.
+
 ### Added
 
 - OpenCTI integration with Wazuh server.
