@@ -3,6 +3,6 @@ cryptography==45.0.3
 jsonschema==4.24.0
 ops==2.22.0
 pydantic==2.11.5
-requests==2.32.3
+requests==2.32.4
 rpds-py==0.25.1
 wheel==0.45.1
