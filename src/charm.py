@@ -155,7 +155,6 @@ class WazuhServerCharm(CharmBaseWithState):
             container: the container to configure Wazuh for.
         """
         if not self.state:
-            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
 
         if not self.state.logs_ca_cert:
