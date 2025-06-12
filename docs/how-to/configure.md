@@ -6,9 +6,8 @@ To customize the configuration of your charmed Wazuh, use the `custom-config-rep
 
 ## Configure a custom configuration repository
 
-The URL of this repository should be in the form `git+ssh://youruser@yourepot@yourref` where:
+The URL of this repository should be in the form `git+ssh://git@yourepo@yourref` where:
 
-- `youruser` is the SSH user to check out your repository.
 - `yourrepo` is the address of your repository.
 - `yourref` is a Git reference, typically a tag, to specify the version you want to deploy.
 
