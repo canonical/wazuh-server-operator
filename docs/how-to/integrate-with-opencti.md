@@ -47,7 +47,7 @@ the Wazuh model.
 ## Create a custom integration script
 
 Create a custom integration script with `custom-opencti-` prepended to the name of the script. The 
-`custom-opencti-` prefix is required for the charm's automation to detect the right <integration> 
+`custom-opencti-` prefix is required for the charm's automation to detect the right `<integration>` 
 block in `ossec.conf` and inject the OpenCTI URL and token accordingly.
 
 Add the script under `/var/ossec/integrations` in your [custom configuration repository](https://charmhub.io/wazuh-server/docs/how-to-configure). 
