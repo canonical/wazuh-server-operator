@@ -37,7 +37,7 @@ Integrate Wazuh with OpenCTI:
 juju integrate wazuh-server:opencti-connector admin/<opencti-model>.opencti
 ```
 
-<note>
+[note]
 There is currently a limitation in Juju that only the offer side of a cross model relation can 
 share a juju secret to the other side. Since the OpenCTI charm creates a secret and shares it 
 in the relation data, the Juju offer must be created on OpenCTI model's side and consumed by
