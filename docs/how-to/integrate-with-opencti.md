@@ -82,6 +82,6 @@ traefik       2.11.0   active      1  traefik-k8s               latest/edge    2
 wazuh-server           active      1  wazuh-server              latest/edge     39  10.87.248.244  no     
 ```
 
-Ensure the wazuh-server application reaches an `Active` status.
+Ensure the `wazuh-server` application reaches an `Active` status.
 
 Congratulations! You've successfully configured custom OpenCTI integration scripts in Wazuh.
