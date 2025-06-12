@@ -1,6 +1,6 @@
 # Integrate with OpenCTI
 
-Wazuh allows integration with [OpenCTI](https://charmhub.io/opencti) through the [`opencti-connector` interface](https://charmhub.io/opencti/integrations#opencti-connector). This enables the user to create [custom integration scripts](https://documentation.wazuh.com/current/user-manual/manager/integration-with-external-apis.html#custom-integration) to query OpenCTI from Wazuh. 
+Wazuh allows integration with [OpenCTI](https://charmhub.io/opencti) through the [`opencti-connector` interface](https://charmhub.io/opencti/integrations#opencti-connector). This enables you to create [custom integration scripts](https://documentation.wazuh.com/current/user-manual/manager/integration-with-external-apis.html#custom-integration) that query OpenCTI from Wazuh. 
 
 ## What you’ll do
 
@@ -20,13 +20,13 @@ Create an offer from OpenCTI:
 juju offer opencti:opencti-connector opencti
 ```
 
-Grant access to the Wazuh model for the OpenCTI offer:
+Grant the Wazuh model access to the OpenCTI offer:
 
 ```bash
 juju grant <wazuh-model> consume admin/<opencti-model>.opencti
 ```
 
-Switch to the Wazuh model and consume the offer:
+In the Wazuh model, consume the OpenCTI offer:
 ```bash
 juju switch <wazuh-model>
 juju consume admin/<opencti-model>.opencti
@@ -46,18 +46,18 @@ the Wazuh model.
 
 ## Create a custom integration script
 
-Create a custom integration script with `custom-opencti-` prepended to the name of the script. The
-prefix is required for the automation to identify the right `<integration>` snippet in the 
-Wazuh configuration file and inject the OpenCTI URL and token accordingly. 
+Create a custom integration script with `custom-opencti-` prepended to the name of the script. The 
+`custom-opencti-` prefix is required for the charm's automation to detect the right <integration> 
+block in `ossec.conf` and inject the OpenCTI URL and token accordingly.
 
 Add the script under `/var/ossec/integrations` in your [custom configuration repository](https://charmhub.io/wazuh-server/docs/how-to-configure). 
 
-Assign permissions to the file:
+Assign permissions to the custom integration script to ensure it is executable:
 ```bash
 chmod 750 /var/ossec/integrations/custom-opencti-script
 ```
 
-Add the following block of configuration to the `/var/ossec/bin/ossec.conf` file:
+Add the following configuration block to `/var/ossec/bin/ossec.conf`:
 
 ```xml
 <integration>
@@ -68,10 +68,10 @@ Add the following block of configuration to the `/var/ossec/bin/ossec.conf` file
 </integration>
 ```
 
-Reconfigure `wazuh-server` to use a new Git reference for the custom configuration repository 
-with the above-mentioned changes.
+Update the wazuh-server configuration to point to a Git branch or tag that includes 
+your custom script and configuration changes.
 ```bash
-juju config wazuh-server custom-config-repository=git+ssh://git@yourepo@yournewref
+juju config wazuh-server custom-config-repository='git+ssh://git@<your-repo-url>@<new-branch-or-tag>'
 ```
 
 Monitor the deployment using `juju status` until the output looks similar to the following one:
@@ -82,7 +82,7 @@ traefik       2.11.0   active      1  traefik-k8s               latest/edge    2
 wazuh-server           active      1  wazuh-server              latest/edge     39  10.87.248.244  no     
 ```
 
-The wazuh-server must have the `Active` status.
+Ensure the wazuh-server application reaches an `Active` status.
 
 Congratulations! You've successfully configured custom OpenCTI integration scripts in Wazuh.
 
