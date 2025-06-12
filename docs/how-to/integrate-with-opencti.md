@@ -68,7 +68,7 @@ Add the following configuration block to `/var/ossec/bin/ossec.conf`:
 </integration>
 ```
 
-Update the wazuh-server configuration to point to a Git reference that includes 
+Update the `wazuh-server` configuration to point to a Git reference that includes 
 your custom script and configuration changes.
 ```bash
 juju config wazuh-server custom-config-repository='git+ssh://git@<your-repo-url>@<new-reference>'
