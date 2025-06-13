@@ -376,7 +376,6 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "-a",
                 "--chown",
                 "wazuh:wazuh",
-                "--delete",
                 "--include='*/'",
                 "--include='etc/*.conf'",
                 "--include='etc/decoders/***'",
