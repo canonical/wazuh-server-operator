@@ -149,7 +149,7 @@ async def opensearch_provider_fixture(
     await machine_model.integrate(sysconfig.name, application.name)
 
     await machine_model.wait_for_idle(
-        apps=[app_name], status="active", raise_on_error=False, timeout=1800
+        apps=[app_name], status="active", raise_on_error=False, timeout=2400
     )
     if num_units == 1:
         await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
