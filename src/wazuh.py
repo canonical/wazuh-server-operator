@@ -314,6 +314,9 @@ def configure_git(
         custom_config_repository: the git repository to add to known hosts in format
         git+ssh://<user>@<url>:<branch>.
         custom_config_ssh_key: the SSH key for the git repository.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while configuring git.
     """
     if custom_config_ssh_key:
         container.push(
