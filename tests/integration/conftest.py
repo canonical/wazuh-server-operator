@@ -139,6 +139,7 @@ async def opensearch_provider_fixture(
     if num_units == 1:
         await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
 
+    await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application
 
