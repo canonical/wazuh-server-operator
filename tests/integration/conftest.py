@@ -23,12 +23,17 @@ logger = logging.getLogger(__name__)
 MACHINE_MODEL_CONFIG = {
     "logging-config": "<root>=INFO;unit=DEBUG",
     "update-status-hook-interval": "5m",
-    "cloudinit-userdata": """postruncmd:
-        - [ 'sysctl', '-w', 'vm.max_map_count=262144' ]
-        - [ 'sysctl', '-w', 'fs.file-max=1048576' ]
-        - [ 'sysctl', '-w', 'vm.swappiness=0' ]
-        - [ 'sysctl', '-w', 'net.ipv4.tcp_retries2=5' ]
-    """,
+}
+
+SYSCONFIG_CONFIG = {
+    "sysctl": """
+    {
+        "vm.max_map_count": 262144,
+        "vm.swappiness": 0,
+        "net.ipv4.tcp_retries2": 5,
+        "fs.file-max": 1048576,
+    }
+"""
 }
 
 
@@ -138,6 +143,8 @@ async def opensearch_provider_fixture(
     )
 
     await machine_model.integrate(self_signed_certificates.name, application.name)
+    sysconfig = await machine_model.deploy("sysconfig", channel="latest/stable", config=SYSCONFIG_CONFIG)
+    await machine_model.integrate(sysconfig.name, application.name)
 
     await machine_model.wait_for_idle(
         apps=[app_name], status="active", raise_on_error=False, timeout=1800
