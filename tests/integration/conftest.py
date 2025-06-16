@@ -23,12 +23,6 @@ logger = logging.getLogger(__name__)
 MACHINE_MODEL_CONFIG = {
     "logging-config": "<root>=INFO;unit=DEBUG",
     "update-status-hook-interval": "5m",
-    "cloudinit-userdata": """postruncmd:
-        - [ 'sysctl', '-w', 'vm.max_map_count=262144' ]
-        - [ 'sysctl', '-w', 'fs.file-max=1048576' ]
-        - [ 'sysctl', '-w', 'vm.swappiness=0' ]
-        - [ 'sysctl', '-w', 'net.ipv4.tcp_retries2=5' ]
-    """,
 }
 
 
@@ -89,7 +83,6 @@ async def traefik_fixture(
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
-    await model.wait_for_idle(apps=[app_name], status="active", raise_on_error=False, timeout=1800)
     yield application
 
 
@@ -137,14 +130,10 @@ async def opensearch_provider_fixture(
         app_name, application_name=app_name, channel="latest/edge", num_units=num_units
     )
 
-    await machine_model.integrate(self_signed_certificates.name, application.name)
-
-    await machine_model.wait_for_idle(
-        apps=[app_name], status="active", raise_on_error=False, timeout=1800
-    )
     if num_units == 1:
         await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
 
+    await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application
 
@@ -187,6 +176,7 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
     charm: str,
+    machine_model: Model,
     model: Model,
     self_signed_certificates: Application,
     opensearch_provider: Application,
@@ -210,9 +200,6 @@ async def application_fixture(
         resources=resources,
         trust=True,
     )
-    await model.wait_for_idle(
-        apps=[application.name], status="waiting", raise_on_error=False, timeout=1800
-    )
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -223,10 +210,16 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
-        apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
+        apps=[traefik.name, application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1800,
     )
-    await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=1800
+    await machine_model.wait_for_idle(
+        apps=[opensearch_provider.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1800,
     )
     yield application
 
@@ -252,5 +245,5 @@ async def opencti_any_charm_fixture(
     )
 
     await model.add_relation(any_app.name, "wazuh-server:opencti-connector")
-    await model.wait_for_idle(status="active", timeout=1800)
+    await model.wait_for_idle(status="active", timeout=600)
     yield any_app
