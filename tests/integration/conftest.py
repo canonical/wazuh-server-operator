@@ -143,7 +143,9 @@ async def opensearch_provider_fixture(
     )
 
     await machine_model.integrate(self_signed_certificates.name, application.name)
-    sysconfig = await machine_model.deploy("sysconfig", channel="latest/stable", config=SYSCONFIG_CONFIG)
+    sysconfig = await machine_model.deploy(
+        "sysconfig", channel="latest/stable", config=SYSCONFIG_CONFIG
+    )
     await machine_model.integrate(sysconfig.name, application.name)
 
     await machine_model.wait_for_idle(
