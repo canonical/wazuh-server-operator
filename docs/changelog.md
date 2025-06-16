@@ -11,6 +11,7 @@ Each revision is versioned by the date of the revision.
 ### Updated
 
 - Modified the `rsync` command to prevent deletion of excluded directories. 
+- Modified the `rsync` command to change ownership to `root:wazuh`. 
 
 ## 2025-06-12
 
