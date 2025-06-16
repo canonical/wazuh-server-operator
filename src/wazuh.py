@@ -381,7 +381,7 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "rsync",
                 "-a",
                 "--chown",
-                "wazuh:wazuh",
+                "root:wazuh",
                 "--delete",
                 "--include=etc/",
                 "--include=etc/*.conf",
