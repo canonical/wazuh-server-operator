@@ -94,7 +94,6 @@ async def traefik_fixture(
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
     )
-    await model.wait_for_idle(apps=[app_name], status="active", raise_on_error=False, timeout=1800)
     yield application
 
 
@@ -148,9 +147,6 @@ async def opensearch_provider_fixture(
     )
     await machine_model.integrate(sysconfig.name, application.name)
 
-    await machine_model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=False, timeout=2400
-    )
     if num_units == 1:
         await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
 
@@ -219,9 +215,6 @@ async def application_fixture(
         resources=resources,
         trust=True,
     )
-    await model.wait_for_idle(
-        apps=[application.name], status="waiting", raise_on_error=False, timeout=1800
-    )
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -232,10 +225,10 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
-        apps=[traefik.name], status="active", raise_on_error=False, timeout=1800
-    )
-    await model.wait_for_idle(
-        apps=[application.name], status="active", raise_on_error=True, timeout=1800
+        apps=[traefik.name, application.name, opensearch_provider.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1800,
     )
     yield application
 
@@ -261,5 +254,5 @@ async def opencti_any_charm_fixture(
     )
 
     await model.add_relation(any_app.name, "wazuh-server:opencti-connector")
-    await model.wait_for_idle(status="active", timeout=1800)
+    await model.wait_for_idle(status="active", timeout=600)
     yield any_app
