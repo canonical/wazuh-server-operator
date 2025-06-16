@@ -181,6 +181,7 @@ async def charm_fixture(pytestconfig: pytest.Config) -> str:
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
     charm: str,
+    machine_model: Model,
     model: Model,
     self_signed_certificates: Application,
     opensearch_provider: Application,
@@ -214,7 +215,13 @@ async def application_fixture(
     )
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
-        apps=[traefik.name, application.name, opensearch_provider.name],
+        apps=[traefik.name, application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1800,
+    )
+    await machine_model.wait_for_idle(
+        apps=[opensearch_provider.name],
         status="active",
         raise_on_error=True,
         timeout=1800,
