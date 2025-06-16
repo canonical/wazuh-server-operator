@@ -314,6 +314,9 @@ def configure_git(
         custom_config_repository: the git repository to add to known hosts in format
         git+ssh://<user>@<url>:<branch>.
         custom_config_ssh_key: the SSH key for the git repository.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while configuring git.
     """
     if custom_config_ssh_key:
         container.push(
@@ -328,36 +331,39 @@ def configure_git(
 
     base_url = None
     branch = None
-    if custom_config_repository:
-        url = urlsplit(custom_config_repository)
-        path_parts = url.path.split("@")
-        branch = path_parts[1] if len(path_parts) > 1 else None
-        base_url = urlunsplit(url._replace(path=path_parts[0]))
-        process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=10)
-        output, _ = process.wait_output()
-        container.push(
-            KNOWN_HOSTS_PATH,
-            output,
-            encoding="utf-8",
-            make_dirs=True,
-            user=WAZUH_USER,
-            group=WAZUH_GROUP,
-            permissions=0o600,
-        )
-    if (
-        _get_current_configuration_url(container) != base_url
-        or _get_current_configuration_url_branch(container) != branch
-    ):
-        process = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1)
-        process.wait_output()
-
-        if base_url:
-            command = ["git", "clone", "--depth", "1"]
-            if branch:
-                command = command + ["--branch", branch]
-            command = command + [base_url, REPOSITORY_PATH]
-            process = container.exec(command, timeout=60)
+    try:
+        if custom_config_repository:
+            url = urlsplit(custom_config_repository)
+            path_parts = url.path.split("@")
+            branch = path_parts[1] if len(path_parts) > 1 else None
+            base_url = urlunsplit(url._replace(path=path_parts[0]))
+            process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=10)
+            output, _ = process.wait_output()
+            container.push(
+                KNOWN_HOSTS_PATH,
+                output,
+                encoding="utf-8",
+                make_dirs=True,
+                user=WAZUH_USER,
+                group=WAZUH_GROUP,
+                permissions=0o600,
+            )
+        if (
+            _get_current_configuration_url(container) != base_url
+            or _get_current_configuration_url_branch(container) != branch
+        ):
+            process = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1)
             process.wait_output()
+
+            if base_url:
+                command = ["git", "clone", "--depth", "1"]
+                if branch:
+                    command = command + ["--branch", branch]
+                command = command + [base_url, REPOSITORY_PATH]
+                process = container.exec(command, timeout=60)
+                process.wait_output()
+    except ops.pebble.ExecError as ex:
+        raise WazuhInstallationError from ex
 
 
 def pull_configuration_files(container: ops.Container) -> None:
@@ -377,18 +383,21 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "--chown",
                 "wazuh:wazuh",
                 "--delete",
-                "--include='*/'",
-                "--include='etc/*.conf'",
-                "--include='etc/decoders/***'",
-                "--include='etc/rules/***'",
-                "--include='etc/shared/*.conf'",
-                "--include='etc/shared/**/*.conf'",
-                "--include='integrations/***'",
-                "--exclude='*'",
+                "--include=etc/",
+                "--include=etc/*.conf",
+                "--include=etc/decoders/***",
+                "--include=etc/rules/***",
+                "--include=etc/shared/",
+                "--include=etc/shared/*.conf",
+                "--include=etc/shared/**/",
+                "--include=etc/shared/**/*.conf",
+                "--include=integrations/***",
+                "--include=ruleset/***",
+                "--exclude=*",
                 "/root/repository/var/ossec/",
                 "/var/ossec",
             ],
-            timeout=1,
+            timeout=10,
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:
