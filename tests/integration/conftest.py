@@ -25,17 +25,6 @@ MACHINE_MODEL_CONFIG = {
     "update-status-hook-interval": "5m",
 }
 
-SYSCONFIG_CONFIG = {
-    "sysctl": """
-    {
-        "vm.max_map_count": 262144,
-        "vm.swappiness": 0,
-        "net.ipv4.tcp_retries2": 5,
-        "fs.file-max": 1048576,
-    }
-"""
-}
-
 
 @pytest_asyncio.fixture(scope="module", name="model")
 async def model_fixture(ops_test: OpsTest) -> Model:
@@ -146,10 +135,6 @@ async def opensearch_provider_fixture(
 
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
-    sysconfig = await machine_model.deploy(
-        "sysconfig", channel="latest/stable", config=SYSCONFIG_CONFIG
-    )
-    await machine_model.integrate(sysconfig.name, application.name)
     yield application
 
 
