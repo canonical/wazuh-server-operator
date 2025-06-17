@@ -12,7 +12,7 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      channel: 1.31-strict/stable
+      channel: edge
       extra-arguments: |
         --kube-config=${GITHUB_WORKSPACE}/kube-config
       juju-channel: 3.5/stable
