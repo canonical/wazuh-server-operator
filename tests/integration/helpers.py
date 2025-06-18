@@ -82,9 +82,12 @@ async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn
     return False
 
 
-async def get_wazuh_ip() -> str:
+async def get_wazuh_ip(model_name: str) -> str:
     """Returns Wazuh server IP
     Not sure why: the applications["wazuh-server"].units[0] returns None.
+
+    Args:
+        model_name: the name of the Juju model.
 
     Returns:
         str: the IP of the Wazuh server.
@@ -95,6 +98,8 @@ async def get_wazuh_ip() -> str:
     output = sh.juju(  # pylint: disable=no-member
         "show-unit",
         "wazuh-server/0",
+        "-m",
+        model_name,
         format="yaml",
     )
     output = yaml.safe_load(output)["wazuh-server/0"]
