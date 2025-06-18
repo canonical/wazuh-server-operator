@@ -108,11 +108,12 @@ async def get_wazuh_ip(model_name: str) -> str:
     return output["address"]
 
 
-async def found_in_logs(pattern: str) -> bool:
+async def found_in_logs(pattern: str, model_name: str) -> bool:
     """Grep logs on the server to see if a pattern is found.
 
     Args:
         pattern: the pattern to look for
+        model_name: the name of the Juju model.
 
     Returns:
         bool: True if the pattern was found
@@ -121,6 +122,8 @@ async def found_in_logs(pattern: str) -> bool:
         sh.juju.ssh(  # pylint: disable=no-member
             "--container=wazuh-server",
             "wazuh-server/0",
+            "-m",
+            model_name,
             f"grep {pattern} /var/log/collectors/rsyslog/rsyslog.log",
         )
         return True

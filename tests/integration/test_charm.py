@@ -126,7 +126,7 @@ async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expec
     )
     assert sent, "Log was not sent."
 
-    found = await found_in_logs(needle)
+    found = await found_in_logs(needle, application.model.name)
 
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
