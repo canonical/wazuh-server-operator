@@ -18,7 +18,7 @@ echo "bootstrapping lxd juju controller"
 # echo "ulimit -n 458752" | sudo tee -a /var/snap/k8s/current/args/containerd-env
 # sudo snap restart k8s
 # sudo k8s status --wait-ready --timeout 5m
-sudo juju bootstrap localhost localhost
+juju bootstrap localhost localhost
 
 echo "Switching to testing model"
 juju switch "$TESTING_MODEL"
