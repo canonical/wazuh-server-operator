@@ -281,8 +281,8 @@ def test_get_version() -> None:
     harness.handle_exec(
         "wazuh-server",
         ["/var/ossec/bin/wazuh-control", "info"],
-        result='WAZUH_VERSION="v4.9.2"\nWAZUH_REVISION="40921"\nWAZUH_TYPE="server"\n',
+        result='WAZUH_VERSION="v4.11.0"\nWAZUH_REVISION="40921"\nWAZUH_TYPE="server"\n',
     )
     container = harness.charm.unit.get_container("wazuh-server")
     version = wazuh.get_version(container)
-    assert "v4.9.2" == version
+    assert "v4.11.0" == version

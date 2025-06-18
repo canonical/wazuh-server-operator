@@ -139,7 +139,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         opencti_token=opencti_token,
         opencti_url=opencti_url,
     )
-    get_version_mock.return_value = "v4.9.2"
+    get_version_mock.return_value = "v4.11.0"
     filebeat_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
     harness.begin()
@@ -250,7 +250,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         ),
         custom_config_ssh_key=None,
     )
-    get_version_mock.return_value = "v4.9.2"
+    get_version_mock.return_value = "v4.11.0"
     filebeat_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
     harness.begin()

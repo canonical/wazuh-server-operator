@@ -1,6 +1,6 @@
 # How to perform a minor upgrade
 
-**Example**: Wazuh 4.9 -> Wazuh 4.10.
+**Example**: Wazuh 4.9 -> Wazuh 4.11.
 
 ```{important}
 The workload's versions are pinned in the charms.
