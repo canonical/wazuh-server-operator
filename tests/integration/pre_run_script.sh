@@ -21,7 +21,7 @@ sudo k8s status --wait-ready --timeout 5m
 sudo juju bootstrap localhost localhost
 
 echo "Switching to testing model"
-juju switch $TESTING_MODEL
+juju switch "$TESTING_MODEL"
 
 # https://charmhub.io/opensearch/docs/t-set-up#set-parameters-on-the-host-machine
 sudo tee -a /etc/sysctl.conf > /dev/null <<EOT

@@ -12,13 +12,13 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      channel: edge
+      channel: 1.33-classic/stable
       extra-arguments: |
         --kube-config=~/.kube/config
       juju-channel: 3.5/stable
       load-test-enabled: false
       pre-run-script: |
-        chmod +x tests/integration/pre_run_script.sh
+        -c "chmod +x tests/integration/pre_run_script.sh
         ./tests/integration/pre_run_script.sh"
       zap-enabled: false
       trivy-fs-enabled: true
