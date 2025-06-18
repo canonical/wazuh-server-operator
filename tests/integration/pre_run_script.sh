@@ -15,9 +15,9 @@ TESTING_MODEL="$(juju switch)"
 # lxd should be install and init by a previous step in integration test action.
 echo "bootstrapping lxd juju controller"
 # Change microk8s default file limits
-echo "ulimit -n 458752" | sudo tee -a /var/snap/k8s/current/args/containerd-env
-sudo snap restart k8s
-sudo k8s status --wait-ready --timeout 5m
+# echo "ulimit -n 458752" | sudo tee -a /var/snap/k8s/current/args/containerd-env
+# sudo snap restart k8s
+# sudo k8s status --wait-ready --timeout 5m
 sudo juju bootstrap localhost localhost
 
 echo "Switching to testing model"
