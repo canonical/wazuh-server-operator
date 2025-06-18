@@ -32,20 +32,20 @@ data "juju_model" "wazuh_server" {
 }
 
 module "wazuh" {
-  source        = "git::https://github.com/canonical/wazuh-server-operator//terraform/product?ref=4.9/stable"
+  source        = "git::https://github.com/canonical/wazuh-server-operator//terraform/product?ref=4.11/stable"
   model         = local.juju_server_model_name
   indexer_model = local.juju_indexer_model_name
 
   wazuh_indexer = {
-    channel = "4.9/stable"
+    channel = "4.11/stable"
   }
 
   wazuh_dashboard = {
-    channel = "4.9/stable"
+    channel = "4.11/stable"
   }
 
   wazuh_server = {
-    channel = "4.9/stable"
+    channel = "4.11/stable"
   }
 
   traefik_k8s = {

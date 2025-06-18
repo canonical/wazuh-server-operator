@@ -29,7 +29,7 @@ IP=$(juju show-unit wazuh-indexer/0 | grep 'public-address:' | awk '{print $2}')
 
 echo "Updating cluster to not have replicates for new indices"
 REQ='{ "index_patterns": ["*"], "template": { "settings": { "number_of_replicas": 0 } } }'
-curl -k -u "$CREDS" -X PUT "https://$IP:9200/_index_template/default-replicas" -H "Content-Type: application/json" -d "$REQ"
+curl -k -u "$CREDS" -X PUT "https://$IP:9200/_index_template/charmed-index-tpl" -H "Content-Type: application/json" -d "$REQ"
 echo
 
 echo "Updating existing indices"
