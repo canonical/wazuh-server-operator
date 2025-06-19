@@ -3,6 +3,7 @@
 ## What you’ll do
 - Deploy the Wazuh Server charm.
 - Integrate with the Wazuh Indexer charm.
+- Integrate with the Wazuh Dashboard charm.
 - Integrate with the self Signed X.509 Certificates charm.
 - Integrate with the Traefik charm.
 
@@ -12,6 +13,7 @@
 * Juju 3 installed and bootstrapped to a MicroK8s and to an LXD controller. You can accomplish
 this process by using a [Multipass](https://multipass.run/) VM as outlined in this guide: [Set up / Tear down your test environment](https://juju.is/docs/juju/set-up--tear-down-your-test-environment)
 * A deployed Wazuh Indexer. For instructions to deploy the Wazuh Indexer, check [its documentation](https://charmhub.io/wazuh-indexer).
+* A deployed Wazuh Dashboard. For instructions to deploy the Wazuh Dashboard, check [its documentation](https://charmhub.io/wazuh-dashboard).
 
 :warning: When using a Multipass VM, make sure to replace IP addresses with the
 VM IP in steps that assume you're running locally. To get the IP address of the
@@ -56,17 +58,19 @@ Provide the integrations between the Wazuh Server and the other charms:
 ```bash
 juju integrate wazuh-server self-signed-certificates
 juju integrate wazuh-server traefik-k8s
-# Note that the indexer is deployed in a machine model in another controller
-juju integrate wazuh-server <offer-url>
+juju integrate wazuh-server <indexer-offer-url>
+juju integrate wazuh-server <dashboard-offer-url>
 ```
 
-Note that `<offer-url>` is the Juju offer for the Wazuh Indexer.
+Note that `<indexer-offer-url>` and `<dashboard-offer-url>` are the Juju offers for the Wazuh Indexer and Dashboard, respectively,
+which deployed in a machine model in another controller.
 
 
 Monitor the deployment using `juju status` until the output looks similar to the following one:
 ```bash
-SAAS                             Status  Store                           URL
-wazuh-indexer-opensearch-client  active  juju-controller-lxd             admin/wazuh.wazuh-indexer-opensearch-client
+SAAS             Status  Store                           URL
+wazuh-indexer    active  juju-controller-lxd             admin/wazuh.wazuh-indexer
+wazuh-dashboard  active  juju-controller-lxd             admin/wazuh.wazuh-dashboard
 
 App           Version  Status  Scale  Charm                     Channel        Rev  Address        Exposed  Message
 certificates           active      1  self-signed-certificates  latest/stable  155  10.87.137.125  no       
