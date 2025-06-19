@@ -11,16 +11,19 @@ title Wazuh architecture overview
 Person(security-analyst, "Security Analyst", "")
 Rel(security-analyst, wazuh-dashboard, "")
 
-Deployment_Node(wazuh-dashboard, "Wazuh dashboard charm") {
-  Component(wazuh-dashboard, "Wazuh Dashboard", "","A customized OpenSearch dashboard")
+Deployment_Node(vm-model, "VM model") {
+  Container_Boundary(wazuh-dashboard, "Wazuh dashboard charm") {
+    Component(wazuh-dashboard, "Wazuh Dashboard", "","A customized OpenSearch dashboard")
+  }
+  Container_Boundary(wazuh-indexer, "Wazuh indexer charm") {
+    Component(wazuh-indexer, "Wazuh Indexer", "","A customized OpenSearch to store logs, events, alerts")
+  }
 }
 
-Deployment_Node(wazuh-indexer, "Wazuh indexer charm") {
-  Component(wazuh-indexer, "Wazuh Indexer", "","A customized OpenSearch to store logs, events, alerts")
-}
-
-Deployment_Node(wazuh-server, "Wazuh Server charm") {
-  Component(wazuh-server, "Wazuh Server", "", "Received, analyzes and exports logs and events")
+Deployment_Node(k8s-model, "k8s model") {
+  Container_Boundary(wazuh-server, "Wazuh Server charm") {
+    Component(wazuh-server, "Wazuh Server", "", "Received, analyzes and exports logs and events")
+  }
 }
 
 System_Ext(endpoint-rsyslog, "Endpoint rsyslog", "","Forwards logs to Wazuh")
