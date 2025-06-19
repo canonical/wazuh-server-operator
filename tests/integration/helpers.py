@@ -82,9 +82,12 @@ async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn
     return False
 
 
-async def get_wazuh_ip() -> str:
+async def get_wazuh_ip(model_name: str) -> str:
     """Returns Wazuh server IP
     Not sure why: the applications["wazuh-server"].units[0] returns None.
+
+    Args:
+        model_name: the name of the Juju model.
 
     Returns:
         str: the IP of the Wazuh server.
@@ -95,6 +98,8 @@ async def get_wazuh_ip() -> str:
     output = sh.juju(  # pylint: disable=no-member
         "show-unit",
         "wazuh-server/0",
+        "-m",
+        model_name,
         format="yaml",
     )
     output = yaml.safe_load(output)["wazuh-server/0"]
@@ -103,17 +108,20 @@ async def get_wazuh_ip() -> str:
     return output["address"]
 
 
-async def found_in_logs(pattern: str) -> bool:
+async def found_in_logs(pattern: str, model_name: str) -> bool:
     """Grep logs on the server to see if a pattern is found.
 
     Args:
         pattern: the pattern to look for
+        model_name: the name of the Juju model.
 
     Returns:
         bool: True if the pattern was found
     """
     try:
         sh.juju.ssh(  # pylint: disable=no-member
+            "-m",
+            model_name,
             "--container=wazuh-server",
             "wazuh-server/0",
             f"grep {pattern} /var/log/collectors/rsyslog/rsyslog.log",

@@ -12,20 +12,20 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      channel: 1.31-strict/stable
+      channel: 1.33-classic/stable
       extra-arguments: |
-        --kube-config=${GITHUB_WORKSPACE}/kube-config
+        --kube-config=~/.kube/config
       juju-channel: 3.5/stable
       load-test-enabled: false
       pre-run-script: |
-        -c "sudo microk8s config > ${GITHUB_WORKSPACE}/kube-config
-        chmod +x tests/integration/pre_run_script.sh
+        -c "chmod +x tests/integration/pre_run_script.sh
         ./tests/integration/pre_run_script.sh"
       zap-enabled: false
       trivy-fs-enabled: true
       trivy-image-config: "trivy.yaml"
       self-hosted-runner: true
       self-hosted-runner-label: "xlarge"
-      microk8s-addons: "dns ingress rbac storage registry"
       tmate-debug: false
       tmate-timeout: 60
+      use-canonical-k8s: true
+      provider: 'k8s'
