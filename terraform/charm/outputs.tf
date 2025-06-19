@@ -20,5 +20,6 @@ output "provides" {
     grafana_dashboard = "grafana-dashboard"
     metrics_endpoint  = "metrics-endpoint"
     wazuh_api         = "wazuh-api"
+    opencti_connector = "opencti-connector"
   }
 }
