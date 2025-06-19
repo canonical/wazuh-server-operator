@@ -97,8 +97,7 @@ async def test_rsyslog_invalid_server_ca(application: Application):
     """
     assert application
     ca_cert = (Path(__file__).parent / "certs/ca.crt").read_text()
-
-    wazuh_ip = await get_wazuh_ip()
+    wazuh_ip = await get_wazuh_ip(application.model.name)
 
     with pytest.raises(ssl.SSLCertVerificationError):
         await send_syslog_over_tls("test", host=wazuh_ip, server_ca=ca_cert, valid_cn=True)
@@ -119,7 +118,7 @@ async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expec
     """
     assert application
     server_ca_cert = await get_ca_certificate()
-    wazuh_ip = await get_wazuh_ip()
+    wazuh_ip = await get_wazuh_ip(application.model.name)
 
     needle = secrets.token_hex()
     sent = await send_syslog_over_tls(
@@ -127,7 +126,7 @@ async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expec
     )
     assert sent, "Log was not sent."
 
-    found = await found_in_logs(needle)
+    found = await found_in_logs(needle, application.model.name)
 
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
