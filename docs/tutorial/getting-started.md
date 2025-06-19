@@ -58,12 +58,12 @@ Provide the integrations between the Wazuh Server and the other charms:
 ```bash
 juju integrate wazuh-server self-signed-certificates
 juju integrate wazuh-server traefik-k8s
-# Note that the indexer and dashboard are deployed in a machine model in another controller
 juju integrate wazuh-server <indexer-offer-url>
 juju integrate wazuh-server <dashboard-offer-url>
 ```
 
-Note that `<indexer-offer-url>` and `<dashboard-offer-url>` are the Juju offers for the Wazuh Indexer and Dashboard, respectively.
+Note that `<indexer-offer-url>` and `<dashboard-offer-url>` are the Juju offers for the Wazuh Indexer and Dashboard, respectively,
+which deployed in a machine model in another controller.
 
 
 Monitor the deployment using `juju status` until the output looks similar to the following one:
