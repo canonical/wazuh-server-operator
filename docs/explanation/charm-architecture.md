@@ -16,7 +16,8 @@ wazuh-server-0                    2/2     Running   0         6h4m
 This shows there are 2 containers:
 
 1. A [Wazuh server](https://wazuh.com/) container, which
-has Wazuh server installed and configured.
+has Wazuh server installed and configured alongside several collectors and
+[filebeat](https://www.elastic.co/beats/filebeat) to ingest and export logs.
 2. A sidecar containing Pebble: a lightweight, API-driven process supervisor that is responsible for
 configuring processes to run in the workload container and controlling those processes
 throughout the workload lifecycle.
@@ -32,13 +33,34 @@ This is done by publishing a resource to Charmhub as described in the
 
 ## Wazuh server
 
-Wazuh server is an application controlled by the `/var/ossec/bin/wazuh-control` script.
+Wazuh server is an application controlled by the `/var/ossec/bin/wazuh-control` script. Alongside it, several collectors and a filebeat instance is deployed to ingest and export the logs.
 
 The Wazuh server listens on ports:
 
 - 1514 and 1515: for the Wazuh agents to connect;
-- 6514: for remote servers to send logs over TLS;
 - 55000: to access Wazuh's API.
+
+The collectors deployed are:
+- rsyslog, which listens on port 6514 for remote servers to send logs over TLS;
+
+```mermaid
+C4Context
+title Wazuh reference architecture
+
+Container_Boundary(wazuh-server-container, "Wazuh container") {
+  Component(wazuh-filebeat, "Wazuh filebeat", "", "Forwards logs")
+  Component(wazuh-server, "Wazuh server", "", "Analyzes logs and events")
+  Component(wazuh-rsyslog, "Wazuh rsyslog server", "", "Collects logs")
+}
+
+Boundary(storage, "Storage") {
+  ComponentDb(filesystem, "Ephemeral storage", "", "Logs files on filesystem")
+}
+
+Rel(wazuh-rsyslog, filesystem,"")
+Rel(filesystem, wazuh-server,"")
+
+```
 
 The workload that this container is running is defined in the [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
 
