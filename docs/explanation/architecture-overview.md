@@ -11,23 +11,19 @@ title Wazuh architecture overview
 Person(security-analyst, "Security Analyst", "")
 Rel(security-analyst, wazuh-dashboard, "")
 
-Container_Boundary(wazuh-dashboard, "Wazuh dashboard charm") {
-    Component(wazuh-dashboard, "Wazuh Dashboard Snap", "","A customized OpenSearch dashboard")
+Deployment_Node(wazuh-dashboard, "Wazuh dashboard charm") {
+  Component(wazuh-dashboard, "Wazuh Dashboard", "","A customized OpenSearch dashboard")
 }
 
-Container_Boundary(wazuh-server, "Wazuh server charm") {
-  Component(wazuh-server, "Wazuh workload", "", "Received, analyzes and exports logs and events")
+Deployment_Node(wazuh-indexer, "Wazuh indexer charm") {
+  Component(wazuh-indexer, "Wazuh Indexer", "","A customized OpenSearch to store logs, events, alerts")
 }
 
-Container_Boundary(wazuh-indexer, "Wazuh indexer charm") {
-    Component(wazuh-indexer, "Wazuh indexer snap", "","A customized OpenSearch to store logs, events, alerts")
+Deployment_Node(wazuh-server, "Wazuh Server charm") {
+  Component(wazuh-server, "Wazuh Server", "", "Received, analyzes and exports logs and events")
 }
 
-
-Container_Boundary(endpoints, "Endpoints") {
-    Component(endpoint-rsyslog, "Endpoint rsyslog", "","Forwards logs to Wazuh")
-}
-
+System_Ext(endpoint-rsyslog, "Endpoint rsyslog", "","Forwards logs to Wazuh")
 
 Rel(wazuh-server, wazuh-indexer, "Store events")
 Rel(wazuh-dashboard, wazuh-indexer, "Access events")
@@ -35,7 +31,6 @@ Rel(wazuh-dashboard, wazuh-server, "")
 Rel(endpoint-rsyslog, wazuh-server, "")
 
 UpdateRelStyle(wazuh-server, wazuh-indexer, $offsetX="-120", $offsetY="200")
-UpdateRelStyle(wazuh-filebeat, wazuh-indexer, $offsetX="75", $offsetY="-80")
 
 UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="2")
 ```
