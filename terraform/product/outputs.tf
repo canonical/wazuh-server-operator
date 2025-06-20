@@ -16,6 +16,7 @@ output "wazuh_server_provides" {
   value = {
     grafana_dashboard = "grafana-dashboard"
     metrics_endpoint  = "metrics-endpoint"
+    opencti_connector = "opencti-connector"
   }
 }
 
