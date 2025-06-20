@@ -12,6 +12,7 @@ output "wazuh_server_requires" {
   }
 }
 
+
 output "wazuh_server_provides" {
   value = {
     grafana_dashboard = "grafana-dashboard"
