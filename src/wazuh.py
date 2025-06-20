@@ -57,6 +57,10 @@ WAZUH_USER = "wazuh"
 logger = logging.getLogger(__name__)
 
 
+class OpenCTIIntegrationMissingError(Exception):
+    """OpenCTI integration is missing."""
+
+
 class WazuhInstallationError(Exception):
     """Base exception for Wazuh errors."""
 
@@ -147,10 +151,8 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
 
     integrations = ossec_config_tree.xpath(".//integration[starts-with(name, 'custom-opencti-')]")
     if integrations and (not opencti_token or not opencti_url):
-        raise WazuhConfigurationError(
-            "Missing OpenCTI token or url for custom-opencti integrations. "
-            "Ensure OpenCTI is integrated with Wazuh."
-        )
+        logger.error("Missing OpenCTI token or url for custom-opencti integrations.")
+        raise OpenCTIIntegrationMissingError()
 
     for integration in integrations:
         api_key = integration.find("api_key")
