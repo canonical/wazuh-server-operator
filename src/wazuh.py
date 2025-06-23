@@ -413,7 +413,6 @@ def set_filesystem_permissions(container: ops.Container) -> None:
         WazuhInstallationError: if an error occurs while setting the permissions.
     """
     try:
-        process.wait_output()
         process = container.exec(
             ["chown", "syslog:wazuh", str(SOCKET_QUEUE)],
             timeout=1,
