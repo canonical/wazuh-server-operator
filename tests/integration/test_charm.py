@@ -162,3 +162,4 @@ async def test_opencti_integration(
             app_data = relation["application-data"]
     for key in ["opencti_url", "opencti_token"]:
         assert key in app_data, f"Missing key in app data: {key}"
+    assert False
