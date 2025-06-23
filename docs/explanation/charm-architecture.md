@@ -53,7 +53,13 @@ Container_Boundary(wazuh-server-container, "Wazuh container") {
   Component(wazuh-rsyslog, "Wazuh rsyslog server", "", "Collects logs")
 }
 
-Rel(wazuh-rsyslog, wazuh-server,"")
+Boundary(storage, "Storage") {
+  ComponentDb(filesystem, "Ephemeral storage", "", "Logs files on filesystem")
+}
+
+Rel(wazuh-rsyslog, filesystem,"")
+Rel(filesystem, wazuh-server,"")
+
 ```
 
 The workload that this container is running is defined in the [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml).
