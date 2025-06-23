@@ -414,8 +414,11 @@ def set_filesystem_permissions(container: ops.Container) -> None:
     """
     try:
         process = container.exec(
-            ["chown", "syslog:wazuh", str(SOCKET_QUEUE)],
-            timeout=1,
+            ["touch", str(SOCKET_QUEUE)], timeout=1
+        )
+        process.wait_output()
+        process = container.exec(
+            ["chown", "syslog:wazuh", str(SOCKET_QUEUE)], timeout=1
         )
         process.wait_output()
     except ops.pebble.ExecError as ex:

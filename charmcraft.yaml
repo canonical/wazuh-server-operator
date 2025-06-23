@@ -77,7 +77,7 @@ containers:
     resource: wazuh-server-image
     mounts:
       - storage: data
-        location: /var/log/collectors
+        location: /var/var/ossec/queue/sockets
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"
@@ -142,3 +142,7 @@ config:
 peers:
   wazuh-peers:
     interface: wazuh-instance
+
+storage:
+  data:
+    type: filesystem
