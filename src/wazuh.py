@@ -24,8 +24,6 @@ import yaml
 from lxml import etree  # nosec
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-COLLECTORS_LOG_PATH = Path("/var/log/collectors")
-COLLECTORS_RSYSLOG_LOG_PATH = COLLECTORS_LOG_PATH / "rsyslog"
 CONTAINER_NAME = "wazuh-server"
 FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_USER = "root"
@@ -44,6 +42,7 @@ FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 LOGS_PATH = Path("/var/ossec/logs")
 OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
+SOCKET_QUEUE = Path("/var/ossec/queue/sockets/queue")
 RSA_PATH = "/root/.ssh/id_rsa"
 REPOSITORY_PATH = "/root/repository"
 SYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
@@ -414,18 +413,9 @@ def set_filesystem_permissions(container: ops.Container) -> None:
         WazuhInstallationError: if an error occurs while setting the permissions.
     """
     try:
-        process = container.exec(
-            ["mkdir", "-p", str(COLLECTORS_RSYSLOG_LOG_PATH)],
-            timeout=1,
-        )
         process.wait_output()
         process = container.exec(
-            ["chmod", "o-rx", str(COLLECTORS_RSYSLOG_LOG_PATH)],
-            timeout=1,
-        )
-        process.wait_output()
-        process = container.exec(
-            ["chown", "syslog:wazuh", str(COLLECTORS_RSYSLOG_LOG_PATH)],
+            ["chown", "syslog:wazuh", str(SOCKET_QUEUE)],
             timeout=1,
         )
         process.wait_output()

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-06-23
+
+### Updated
+
+- Write logs to a unix socket instead of relying on Juju storage.
+
 ## 2025-06-19
 
 ### Updated
