@@ -18,12 +18,6 @@ Each revision is versioned by the date of the revision.
 
 - Changed exception to blocked status for missing OpenCTI integration.
 
-## 2025-06-24
-
-### Updated
-
-- Updated the documentation to reference CK8s instead of Microk8s.
-
 ## 2025-06-19
 
 ### Updated
