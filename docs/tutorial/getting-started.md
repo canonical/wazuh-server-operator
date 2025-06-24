@@ -50,7 +50,7 @@ juju add-k8s ck8s --client --context-name="k8s"
 juju bootstrap ck8s
 ```
 
-## Set up a Tutorial Model
+## Set up a tutorial model
 
 To manage resources effectively and to separate this tutorial's workload from
 your usual work, create a new model using the following command.
