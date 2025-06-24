@@ -43,7 +43,7 @@ sudo k8s status --wait-ready
 
 ### Bootstrap a controller
 
-Bootstrap the first Juju controller in K8s:
+Bootstrap the Juju controller:
 
 ```bash
 juju add-k8s ck8s --client --context-name="k8s"
