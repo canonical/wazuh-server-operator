@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-06-23
+
+### Updated
+
+- Changed exception to blocked status for missing OpenCTI integration.
+
 ## 2025-06-19
 
 ### Updated
