@@ -280,7 +280,10 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state:
             self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
             return
-        self._configure_installation(container)
+        try:
+            self._configure_installation(container)
+        except wazuh.OpenCTIIntegrationMissingError:
+            self.unit.status = ops.BlockedStatus("OpenCTI integration is missing.")
         container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
         container.replan()
         self._configure_users()
