@@ -26,7 +26,7 @@ Multipass instance run ```multipass info my-juju-vm```.
 
 ### Install Canonical Kubernetes
 
-Install, bootstrap, and check the status of Canonical K8s:
+Install, bootstrap, and check the status of Canonical Kubernetes:
 
 ```bash
 sudo snap install k8s --edge --classic
