@@ -84,9 +84,7 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the secret doesn't exist.
         """
-        if not self.state:
-            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
-            return
+        _ = self.state  # Ensure the state is valid
         if self.unit.is_leader():
             try:
                 secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
@@ -106,7 +104,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 raise InvalidStateError from exc
 
     @property
-    def state(self) -> State | None:
+    def state(self) -> State:
         """The charm state."""
         try:
             opensearch_relation = self.model.get_relation(opensearch_observer.RELATION_NAME)
@@ -130,12 +128,10 @@ class WazuhServerCharm(CharmBaseWithState):
             raise exc
         except IncompleteStateError as exc:
             logger.debug("Charm configuration not ready, %s", exc)
-            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
-            return None
+            raise exc
         except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
-            self.unit.status = ops.BlockedStatus("Charm state is invalid")
-            return None
+            raise exc
 
     @property
     def external_hostname(self) -> str | None:
@@ -158,10 +154,9 @@ class WazuhServerCharm(CharmBaseWithState):
             return
 
         if not self.state.logs_ca_cert:
-            self.unit.status = ops.BlockedStatus(
-                "Invalid charm configuration 'logs-ca-cert' is missing."
+            raise wazuh.WazuhConfigurationError(
+                "Invalid charm configuration: 'logs-ca-cert' is missing."
             )
-            return
 
         wazuh.install_certificates(
             container=container,
@@ -269,6 +264,7 @@ class WazuhServerCharm(CharmBaseWithState):
 
         This is the main entry for changes that require a restart.
         """
+        self.unit.status = ops.MaintenanceStatus()
         container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
             logger.warning(
@@ -277,24 +273,28 @@ class WazuhServerCharm(CharmBaseWithState):
             )
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
-        if not self.state:
-            self.unit.status = ops.WaitingStatus("Waiting for status to be available.")
-            return
         try:
+            _ = self.state  # Ensure the state is valid
             self._configure_installation(container)
+            container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+            container.replan()
+            self._configure_users()
+            self._populate_wazuh_api_relation_data()
+            # Fetch the new wazuh layer, which has different env vars
+            logger.debug("Reconfiguring pebble layers")
+            container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
+            container.replan()
+            self.unit.set_workload_version(wazuh.get_version(container))
+            self.unit.status = ops.ActiveStatus()
+        except wazuh.WazuhConfigurationError as exc:
+            self.unit.status = ops.BlockedStatus(str(exc))
         except wazuh.OpenCTIIntegrationMissingError:
             self.unit.status = ops.BlockedStatus("OpenCTI integration is missing.")
-        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-        container.replan()
-        self._configure_users()
-        self._populate_wazuh_api_relation_data()
-        # Fetch the new wazuh layer, which has different env vars
-        logger.debug("Reconfiguring pebble layers")
-        container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-        container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-        container.replan()
-        self.unit.set_workload_version(wazuh.get_version(container))
-        self.unit.status = ops.ActiveStatus()
+        except RecoverableStateError:
+            self.unit.status = ops.BlockedStatus("Charm state is invalid")
+        except IncompleteStateError:
+            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
 
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:
