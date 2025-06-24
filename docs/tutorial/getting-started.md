@@ -34,7 +34,7 @@ sudo k8s bootstrap
 sudo k8s status --wait-ready
 ```
 
-Once Canonical K8s is up and running, enable the following core cluster features:
+Once Canonical Kubernetes is up and running, enable the following core cluster features:
 
 ```bash
 sudo k8s enable network dns load-balancer local-storage gateway
