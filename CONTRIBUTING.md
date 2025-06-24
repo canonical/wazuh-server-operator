@@ -87,7 +87,7 @@ rockcraft pack
 
 #### Add rock to registry
 
-The [Wazuh Server](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) image needs to be pushed to Docker for the tests to run. It should be tagged as `localhost:32000/wazuh-server:latest` so that Kubernetes knows how to pull them from the Docker registry.
+The [Wazuh Server](https://github.com/canonical/wazuh-server-operator/tree/main/rockcraft.yaml) image needs to be pushed to Docker for the tests to run. It should be tagged as `localhost:5000/wazuh-server:latest` so that Kubernetes knows how to pull them from the Docker registry.
 
 To add the image to the registry:
 
@@ -100,25 +100,25 @@ To add the image to the registry:
 You can run the tests with:
 
 ```shell
-tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:32000/wazuh-server:latest
+tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:5000/wazuh-server:latest
 ```
 
 By default, this will create 3 `wazuh-indexer` nodes. This should be fine with 32 GB of RAM. If you have less, you can run a single node indexer with:
 
 ```shell
-tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:32000/wazuh-server:latest --single-node-indexer
+tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:5000/wazuh-server:latest --single-node-indexer
 ```
 
 To get faster test results, you may want to reuse your integration environments. To do so, you can initially run:
 
 ```shell
-tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:32000/wazuh-server:latest --single-node-indexer --model test-wazuh --keep-models
+tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:5000/wazuh-server:latest --single-node-indexer --model test-wazuh --keep-models
 ```
 
 And then use the following command for the next runs:
 
 ```shell
-tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:32000/wazuh-server:latest --single-node-indexer --model test-wazuh --keep-models --no-deploy
+tox run -e integration -- --charm-file=wazuh-server_ubuntu-22.04-amd64.charm --wazuh-server-image localhost:5000/wazuh-server:latest --single-node-indexer --model test-wazuh --keep-models --no-deploy
 ```
 
 ### Deploy
@@ -132,5 +132,5 @@ juju add-model wazuh-server-dev
 juju model-config logging-config="<root>=INFO;unit=DEBUG"
 # Deploy the charm (assuming you're on amd64)
 juju deploy ./wazuh_server_ubuntu-22.04-amd64.charm \
-  --resource wazuh-server-image=localhost:32000/wazuh-server:latest
+  --resource wazuh-server-image=localhost:5000/wazuh-server:latest
 ```
