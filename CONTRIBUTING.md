@@ -3,7 +3,7 @@
 To make contributions to this charm, you'll need a working development setup with the following requirements met:
 * Juju 3 installed and bootstrapped to an LXD controller. You can accomplish
 this process by using a [Multipass](https://multipass.run/) VM as outlined in this guide: [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/). Note that this tutorial provides documentation for both manual and automatic deployment management. You would have to follow the manual steps only to avoid installing MicroK8s in your setup.
-* Canonical K8s installed and bootstrapped to Juju. This can be accomplished by following the [Setup Canonical Kubernetes](to-be-updated) section in the getting started tutorial for Wazuh server.
+* Canonical Kubernetes installed and bootstrapped to Juju. This can be accomplished by following the [Setup Canonical Kubernetes](to-be-updated) section in the getting started tutorial for Wazuh server.
 
 ## Set up Docker
 
