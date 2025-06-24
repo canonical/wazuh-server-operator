@@ -185,7 +185,7 @@ module "wazuh_indexer" {
 resource "juju_offer" "wazuh_indexer" {
   model = data.juju_model.wazuh_indexer.name
 
-  name             = "wazuh-indexer"
+  name             = data.juju_model.wazuh_indexer.name
   application_name = module.wazuh_indexer.app_name
   endpoint         = module.wazuh_indexer.wazuh_indexer_provides.opensearch_client
 
@@ -255,7 +255,7 @@ module "wazuh_indexer_backup" {
   source = "./modules/s3-integrator"
   model  = data.juju_model.wazuh_indexer.name
 
-  app_name    = "wazuh-indexer-backup"
+  app_name    = "${data.juju_model.wazuh_indexer.name}-backup"
   channel     = var.wazuh_indexer_backup.channel
   config      = var.wazuh_indexer_backup.config
   constraints = var.wazuh_indexer_backup.constraints
