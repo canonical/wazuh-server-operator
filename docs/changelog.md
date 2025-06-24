@@ -10,7 +10,7 @@ Each revision is versioned by the date of the revision.
 
 ### Updated
 
-- Updated the documentation to reference CK8s instead of Microk8s.
+- Updated the documentation to reference Canonical Kubernetes instead of MicroK8s.
 
 ## 2025-06-23
 
