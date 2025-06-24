@@ -9,7 +9,7 @@ this process by using a [Multipass](https://multipass.run/) VM as outlined in th
 
 Docker is required to upload rocks and test changes to the image locally. 
 
-### Install docker and set up add Docker's GPG key
+### Install Docker and set up add Docker's GPG key
 
 ```bash
 sudo apt-get update
