@@ -22,7 +22,7 @@ The [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/ho
 VM IP in steps that assume you're running locally. To get the IP address of the
 Multipass instance run ```multipass info my-juju-vm```.
 
-## Setup Canonical Kubernetes
+## Set up Canonical Kubernetes
 
 ### Install Canonical Kubernetes
 
