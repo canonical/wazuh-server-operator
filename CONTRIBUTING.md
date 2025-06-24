@@ -20,7 +20,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.asc
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-### Setup a local registry
+### Set up a local registry
 
 Start a registry container:
 ```bash
