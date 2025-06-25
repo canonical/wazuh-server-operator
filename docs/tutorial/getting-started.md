@@ -10,8 +10,11 @@
 ## Requirements
 
 * A working station, e.g., a laptop, with amd64 architecture.
-* Juju 3 installed and bootstrapped to a MicroK8s and to an LXD controller. You can accomplish
-this process by using a [Multipass](https://multipass.run/) VM as outlined in this guide: [Set up / Tear down your test environment](https://juju.is/docs/juju/set-up--tear-down-your-test-environment)
+* Juju 3 installed and bootstrapped to an LXD controller. You can accomplish
+this process by using a [Multipass](https://multipass.run/) VM as outlined in this guide: [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/). 
+[note]
+The [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/) tutorial provides documentation for both manual and automatic deployment management. You would have to follow the manual steps only to avoid installing MicroK8s in your setup.
+[/note]
 * A deployed Wazuh Indexer. For instructions to deploy the Wazuh Indexer, check [its documentation](https://charmhub.io/wazuh-indexer).
 * A deployed Wazuh Dashboard. For instructions to deploy the Wazuh Dashboard, check [its documentation](https://charmhub.io/wazuh-dashboard).
 
@@ -19,7 +22,35 @@ this process by using a [Multipass](https://multipass.run/) VM as outlined in th
 VM IP in steps that assume you're running locally. To get the IP address of the
 Multipass instance run ```multipass info my-juju-vm```.
 
-## Set up a Tutorial Model
+## Set up Canonical Kubernetes
+
+### Install Canonical Kubernetes
+
+Install, bootstrap, and check the status of Canonical Kubernetes:
+
+```bash
+sudo snap install k8s --edge --classic
+sudo k8s bootstrap
+sudo k8s status --wait-ready
+```
+
+Once Canonical Kubernetes is up and running, enable the following core cluster features:
+
+```bash
+sudo k8s enable network dns load-balancer local-storage gateway
+sudo k8s status --wait-ready
+```
+
+### Bootstrap a controller
+
+Bootstrap the Juju controller:
+
+```bash
+juju add-k8s ck8s --client --context-name="k8s"
+juju bootstrap ck8s
+```
+
+## Set up a tutorial model
 
 To manage resources effectively and to separate this tutorial's workload from
 your usual work, create a new model using the following command.
