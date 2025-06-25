@@ -2,9 +2,7 @@
 
 A Juju charm deploying and managing the Wazuh Server on Kubernetes. Wazuh is an
 open-source XDR and SIEM tool to protect endpoints and cloud workloads. It allows for deployment on
-many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) to
-[Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
-offerings.
+various [Kubernetes platforms](https://ubuntu.com/kubernetes) offered by Canonical.
 
 Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
 
