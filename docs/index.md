@@ -35,9 +35,9 @@ Thinking about using the Wazuh Server Operator for your next project? [Get in to
 # Contents
 
 1. [Tutorial](tutorial)
-  1. [TutoGetting started](tutorial/getting-started.md)
+  1. [Deploy the Wazuh Server charm for the first time](tutorial/getting-started.md)
 1. [How to](how-to)
-  1. [Backup and restore](how-to/backup-restore.md)
+  1. [Back up and restore](how-to/backup-restore.md)
   1. [Collect logs](how-to/collect-logs.md)
   1. [Configure](how-to/configure.md)
   1. [Contribute](how-to/contribute.md)
