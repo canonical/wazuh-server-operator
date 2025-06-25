@@ -151,7 +151,7 @@ resource "juju_integration" "wazuh_server_certificates" {
 }
 
 module "wazuh_indexer" {
-  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev9&depth=1"
+  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev10&depth=1"
 
   model = data.juju_model.wazuh_indexer.name
 
@@ -185,7 +185,7 @@ module "wazuh_indexer" {
 resource "juju_offer" "wazuh_indexer" {
   model = data.juju_model.wazuh_indexer.name
 
-  name             = data.juju_model.wazuh_indexer.name
+  name             = module.wazuh_indexer.app_name
   application_name = module.wazuh_indexer.app_name
   endpoint         = module.wazuh_indexer.wazuh_indexer_provides.opensearch_client
 
@@ -289,7 +289,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev12&depth=1"
+  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev14&depth=1"
 
   model = data.juju_model.wazuh_dashboard.name
 
