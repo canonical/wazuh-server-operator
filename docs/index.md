@@ -34,7 +34,8 @@ Thinking about using the Wazuh Server Operator for your next project? [Get in to
 
 # Contents
 
-1. [Tutorial](getting-started.md)
+1. [Tutorial](tutorial)
+  1. [TutoGetting started](tutorial/getting-started.md)
 1. [How to](how-to)
   1. [Backup and restore](how-to/backup-restore.md)
   1. [Collect logs](how-to/collect-logs.md)
