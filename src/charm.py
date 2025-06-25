@@ -126,12 +126,6 @@ class WazuhServerCharm(CharmBaseWithState):
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             raise exc
-        except IncompleteStateError as exc:
-            logger.debug("Charm configuration not ready, %s", exc)
-            raise exc
-        except RecoverableStateError as exc:
-            logger.error("Invalid charm configuration, %s", exc)
-            raise exc
 
     @property
     def external_hostname(self) -> str | None:
@@ -264,7 +258,6 @@ class WazuhServerCharm(CharmBaseWithState):
 
         This is the main entry for changes that require a restart.
         """
-        self.unit.status = ops.MaintenanceStatus()
         container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
             logger.warning(
@@ -291,9 +284,11 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.BlockedStatus(str(exc))
         except wazuh.OpenCTIIntegrationMissingError:
             self.unit.status = ops.BlockedStatus("OpenCTI integration is missing.")
-        except RecoverableStateError:
+        except RecoverableStateError as exc:
+            logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
-        except IncompleteStateError:
+        except IncompleteStateError as exc:
+            logger.debug("Charm configuration not ready, %s", exc)
             self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
 
     @property
