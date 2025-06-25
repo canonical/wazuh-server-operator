@@ -8,6 +8,10 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-06-24
 
+### Added
+
+- How to redeploy documentation.
+
 ### Updated
 
 - Updated the documentation to reference Canonical Kubernetes instead of MicroK8s.
