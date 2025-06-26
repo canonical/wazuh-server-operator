@@ -106,26 +106,22 @@ class WazuhServerCharm(CharmBaseWithState):
     @property
     def state(self) -> State:
         """The charm state."""
-        try:
-            opensearch_relation = self.model.get_relation(opensearch_observer.RELATION_NAME)
-            opensearch_relation_data = (
-                opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
-            )
-            opencti_relation = self.model.get_relation(opencti_connector_observer.RELATION_NAME)
-            opencti_relation_data = (
-                opencti_relation.data[opencti_relation.app] if opencti_relation else {}
-            )
-            certificates = self.certificates.certificates.get_provider_certificates()
-            return State.from_charm(
-                self,
-                opensearch_relation_data,
-                opencti_relation_data,
-                certificates,
-                self.certificates.get_csr().decode("utf-8"),
-            )
-        except InvalidStateError as exc:
-            logger.error("Invalid charm configuration, %s", exc)
-            raise exc
+        opensearch_relation = self.model.get_relation(opensearch_observer.RELATION_NAME)
+        opensearch_relation_data = (
+            opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
+        )
+        opencti_relation = self.model.get_relation(opencti_connector_observer.RELATION_NAME)
+        opencti_relation_data = (
+            opencti_relation.data[opencti_relation.app] if opencti_relation else {}
+        )
+        certificates = self.certificates.certificates.get_provider_certificates()
+        return State.from_charm(
+            self,
+            opensearch_relation_data,
+            opencti_relation_data,
+            certificates,
+            self.certificates.get_csr().decode("utf-8"),
+        )
 
     @property
     def external_hostname(self) -> str | None:
@@ -290,6 +286,9 @@ class WazuhServerCharm(CharmBaseWithState):
         except IncompleteStateError as exc:
             logger.debug("Charm configuration not ready, %s", exc)
             self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
+        except InvalidStateError as exc:
+            logger.error("Invalid charm configuration, %s", exc)
+            self.unit.status = ops.BlockedStatus("Invalid charm configuration")
 
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:
