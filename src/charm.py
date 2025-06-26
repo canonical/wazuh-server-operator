@@ -253,6 +253,9 @@ class WazuhServerCharm(CharmBaseWithState):
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.
+
+        Raises:
+            InvalidStateError: if the charm configuration is invalid.
         """
         container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
@@ -288,7 +291,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
-            self.unit.status = ops.BlockedStatus("Invalid charm configuration")
+            raise InvalidStateError from exc
 
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:
