@@ -8,8 +8,13 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-06-24
 
+### Added
+
+- How to redeploy documentation.
+
 ### Updated
 
+- Updated the documentation to reference Canonical Kubernetes instead of MicroK8s.
 - Moved the charm status setting logic to the reconcile loop.
 
 ## 2025-06-23

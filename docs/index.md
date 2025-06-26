@@ -2,9 +2,7 @@
 
 A Juju charm deploying and managing the Wazuh Server on Kubernetes. Wazuh is an
 open-source XDR and SIEM tool to protect endpoints and cloud workloads. It allows for deployment on
-many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) to
-[Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
-offerings.
+various [Kubernetes platforms](https://ubuntu.com/kubernetes) offered by Canonical.
 
 Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
 
@@ -33,3 +31,26 @@ The Wazuh Server Operator is a member of the Ubuntu family. It's an open-source 
 - [Contribute](https://charmhub.io/wazuh-server/docs/how-to-contribute)
 
 Thinking about using the Wazuh Server Operator for your next project? [Get in touch](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)!
+
+# Contents
+
+1. [Tutorial](tutorial)
+  1. [Deploy the Wazuh Server charm for the first time](tutorial/getting-started.md)
+1. [How to](how-to)
+  1. [Back up and restore](how-to/backup-restore.md)
+  1. [Collect logs](how-to/collect-logs.md)
+  1. [Configure](how-to/configure.md)
+  1. [Contribute](how-to/contribute.md)
+  1. [Deploy to production](how-to/deploy-to-production.md)
+  1. [Integrate with OpenCTI](how-to/integrate-with-opencti.md)
+  1. [Redeploy](how-to/redeploy.md)
+  1. [Upgrade](how-to/upgrade.md)
+1. [Reference](reference)
+  1. [Actions](reference/actions.md)
+  1. [Configurations](reference/configurations.md)
+  1. [External access](reference/external-access.md)
+  1. [Integrations](reference/integrations.md)
+1. [Explanation](explanation)
+  1. [Architecture overview](explanation/architecture-overview.md)
+  1. [Charm architecture](explanation/charm-architecture.md) 
+  1. [Security](explanation/security.md)

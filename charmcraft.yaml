@@ -57,9 +57,8 @@ description: |
 
   This charm simplifies initial deployment and "day N" operations of Wazuh
   on Kubernetes, such as scaling the number of instances, TLS certificates
-  configuration and more. It allows for deployment on many different Kubernetes
-  platforms, from [MicroK8s](https://microk8s.io) to [Charmed Kubernetes]
-  (https://ubuntu.com/kubernetes) and public cloud Kubernetes offerings.
+  configuration and more. It allows for deployment on various
+  [Kubernetes platforms](https://ubuntu.com/kubernetes) offered by Canonical.
 
   As such, the charm makes it easy for those looking to take control of their own
   XDR and SIEM system whilst keeping operations simple, and gives them the
