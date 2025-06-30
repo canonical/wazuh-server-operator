@@ -18,6 +18,6 @@ resource "juju_application" "s3_integrator" {
 
   provisioner "local-exec" {
     # There's currently no way to wait for the charm to be idle, hence the sleep
-    command = "sleep 60; juju run ${self.name}/leader sync-s3-credentials access-key=${var.s3_access_key} secret-key=${var_secret_key}; "
+    command = "sleep 60; juju run ${self.name}/leader sync-s3-credentials access-key=${var.s3_access_key} secret-key=${var.s3_secret_key}; "
   }
 }
