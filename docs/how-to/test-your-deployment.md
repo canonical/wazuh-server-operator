@@ -14,9 +14,9 @@ First retrieve valid credentials:
 Then access the dashboard:
 
 - Go to the environment where your `wazuh-dashboard` is deployed.
-- Retrieve the leader IP address.
-- Connect from your browser to `https://$leader_ip:5601`.
-- Accept the security exception.
+- Retrieve one of the units public IP address.
+- Connect from your browser to `https://$public_ip:5601`.
+- If you deployed Wazuh with a self-signed-certificate, you will have to accept the security exception.
 - You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
 - Enter the `username` and `password` from the first step.
 - You should see "Wazuh... loading" again, and then you should have access to the dashboard.
