@@ -29,7 +29,7 @@ Ensure that eveything is working properly:
   - `wazuh-alerts-*`
   - `wazuh-monitoring-*`
   - `wazuh-statistic-*`
-  - `wazuh-archives-*` (you may need to send some logs first, see next section)
+  - `wazuh-archives-*` (you will need to send some logs first, see next section)
 
 ## Test logs processing
 
@@ -72,6 +72,7 @@ GET wazuh-archives-*/_search
 - Run the query.
 - It should return at least one document.
 
+When you have some logs available, you can configure the `index-pattern` as described in [Wazuh's documentation](https://documentation.wazuh.com/current/user-manual/wazuh-indexer/wazuh-indexer-indices.html#the-wazuharchives-indices) to see them in the "Discover" page.
 
 ## Test your backups
 
