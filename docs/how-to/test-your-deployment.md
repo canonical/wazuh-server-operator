@@ -2,7 +2,7 @@
 
 In this document, we describe the main tests to ensure your deployment is working properly.
 
-All actions should be performed after your deployment is successful (all units and apps in `idle` state).
+All actions should be performed after your deployment is successful: all units and apps should be in active and idle state.
 
 ## Test the dashboard
 
@@ -29,11 +29,49 @@ Ensure that eveything is working properly:
   - `wazuh-alerts-*`
   - `wazuh-monitoring-*`
   - `wazuh-statistic-*`
-  - `wazuh-archives-*`
+  - `wazuh-archives-*` (you may need to send some logs first, see next section)
 
 ## Test logs processing
 
-- TODO: we should describe here a setup where we send some logs from a rsyslog client and check that they reach the indexer and the dashboard
+First, let's monitor the logs:
+
+- Go to the environment where your `wazuh-server` is deployed.
+- Open a shell on the leader unit `juju ssh --container wazuh-server wazuh-server/leader`.
+- Monitor the logs: `tail -f /var/log/collectors/rsyslog/rsyslog.log`
+
+In parallel, send some traffic:
+
+- Fetch your public IP for `rsyslog`. This is the external IP from the `kubectl get services traefik-k8s-lb` output.
+- Try to send some data: `echo "Hi" | openssl s_client -connect $your_ip:6514`.
+- You should see some logs on the server, especially: `... did not provide a certificate, not permitted to talk to it ...`
+
+If everything is ok, you should be able to send logs with a certificate issued by the CA configured in `logs-ca-cert`.
+
+- Run the following command on your client: `echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key`
+- You should see "TEST123" in the logs on the server.
+
+After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm it, look in `/var/ossec/logs/archives/archives.log` where you should see them.
+
+From there, they should be processed by `filebeat` and sent to `wazuh-indexer`. To check:
+
+- Go to the Wazuh dashboard with your browser.
+- Go to "Indexer management > Dev Tools".
+- Enter the following query (update with your test string if necessary): 
+
+```
+GET wazuh-archives-*/_search
+{
+  "query": {
+    "query_string": {
+      "query": "TEST123"
+    }
+  }
+}
+```
+
+- Run the query.
+- It should return at least one document.
+
 
 ## Test your backups
 
