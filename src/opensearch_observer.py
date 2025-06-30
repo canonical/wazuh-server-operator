@@ -32,3 +32,6 @@ class OpenSearchObserver(Object):
         self.framework.observe(
             self._charm.on.opensearch_client_relation_changed, self._charm.reconcile
         )
+        self.framework.observe(
+            self._charm.on.opensearch_client_relation_departed, self._charm.reconcile
+        )
