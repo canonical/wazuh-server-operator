@@ -38,5 +38,5 @@ Ensure that eveything is working properly:
 ## Test your backups
 
 - Go to the environment where your `wazuh-indexer` is deployed.
-- Run `juju run wazuh-indexer-v5/leader create-backup` to check that you can create backups.
-- Run `juju run wazuh-indexer-v5/leader create-backup` to check that backups are accessible.
+- Run `juju run wazuh-indexer/leader create-backup` to check that you can create backups. It should return `status: Backup is running.`.
+- Run `juju run wazuh-indexer/leader list-backups` to check that backups are accessible. It should return at least a backup timestamp with a `success` status.
