@@ -41,7 +41,11 @@ If you deployed Wazuh with a self-signed-certificate, you will have to accept th
   - `wazuh-alerts-*`
   - `wazuh-monitoring-*`
   - `wazuh-statistic-*`
-  - `wazuh-archives-*` (you will need to send some logs first, see next section)
+  - `wazuh-archives-*` 
+  
+[note]
+You will need to send some logs first to see `wazuh-archives-*` listed in the `Discover` section. See the next section for more details.
+[/note]
 
 ## Test logs processing
 
