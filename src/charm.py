@@ -63,7 +63,9 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(self.on.config_changed, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
+        self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_departed, self.reconcile)
         self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_changed, self.reconcile)
+        self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_broken, self.reconcile)
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -287,7 +289,7 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
         except IncompleteStateError as exc:
-            logger.debug("Charm configuration not ready, %s", exc)
+            logger.error("Charm configuration not ready, %s", exc)
             self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
