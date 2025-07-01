@@ -20,6 +20,11 @@ jq -r '.[].results.opensearch | "username: \(.username)\npassword: \(.password)"
 
 - Go to the environment where your `wazuh-dashboard` is deployed: `juju switch <wazuh-dashboard-model>`.
 - Retrieve one of the units public IP address.
+
+```
+juju status wazuh-dashboard --format=json | jq -r '.applications["wazuh-dashboard"].units | to_entries[0].value["public-address"]'
+```
+
 - Connect from your browser to `https://<public-ip>:5601`.
 - If you deployed Wazuh with a self-signed-certificate, you will have to accept the security exception.
 - You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
