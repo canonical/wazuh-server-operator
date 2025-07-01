@@ -58,7 +58,7 @@ juju ssh --container wazuh-server wazuh-server/leader
 ```
 - Monitor the logs: `tail -f /var/log/collectors/rsyslog/rsyslog.log`
 
-In parallel, send some traffic:
+In parallel, open another terminal to send some traffic to Wazuh:
 
 - Fetch your public IP for `rsyslog`:
 ```shell
