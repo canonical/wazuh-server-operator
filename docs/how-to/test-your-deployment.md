@@ -45,9 +45,8 @@ In parallel, send some traffic:
 - Try to send some data: `echo "Hi" | openssl s_client -connect $your_ip:6514`.
 - You should see some logs on the server, especially: `... did not provide a certificate, not permitted to talk to it ...`
 
-If everything is ok, you should be able to send logs with a certificate issued by the CA configured in `logs-ca-cert`.
-
-- Run the following command on your client: `echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key`
+You should now be able to send logs with a certificate issued by the CA configured in `logs-ca-cert`:
+`echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key`
 - You should see "TEST123" in the logs on the server.
 
 After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm it, look in `/var/ossec/logs/archives/archives.log` where you should see them.
