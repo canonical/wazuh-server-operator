@@ -50,17 +50,17 @@ In parallel, send some traffic:
 - Send some data to the public IP obtained from the previous step: `echo "Hi" | openssl s_client -connect <public-ip>:6514`.
 - You should see some logs on the server, especially: `... did not provide a certificate, not permitted to talk to it ...`
 
-If everything is ok, you should be able to send logs with a certificate issued by the CA configured in `logs-ca-cert`.
+You should now be able to send logs with a certificate issued by the CA configured in `logs-ca-cert`:
+`echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key`
 
-- Run the following command on your client: `echo "TEST123" | openssl s_client -connect <public-ip>:6514 -cert good-client.crt -key good-client.key`
-- You should see "TEST123" in the logs on the server.
+You should see "TEST123" in the logs on the server.
 
-After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm it, look in `/var/ossec/logs/archives/archives.log` where you should see them.
+After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm the same, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"` to verify if the log is processed.
 
 From there, they should be processed by `filebeat` and sent to `wazuh-indexer`. To check:
 
 - Go to the Wazuh dashboard with your browser.
-- Go to "Indexer management > Dev Tools".
+- Go to `Indexer management > Dev Tools`.
 - Enter the following query (update with your test string if necessary): 
 
 ```
@@ -83,4 +83,16 @@ When you have some logs available, you can configure the `index-pattern` as desc
 
 - Go to the environment where your `wazuh-indexer` is deployed.
 - Run `juju run wazuh-indexer/leader create-backup` to check that you can create backups. It should return `status: Backup is running.`.
-- Run `juju run wazuh-indexer/leader list-backups` to check that backups are accessible. It should return at least a backup timestamp with a `success` status.
+- Run `juju run wazuh-indexer/leader list-backups` to check that backups are accessible. It should return at least a backup timestamp with a `success` status:
+
+```text
+$ juju run wazuh-indexer/1 list-backups
+Running operation 174 with 1 task
+  - task 175 on unit-wazuh-indexer-1
+
+Waiting for task 175...
+backups: |1-
+   backup-id           | backup-status
+  ------------------------------------
+  2025-06-30T12:28:27Z | success
+```
