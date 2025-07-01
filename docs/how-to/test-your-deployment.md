@@ -51,8 +51,11 @@ You will need to send some logs first to see `wazuh-archives-*` listed in the `D
 
 First, let's monitor the logs:
 
-- Go to the environment where your `wazuh-server` is deployed.
-- Open a shell on the leader unit `juju ssh --container wazuh-server wazuh-server/leader`.
+- Go to the environment where your `wazuh-server` is deployed: `juju switch <wazuh-server-model>`
+- Open a shell on the leader unit:
+```
+juju ssh --container wazuh-server wazuh-server/leader
+```
 - Monitor the logs: `tail -f /var/log/collectors/rsyslog/rsyslog.log`
 
 In parallel, send some traffic:
