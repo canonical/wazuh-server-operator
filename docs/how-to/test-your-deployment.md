@@ -54,7 +54,7 @@ After landing in `rsyslog.log`, your log should be processed by Wazuh. To confir
 From there, they should be processed by `filebeat` and sent to `wazuh-indexer`. To check:
 
 - Go to the Wazuh dashboard with your browser.
-- Go to "Indexer management > Dev Tools".
+- Go to `Indexer management > Dev Tools`.
 - Enter the following query (update with your test string if necessary): 
 
 ```
