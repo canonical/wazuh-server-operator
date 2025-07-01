@@ -60,7 +60,10 @@ juju ssh --container wazuh-server wazuh-server/leader
 
 In parallel, send some traffic:
 
-- Fetch your public IP for `rsyslog`. This is the external IP from the `kubectl get services traefik-k8s-lb` output.
+- Fetch your public IP for `rsyslog`:
+```shell
+kubectl get svc traefik-k8s-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
 - Send some data to the public IP obtained from the previous step: `echo "Hi" | openssl s_client -connect <public-ip>:6514`.
 - You should see some logs on the server, especially: `... did not provide a certificate, not permitted to talk to it ...`
 
