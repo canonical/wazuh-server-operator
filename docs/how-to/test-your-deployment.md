@@ -37,7 +37,7 @@ If you deployed Wazuh with a self-signed-certificate, you will have to accept th
 
 - Unfold the navigation bar with the icon on the top-left corner.
 - Go to "Dashboard management > Server APIs": your `wazuh` cluster should be reported as "Online".
-- Go to "Explore > Discover", in the top-left drop-down, check that you see the 4 following indexes:
+- Go to `Explore > Discover`, in the top-left drop-down, check that you see the 4 following indexes:
   - `wazuh-alerts-*`
   - `wazuh-monitoring-*`
   - `wazuh-statistic-*`
