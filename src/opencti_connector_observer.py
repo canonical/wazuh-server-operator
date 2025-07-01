@@ -33,6 +33,9 @@ class OpenCTIObserver(Object):
         self.framework.observe(
             self._charm.on.opencti_connector_relation_changed, self._charm.reconcile
         )
+        self.framework.observe(
+            self._charm.on.opencti_connector_relation_broken, self._charm.reconcile
+        )
 
     def _on_opencti_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
         """Handle OpenCTI relation joined event.
