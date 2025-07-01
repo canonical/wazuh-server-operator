@@ -26,7 +26,9 @@ juju status wazuh-dashboard --format=json | jq -r '.applications["wazuh-dashboar
 ```
 
 - Connect from your browser to `https://<public-ip>:5601`.
-- If you deployed Wazuh with a self-signed-certificate, you will have to accept the security exception.
+[note]
+If you deployed Wazuh with a self-signed-certificate, you will have to accept the security exception.
+[/note]
 - You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
 - Enter the `username` and `password` from the first step.
 - You should see "Wazuh... loading" again, and then you should have access to the dashboard.
