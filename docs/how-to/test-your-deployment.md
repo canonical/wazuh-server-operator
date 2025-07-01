@@ -33,7 +33,7 @@ If you deployed Wazuh with a self-signed-certificate, you will have to accept th
 - Enter the `username` and `password` from the first step.
 - You should see "Wazuh... loading" again, and then you should have access to the dashboard.
 
-Ensure that eveything is working properly:
+### Verify Wazuh is working properly
 
 - Unfold the navigation bar with the icon on the top-left corner.
 - Go to "Dashboard management > Server APIs": everything should be green.
