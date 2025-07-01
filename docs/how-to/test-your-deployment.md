@@ -49,7 +49,7 @@ You should now be able to send logs with a certificate issued by the CA configur
 `echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key`
 - You should see "TEST123" in the logs on the server.
 
-After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm it, look in `/var/ossec/logs/archives/archives.log` where you should see them.
+After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm the same, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"` to verify if the log is processed.
 
 From there, they should be processed by `filebeat` and sent to `wazuh-indexer`. To check:
 
