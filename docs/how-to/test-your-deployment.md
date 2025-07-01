@@ -8,14 +8,19 @@ All actions should be performed after your deployment is successful: all units a
 
 First retrieve valid credentials:
 
-- Go to the environment where your `wazuh-indexer` is deployed.
-- Run `juju run data-integrator/leader get-credentials` and write down the `username` and `password`.
+- Go to the environment where your `wazuh-indexer` is deployed: `juju switch <wazuh-indexer-model>`.
+- Get the `username` and `password` with the following command:
 
-Then access the dashboard:
+```shell
+juju run data-integrator/leader get-credentials --format=json | \
+jq -r '.[].results.opensearch | "username: \(.username)\npassword: \(.password)"'
+```
 
-- Go to the environment where your `wazuh-dashboard` is deployed.
+### Access the dashboard
+
+- Go to the environment where your `wazuh-dashboard` is deployed: `juju switch <wazuh-dashboard-model>`.
 - Retrieve one of the units public IP address.
-- Connect from your browser to `https://$public_ip:5601`.
+- Connect from your browser to `https://<public-ip>:5601`.
 - If you deployed Wazuh with a self-signed-certificate, you will have to accept the security exception.
 - You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
 - Enter the `username` and `password` from the first step.
@@ -42,12 +47,12 @@ First, let's monitor the logs:
 In parallel, send some traffic:
 
 - Fetch your public IP for `rsyslog`. This is the external IP from the `kubectl get services traefik-k8s-lb` output.
-- Try to send some data: `echo "Hi" | openssl s_client -connect $your_ip:6514`.
+- Send some data to the public IP obtained from the previous step: `echo "Hi" | openssl s_client -connect <public-ip>:6514`.
 - You should see some logs on the server, especially: `... did not provide a certificate, not permitted to talk to it ...`
 
 If everything is ok, you should be able to send logs with a certificate issued by the CA configured in `logs-ca-cert`.
 
-- Run the following command on your client: `echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key`
+- Run the following command on your client: `echo "TEST123" | openssl s_client -connect <public-ip>:6514 -cert good-client.crt -key good-client.key`
 - You should see "TEST123" in the logs on the server.
 
 After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm it, look in `/var/ossec/logs/archives/archives.log` where you should see them.
