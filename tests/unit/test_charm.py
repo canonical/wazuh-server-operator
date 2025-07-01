@@ -6,7 +6,7 @@
 
 """Charm unit tests."""
 import secrets
-from unittest.mock import ANY, call, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import ops
 import pytest
@@ -46,15 +46,17 @@ def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
 def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
     """
     arrange: mock State.from_charm so that it raises a RecoverableStateError.
-    act: instantiate a charm.
-    assert: the charm reaches blocked status when the state is fetched.
+    act: instantiate a charm and call reconcile.
+    assert: the charm reaches blocked status.
     """
     state_from_charm_mock.side_effect = RecoverableStateError()
 
     harness = Harness(WazuhServerCharm)
     harness.begin()
-
-    assert harness.charm.state is None
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+    harness.charm.reconcile(None)
     assert harness.model.unit.status.name == ops.BlockedStatus().name
 
 
@@ -63,16 +65,44 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
 def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
     """
     arrange: mock State.from_charm so that it raises an IncompleteStateError.
-    act: instantiate a charm.
-    assert: the charm reaches blocked status when the state is fetched.
+    act: instantiate a charm and call reconcile.
+    assert: the charm reaches waiting status.
     """
     state_from_charm_mock.side_effect = IncompleteStateError()
 
     harness = Harness(WazuhServerCharm)
     harness.begin()
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+    harness.charm.reconcile(None)
 
-    assert harness.charm.state is None
     assert harness.model.unit.status.name == ops.WaitingStatus().name
+
+
+@patch.object(CertificatesObserver, "get_csr")
+@patch.object(State, "from_charm")
+def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
+    """
+    arrange: mock State.from_charm so that it raises an IncompleteStateError.
+    act: instantiate a charm and call reconcile.
+    assert: the charm reaches waiting status.
+    """
+    mock_state = MagicMock()
+    mock_state.logs_ca_cert = None
+    state_from_charm_mock.return_value = mock_state
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+    harness.charm.reconcile(None)
+
+    assert harness.model.unit.status.name == ops.BlockedStatus().name
+    assert (
+        harness.model.unit.status.message
+        == "Invalid charm configuration: 'logs-ca-cert' is missing."
+    )
 
 
 # pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments

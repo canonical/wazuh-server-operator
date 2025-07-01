@@ -6,7 +6,7 @@ All actions should be performed after your deployment is successful: all units a
 
 ## Test the dashboard
 
-First retrieve valid credentials:
+### Retrieve dashboard credentials
 
 - Go to the environment where your `wazuh-indexer` is deployed: `juju switch <wazuh-indexer-model>`.
 - Get the `username` and `password` with the following command:
