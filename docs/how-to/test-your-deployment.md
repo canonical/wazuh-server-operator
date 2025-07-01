@@ -58,7 +58,7 @@ juju ssh --container wazuh-server wazuh-server/leader
 ```
 - Monitor the logs: `tail -f /var/log/collectors/rsyslog/rsyslog.log`
 
-In parallel, send some traffic:
+In parallel, open another terminal to send some traffic to Wazuh:
 
 - Fetch your public IP for `rsyslog`. This is the external IP from the `kubectl get services traefik-k8s-lb` output.
 - Send some data to the public IP obtained from the previous step: `echo "Hi" | openssl s_client -connect <public-ip>:6514`.
