@@ -127,7 +127,11 @@ async def opensearch_provider_fixture(
     if pytestconfig.getoption("--single-node-indexer"):
         num_units = 1
     application = await machine_model.deploy(
-        app_name, application_name=app_name, channel="latest/edge", num_units=num_units
+        app_name,
+        application_name=app_name,
+        channel="latest/edge",
+        num_units=num_units,
+        config={"profile": "testing"},
     )
 
     if num_units == 1:
@@ -228,6 +232,7 @@ async def application_fixture(
 async def opencti_any_charm_fixture(
     model: Model,
     pytestconfig: pytest.Config,
+    application: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy OpenCTI any-charm and integrate with Wazuh Server."""
     any_app_name = "any-opencti"
@@ -244,6 +249,6 @@ async def opencti_any_charm_fixture(
         config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "PyJWT"},
     )
 
-    await model.add_relation(any_app.name, "wazuh-server:opencti-connector")
+    await model.add_relation(any_app.name, f"{application.name}:opencti-connector")
     await model.wait_for_idle(status="active", timeout=600)
     yield any_app
