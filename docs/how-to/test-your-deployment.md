@@ -107,12 +107,14 @@ When you have some logs available, you can configure the `index-pattern` as desc
 
 ## Test your backups
 
+### Create a backup
+
 - Go to the model where your `wazuh-indexer` is deployed.
 - Run `juju run wazuh-indexer/leader create-backup` to check that you can create backups. It should return `status: Backup is running.`.
 - Run `juju run wazuh-indexer/leader list-backups` to check that backups are accessible. It should return at least a backup timestamp with a `success` status:
 
 ```text
-$ juju run wazuh-indexer/1 list-backups
+$ juju run wazuh-indexer/leader list-backups
 Running operation 174 with 1 task
   - task 175 on unit-wazuh-indexer-1
 
@@ -121,4 +123,23 @@ backups: |1-
    backup-id           | backup-status
   ------------------------------------
   2025-06-30T12:28:27Z | success
+```
+
+### Restore a backup
+
+- Run `juju run wazuh-indexer/leader restore backup-id="<backup-id-from-the-list>"`
+- You should get something like:
+
+```test
+Running operation 182 with 1 task
+  - task 183 on unit-wazuh-indexer-1
+
+Waiting for task 183...
+backup-id: "2025-06-30T12:28:27Z"
+closed-indices: '{''.wazuh-dashboard'', ''wazuh-statistics-2025.27w'', ''.plugins-ml-config'',
+  ''.kibana_1'', ''wazuh-monitoring-2025.26w'', ''.opensearch-sap-log-types-config'',
+  ''placeholder'', ''wazuh-archives-4.x-2025.06.30'', ''wazuh-monitoring-2025.27w'',
+  ''.kibana_244217601_opensearchclient527_1'', ''wazuh-statistics-2025.26w'', ''.ql-datasources'',
+  ''wazuh-alerts-4.x-2025.06.30''}'
+status: Restore is complete
 ```
