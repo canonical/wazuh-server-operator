@@ -19,7 +19,7 @@ juju run data-integrator/leader get-credentials --format=json | \
 ### Access the dashboard
 
 - Go to the model where your `wazuh-dashboard` is deployed: `juju switch <wazuh-dashboard-model>`.
-- Retrieve one of the units public IP address.
+- Retrieve one of the units' public IP address.
 
 ```
 juju status wazuh-dashboard --format=json | \
