@@ -2,7 +2,8 @@
 
 In this document, we describe the main tests to ensure your deployment is working properly.
 
-All actions should be performed after your deployment is successful: all units and apps should be in active and idle state.
+All actions should be performed after your deployment is successful.
+A successful deployment is one where all units and apps are in active and idle state.
 
 ## Test the dashboard
 
@@ -23,12 +24,11 @@ juju run data-integrator/leader get-credentials --format=json | \
 
 ```
 juju status wazuh-dashboard --format=json | \
-  jq -r '.applications["wazuh-dashboard"].units | \
-  to_entries[0].value["public-address"]'
+  jq -r '.applications["wazuh-dashboard"].units | to_entries[0].value["public-address"]'
 ```
 
 > [!NOTE]
-> If you deployed Wazuh with a self-signed-certificate, you will have to accept a security exception in your browser.
+> If you deployed Wazuh with a self-signed-certificate, you will have to accept a security exception in your browser in the following step.
 
 - Connect from your browser to `https://<public-ip>:5601`.
 - You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
