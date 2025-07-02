@@ -27,9 +27,8 @@ juju status wazuh-dashboard --format=json | \
   to_entries[0].value["public-address"]'
 ```
 
-```note
-If you deployed Wazuh with a self-signed-certificate, you will have to accept a security exception in your browser.
-```
+> [!NOTE]
+> If you deployed Wazuh with a self-signed-certificate, you will have to accept a security exception in your browser.
 
 - Connect from your browser to `https://<public-ip>:5601`.
 - You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
@@ -46,9 +45,8 @@ If you deployed Wazuh with a self-signed-certificate, you will have to accept a 
   - `wazuh-statistic-*`
   - `wazuh-archives-*` 
   
-```note
-You will need to send some logs first to see `wazuh-archives-*` listed in the `Discover` section. See the next section for more details.
-```
+> [!NOTE]
+> You will need to send some logs first to see `wazuh-archives-*` listed in the `Discover` section. See the next section for more details.
 
 ## Test logs processing
 
