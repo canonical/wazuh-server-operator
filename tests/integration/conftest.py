@@ -129,7 +129,7 @@ async def opensearch_provider_fixture(
     application = await machine_model.deploy(
         app_name,
         application_name=app_name,
-        channel="latest/edge",
+        channel="4.11/edge",
         num_units=num_units,
         config={"profile": "testing"},
     )
@@ -158,7 +158,7 @@ async def wazuh_dashboard_fixture(
 
     num_units = 1
     application = await machine_model.deploy(
-        app_name, application_name=app_name, channel="latest/edge", num_units=num_units
+        app_name, application_name=app_name, channel="4.11/edge", num_units=num_units
     )
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.integrate(opensearch_provider.name, application.name)
