@@ -8,7 +8,7 @@ All actions should be performed after your deployment is successful: all units a
 
 ### Retrieve dashboard credentials
 
-- Go to the environment where your `wazuh-indexer` is deployed: `juju switch <wazuh-indexer-model>`.
+- Go to the model where your `wazuh-indexer` is deployed: `juju switch <wazuh-indexer-model>`.
 - Get the `username` and `password` with the following command:
 
 ```shell
@@ -18,7 +18,7 @@ juju run data-integrator/leader get-credentials --format=json | \
 
 ### Access the dashboard
 
-- Go to the environment where your `wazuh-dashboard` is deployed: `juju switch <wazuh-dashboard-model>`.
+- Go to the model where your `wazuh-dashboard` is deployed: `juju switch <wazuh-dashboard-model>`.
 - Retrieve one of the units public IP address.
 
 ```
@@ -52,7 +52,7 @@ juju status wazuh-dashboard --format=json | \
 
 First, let's monitor the logs:
 
-- Go to the environment where your `wazuh-server` is deployed: `juju switch <wazuh-server-model>`
+- Go to the model where your `wazuh-server` is deployed: `juju switch <wazuh-server-model>`
 - Open a shell on the leader unit:
 ```
 juju ssh --container wazuh-server wazuh-server/leader
@@ -107,7 +107,7 @@ When you have some logs available, you can configure the `index-pattern` as desc
 
 ## Test your backups
 
-- Go to the environment where your `wazuh-indexer` is deployed.
+- Go to the model where your `wazuh-indexer` is deployed.
 - Run `juju run wazuh-indexer/leader create-backup` to check that you can create backups. It should return `status: Backup is running.`.
 - Run `juju run wazuh-indexer/leader list-backups` to check that backups are accessible. It should return at least a backup timestamp with a `success` status:
 
