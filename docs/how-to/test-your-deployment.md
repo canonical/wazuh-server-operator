@@ -81,9 +81,9 @@ echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -
 
 You should see `TEST123` in the logs on the server.
 
-After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm the same, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"` to verify if the log is processed.
+After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm this, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"`.
 
-From there, they should be processed by `filebeat` and sent to `wazuh-indexer`. To check:
+From there, they should be processed by `filebeat` and `filebeat` will send them to `wazuh-indexer`. To check:
 
 - Go to the Wazuh dashboard with your browser.
 - Go to `Indexer management > Dev Tools`.
