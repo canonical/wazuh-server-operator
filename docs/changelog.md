@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-06-30
+
+### Added
+
+- Adding `<endpoint>-relation-departed` hooks for opensearch_observer, 
+opencti_connector, wazuh_api and wazuh_peer integrations.
+
 ## 2025-06-24
 
 ### Added
