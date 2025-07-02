@@ -20,7 +20,7 @@ juju run data-integrator/leader get-credentials --format=json | \
 ### Access the dashboard
 
 - Go to the model where your `wazuh-dashboard` is deployed: `juju switch <wazuh-dashboard-model>`.
-- Retrieve one of the units' public IP address.
+- Retrieve the public IP address for one of the units.
 
 ```
 juju status wazuh-dashboard --format=json | \
@@ -31,15 +31,15 @@ juju status wazuh-dashboard --format=json | \
 > If you deployed Wazuh with a self-signed-certificate, you will have to accept a security exception in your browser in the following step.
 
 - Connect from your browser to `https://<public-ip>:5601`.
-- You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
+- You should see "Wazuh... loading" for a few seconds followed by a prompt for credentials.
 - Enter the `username` and `password` from the first step.
 - You should see "Wazuh... loading" again, and then you should have access to the dashboard.
 
 ### Verify Wazuh is working properly
 
 - Unfold the navigation bar with the icon on the top-left corner.
-- Go to "Dashboard management > Server APIs": your `wazuh` cluster should be reported as "Online".
-- Go to `Explore > Discover`, in the top-left drop-down, check that you see the 4 following indexes:
+- Go to `Dashboard management > Server APIs`. Your `wazuh` cluster should be reported as "Online".
+- Go to `Explore > Discover`. In the top-left drop-down, check that you see the 4 following indexes:
   - `wazuh-alerts-*`
   - `wazuh-monitoring-*`
   - `wazuh-statistic-*`
@@ -48,7 +48,7 @@ juju status wazuh-dashboard --format=json | \
 > [!NOTE]
 > You will need to send some logs first to see `wazuh-archives-*` listed in the `Discover` section. See the next section for more details.
 
-## Test logs processing
+## Test the logs
 
 First, let's monitor the logs:
 
@@ -87,7 +87,7 @@ From there, they should be processed by `filebeat` and `filebeat` will send them
 
 - Go to the Wazuh dashboard with your browser.
 - Go to `Indexer management > Dev Tools`.
-- Enter the following query (update with your test string if necessary): 
+- Enter the following query: 
 
 ```
 GET wazuh-archives-*/_search
@@ -100,12 +100,11 @@ GET wazuh-archives-*/_search
 }
 ```
 
-- Run the query.
-- It should return at least one document.
+- Run the query. It should return at least one document.
 
 When you have some logs available, you can configure the `index-pattern` as described in [Wazuh's documentation](https://documentation.wazuh.com/current/user-manual/wazuh-indexer/wazuh-indexer-indices.html#the-wazuharchives-indices) to see them in the "Discover" page.
 
-## Test your backups
+## Test the backups
 
 ### Create a backup
 
@@ -114,7 +113,6 @@ When you have some logs available, you can configure the `index-pattern` as desc
 - Run `juju run wazuh-indexer/leader list-backups` to check that backups are accessible. It should return at least a backup timestamp with a `success` status:
 
 ```text
-$ juju run wazuh-indexer/leader list-backups
 Running operation 174 with 1 task
   - task 175 on unit-wazuh-indexer-1
 
@@ -127,8 +125,8 @@ backups: |1-
 
 ### Restore a backup
 
-- Run `juju run wazuh-indexer/leader restore backup-id="<backup-id-from-the-list>"`
-- You should get something like:
+Run `juju run wazuh-indexer/leader restore backup-id="<backup-id-from-the-list>"`.
+You should get something like:
 
 ```test
 Running operation 182 with 1 task
