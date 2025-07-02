@@ -13,7 +13,7 @@ All actions should be performed after your deployment is successful: all units a
 
 ```shell
 juju run data-integrator/leader get-credentials --format=json | \
-jq -r '.[].results.opensearch | "username: \(.username)\npassword: \(.password)"'
+  jq -r '.[].results.opensearch | "username: \(.username)\npassword: \(.password)"'
 ```
 
 ### Access the dashboard
@@ -22,13 +22,16 @@ jq -r '.[].results.opensearch | "username: \(.username)\npassword: \(.password)"
 - Retrieve one of the units public IP address.
 
 ```
-juju status wazuh-dashboard --format=json | jq -r '.applications["wazuh-dashboard"].units | to_entries[0].value["public-address"]'
+juju status wazuh-dashboard --format=json | \
+  jq -r '.applications["wazuh-dashboard"].units | \
+  to_entries[0].value["public-address"]'
+```
+
+```note
+If you deployed Wazuh with a self-signed-certificate, you will have to accept a security exception in your browser.
 ```
 
 - Connect from your browser to `https://<public-ip>:5601`.
-[note]
-If you deployed Wazuh with a self-signed-certificate, you will have to accept the security exception.
-[/note]
 - You should see "Wazuh... loading" for a few seconds and then be prompted for credentials.
 - Enter the `username` and `password` from the first step.
 - You should see "Wazuh... loading" again, and then you should have access to the dashboard.
@@ -43,9 +46,9 @@ If you deployed Wazuh with a self-signed-certificate, you will have to accept th
   - `wazuh-statistic-*`
   - `wazuh-archives-*` 
   
-[note]
+```note
 You will need to send some logs first to see `wazuh-archives-*` listed in the `Discover` section. See the next section for more details.
-[/note]
+```
 
 ## Test logs processing
 
@@ -64,13 +67,21 @@ In parallel, open another terminal to send some traffic to Wazuh:
 ```shell
 kubectl get svc traefik-k8s-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
-- Send some data to the public IP obtained from the previous step: `echo "Hi" | openssl s_client -connect <public-ip>:6514`.
+- Send some data to the public IP obtained from the previous step:
+
+```shell
+echo "Hi" | openssl s_client -connect <public-ip>:6514
+```
+
 - You should see some logs on the server, especially: `... did not provide a certificate, not permitted to talk to it ...`
 
 You should now be able to send logs with a certificate issued by the CA configured in `logs-ca-cert`:
-`echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key`
 
-You should see "TEST123" in the logs on the server.
+```shell
+echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key
+```
+
+You should see `TEST123` in the logs on the server.
 
 After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm the same, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"` to verify if the log is processed.
 
