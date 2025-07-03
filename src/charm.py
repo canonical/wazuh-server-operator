@@ -372,6 +372,14 @@ class WazuhServerCharm(CharmBaseWithState):
                     },
                 }
             },
+            "checks": {
+                "wazuh-alive": {
+                    "override": "replace",
+                    "level": "alive",
+                    "threshold": 10,
+                    "tcp": {"port": observability.PROMETHEUS_PORT},
+                },
+            },
         }
 
     @property
