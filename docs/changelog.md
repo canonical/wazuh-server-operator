@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-07-03
+
+### Added
+
+- Adding alive pebble check for the Prometheus exporter.
+
+### Updated
+
+- Update the Prometheus exporter
+
 ## 2025-06-30
 
 ### Added
