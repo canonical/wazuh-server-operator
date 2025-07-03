@@ -373,7 +373,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 }
             },
             "checks": {
-                "wazuh-alive": {
+                "wazuh-exporter-alive": {
                     "override": "replace",
                     "level": "alive",
                     "threshold": 10,
