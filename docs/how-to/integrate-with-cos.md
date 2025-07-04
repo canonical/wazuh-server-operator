@@ -54,4 +54,4 @@ juju run grafana/0 get-admin-password
 
 This action returns the URL and the admin password to access the Wazuh server dashboard. Now, on your host machine, open a web browser, enter the Grafana URL, and use the username “admin” and your Grafana password to log in. Under **Home > Dashboards**, you should be able to see the Wazuh server dashboard listed.
 
-This effectively integrates your application with Prometheus, Loki, and Grafana.
+This integrates your application with Prometheus, Loki, and Grafana.
