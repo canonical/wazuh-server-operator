@@ -42,6 +42,7 @@ Thinking about using the Wazuh Server Operator for your next project? [Get in to
   1. [Configure](how-to/configure.md)
   1. [Contribute](how-to/contribute.md)
   1. [Deploy to production](how-to/deploy-to-production.md)
+  1. [Integrate with COS](how-to/integrate-with-cos.md)
   1. [Integrate with OpenCTI](how-to/integrate-with-opencti.md)
   1. [Redeploy](how-to/redeploy.md)
   1. [Upgrade](how-to/upgrade.md)
