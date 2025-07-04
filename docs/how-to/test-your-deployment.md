@@ -40,7 +40,7 @@ If you deployed Wazuh with a self-signed-certificate, you will have to accept a 
 
 - Unfold the navigation bar with the icon on the top-left corner.
 - Go to `Dashboard management > Server APIs`. Your `wazuh` cluster should be reported as "Online".
-- Go to `Explore > Discover`. In the top-left drop-down, check that you see the 4 following indexes:
+- Go to `Explore > Discover`. In the top-left drop-down, check that you see the four following indexes:
   - `wazuh-alerts-*`
   - `wazuh-monitoring-*`
   - `wazuh-statistic-*`
@@ -130,7 +130,7 @@ backups: |1-
 Run `juju run wazuh-indexer/leader restore backup-id="<backup-id-from-the-list>"`.
 You should get something like:
 
-```test
+```text
 Running operation 182 with 1 task
   - task 183 on unit-wazuh-indexer-1
 
