@@ -43,7 +43,7 @@ juju integrate wazuh-server admin/cos-lite.loki
 juju integrate wazuh-server admin/cos-lite.prometheus
 ```
 
-Ensure that Wazuh server and the COS Lite applications are settled down (you can monitor this by using `juju status --watch 2s`).
+Ensure that Wazuh server and the COS Lite applications have settled down (you can monitor this by using `juju status --watch 2s`).
 
 Obtain the Grafana dashboard credentials by running the `get-admin-password` action:
 
