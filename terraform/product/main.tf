@@ -262,8 +262,6 @@ module "wazuh_indexer_backup" {
   revision      = var.wazuh_indexer_backup.revision
   base          = var.wazuh_indexer_backup.base
   units         = var.wazuh_indexer_backup.units
-  s3_access_key = var.wazuh_indexer_backup.s3_access_key
-  s3_secret_key = var.wazuh_indexer_backup.s3_secret_key
 
   providers = {
     juju = juju.wazuh_indexer
