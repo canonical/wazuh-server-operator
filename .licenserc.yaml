@@ -29,4 +29,5 @@ header:
     - 'src/prometheus_alert_rules/**'
     - 'tests/unit/resources/**'
     - 'tests/integration/certs/**'
+    - 'icon.svg'
   comment: on-failure
