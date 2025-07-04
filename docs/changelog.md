@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
-## 2025-07-03
+## 2025-07-04
 
 ### Added
 
+- Adding documentation on how to integrate with COS.
 - Adding alive pebble check for the Prometheus exporter.
 
 ### Updated
