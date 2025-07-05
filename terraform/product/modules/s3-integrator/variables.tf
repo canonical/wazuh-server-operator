@@ -48,11 +48,3 @@ variable "units" {
   type        = number
   default     = 1
 }
-
-variable "s3_access_key" {
-  type = string
-}
-
-variable "s3_secret_key" {
-  type = string
-}
