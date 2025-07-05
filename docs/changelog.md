@@ -11,6 +11,11 @@ Each revision is versioned by the date of the revision.
 ### Added
 
 - Adding documentation on how to integrate with COS.
+- Adding alive pebble check for the Prometheus exporter.
+
+### Updated
+
+- Update the Prometheus exporter
 
 ## 2025-06-30
 
