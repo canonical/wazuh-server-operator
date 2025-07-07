@@ -45,6 +45,7 @@ parts:
 name: wazuh-server
 summary: A charm deploying the Wazuh Server.
 links:
+  documentation: https://discourse.charmhub.io/t/wazuh-server-documentation-overview/18199
   contact: https://launchpad.net/~canonical-is-devops
   issues: https://github.com/canonical/wazuh-server-operator/issues
   source: https://github.com/canonical/wazuh-server-operator
