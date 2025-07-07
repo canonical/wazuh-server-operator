@@ -53,5 +53,6 @@ Thinking about using the Wazuh Server Operator for your next project? [Get in to
   1. [Integrations](reference/integrations.md)
 1. [Explanation](explanation)
   1. [Architecture overview](explanation/architecture-overview.md)
-  1. [Charm architecture](explanation/charm-architecture.md) 
+  1. [Charm architecture](explanation/charm-architecture.md)
   1. [Security](explanation/security.md)
+1. [Changelog](changelog.md)
