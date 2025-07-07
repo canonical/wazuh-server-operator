@@ -25,7 +25,7 @@ jobs:
       trivy-image-config: "trivy.yaml"
       self-hosted-runner: true
       self-hosted-runner-label: "xlarge"
-      tmate-debug: false
-      tmate-timeout: 60
+      tmate-debug: true
+      tmate-timeout: 20
       use-canonical-k8s: true
       provider: 'k8s'
