@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@feat/ck8s_docker_mirror
     secrets: inherit
     with:
       channel: 1.33-classic/stable
