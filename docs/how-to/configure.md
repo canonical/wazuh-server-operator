@@ -48,4 +48,3 @@ it may pull the repository on specific events, such as a restarts.
 That's why it's recommended to refer to an fixed Git reference
 to avoid unexpected configuration changes on your deployment.
 ```
-
