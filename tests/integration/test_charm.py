@@ -51,7 +51,6 @@ async def test_api(model: Model, application: Application):
     )
 
     assert response.status_code == 401, response.content
-    # assert False, "Force fail to troubleshoot CI"
 
 
 @pytest.mark.skip
