@@ -164,6 +164,9 @@ async def wazuh_dashboard_fixture(
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.integrate(opensearch_provider.name, application.name)
     yield application
+    await machine_model.applications[app_name].destroy(
+        destroy_storage=True, force=True, no_wait=False
+    )
 
 
 @pytest_asyncio.fixture(scope="module", name="charm")
@@ -227,7 +230,7 @@ async def application_fixture(
         timeout=1800,
     )
     yield application
-    await model.applicatons[wazuh_server_app].destroy(
+    await model.applications[wazuh_server_app].destroy(
         destroy_storage=True, force=True, no_wait=False
     )
 
