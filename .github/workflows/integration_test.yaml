@@ -9,13 +9,13 @@ concurrency:
 
 jobs:
   integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@feat/ck8s_docker_mirror
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       channel: 1.33-classic/stable
       extra-arguments: |
         --kube-config=~/.kube/config
-      juju-channel: 3.5/stable
+      juju-channel: 3/stable
       load-test-enabled: false
       pre-run-script: |
         -c "chmod +x tests/integration/pre_run_script.sh
