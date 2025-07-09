@@ -227,6 +227,9 @@ async def application_fixture(
         timeout=1800,
     )
     yield application
+    await model.applicatons[wazuh_server_app].destroy(
+        destroy_storage=True, force=True, no_wait=False
+    )
 
 
 @pytest_asyncio.fixture(scope="module", name="any_opencti")
