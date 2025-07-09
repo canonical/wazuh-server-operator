@@ -1,7 +1,7 @@
 cosl ==1.0.0
 cryptography==45.0.5
 jsonschema==4.24.0
-ops==2.23.0
+ops==2.22.0
 pydantic==2.11.7
 requests==2.32.4
 rpds-py==0.26.0
