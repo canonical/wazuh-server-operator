@@ -1,54 +1,270 @@
 {
-    "__inputs": [
-    {
-        "name": "prometheusds",
-        "label": "Prometheus",
-        "description": "",
-        "type": "datasource",
-        "pluginId": "prometheus",
-        "pluginName": "Prometheus"
-    }
-  ],
-  "__requires": [],
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
   "description": "A dashboard that monitors the Wazuh Server Operator. It is created using the (Wazuh Prometheus exporter)[https://github.com/pyToshka/wazuh-prometheus-exporter]",
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "hideControls": false,
-  "id": null,
   "links": [
-      {
-          "icon": "doc",
-          "tags": [],
-          "targetBlank": true,
-          "title": "Docs",
-          "tooltip": "Official documentation of Wazuh Server Operator",
-          "type": "link",
-          "url": "https://charmhub.io/wazuh-server"
-      },
-      {
-        "icon": "info",
-        "tags": [],
-        "targetBlank": true,
-        "title": "GitHub",
-        "tooltip": "Wazuh Prometheus Exporter",
-        "type": "link",
-        "url": "https://github.com/pyToshka/wazuh-prometheus-exporter"
-      }
+    {
+      "icon": "doc",
+      "tags": [],
+      "targetBlank": true,
+      "title": "Docs",
+      "tooltip": "Official documentation of Wazuh Server Operator",
+      "type": "link",
+      "url": "https://charmhub.io/wazuh-server"
+    },
+    {
+      "icon": "info",
+      "tags": [],
+      "targetBlank": true,
+      "title": "GitHub",
+      "tooltip": "Wazuh Prometheus Exporter",
+      "type": "link",
+      "url": "https://github.com/pyToshka/wazuh-prometheus-exporter"
+    }
   ],
+  "liveNow": false,
   "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "P9F8F231DC3B5E1F4"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "dark-red",
+                  "index": 1,
+                  "text": "KO"
+                },
+                "1": {
+                  "color": "dark-green",
+                  "index": 0,
+                  "text": "OK"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^OK$/",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.5.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P9F8F231DC3B5E1F4"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "wazuh_validate_configuration_info",
+          "format": "time_series",
+          "instant": true,
+          "legendFormat": "{{status}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Configuration",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "P9F8F231DC3B5E1F4"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P9F8F231DC3B5E1F4"
+          },
+          "editorMode": "code",
+          "expr": "wazuh_active_agents",
+          "legendFormat": "Active",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P9F8F231DC3B5E1F4"
+          },
+          "editorMode": "code",
+          "expr": "wazuh_disconnected_agents",
+          "hide": false,
+          "legendFormat": "Disconnected",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P9F8F231DC3B5E1F4"
+          },
+          "editorMode": "code",
+          "expr": "wazuh_pending_agents",
+          "hide": false,
+          "legendFormat": "Pending",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "P9F8F231DC3B5E1F4"
+          },
+          "editorMode": "code",
+          "expr": "wazuh_never_connected_agents",
+          "hide": false,
+          "legendFormat": "Never connected",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Agents by state",
+      "type": "timeseries"
+    }
   ],
   "refresh": "5s",
-  "rows": [],
-  "schemaVersion": 14,
+  "schemaVersion": 38,
   "style": "dark",
   "tags": [
     "wazuh",
-    "wazuh-server"
+    "wazuh-server",
+    "charm: wazuh-server"
   ],
+  "templating": {
+    "list": []
+  },
   "time": {
     "from": "now-2d",
     "to": "now"
@@ -80,5 +296,7 @@
   },
   "timezone": "utc",
   "title": "Wazuh Server",
-  "version": 0
+  "uid": "62ba911f6916dfcd59286a7dde5d9daa5b9c4eac",
+  "version": 1,
+  "weekStart": ""
 }
