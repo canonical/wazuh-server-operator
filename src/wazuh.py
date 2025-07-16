@@ -152,23 +152,16 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
 
     integrations = ossec_config_tree.xpath(".//integration[starts-with(name, 'custom-opencti-')]")
     if integrations and (not opencti_token or not opencti_url):
-        logger.error("Missing OpenCTI token or url for custom-opencti integrations.")
-        raise OpenCTIIntegrationMissingError()
+        logger.warning("Missing OpenCTI token or url for custom-opencti integrations.")
 
     for integration in integrations:
         api_key = integration.find("api_key")
-        if api_key is None:
-            raise WazuhConfigurationError(
-                f"Missing API key in {etree.tostring(integration, pretty_print=True).decode()}."
-            )
-        api_key.text = opencti_token
+        if api_key and opencti_token:
+            api_key.text = opencti_token
 
         hook_url = integration.find("hook_url")
-        if hook_url is None:
-            raise WazuhConfigurationError(
-                f"Missing hook_url in {etree.tostring(integration, pretty_print=True).decode()}."
-            )
-        hook_url.text = f"{opencti_url}/graphql"
+        if hook_url and opencti_url:
+            hook_url.text = f"{opencti_url}/graphql"
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
