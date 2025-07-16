@@ -395,6 +395,21 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "--include=etc/shared/**/",
                 "--include=etc/shared/**/*.conf",
                 "--include=integrations/***",
+                "--exclude=*",
+                "/root/repository/var/ossec/",
+                "/var/ossec",
+            ],
+            timeout=10,
+        )
+        process.wait_output()
+
+        # Copy patch files in ruleset directory
+        process = container.exec(
+            [
+                "rsync",
+                "-a",
+                "--chown",
+                "root:wazuh",
                 "--include=ruleset/***",
                 "--exclude=*",
                 "/root/repository/var/ossec/",
