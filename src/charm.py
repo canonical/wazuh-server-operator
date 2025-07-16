@@ -283,8 +283,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.unit.status = ops.ActiveStatus()
         except wazuh.WazuhConfigurationError as exc:
             self.unit.status = ops.BlockedStatus(str(exc))
-        except wazuh.OpenCTIIntegrationMissingError:
-            self.unit.status = ops.BlockedStatus("OpenCTI integration is missing.")
         except RecoverableStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             self.unit.status = ops.BlockedStatus("Charm state is invalid")
