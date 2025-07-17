@@ -255,13 +255,13 @@ module "wazuh_indexer_backup" {
   source = "./modules/s3-integrator"
   model  = data.juju_model.wazuh_indexer.name
 
-  app_name      = "${var.wazuh_indexer.app_name}-backup"
-  channel       = var.wazuh_indexer_backup.channel
-  config        = var.wazuh_indexer_backup.config
-  constraints   = var.wazuh_indexer_backup.constraints
-  revision      = var.wazuh_indexer_backup.revision
-  base          = var.wazuh_indexer_backup.base
-  units         = var.wazuh_indexer_backup.units
+  app_name    = "${var.wazuh_indexer.app_name}-backup"
+  channel     = var.wazuh_indexer_backup.channel
+  config      = var.wazuh_indexer_backup.config
+  constraints = var.wazuh_indexer_backup.constraints
+  revision    = var.wazuh_indexer_backup.revision
+  base        = var.wazuh_indexer_backup.base
+  units       = var.wazuh_indexer_backup.units
 
   providers = {
     juju = juju.wazuh_indexer
