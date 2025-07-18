@@ -70,7 +70,7 @@ See if the skipped tests are still relevant. You can list them with `grep -ri 's
 
 ### How to upgrade Wazuh version
 
-All repositories must be update to the same Wazuh version.
+All repositories must be updated to the same Wazuh version.
 
 ## `wazuh-indexer-snap`
 
