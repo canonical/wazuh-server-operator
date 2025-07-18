@@ -1,6 +1,6 @@
 # How to contribute
 
-Our documentation is hosted on the [Github](https://discourse.charmhub.io/t/wazuh-server-documentation-overview/16070) to enable collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, ask a question, or make a suggestion about a potential change via the comments section.
+Our documentation is hosted on the [GitHub](https://discourse.charmhub.io/t/wazuh-server-documentation-overview/16070) to enable collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, ask a question, or make a suggestion about a potential change via the comments section.
 
 Our documentation is also available alongside the [source code on GitHub](https://github.com/canonical/wazuh-server-operator/).
 You may open a pull request with your documentation changes, or you can
@@ -11,7 +11,7 @@ for information on contributing to the source code.
 
 ## How to upgrade Wazuh version
 
-The Wazuh product is deployed using 3 charms:
+The Wazuh product is deployed using three charms:
 - `wazuh-server`: this repository.
 - [`wazuh-indexer`](https://github.com/canonical/wazuh-indexer-operator/): a fork of [`opensearch-operator`](https://github.com/canonical/opensearch-operator) relying on [`opensearch-snap`](https://github.com/canonical/opensearch-snap)
 - [`wazuh-dashboard`](https://github.com/canonical/wazuh-dashboard-operator/): a fork of [`opensearch-dashboards-operator`](https://github.com/canonical/opensearch-dashboards-operator) relying on [`opensearch-dashboards-snap`](https://github.com/canonical/opensearch-dashboards-snap)
@@ -57,8 +57,8 @@ There will be conflicts, try to minimize them for future merges :
 Here are few tips to fix the conflicts:
 
 - Keep the changes where `opensearch` is replaced by `wazuh`.
-- Keep the changes refering to Wazuh channels, revisions or versions.
-- Keep the changes explicitely mentioning `wazuh` (including comments).
+- Keep the changes referring to Wazuh channels, revisions or versions.
+- Keep the changes explicitly mentioning `wazuh` (including comments).
 
 When all conflicts are resolved and the merge is completed, run the CI to ensure all tests pass.
 
@@ -69,6 +69,8 @@ See if the skipped tests are still relevant. You can list them with `grep -ri 's
 ### How to upgrade Wazuh version
 
 All repositories must be updated to the same Wazuh version.
+
+For Wazuh, we currently have a track for the minor version (e.g. 4.11/edge) as we have seen some breaking changes between minor versions in the past. We may switch back to a track per major version in the future (e.g. 5/edge).
 
 ## `wazuh-indexer-snap`
 
