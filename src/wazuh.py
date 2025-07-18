@@ -57,10 +57,6 @@ WAZUH_USER = "wazuh"
 logger = logging.getLogger(__name__)
 
 
-class OpenCTIIntegrationMissingError(Exception):
-    """OpenCTI integration is missing but required."""
-
-
 class WazuhInstallationError(Exception):
     """Base exception for Wazuh errors."""
 
@@ -123,7 +119,6 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
         opencti_url: OpenCTI URL.
 
     Raises:
-        OpenCTIIntegrationMissingError: if the OpenCTI integration is missing but required.
         WazuhConfigurationError: if the configuration is invalid or missing required elements.
     """
     ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
@@ -152,23 +147,16 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
 
     integrations = ossec_config_tree.xpath(".//integration[starts-with(name, 'custom-opencti-')]")
     if integrations and (not opencti_token or not opencti_url):
-        logger.error("Missing OpenCTI token or url for custom-opencti integrations.")
-        raise OpenCTIIntegrationMissingError()
+        logger.warning("Missing OpenCTI token or url for custom-opencti integrations.")
 
     for integration in integrations:
         api_key = integration.find("api_key")
-        if api_key is None:
-            raise WazuhConfigurationError(
-                f"Missing API key in {etree.tostring(integration, pretty_print=True).decode()}."
-            )
-        api_key.text = opencti_token
+        if api_key and opencti_token:
+            api_key.text = opencti_token
 
         hook_url = integration.find("hook_url")
-        if hook_url is None:
-            raise WazuhConfigurationError(
-                f"Missing hook_url in {etree.tostring(integration, pretty_print=True).decode()}."
-            )
-        hook_url.text = f"{opencti_url}/graphql"
+        if hook_url and opencti_url:
+            hook_url.text = f"{opencti_url}/graphql"
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
     container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
@@ -395,6 +383,21 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "--include=etc/shared/**/",
                 "--include=etc/shared/**/*.conf",
                 "--include=integrations/***",
+                "--exclude=*",
+                "/root/repository/var/ossec/",
+                "/var/ossec",
+            ],
+            timeout=10,
+        )
+        process.wait_output()
+
+        # Copy patch files in ruleset directory
+        process = container.exec(
+            [
+                "rsync",
+                "-a",
+                "--chown",
+                "root:wazuh",
                 "--include=ruleset/***",
                 "--exclude=*",
                 "/root/repository/var/ossec/",
