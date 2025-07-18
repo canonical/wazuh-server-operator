@@ -18,8 +18,6 @@ The Wazuh product is deployed using 3 charms:
 
 To upgrade the Wazuh version, the snaps and charms must be updated in the following order:
 
-Updates should be done in the following order:
-
 1. `wazuh-indexer-snap`: merge upstream changes, then upgrade Wazuh version.
 2. `wazuh-dashboard-snap`: merge upstream changes, then upgrade Wazuh version.
 3. `wazuh-indexer-operator`: merge upstream changes, then upgrade Wazuh version.
@@ -28,7 +26,7 @@ Updates should be done in the following order:
 
 
 > [!IMPORTANT]
-> GitHub incorrectly shows that the forks are based on the `main` branch of the `opensearch` snaps and charms.
+> GitHub incorrectly shows that the forks are based on the `main` branch of the `opensearch` snaps and charms (it's a known issue when an upstream project renames its default branch after a fork and the fork doesn't. Unfortunately, the upstream branch cannot be updated on the fork.).
 > They are based on the `2/edge` branch.
 
 ### How to merge upstream changes
