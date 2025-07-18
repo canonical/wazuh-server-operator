@@ -64,7 +64,7 @@ Here are few tips to fix the conflicts:
 
 When all conflicts are resolved and the merge is completed, run the CI to ensure all tests pass.
 
-#### Sanity checks
+#### Extra checks
 
 See if the skipped tests are still relevant. You can list them with `grep -ri 'skip.*wazuh' tests/`.
 
