@@ -1,3 +1,5 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
 alert: WazuhRsyslogErrorFound
 expr: rate({%%juju_topology%%, pebble_service="rsyslog"} |= " - ERROR - "[5m]) > 0
 for: 5m
