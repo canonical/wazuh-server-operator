@@ -382,7 +382,6 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "--include=etc/shared/*.conf",
                 "--include=etc/shared/**/",
                 "--include=etc/shared/**/*.conf",
-                "--include=integrations/***",
                 "--exclude=*",
                 "/root/repository/var/ossec/",
                 "/var/ossec",
@@ -399,6 +398,24 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "--chown",
                 "root:wazuh",
                 "--include=ruleset/***",
+                "--exclude=*",
+                "/root/repository/var/ossec/",
+                "/var/ossec",
+            ],
+            timeout=10,
+        )
+        process.wait_output()
+
+        # Copy integration files with executable permissions
+        process = container.exec(
+            [
+                "rsync",
+                "-a",
+                "--chown",
+                "root:wazuh",
+                "--chmod",
+                "755",
+                "--include=integrations/***",
                 "--exclude=*",
                 "/root/repository/var/ossec/",
                 "/var/ossec",
