@@ -1,0 +1,10 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+alert: WazuhRsyslogErrorFound
+expr: rate({%%juju_topology%%, pebble_service="rsyslog"} |= " - ERROR - "[5m]) > 0
+for: 5m
+labels:
+  severity: error
+annotations:
+  summary: Rsyslog errors detected.
+  description: This alert is triggered when Rsyslog logs an error level message in the last 5 minutes.
