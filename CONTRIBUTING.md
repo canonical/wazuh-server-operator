@@ -209,7 +209,7 @@ For Wazuh, we currently have a track for the minor version (e.g. `4.11/edge`) as
 - Update them to the version you want to deploy.
 - Update `workflows/ci.yaml`, to use the latest `wazuh-indexer` release.
 
-If Wazuh team has implemented a variable to refer to the Wazuh configuration, you may replace the last for lines in `snapcraft.yaml` which are temporary workarounds.
+If the Wazuh team has implemented a variable to refer to the Wazuh configuration, you may replace the last four lines in `snapcraft.yaml` which are temporary workarounds.
 
 ## `wazuh-indexer-operator`
 
