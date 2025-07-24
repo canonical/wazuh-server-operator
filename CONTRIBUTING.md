@@ -196,7 +196,7 @@ See if the skipped tests are still relevant. You can list them with `grep -ri 's
 
 All repositories must be updated to the same Wazuh version.
 
-For Wazuh, we currently have a track for the minor version (e.g. 4.11/edge) as we have seen some breaking changes between minor versions in the past. We may switch back to a track per major version in the future (e.g. 5/edge).
+For Wazuh, we currently have a track for the minor version (e.g. `4.11/edge`) as we have seen some breaking changes between minor versions in the past. We may switch back to a track per major version in the future (e.g. `5/edge`).
 
 ## `wazuh-indexer-snap`
 
