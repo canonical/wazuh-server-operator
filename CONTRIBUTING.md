@@ -177,7 +177,7 @@ Start the merge with `git merge upstream/2/edge`.
 
 There will be conflicts, try to minimize them for future merges :
 
-- Apply all upstream changes to the wazuh repository, even comments.
+- Apply all upstream changes to the Wazuh repository, even comments.
 - Propose changes upstream that would simplify future merges (use of constants instead of hard coded strings for instance).
 
 Here are few tips to fix the conflicts:
