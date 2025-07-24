@@ -136,20 +136,26 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         return traefik_route_relation_data.get("external_host")
 
-    def _configure_installation(self, container: ops.Container) -> None:
-        """Configure the Wazuh installation.
+    def _reconcile_config_repo(self, container: ops.Container) -> None:
+        """Reconcile the custom config repository
 
         Args:
             container: the container to configure Wazuh for.
         """
-        if not self.state:
-            return
-
-        if not self.state.logs_ca_cert:
-            raise wazuh.WazuhConfigurationError(
-                "Invalid charm configuration: 'logs-ca-cert' is missing."
+        if self.state.custom_config_repository:
+            wazuh.sync_config_repo(
+                container,
+                custom_config_repository=str(self.state.custom_config_repository),
+                custom_config_ssh_key=self.state.custom_config_ssh_key,
             )
+        return
+    
+    def _reconcile_filebeat(self, container: ops.Container) -> None:
+        """Reconcile the filebeat configuration
 
+        Args:
+            container: the container to configure Wazuh for.
+        """
         wazuh.install_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
@@ -159,6 +165,22 @@ class WazuhServerCharm(CharmBaseWithState):
             user=wazuh.FILEBEAT_USER,
             group=wazuh.FILEBEAT_USER,
         )
+        wazuh.configure_filebeat_user(
+            container, self.state.filebeat_username, self.state.filebeat_password
+        )
+        return
+
+    def _reconcile_rsyslog(self, container: ops.Container) -> None:
+        """Reconcile the rsyslog configuration
+
+        Args:
+            container: the container to configure Wazuh for.
+        """
+        if not self.state.logs_ca_cert:
+            raise wazuh.WazuhConfigurationError(
+                "Invalid charm configuration: 'logs-ca-cert' is missing."
+            )
+
         wazuh.install_certificates(
             container=container,
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
@@ -168,19 +190,17 @@ class WazuhServerCharm(CharmBaseWithState):
             user=wazuh.SYSLOG_USER,
             group=wazuh.SYSLOG_USER,
         )
-        wazuh.configure_filebeat_user(
-            container, self.state.filebeat_username, self.state.filebeat_password
-        )
         wazuh.set_filesystem_permissions(container)
+        return
+
+    def _reconcile_wazuh(self, container: ops.Container) -> None:
+        """Reconcile the Wazuh installation.
+
+        Args:
+            container: the container to configure Wazuh for.
+        """
         if self.state.agent_password:
             wazuh.configure_agent_password(container=container, password=self.state.agent_password)
-        if self.state.custom_config_repository:
-            wazuh.configure_git(
-                container,
-                str(self.state.custom_config_repository),
-                self.state.custom_config_ssh_key,
-            )
-            wazuh.pull_configuration_files(container)
         wazuh.update_configuration(
             container,
             self.state.indexer_ips,
@@ -190,6 +210,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.opencti_url,
             self.state.opencti_token,
         )
+        return
 
     # It doesn't make sense to split the logic further
     # Ignoring method too complex error from pflake8
@@ -259,7 +280,7 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the charm configuration is invalid.
         """
-        container = self.unit.get_container(wazuh.CONTAINER_NAME)
+        container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
             logger.warning(
                 "Unable to connect to container during reconcile. "
@@ -269,7 +290,10 @@ class WazuhServerCharm(CharmBaseWithState):
             return
         try:
             _ = self.state  # Ensure the state is valid
-            self._configure_installation(container)
+            self._reconcile_config_repo(container)
+            self._reconcile_filebeat(container)
+            self._reconcile_rsyslog(container)
+            self._reconcile_wazuh(container)
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
             self._configure_users()
