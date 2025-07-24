@@ -152,7 +152,7 @@ To upgrade the Wazuh version, the snaps and charms must be updated in the follow
 
 
 > [!IMPORTANT]
-> GitHub incorrectly shows that the forks are based on the `main` branch of the `opensearch` snaps and charms (it's a known issue when an upstream project renames its default branch after a fork and the fork doesn't. Unfortunately, the upstream branch cannot be updated on the fork.).
+> GitHub incorrectly shows that the forks are based on the `main` branch of the `opensearch` snaps and charms. It's a known issue when an upstream project renames its default branch after a fork and the fork doesn't. Unfortunately, the upstream branch cannot be updated on the fork.
 > They are based on the `2/edge` branch.
 
 ### How to merge upstream changes
@@ -196,7 +196,7 @@ See if the skipped tests are still relevant. You can list them with `grep -ri 's
 
 All repositories must be updated to the same Wazuh version.
 
-For Wazuh, we currently have a track for the minor version (e.g. 4.11/edge) as we have seen some breaking changes between minor versions in the past. We may switch back to a track per major version in the future (e.g. 5/edge).
+For Wazuh, we currently have a track for the minor version (e.g. `4.11/edge`) as we have seen some breaking changes between minor versions in the past. We may switch back to a track per major version in the future (e.g. `5/edge`).
 
 ## `wazuh-indexer-snap`
 
@@ -209,7 +209,7 @@ For Wazuh, we currently have a track for the minor version (e.g. 4.11/edge) as w
 - Update them to the version you want to deploy.
 - Update `workflows/ci.yaml`, to use the latest `wazuh-indexer` release.
 
-If Wazuh team has implemented a variable to refer to the Wazuh configuration, you may replace the last for lines in `snapcraft.yaml` which are temporary workarounds.
+If the Wazuh team has implemented a variable to refer to the Wazuh configuration, you may replace the last four lines in `snapcraft.yaml` which are temporary workarounds.
 
 ## `wazuh-indexer-operator`
 
