@@ -80,6 +80,9 @@ def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
     assert harness.model.unit.status.name == ops.WaitingStatus().name
 
 
+@patch.object(WazuhServerCharm, "_reconcile_config_repo")
+@patch.object(WazuhServerCharm, "_reconcile_filebeat")
+@patch.object(WazuhServerCharm, "_reconcile_wazuh")
 @patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
@@ -110,7 +113,7 @@ def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
 @patch.object(wazuh, "authenticate_user")
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
-@patch.object(wazuh, "configure_git")
+@patch.object(wazuh, "sync_config_repo", spec=wazuh.sync_config_repo)
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "configure_agent_password")
@@ -128,7 +131,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
-    configure_git_mock,
+    sync_config_repo_mock,
     state_from_charm_mock,
     *_,
 ):
@@ -200,7 +203,8 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 user="syslog",
                 group="syslog",
             ),
-        ]
+        ],
+        any_order=True
     )
     wazuh_update_configuration_mock.assert_called_with(
         container,
@@ -216,10 +220,9 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_configure_agent_password_mock.assert_called_with(
         container=container, password=agent_password
     )
-    configure_git_mock.assert_called_with(
+    sync_config_repo_mock.assert_called_with(
         container, str(wazuh_config.custom_config_repository), "somekey"
     )
-    pull_configuration_files_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
@@ -229,7 +232,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "authenticate_user")
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
-@patch.object(wazuh, "configure_git")
+@patch.object(wazuh, "sync_config_repo")
 @patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "configure_agent_password")
@@ -247,7 +250,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
     pull_configuration_files_mock,
-    configure_git_mock,
+    sync_config_repo_mock,
     state_from_charm_mock,
     *_,
 ):
@@ -311,12 +314,13 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 user="syslog",
                 group="syslog",
             ),
-        ]
+        ],
+        any_order=True
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     set_filesystem_permissions_mock.assert_called_with(container)
     wazuh_configure_agent_password_mock.assert_not_called()
-    configure_git_mock.assert_not_called()
+    sync_config_repo_mock.assert_not_called()
     pull_configuration_files_mock.assert_not_called()
     wazuh_update_configuration_mock.assert_called_with(
         container,

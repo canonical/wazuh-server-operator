@@ -253,7 +253,7 @@ def configure_agent_password(container: ops.Container, password: str) -> None:
     )
 
 
-def _get_current_configuration_url(container: ops.Container) -> str:
+def _get_current_repo_url(container: ops.Container) -> str:
     """Get the current remote repository for configuration.
 
     Args:
@@ -273,7 +273,7 @@ def _get_current_configuration_url(container: ops.Container) -> str:
     return remote_url.rstrip()
 
 
-def _get_current_configuration_url_branch(container: ops.Container) -> str:
+def _get_current_repo_branch(container: ops.Container) -> str:
     """Get the current remote repository branch for configuration.
 
     Args:
@@ -293,22 +293,46 @@ def _get_current_configuration_url_branch(container: ops.Container) -> str:
     return branch.rstrip()
 
 
-def configure_git(
+def _get_current_repo_tag(container: ops.Container) -> str:
+    """Get the current remote repository tag for configuration.
+
+    Args:
+        container: the container to configure git for.
+
+    Returns:
+        The repository branch.
+    """
+    process = container.exec(
+        ["git", "-C", REPOSITORY_PATH, "describe", "--tags", "--exact-match"], timeout=1
+    )
+    branch = ""
+    try:
+        branch, _ = process.wait_output()
+    except ops.pebble.ExecError as ex:
+        logging.debug(ex)
+    return branch.rstrip()
+
+
+def sync_config_repo(
     container: ops.Container,
     custom_config_repository: typing.Optional[str],
     custom_config_ssh_key: typing.Optional[str],
 ) -> None:
-    """Configure git.
+    """Configure git and pull a local copy of the custom config repository
 
     Args:
         container: the container to configure git for.
         custom_config_repository: the git repository to add to known hosts in format
-        git+ssh://<user>@<url>:<branch>.
+        git+ssh://<user>@<url>:<branch|tag>.
         custom_config_ssh_key: the SSH key for the git repository.
 
     Raises:
         WazuhInstallationError: if an error occurs while configuring git.
     """
+    if not custom_config_repository:
+        # nothing to do
+        return
+
     if custom_config_ssh_key:
         container.push(
             RSA_PATH,
@@ -322,38 +346,54 @@ def configure_git(
 
     base_url = None
     branch = None
-    try:
-        if custom_config_repository:
-            url = urlsplit(custom_config_repository)
-            path_parts = url.path.split("@")
-            branch = path_parts[1] if len(path_parts) > 1 else None
-            base_url = urlunsplit(url._replace(path=path_parts[0]))
-            process = container.exec(["ssh-keyscan", "-t", "rsa", str(url.hostname)], timeout=10)
-            output, _ = process.wait_output()
-            container.push(
-                KNOWN_HOSTS_PATH,
-                output,
-                encoding="utf-8",
-                make_dirs=True,
-                user=WAZUH_USER,
-                group=WAZUH_GROUP,
-                permissions=0o600,
-            )
-        if (
-            _get_current_configuration_url(container) != base_url
-            or _get_current_configuration_url_branch(container) != branch
-        ):
-            process = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1)
-            process.wait_output()
 
-            if base_url:
-                command = ["git", "clone", "--depth", "1"]
-                if branch:
-                    command = command + ["--branch", branch]
-                command = command + [base_url, REPOSITORY_PATH]
-                process = container.exec(command, timeout=60)
-                process.wait_output()
+    try:
+        url = urlsplit(custom_config_repository)
+        path_parts = url.path.split("@")
+        # 'branch' could be either a branch name or tag name
+        branch = path_parts[1] if len(path_parts) > 1 else None
+        base_url = urlunsplit(url._replace(path=path_parts[0]))
     except ops.pebble.ExecError as ex:
+        logger.error("custom_config_repository could not be parsed")
+        raise WazuhInstallationError from ex
+
+    if not base_url:
+        logger.error("custom_config_repository base URL was not found")
+        raise WazuhInstallationError
+
+    try:
+        process = container.exec(
+            ["ssh-keyscan", "-t", "rsa", str(url.hostname)],
+            timeout=10
+        )
+        output, _ = process.wait_output()
+        container.push(
+            KNOWN_HOSTS_PATH,
+            output,
+            encoding="utf-8",
+            make_dirs=True,
+            user=WAZUH_USER,
+            group=WAZUH_GROUP,
+            permissions=0o600,
+        )
+        is_right_repo: bool = _get_current_repo_url(container) == base_url
+        is_right_branch: bool = _get_current_repo_branch(container) == branch
+        is_right_tag: bool = _get_current_repo_tag(container) == branch
+        already_synced: bool = is_right_repo and (is_right_branch or is_right_tag)
+        if not already_synced:
+            process = container.exec(
+                ["rm", "-Rf", REPOSITORY_PATH],
+                timeout=1
+            )
+            _ = process.wait_output()
+            command = ["git", "clone", "--depth", "1"]
+            if branch:
+                command = command + ["--branch", branch]
+            command = command + [base_url, REPOSITORY_PATH]
+            process = container.exec(command, timeout=60)
+            _ = process.wait_output()
+    except ops.pebble.ExecError as ex:
+        logger.error("git clone of custom_config_repository failed")
         raise WazuhInstallationError from ex
 
 

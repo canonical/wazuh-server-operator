@@ -177,6 +177,11 @@ def test_configure_git_when_branch_specified() -> None:
         result="",
     )
     harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="",
+    )
+    harness.handle_exec(
         "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
     )
     harness.handle_exec("wazuh-server", ["rm", "-Rf", wazuh.REPOSITORY_PATH], result="")
@@ -198,12 +203,12 @@ def test_configure_git_when_branch_specified() -> None:
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     custom_config_ssh_key = "somekey"
-    wazuh.configure_git(container, custom_config_repository, custom_config_ssh_key)
+    wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
     assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
 
-def test_configure_git_when_no_branch_specified() -> None:
+def test_sync_config_repo_when_no_branch_specified() -> None:
     """
     arrange: do nothing.
     act: configure git without specifying a branch name.
@@ -218,6 +223,11 @@ def test_configure_git_when_no_branch_specified() -> None:
     harness.handle_exec(
         "wazuh-server",
         ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"],
+        result="",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
         result="",
     )
     harness.handle_exec(
@@ -240,12 +250,12 @@ def test_configure_git_when_no_branch_specified() -> None:
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     custom_config_ssh_key = "somekey"
-    wazuh.configure_git(container, custom_config_repository, custom_config_ssh_key)
+    wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
     assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
 
-def test_configure_git_when_no_key_no_repository_specified() -> None:
+def test_sync_config_repo_when_no_key_no_repository_specified() -> None:
     """
     arrange: do nothing.
     act: configure git without specifying a repository.
@@ -265,7 +275,7 @@ def test_configure_git_when_no_key_no_repository_specified() -> None:
     harness.handle_exec("wazuh-server", ["rm", "-Rf", wazuh.REPOSITORY_PATH], result="")
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    wazuh.configure_git(container, None, None)
+    wazuh.sync_config_repo(container, None, None)
     assert not container.exists(wazuh.KNOWN_HOSTS_PATH)
     assert not container.exists(wazuh.RSA_PATH)
 
