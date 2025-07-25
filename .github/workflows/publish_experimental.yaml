@@ -1,0 +1,14 @@
+name: Publish to experimental
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experimental
+
+jobs:
+  publish-to-edge:
+    uses: canonical/operator-workflows/.github/workflows/publish_charm.yaml@main
+    secrets: inherit
+    with:
+      channel: 4.11/experimental
