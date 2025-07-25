@@ -136,20 +136,6 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         return traefik_route_relation_data.get("external_host")
 
-    def _reconcile_config_repo(self, container: ops.Container) -> None:
-        """Reconcile the custom config repository
-
-        Args:
-            container: the container to configure Wazuh for.
-        """
-        if self.state.custom_config_repository:
-            wazuh.sync_config_repo(
-                container,
-                custom_config_repository=str(self.state.custom_config_repository),
-                custom_config_ssh_key=self.state.custom_config_ssh_key,
-            )
-        return
-    
     def _reconcile_filebeat(self, container: ops.Container) -> None:
         """Reconcile the filebeat configuration
 
@@ -290,7 +276,11 @@ class WazuhServerCharm(CharmBaseWithState):
             return
         try:
             _ = self.state  # Ensure the state is valid
-            self._reconcile_config_repo(container)
+            wazuh.sync_config_repo(
+                container,
+                custom_config_repository=self.state.custom_config_repository,
+                custom_config_ssh_key=self.state.custom_config_ssh_key,
+            )
             self._reconcile_filebeat(container)
             self._reconcile_rsyslog(container)
             self._reconcile_wazuh(container)

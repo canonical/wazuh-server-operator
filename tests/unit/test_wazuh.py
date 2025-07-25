@@ -159,7 +159,7 @@ def test_configure_agent_password() -> None:
     assert password == container.pull(wazuh.AGENT_PASSWORD_PATH, encoding="utf-8").read()
 
 
-def test_configure_git_when_branch_specified() -> None:
+def test_sync_config_repo_when_branch_specified() -> None:
     """
     arrange: do nothing.
     act: configure git specifying a branch name.
@@ -207,8 +207,8 @@ def test_configure_git_when_branch_specified() -> None:
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
     assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
-
-def test_sync_config_repo_when_no_branch_specified() -> None:
+#@unittest.mock.patch.object(wazuh, "pull_config_repo")
+def test_sync_config_repo_when_no_branch_specified(*_) -> None:
     """
     arrange: do nothing.
     act: configure git without specifying a branch name.
@@ -278,6 +278,77 @@ def test_sync_config_repo_when_no_key_no_repository_specified() -> None:
     wazuh.sync_config_repo(container, None, None)
     assert not container.exists(wazuh.KNOWN_HOSTS_PATH)
     assert not container.exists(wazuh.RSA_PATH)
+
+
+@unittest.mock.patch.object(wazuh, "pull_config_repo")
+def test_sync_config_repo_when_branch_up_to_date(
+    wazuh_pull_config_repo_mock: unittest.mock.Mock
+) -> None:
+    """
+    arrange: do nothing.
+    act: configure git without specifying a repository.
+    assert: the files have been saved with the appropriate content.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git@github.com:dummy/url.git",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"],
+        result="main",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="",
+    )
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    wazuh.sync_config_repo(
+        container,
+        custom_config_repository="git+ssh://git@github.com:dummy/url.git@main",
+        custom_config_ssh_key=None
+    )
+    assert not wazuh_pull_config_repo_mock.called
+
+
+@unittest.mock.patch.object(wazuh, "pull_config_repo")
+def test_sync_config_repo_when_tag_up_to_date(
+    wazuh_pull_config_repo_mock: unittest.mock.Mock
+) -> None:
+    """
+    arrange: do nothing.
+    act: sync config repo when repo is up to date (based on tag)
+    assert: the files have been saved with the appropriate content.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git@github.com:dummy/url.git",
+    )
+    # if repo was checked out with --depth 1 --branch <tag>
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"],
+        result="HEAD",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="v5",
+    )
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    wazuh.sync_config_repo(
+        container,
+        custom_config_repository="git+ssh://git@github.com:dummy/url.git@v5",
+        custom_config_ssh_key=None
+    )
+    assert not wazuh_pull_config_repo_mock.called
 
 
 def test_get_version() -> None:
