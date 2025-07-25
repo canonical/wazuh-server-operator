@@ -33,7 +33,9 @@ from state import (
 logger = logging.getLogger(__name__)
 
 WAZUH_PEER_RELATION_NAME = "wazuh-peers"
-
+WAZUH_SERVICE_NAME = "wazuh"
+FILEBEAT_SERVICE_NAME = "filebeat"
+RSYSLOG_SERVICE_NAME = "rsyslog"
 
 class WazuhServerCharm(CharmBaseWithState):
     """Charm the service.
@@ -154,6 +156,8 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
         )
+        if container.get_service(FILEBEAT_SERVICE_NAME).is_running():
+            container.restart(FILEBEAT_SERVICE_NAME)
         return
 
     def _reconcile_rsyslog(self, container: ops.Container) -> None:
@@ -177,6 +181,8 @@ class WazuhServerCharm(CharmBaseWithState):
             group=wazuh.SYSLOG_USER,
         )
         wazuh.set_filesystem_permissions(container)
+        if container.get_service(RSYSLOG_SERVICE_NAME).is_running():
+            container.restart(RSYSLOG_SERVICE_NAME)
         return
 
     def _reconcile_wazuh(self, container: ops.Container) -> None:
@@ -196,6 +202,9 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.opencti_url,
             self.state.opencti_token,
         )
+        wazuh.pull_configuration_files(container)
+        if container.get_service(WAZUH_SERVICE_NAME).is_running():
+            container.restart(WAZUH_SERVICE_NAME)
         return
 
     # It doesn't make sense to split the logic further
@@ -325,7 +334,7 @@ class WazuhServerCharm(CharmBaseWithState):
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
             "services": {
-                "wazuh": {
+                WAZUH_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "wazuh manager",
                     "command": "sh -c 'sleep 1; /var/ossec/bin/wazuh-control start'",
@@ -333,13 +342,13 @@ class WazuhServerCharm(CharmBaseWithState):
                     "on-success": "ignore",
                     "environment": environment,
                 },
-                "filebeat": {
+                FILEBEAT_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "filebeat",
                     "command": f"sh -c 'sleep 1; {' '.join(wazuh.FILEBEAT_CMD)}'",
                     "startup": "enabled",
                 },
-                "rsyslog": {
+                RSYSLOG_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "rsyslog",
                     "command": "rsyslogd -n -f /etc/rsyslog.conf",
