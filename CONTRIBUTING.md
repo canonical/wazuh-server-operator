@@ -1,6 +1,24 @@
 # Contributing
 
-Contributions to this repository are welcome.
+This document explains the processes and practices recommended for contributing enhancements to the Wazuh server charm.
+
+## Overview
+
+- Generally, before developing enhancements to this charm, you should consider [opening an issue
+  ](https://github.com/canonical/wazuh-server-operator/issues) explaining your use case.
+- If you would like to chat with us about your use-cases or proposed implementation, you can reach
+  us at [Canonical Matrix public channel](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
+  or [Discourse](https://discourse.charmhub.io/).
+- Familiarizing yourself with the [Juju documentation](https://canonical-juju.readthedocs-hosted.com/en/latest/user/howto/manage-charms/)
+  will help you a lot when working on new features or bug fixes.
+- All enhancements require review before being merged. Code review typically examines
+  - code quality
+  - test coverage
+  - user experience for Juju operators of this charm.
+- Once your pull request is approved, we squash and merge your pull request branch onto
+  the `main` branch. This creates a linear Git commit history.
+- For further information on contributing, please refer to our
+  [Contributing Guide](https://github.com/canonical/is-charms-contributing-guide).
 
 ## Developing
 
@@ -35,7 +53,7 @@ requirements:
   installing MicroK8s in your setup.
 - Canonical Kubernetes installed and bootstrapped to Juju. This can be
   accomplished by following the
-  [Setup Canonical Kubernetes](https://charmhub.io/wazuh-server/docs/tutorial-getting-started#p-38194-set-up-canonical-kubernetes)
+  [Set up Canonical Kubernetes](https://charmhub.io/wazuh-server/docs/tutorial-getting-started#p-38194-set-up-canonical-kubernetes)
   section in the getting started tutorial for Wazuh server.
 
 Note that if you follow the external documentation, you must still refer to the

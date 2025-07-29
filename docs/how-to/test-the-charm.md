@@ -1,27 +1,29 @@
-# Test the charm
+# How to test the charm
 
 The integration tests for this charm are designed to be run by
 [canonical/operator-workflows/integration_test](https://github.com/canonical/operator-workflows/blob/main/.github/workflows/integration_test.yaml).
 
 To run them locally, your environment should be as similar as possible to the
-one created on the Github actions runner.
+one created on the GitHub actions runner.
 
 ## Development environment setup
 
 Starting from a fresh Ubuntu 24.04 LTS (Noble Numbat) virtual machine, follow
 these instructions:
 
-_Note: `sudo` has been omitted from all commands, though many of the below
-commands require root access._
+[note]
+`sudo` has been omitted from all commands, though many of the below
+commands require root access.
+[/note]
 
-### Clone the repo
+### Clone the repository
 
 ```bash
 git clone git+ssh://git@github.com:canonical/wazuh-server-operator.git ~/wazuh-server-operator
 cd wazuh-sever-operator
 ```
 
-### Install charmcraft
+### Install Charmcraft
 
 ```bash
 snap install charmcraft --classic
@@ -46,14 +48,16 @@ newgrp lxd
 lxd init --auto
 ```
 
-### Install canonical k8s
+### Install Canonical Kubernetes
 
 ```bash
 snap install k8s --classic
 ```
 
-_Note: If you encounter an error running the next command, log out and log back
-in._
+[note]
+If you encounter an error running the next command, log out and log back
+in.
+[/note]
 
 ```bash
 cat << EOF | k8s bootstrap --file -
@@ -67,10 +71,10 @@ mkdir -p ~/.kube
 k8s config > ~/.kube/config
 ```
 
-#### Configure k8s load-balancer
+#### Configure Kubernetes load-balancer
 
-The following commands will configure the k8s metallb plugin to use IP addresses
-between .225 and .250 on the machine's 'real' subnet. If this will create IP
+The following commands will configure the Kubernetes `metallb` plugin to use IP addresses
+between .225 and .250 on the machine's 'real' subnet. If this creates IP
 address conflict(s) in your environment, please modify the commands.
 
 ```bash
@@ -99,13 +103,13 @@ snap install kubectl --classic
 snap install juju
 ```
 
-### Bootstrap the k8s controller
+### Bootstrap the Kubernetes controller
 
 ```bash
 juju bootstrap k8s
 ```
 
-### Run the pre_run script
+### Run the pre-run script
 
 ```bash
 bash -xe ~/wazuh-server-operator/tests/integration/pre_run_script.sh
@@ -116,7 +120,7 @@ bash -xe ~/wazuh-server-operator/tests/integration/pre_run_script.sh
 If you anticipate changing the rock container image, follow these additional
 steps:
 
-#### Install rockcraft
+#### Install Rockcraft
 
 ```bash
 snap install rockcraft --classic
@@ -142,13 +146,11 @@ This project uses `tox` for managing test environments. There are some
 pre-configured environments that can be used for linting and formatting code
 when you're preparing contributions to the charm:
 
-```bash
-tox run -e fmt        # update your code according to linting rules
-tox run -e lint       # code style
-tox run -e static     # other checks such as `bandit` for security issues.
-tox run -e unit       # unit tests
-tox                   # runs 'format', 'lint', 'static' and 'unit' environments
-```
+* ``tox``: Executes all of the basic checks and tests (``lint``, ``unit``, ``static``, and ``format``).
+* ``tox run -e fmt``: Update your code according to linting rules.
+* ``tox run -e lint``: Runs a range of static code analysis to check the code.
+* ``tox run -e static``: Runs other checks such as ``bandit`` for security issues.
+* ``tox run -e unit``: Runs unit tests.
 
 ## Integration testing
 
@@ -169,8 +171,8 @@ charmcraft pack
 
 If you have not made any changes to the rock, you do not need to rebuild it.
 
-The Github integration test workflow builds and uploads the rock to `ghcr.io`
-for its own tests. If you haven't changed the rock since the last Github action
+The GitHub integration test workflow builds and uploads the rock to `ghcr.io`
+for its own tests. If you haven't changed the rock since the last GitHub action
 run, you might as well reuse that artifact.
 
 Check
@@ -232,7 +234,7 @@ tox run -e integration -- \
     --controller k8s --model test-wazuh
 ```
 
-##### To reuse environments
+##### Reuse environments
 
 To get faster test results over multiple iterations you may want to reuse your
 integration environments. To do so, you can initially run:
