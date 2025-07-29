@@ -259,11 +259,12 @@ async def opencti_any_charm_fixture(
     any_app_name = "any-opencti"
     any_charm_script = Path("tests/integration/any_charm.py").read_text(encoding="utf-8")
     any_charm_src_overwrite = {"any_charm.py": any_charm_script}
+    any_app: Application
     if pytestconfig.getoption("--no-deploy") and any_app_name in model.applications:
         logger.warning("Using existing application: %s", any_app_name)
-        any_app: Application = model.applications[any_app_name]
+        any_app = model.applications[any_app_name]
     else:
-        any_app: Application = await model.deploy(
+        any_app = await model.deploy(
             "any-charm",
             application_name=any_app_name,
             channel="beta",
