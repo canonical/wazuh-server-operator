@@ -138,8 +138,12 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         return traefik_route_relation_data.get("external_host")
 
+    def _restart_service(self, container: ops.Container, service_name: str) -> None:
+        if container.get_service(service_name).is_running():
+            container.restart(service_name)
+
     def _reconcile_filebeat(self, container: ops.Container) -> None:
-        """Reconcile the filebeat configuration
+        """Reconcile the filebeat configuration.
 
         Args:
             container: the container to configure Wazuh for.
@@ -156,12 +160,11 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
         )
-        if container.get_service(FILEBEAT_SERVICE_NAME).is_running():
-            container.restart(FILEBEAT_SERVICE_NAME)
+        self._restart_service(container, FILEBEAT_SERVICE_NAME)
         return
 
     def _reconcile_rsyslog(self, container: ops.Container) -> None:
-        """Reconcile the rsyslog configuration
+        """Reconcile the rsyslog configuration.
 
         Args:
             container: the container to configure Wazuh for.
@@ -181,8 +184,7 @@ class WazuhServerCharm(CharmBaseWithState):
             group=wazuh.SYSLOG_USER,
         )
         wazuh.set_filesystem_permissions(container)
-        if container.get_service(RSYSLOG_SERVICE_NAME).is_running():
-            container.restart(RSYSLOG_SERVICE_NAME)
+        self._restart_service(container, RSYSLOG_SERVICE_NAME)
         return
 
     def _reconcile_wazuh(self, container: ops.Container) -> None:
@@ -203,8 +205,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.opencti_token,
         )
         wazuh.pull_configuration_files(container)
-        if container.get_service(WAZUH_SERVICE_NAME).is_running():
-            container.restart(WAZUH_SERVICE_NAME)
+        self._restart_service(container, WAZUH_SERVICE_NAME)
         return
 
     # It doesn't make sense to split the logic further

@@ -316,7 +316,7 @@ def _get_current_repo_tag(container: ops.Container) -> str:
 def pull_config_repo(
     container: ops.Container, hostname: str, base_url: str, branch: str
 ) -> None:
-    """Pull a local copy of the specified repository
+    """Pull a local copy of the specified repository.
 
     Args:
         container: the container to configure git for.
@@ -364,7 +364,7 @@ def sync_config_repo(
     custom_config_repository: typing.Optional[str],
     custom_config_ssh_key: typing.Optional[str],
 ) -> None:
-    """Configure git and pull a local copy of the custom config repository
+    """Configure git and pull a local copy of the custom config repository.
 
     Args:
         container: the container to configure git for.
