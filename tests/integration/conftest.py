@@ -44,9 +44,9 @@ async def machine_controller_fixture() -> typing.AsyncGenerator[Controller, None
     await controller.disconnect()
     await asyncio.sleep(1)
     current_task = asyncio.current_task()
-    logger.debug(f"Cleaning up remaining asyncio tasks")
+    logger.debug("Cleaning up remaining asyncio tasks")
     for task in asyncio.all_tasks():
-        if not task.done() and not task.cancelled() and not task is current_task:
+        if not task.done() and not task.cancelled() and task is not current_task:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 
