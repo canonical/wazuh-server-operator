@@ -3,7 +3,7 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 #
-# When run with --single-index-node parameter, integration tests need 
+# When run with --single-index-node parameter, integration tests need
 # opensearch to be configured in a specific way.
 #
 
@@ -16,22 +16,27 @@ date
 sleep 2
 juju switch "$MACHINE_MODEL"
 if ! juju show-application wazuh-indexer &>/dev/null; then
-	echo "No wazuh-indexer found (are you on the right model?)"
-	exit 1
+  echo "No wazuh-indexer found (are you on the right model?)"
+  exit 1
 fi
 
 echo "Fetching admin password through secrets as the get-password action would fail if the charm is blocked"
+get_password() {
+  for secret in $(juju secrets | tail +2 | awk '{print $1}'); do
+    juju show-secret "$secret" --reveal
+  done | awk '/admin-password:/{print $2}'
+}
 num_sleeps=0
-PASSWORD=$(for secret in $(juju secrets | tail +2 | awk '{print $1}'); do juju show-secret "$secret" --reveal; done | awk '/admin-password:/{print $2}')
+PASSWORD=$(get_password)
 while [[ $PASSWORD == "" ]]; do
-	if [[ $num_sleeps -ge 30 ]]; then
-		echo "wazuh-indexer still not ready, exiting"
-		exit 1
-	fi
-	echo "wazuh-indexer not ready, waiting 30s"
-	num_sleeps=$(( num_sleeps + 1 ))
-	sleep 30
-	PASSWORD=$(for secret in $(juju secrets | tail +2 | awk '{print $1}'); do juju show-secret "$secret" --reveal; done | awk '/admin-password:/{print $2}')
+  if [[ $num_sleeps -ge 30 ]]; then
+    echo "wazuh-indexer still not ready, exiting"
+    exit 1
+  fi
+  echo "wazuh-indexer not ready, waiting 30s"
+  num_sleeps=$((num_sleeps + 1))
+  sleep 30
+  PASSWORD=$(get_password)
 done
 CREDS="admin:$PASSWORD"
 
@@ -44,10 +49,10 @@ curl -k -u "$CREDS" -X PUT "https://$IP:9200/_index_template/charmed-index-tpl" 
 echo
 
 echo "Updating existing indices"
-for index in $(curl -k -u "$CREDS" "https://$IP:9200/_cat/indices"  | awk '{print $3}' | grep -v .opendistro_security); do
-	echo "$index"
-	curl -k -u "$CREDS" -X PUT "https://$IP:9200/$index/_settings" -H "Content-Type: application/json" -d '{ "index": { "number_of_replicas": 0 } }'
-	echo
+for index in $(curl -k -u "$CREDS" "https://$IP:9200/_cat/indices" | awk '{print $3}' | grep -v .opendistro_security); do
+  echo "$index"
+  curl -k -u "$CREDS" -X PUT "https://$IP:9200/$index/_settings" -H "Content-Type: application/json" -d '{ "index": { "number_of_replicas": 0 } }'
+  echo
 done
 
 echo "Waiting 5s for health to turn green"
