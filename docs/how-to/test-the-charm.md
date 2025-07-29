@@ -140,7 +140,7 @@ systemctl restart docker
 apt install -y skopeo
 ```
 
-## Linting, static testing, and unit testing
+## Testing
 
 This project uses `tox` for managing test environments. There are some
 pre-configured environments that can be used for linting and formatting code
@@ -167,7 +167,7 @@ cd ~/wazuh-server-operator
 charmcraft pack
 ```
 
-#### Optional - build the rock
+#### (Optional) Build the rock
 
 If you have not made any changes to the rock, you do not need to rebuild it.
 
