@@ -3,6 +3,7 @@
 
 """General configuration module for integration tests."""
 
+import asyncio
 import json
 import logging
 import os.path
@@ -12,7 +13,6 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
-import asyncio
 from juju.application import Application
 from juju.model import Controller, Model
 from pytest_operator.plugin import OpsTest
@@ -267,7 +267,10 @@ async def opencti_any_charm_fixture(
             "any-charm",
             application_name=any_app_name,
             channel="beta",
-            config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "PyJWT"},
+            config={
+                "src-overwrite": json.dumps(any_charm_src_overwrite),
+                "python-packages": "PyJWT",
+            },
         )
         await model.wait_for_idle(apps=[any_app_name], timeout=600)
     await model.integrate(any_app.name, f"{application.name}:opencti-connector")

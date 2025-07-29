@@ -111,10 +111,7 @@ async def test_rsyslog_invalid_server_ca(application: Application):
     ],
 )
 async def test_rsyslog_client_cn(
-    application: Application,
-    machine_model: Model,
-    valid_cn: bool,
-    expect_logs: bool
+    application: Application, machine_model: Model, valid_cn: bool, expect_logs: bool
 ):
     """
     Arrange: a working Wazuh deployment with a log-certification-authority configured

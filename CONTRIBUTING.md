@@ -1,5 +1,7 @@
 # Contributing
 
+Contributions to this repository are welcome.
+
 ## Developing
 
 The code for this charm can be downloaded as follows:

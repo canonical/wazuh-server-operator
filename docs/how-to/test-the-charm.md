@@ -1,14 +1,15 @@
 # Test the charm
 
-## Development environment setup
-
 The integration tests for this charm are designed to be run by
 [canonical/operator-workflows/integration_test](https://github.com/canonical/operator-workflows/blob/main/.github/workflows/integration_test.yaml).
 
 To run them locally, your environment should be as similar as possible to the
 one created on the Github actions runner.
 
-Starting from a fresh Ubuntu 24.04 virtual machine, follow these instructions:
+## Development environment setup
+
+Starting from a fresh Ubuntu 24.04 LTS (Noble Numbat) virtual machine, follow
+these instructions:
 
 _Note: `sudo` has been omitted from all commands, though many of the below
 commands require root access._
@@ -92,7 +93,7 @@ k8s set \
 snap install kubectl --classic
 ```
 
-### Install juju
+### Install Juju
 
 ```bash
 snap install juju
@@ -121,7 +122,7 @@ steps:
 snap install rockcraft --classic
 ```
 
-#### Install and configure docker
+#### Install and configure Docker
 
 ```bash
 apt install -y docker.io
@@ -135,7 +136,7 @@ systemctl restart docker
 apt install -y skopeo
 ```
 
-## Testing
+## Linting, static testing, and unit testing
 
 This project uses `tox` for managing test environments. There are some
 pre-configured environments that can be used for linting and formatting code
@@ -149,7 +150,13 @@ tox run -e unit       # unit tests
 tox                   # runs 'format', 'lint', 'static' and 'unit' environments
 ```
 
-### Run integration tests
+## Integration testing
+
+Integration testing is a multi-step process that requires:
+
+1. Building the charm
+1. (Optionally) building the rock
+1. Running the tests
 
 #### Build the charm
 
@@ -164,7 +171,7 @@ If you have not made any changes to the rock, you do not need to rebuild it.
 
 The Github integration test workflow builds and uploads the rock to `ghcr.io`
 for its own tests. If you haven't changed the rock since the last Github action
-run, you might as well re-use that artifact.
+run, you might as well reuse that artifact.
 
 Check
 [here](https://github.com/canonical/wazuh-server-operator/pkgs/container/wazuh-server)
@@ -225,7 +232,7 @@ tox run -e integration -- \
     --controller k8s --model test-wazuh
 ```
 
-##### To re-use environments
+##### To reuse environments
 
 To get faster test results over multiple iterations you may want to reuse your
 integration environments. To do so, you can initially run:
