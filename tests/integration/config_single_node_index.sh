@@ -21,7 +21,18 @@ if ! juju show-application wazuh-indexer &>/dev/null; then
 fi
 
 echo "Fetching admin password through secrets as the get-password action would fail if the charm is blocked"
+num_sleeps=0
 PASSWORD=$(for secret in $(juju secrets | tail +2 | awk '{print $1}'); do juju show-secret "$secret" --reveal; done | awk '/admin-password:/{print $2}')
+while [[ $PASSWORD == "" ]]; do
+	if [[ $num_sleeps -ge 30 ]]; then
+		echo "wazuh-indexer still not ready, exiting"
+		exit 1
+	fi
+	echo "wazuh-indexer not ready, waiting 30s"
+	num_sleeps=$(( num_sleeps + 1 ))
+	sleep 30
+	PASSWORD=$(for secret in $(juju secrets | tail +2 | awk '{print $1}'); do juju show-secret "$secret" --reveal; done | awk '/admin-password:/{print $2}')
+done
 CREDS="admin:$PASSWORD"
 
 echo "Retrieving unit IP"

@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
+import asyncio
 from juju.application import Application
 from juju.model import Controller, Model
 from pytest_operator.plugin import OpsTest
@@ -41,6 +42,13 @@ async def machine_controller_fixture() -> typing.AsyncGenerator[Controller, None
     await controller.connect_controller("localhost")
     yield controller
     await controller.disconnect()
+    await asyncio.sleep(1)
+    current_task = asyncio.current_task()
+    logger.debug(f"Cleaning up remaining asyncio tasks")
+    for task in asyncio.all_tasks():
+        if not task.done() and not task.cancelled() and not task is current_task:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
 
 
 @pytest_asyncio.fixture(scope="module", name="machine_model")
@@ -134,11 +142,17 @@ async def opensearch_provider_fixture(
         num_units=num_units,
         config={"profile": "testing"},
     )
+    await machine_model.integrate(self_signed_certificates.name, application.name)
+    await machine_model.wait_for_idle(
+        apps=[application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1800,
+    )
 
     if num_units == 1:
         await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
 
-    await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application
 
@@ -247,15 +261,15 @@ async def opencti_any_charm_fixture(
     any_charm_src_overwrite = {"any_charm.py": any_charm_script}
     if pytestconfig.getoption("--no-deploy") and any_app_name in model.applications:
         logger.warning("Using existing application: %s", any_app_name)
-        yield model.applications[any_app_name]
-        return
-    any_app: Application = await model.deploy(
-        "any-charm",
-        application_name=any_app_name,
-        channel="beta",
-        config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "PyJWT"},
-    )
-
-    await model.add_relation(any_app.name, f"{application.name}:opencti-connector")
+        any_app: Application = model.applications[any_app_name]
+    else:
+        any_app: Application = await model.deploy(
+            "any-charm",
+            application_name=any_app_name,
+            channel="beta",
+            config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "PyJWT"},
+        )
+        await model.wait_for_idle(apps=[any_app_name], timeout=600)
+    await model.integrate(any_app.name, f"{application.name}:opencti-connector")
     await model.wait_for_idle(status="active", timeout=600)
     yield any_app
