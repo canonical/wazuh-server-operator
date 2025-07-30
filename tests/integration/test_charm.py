@@ -110,15 +110,21 @@ async def test_rsyslog_invalid_server_ca(application: Application):
         pytest.param(False, False, id="invalid"),
     ],
 )
-async def test_rsyslog_client_cn(application: Application, valid_cn: bool, expect_logs: bool):
+async def test_rsyslog_client_cn(
+    application: Application, machine_model: Model, valid_cn: bool, expect_logs: bool
+):
     """
     Arrange: a working Wazuh deployment with a log-certification-authority configured
     Act: send a syslog message over tls (with or without a valid CN)
     Assert: the message appears in the log only if the CN is valid
     """
     assert application
-    server_ca_cert = await get_ca_certificate()
-    wazuh_ip = await get_wazuh_ip(application.model.name)
+    machine_controller = await machine_model.get_controller()
+    machine_model_url = f"{machine_controller.controller_name}:{machine_model.name}"
+    server_ca_cert = await get_ca_certificate(machine_model_url)
+    controller = await application.model.get_controller()
+    model_url = f"{controller.controller_name}:{application.model.name}"
+    wazuh_ip = await get_wazuh_ip(model_url)
 
     needle = secrets.token_hex()
     sent = await send_syslog_over_tls(

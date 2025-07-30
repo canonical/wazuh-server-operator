@@ -31,8 +31,11 @@ async def get_k8s_service_address(model: Model, service_name: str) -> str:
     )
 
 
-async def get_ca_certificate() -> str:
+async def get_ca_certificate(model_url: str) -> str:
     """Returns the CA certificate of the Wazuh server
+
+    Args:
+        model_url: model containing self-signed-certificates in format <controller>:<model>
 
     Returns:
         str: the CA certificate.
@@ -41,7 +44,7 @@ async def get_ca_certificate() -> str:
         "self-signed-certificates/0",
         "get-ca-certificate",
         "--no-color",
-        model="localhost:testing-machine",
+        model=model_url,
         format="yaml",
     )
     return yaml.safe_load(output)["self-signed-certificates/0"]["results"]["ca-certificate"]
@@ -82,12 +85,12 @@ async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn
     return False
 
 
-async def get_wazuh_ip(model_name: str) -> str:
+async def get_wazuh_ip(model_url: str) -> str:
     """Returns Wazuh server IP
     Not sure why: the applications["wazuh-server"].units[0] returns None.
 
     Args:
-        model_name: the name of the Juju model.
+        model_url: model containing wazuh-server in format <controller>:<model>
 
     Returns:
         str: the IP of the Wazuh server.
@@ -99,7 +102,7 @@ async def get_wazuh_ip(model_name: str) -> str:
         "show-unit",
         "wazuh-server/0",
         "-m",
-        model_name,
+        model_url,
         format="yaml",
     )
     output = yaml.safe_load(output)["wazuh-server/0"]
