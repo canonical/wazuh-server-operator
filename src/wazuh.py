@@ -406,6 +406,36 @@ def pull_configuration_files(container: ops.Container) -> None:
             timeout=10,
         )
         process.wait_output()
+
+        # Find all files within the integrations directory and make them executable.
+        # This ensures all integration scripts are runnable by the wazuh group.
+        process = container.exec(
+            [
+                "find",
+                "/var/ossec/integrations",
+                "-type",
+                "f",
+                "-exec",
+                "chmod",
+                "750",
+                "{}",
+                "+",
+            ],
+            timeout=10,
+        )
+        process.wait_output()
+
+        # Adds correct permissions to the /etc/shared/default directory
+        # 770 required for the manager to create the merged.mg file
+        process = container.exec(
+            [
+                "chmod",
+                "770",
+                "/var/ossec/etc/shared/default",
+            ],
+            timeout=10,
+        )
+        process.wait_output()
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
 
