@@ -203,11 +203,11 @@ def test_sync_config_repo_when_branch_specified() -> None:
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     custom_config_ssh_key = "somekey"
-    wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
+    _ = wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
     assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
-#@unittest.mock.patch.object(wazuh, "pull_config_repo")
+
 def test_sync_config_repo_when_no_branch_specified(*_) -> None:
     """
     arrange: do nothing.
@@ -250,7 +250,7 @@ def test_sync_config_repo_when_no_branch_specified(*_) -> None:
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     custom_config_ssh_key = "somekey"
-    wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
+    _ = wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
     assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
@@ -275,19 +275,20 @@ def test_sync_config_repo_when_no_key_no_repository_specified() -> None:
     harness.handle_exec("wazuh-server", ["rm", "-Rf", wazuh.REPOSITORY_PATH], result="")
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    wazuh.sync_config_repo(container, None, None)
+    _ = wazuh.sync_config_repo(container, None, None)
     assert not container.exists(wazuh.KNOWN_HOSTS_PATH)
     assert not container.exists(wazuh.RSA_PATH)
 
 
 @unittest.mock.patch.object(wazuh, "pull_config_repo")
 def test_sync_config_repo_when_branch_up_to_date(
-    wazuh_pull_config_repo_mock: unittest.mock.Mock
+    wazuh_pull_config_repo_mock: unittest.mock.Mock,
 ) -> None:
     """
     arrange: do nothing.
-    act: configure git without specifying a repository.
-    assert: the files have been saved with the appropriate content.
+    act: configure git with a repository and branch.
+    assert: the repo branch is fetched even if already present
+        (no guarantee local copy has the latest commits).
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.handle_exec(
@@ -307,22 +308,22 @@ def test_sync_config_repo_when_branch_up_to_date(
     )
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    wazuh.sync_config_repo(
+    _ = wazuh.sync_config_repo(
         container,
         custom_config_repository="git+ssh://git@github.com:dummy/url.git@main",
-        custom_config_ssh_key=None
+        custom_config_ssh_key=None,
     )
-    assert not wazuh_pull_config_repo_mock.called
+    assert wazuh_pull_config_repo_mock.called
 
 
 @unittest.mock.patch.object(wazuh, "pull_config_repo")
 def test_sync_config_repo_when_tag_up_to_date(
-    wazuh_pull_config_repo_mock: unittest.mock.Mock
+    wazuh_pull_config_repo_mock: unittest.mock.Mock,
 ) -> None:
     """
     arrange: do nothing.
     act: sync config repo when repo is up to date (based on tag)
-    assert: the files have been saved with the appropriate content.
+    assert: the repo is not fetched.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.handle_exec(
@@ -343,10 +344,10 @@ def test_sync_config_repo_when_tag_up_to_date(
     )
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    wazuh.sync_config_repo(
+    _ = wazuh.sync_config_repo(
         container,
         custom_config_repository="git+ssh://git@github.com:dummy/url.git@v5",
-        custom_config_ssh_key=None
+        custom_config_ssh_key=None,
     )
     assert not wazuh_pull_config_repo_mock.called
 

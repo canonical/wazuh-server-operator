@@ -43,9 +43,11 @@ FILEBEAT_CMD = [
 FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 LOGS_PATH = Path("/var/ossec/logs")
-OSSEC_CONF_PATH = Path("/var/ossec/etc/ossec.conf")
-RSA_PATH = "/root/.ssh/id_rsa"
+WAZUH_CONF_PATH = "/var/ossec"
+OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
+REPO_WAZUH_CONF_PATH = Path(REPOSITORY_PATH, "var/ossec")
+RSA_PATH = "/root/.ssh/id_rsa"
 SYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
 SYSLOG_USER = "syslog"
 API_PORT = 55000
@@ -273,26 +275,6 @@ def _get_current_repo_url(container: ops.Container) -> str:
     return remote_url.rstrip()
 
 
-def _get_current_repo_branch(container: ops.Container) -> str:
-    """Get the current remote repository branch for configuration.
-
-    Args:
-        container: the container to configure git for.
-
-    Returns:
-        The repository branch.
-    """
-    process = container.exec(
-        ["git", "-C", REPOSITORY_PATH, "rev-parse", "--abbrev-ref", "HEAD"], timeout=1
-    )
-    branch = ""
-    try:
-        branch, _ = process.wait_output()
-    except ops.pebble.ExecError as ex:
-        logging.debug(ex)
-    return branch.rstrip()
-
-
 def _get_current_repo_tag(container: ops.Container) -> str:
     """Get the current remote repository tag for configuration.
 
@@ -313,10 +295,8 @@ def _get_current_repo_tag(container: ops.Container) -> str:
     return branch.rstrip()
 
 
-def pull_config_repo(
-    container: ops.Container, hostname: str, base_url: str, branch: str
-) -> None:
-    """Pull a local copy of the specified repository
+def pull_config_repo(container: ops.Container, hostname: str, base_url: str, branch: str) -> None:
+    """Pull a local copy of the specified repository.
 
     Args:
         container: the container to configure git for.
@@ -327,12 +307,9 @@ def pull_config_repo(
     Raises:
         WazuhInstallationError: if an error occurs while configuring git.
     """
-    logger.debug(f"cloning repo '{base_url}', branch '{branch}'")
+    logger.info("cloning the '%s' branch of '%s'", branch, base_url)
     try:
-        process = container.exec(
-            ["ssh-keyscan", "-t", "rsa", str(hostname)],
-            timeout=10
-        )
+        process = container.exec(["ssh-keyscan", "-t", "rsa", str(hostname)], timeout=10)
         output, _ = process.wait_output()
         container.push(
             KNOWN_HOSTS_PATH,
@@ -343,10 +320,7 @@ def pull_config_repo(
             group=WAZUH_GROUP,
             permissions=0o600,
         )
-        process = container.exec(
-            ["rm", "-Rf", REPOSITORY_PATH],
-            timeout=1
-        )
+        process = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1)
         _ = process.wait_output()
         command = ["git", "clone", "--depth", "1"]
         if branch:
@@ -363,8 +337,8 @@ def sync_config_repo(
     container: ops.Container,
     custom_config_repository: typing.Optional[str],
     custom_config_ssh_key: typing.Optional[str],
-) -> None:
-    """Configure git and pull a local copy of the custom config repository
+) -> bool:
+    """Synchronize a local copy of the custom config repository.
 
     Args:
         container: the container to configure git for.
@@ -372,12 +346,15 @@ def sync_config_repo(
         git+ssh://<user>@<url>:<branch|tag>.
         custom_config_ssh_key: the SSH key for the git repository.
 
+    Returns:
+        bool: True if a pull was executed, False if there was nothing to sync
+
     Raises:
         WazuhInstallationError: if an error occurs while configuring git.
     """
     if not custom_config_repository:
         # nothing to do
-        return
+        return False
 
     base_url = ""
     branch = ""
@@ -397,15 +374,13 @@ def sync_config_repo(
         raise WazuhInstallationError
 
     repo = _get_current_repo_url(container)
-    # per docs, url should always be provided in git+ssh:// format
-    is_right_repo: bool = f"git+ssh://{repo}" == base_url
-    is_right_branch: bool = _get_current_repo_branch(container) == branch
+    is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = _get_current_repo_tag(container) == branch
-    already_synced: bool = is_right_repo and (is_right_branch or is_right_tag)
+    already_synced: bool = is_right_repo and is_right_tag
 
     if already_synced:
-        logger.debug("custom_config_repository already up to date")
-        return
+        logger.info("custom_config_repository is already up to date")
+        return False
 
     if custom_config_ssh_key:
         container.push(
@@ -419,15 +394,12 @@ def sync_config_repo(
         )
 
     pull_config_repo(
-        container,
-        hostname=str(url.hostname),
-        base_url=str(base_url),
-        branch=str(branch)
+        container, hostname=str(url.hostname), base_url=str(base_url), branch=str(branch)
     )
-    return
+    return True
 
 
-def pull_configuration_files(container: ops.Container) -> None:
+def sync_wazuh_config_files(container: ops.Container) -> None:
     """Pull configuration files from the repository.
 
     Args:
@@ -436,7 +408,12 @@ def pull_configuration_files(container: ops.Container) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
+    if not REPO_WAZUH_CONF_PATH.exists():
+        logger.info("path '%s' does not exist, no files to patch", REPO_WAZUH_CONF_PATH.as_posix())
+        return
     try:
+        source_dir = f"{REPO_WAZUH_CONF_PATH.as_posix()}/"
+        logger.info("patching files from %s to %s", source_dir, WAZUH_CONF_PATH)
         process = container.exec(
             [
                 "rsync",
@@ -454,8 +431,8 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "--include=etc/shared/**/*.conf",
                 "--include=integrations/***",
                 "--exclude=*",
-                "/root/repository/var/ossec/",
-                "/var/ossec",
+                source_dir,
+                WAZUH_CONF_PATH,
             ],
             timeout=10,
         )
@@ -470,8 +447,8 @@ def pull_configuration_files(container: ops.Container) -> None:
                 "root:wazuh",
                 "--include=ruleset/***",
                 "--exclude=*",
-                "/root/repository/var/ossec/",
-                "/var/ossec",
+                source_dir,
+                WAZUH_CONF_PATH,
             ],
             timeout=10,
         )
@@ -498,11 +475,7 @@ def pull_configuration_files(container: ops.Container) -> None:
         # Adds correct permissions to the /etc/shared/default directory
         # 770 required for the manager to create the merged.mg file
         process = container.exec(
-            [
-                "chmod",
-                "770",
-                "/var/ossec/etc/shared/default",
-            ],
+            ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         )
         process.wait_output()

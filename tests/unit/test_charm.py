@@ -109,12 +109,12 @@ def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
 
 
 # pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
+@patch.object(wazuh, "sync_wazuh_config_files")
 @patch.object(wazuh, "create_readonly_api_user")
 @patch.object(wazuh, "authenticate_user")
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "sync_config_repo", spec=wazuh.sync_config_repo)
-@patch.object(wazuh, "pull_configuration_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
@@ -130,7 +130,6 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
-    pull_configuration_files_mock,
     sync_config_repo_mock,
     state_from_charm_mock,
     *_,
@@ -204,7 +203,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 group="syslog",
             ),
         ],
-        any_order=True
+        any_order=True,
     )
     wazuh_update_configuration_mock.assert_called_with(
         container,
@@ -233,7 +232,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
 @patch.object(wazuh, "pull_config_repo")
-@patch.object(wazuh, "pull_configuration_files")
+@patch.object(wazuh, "sync_wazuh_config_files")
 @patch.object(wazuh, "update_configuration")
 @patch.object(wazuh, "configure_agent_password")
 @patch.object(wazuh, "install_certificates")
@@ -249,7 +248,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_install_certificates_mock,
     wazuh_configure_agent_password_mock,
     wazuh_update_configuration_mock,
-    pull_configuration_files_mock,
+    sync_wazuh_config_files_mock,
     pull_config_repo_mock,
     state_from_charm_mock,
     *_,
@@ -315,13 +314,13 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 group="syslog",
             ),
         ],
-        any_order=True
+        any_order=True,
     )
     configure_filebeat_user_mock.assert_called_with(container, "user1", password)
     set_filesystem_permissions_mock.assert_called_with(container)
     wazuh_configure_agent_password_mock.assert_not_called()
     pull_config_repo_mock.assert_not_called()
-    pull_configuration_files_mock.assert_not_called()
+    sync_wazuh_config_files_mock.assert_not_called()
     wazuh_update_configuration_mock.assert_called_with(
         container,
         ["10.0.0.1"],

@@ -7,6 +7,7 @@
 
 import logging
 import secrets
+import time
 import typing
 
 import ops
@@ -137,7 +138,7 @@ class WazuhServerCharm(CharmBaseWithState):
         return traefik_route_relation_data.get("external_host")
 
     def _reconcile_filebeat(self, container: ops.Container) -> None:
-        """Reconcile the filebeat configuration
+        """Reconcile the filebeat configuration.
 
         Args:
             container: the container to configure Wazuh for.
@@ -154,10 +155,9 @@ class WazuhServerCharm(CharmBaseWithState):
         wazuh.configure_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
         )
-        return
 
     def _reconcile_rsyslog(self, container: ops.Container) -> None:
-        """Reconcile the rsyslog configuration
+        """Reconcile the rsyslog configuration.
 
         Args:
             container: the container to configure Wazuh for.
@@ -177,16 +177,18 @@ class WazuhServerCharm(CharmBaseWithState):
             group=wazuh.SYSLOG_USER,
         )
         wazuh.set_filesystem_permissions(container)
-        return
 
-    def _reconcile_wazuh(self, container: ops.Container) -> None:
+    def _reconcile_wazuh(self, container: ops.Container, sync_config_files: bool) -> None:
         """Reconcile the Wazuh installation.
 
         Args:
             container: the container to configure Wazuh for.
+            sync_config_files: whether local repo files should be synced to Wazuh dir.
         """
         if self.state.agent_password:
             wazuh.configure_agent_password(container=container, password=self.state.agent_password)
+        if sync_config_files:
+            wazuh.sync_wazuh_config_files(container)
         wazuh.update_configuration(
             container,
             self.state.indexer_ips,
@@ -196,7 +198,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self.state.opencti_url,
             self.state.opencti_token,
         )
-        return
 
     # It doesn't make sense to split the logic further
     # Ignoring method too complex error from pflake8
@@ -266,24 +267,27 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the charm configuration is invalid.
         """
+        reconcile_start_time = time.perf_counter()
         container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
             logger.warning(
-                "Unable to connect to container during reconcile. "
-                "Waiting for future events which will trigger another reconcile."
+                (
+                    "Unable to connect to container during reconcile. "
+                    "Waiting for future events which will trigger another reconcile."
+                )
             )
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
         try:
             _ = self.state  # Ensure the state is valid
-            wazuh.sync_config_repo(
+            local_repo_updated: bool = wazuh.sync_config_repo(
                 container,
                 custom_config_repository=self.state.custom_config_repository,
                 custom_config_ssh_key=self.state.custom_config_ssh_key,
             )
             self._reconcile_filebeat(container)
             self._reconcile_rsyslog(container)
-            self._reconcile_wazuh(container)
+            self._reconcile_wazuh(container, local_repo_updated)
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
             self._configure_users()
@@ -306,6 +310,8 @@ class WazuhServerCharm(CharmBaseWithState):
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             raise InvalidStateError from exc
+        elapsed = time.perf_counter() - reconcile_start_time
+        logger.info("reconciled charm in %s seconds", elapsed)
 
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:
