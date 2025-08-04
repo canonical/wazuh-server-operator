@@ -72,12 +72,12 @@ class WazuhServerCharm(CharmBaseWithState):
         """Install event handler."""
         if self.unit.is_leader():
             try:
-                self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
+                _ = self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
             except ops.SecretNotFoundError:
-                logger.debug(
+                logger.info(
                     "Secret with label %s not found. Creating one.", WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
-                self.app.add_secret(
+                _ = self.app.add_secret(
                     {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
 
@@ -267,6 +267,7 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the charm configuration is invalid.
         """
+        logger.debug("Starting reconciliation")
         reconcile_start_time = time.perf_counter()
         container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():

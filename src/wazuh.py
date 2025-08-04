@@ -153,11 +153,11 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
 
     for integration in integrations:
         api_key = integration.find("api_key")
-        if api_key and opencti_token:
+        if api_key is not None and opencti_token is not None:
             api_key.text = opencti_token
 
         hook_url = integration.find("hook_url")
-        if hook_url and opencti_url:
+        if hook_url is not None and opencti_url is not None:
             hook_url.text = f"{opencti_url}/graphql"
 
     content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
@@ -408,12 +408,12 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
-    if not REPO_WAZUH_CONF_PATH.exists():
-        logger.info("path '%s' does not exist, no files to patch", REPO_WAZUH_CONF_PATH.as_posix())
+    source_path: str = f"{REPO_WAZUH_CONF_PATH.as_posix()}/"
+    if not container.exists(source_path):
+        logger.info("path '%s' does not exist, no files to patch", source_path)
         return
     try:
-        source_dir = f"{REPO_WAZUH_CONF_PATH.as_posix()}/"
-        logger.info("patching files from %s to %s", source_dir, WAZUH_CONF_PATH)
+        logger.info("patching files from %s to %s", source_path, WAZUH_CONF_PATH)
         process = container.exec(
             [
                 "rsync",
@@ -431,12 +431,12 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
                 "--include=etc/shared/**/*.conf",
                 "--include=integrations/***",
                 "--exclude=*",
-                source_dir,
+                source_path,
                 WAZUH_CONF_PATH,
             ],
             timeout=10,
         )
-        process.wait_output()
+        _ = process.wait_output()
 
         # Copy patch files in ruleset directory
         process = container.exec(
@@ -447,12 +447,12 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
                 "root:wazuh",
                 "--include=ruleset/***",
                 "--exclude=*",
-                source_dir,
+                source_path,
                 WAZUH_CONF_PATH,
             ],
             timeout=10,
         )
-        process.wait_output()
+        _ = process.wait_output()
 
         # Find all files within the integrations directory and make them executable.
         # This ensures all integration scripts are runnable by the wazuh group.
@@ -470,7 +470,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
             ],
             timeout=10,
         )
-        process.wait_output()
+        _ = process.wait_output()
 
         # Adds correct permissions to the /etc/shared/default directory
         # 770 required for the manager to create the merged.mg file
@@ -478,7 +478,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         )
-        process.wait_output()
+        _ = process.wait_output()
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
 
