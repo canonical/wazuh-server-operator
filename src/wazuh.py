@@ -25,7 +25,7 @@ from lxml import etree  # nosec
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 COLLECTORS_LOG_PATH = Path("/var/log/collectors")
-COLLECTORS_RSYSLOG_LOG_PATH = COLLECTORS_LOG_PATH / "rsyslog"
+RSYSLOG_LOG_DIR = COLLECTORS_LOG_PATH / "rsyslog"
 CONTAINER_NAME = "wazuh-server"
 FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
 FILEBEAT_USER = "root"
@@ -46,7 +46,11 @@ LOGS_PATH = Path("/var/ossec/logs")
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
-REPO_WAZUH_CONF_PATH = Path(REPOSITORY_PATH, "var/ossec")
+REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
+RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
+RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
+REPO_RSYSLOG_CONF_PATH = REPOSITORY_PATH + RSYSLOG_CONF_PATH
+REPO_RSYSLOG_CONF_DIR_PATH = REPOSITORY_PATH + RSYSLOG_CONF_DIR_PATH
 RSA_PATH = "/root/.ssh/id_rsa"
 SYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
 SYSLOG_USER = "syslog"
@@ -83,23 +87,29 @@ class NodeType(Enum):
     MASTER = "master"
 
 
-def _update_filebeat_configuration(container: ops.Container, ip_ports: list[str]) -> None:
+def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
     """Update Filebeat configuration.
 
     Arguments:
         container: the container for which to update the configuration.
-        ip_ports: list of indexer IPs and ports to configure.
+        indexer_endpoints: list of indexer IPs and ports to configure.
+
+    Returns:
+        bool: True if updates were made, False if config was already up to date.
     """
     filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
-    filebeat_config_yaml["output.elasticsearch"]["hosts"] = ip_ports
+    if set(filebeat_config_yaml["output.elasticsearch"]["hosts"]) == set(indexer_endpoints):
+        return False
+    filebeat_config_yaml["output.elasticsearch"]["hosts"] = indexer_endpoints
     container.push(
         FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml, sort_keys=False), encoding="utf-8"
     )
+    return True
 
 
 # Won't sacrify cohesion and readability to make pylint happier
-def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-arguments
+def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
     container: ops.Container,
     ip_ports: list[str],
     master_address: str,
@@ -108,7 +118,7 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
     *,
     opencti_token: str | None = None,
     opencti_url: str | None = None,
-) -> None:
+) -> bool:
     """Update Wazuh configuration.
 
     Arguments:
@@ -120,10 +130,14 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
         opencti_token: OpenCTI API token.
         opencti_url: OpenCTI URL.
 
+    Returns:
+        bool: True if config has changed, False if no updates were made
+
     Raises:
         WazuhConfigurationError: if the configuration is invalid or missing required elements.
     """
-    ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
+    original_bytes: bytes = container.pull(OSSEC_CONF_PATH, encoding=None).read()
+    ossec_config: str = original_bytes.decode("utf-8")
     # Enclose the config file in an element since it might have repeated roots
     ossec_config_tree = etree.fromstring(f"<root>{ossec_config}</root>")
     hosts = ossec_config_tree.xpath("/root/ossec_config/indexer/hosts")
@@ -160,44 +174,65 @@ def _update_wazuh_configuration(  # pylint: disable=too-many-locals, too-many-ar
         if hook_url is not None and opencti_url is not None:
             hook_url.text = f"{opencti_url}/graphql"
 
-    content = b"".join([etree.tostring(element, pretty_print=True) for element in elements])
-    container.push(OSSEC_CONF_PATH, content, encoding="utf-8")
+    new_ossec_conf: bytes = b"".join(
+        [etree.tostring(element, pretty_print=True, encoding="utf-8") for element in elements]
+    )
+    if original_bytes == new_ossec_conf:
+        logger.info("ossec.conf has not changed, nothing to write")
+        return False
+    logger.info("writing new configuration to %s", OSSEC_CONF_PATH)
+    container.push(OSSEC_CONF_PATH, new_ossec_conf, encoding="utf-8")
+    return True
 
 
-def update_configuration(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+def sync_permissions(
     container: ops.Container,
-    indexer_ips: list[str],
-    master_address: str,
-    unit_name: str,
-    cluster_key: str,
-    opencti_url: str | None = None,
-    opencti_token: str | None = None,
-) -> None:
-    """Update the workload configuration.
+    path: str,
+    permissions: int,
+    user: str | None = None,
+    group: str | None = None,
+) -> bool:
+    """Sync permissions on an arbitrary filepath.
 
     Arguments:
         container: the container for which to update the configuration.
-        indexer_ips: list of indexer IPs to configure.
-        master_address: the master unit addresses.
-        unit_name: the unit's name.
-        cluster_key: the Wazuh key for the cluster nodes.
-        opencti_url: the URL used for OpenCTI APIs.
-        opencti_token: OpenCTI API token.
+        path: the path on which to sync permissions.
+        permissions: the integer-formatted Linux file permissions to set, i.e. 0o400.
+        user: (optional) the file owner's username.
+        group: (optional) the file owner's groupname.
+
+    Returns:
+        bool: True if a change was made, False if permissions were up to date
     """
-    ip_ports = [f"{ip}" for ip in indexer_ips]
-    _update_filebeat_configuration(container, ip_ports)
-    _update_wazuh_configuration(
-        container,
-        ip_ports,
-        master_address,
-        unit_name,
-        cluster_key,
-        opencti_token=opencti_token,
-        opencti_url=opencti_url,
-    )
+    made_changes = False
+    if not container.exists(path):
+        logger.warning("cannot sync permissions on '%s', path does not exist", path)
+        return made_changes
+
+    stdout, _ = container.exec(["stat", "-c", "'%a'", path]).wait_output()
+    current_permissions = int(stdout, 8)
+    if current_permissions != permissions:
+        made_changes = True
+        process = container.exec(["chmod", f"{permissions:o}", path])
+        _ = process.wait_output()
+
+    needs_chown = False
+    if user is not None:
+        current_user, _ = container.exec(["stat", "-c", "'%U'", path]).wait_output()
+        needs_chown = needs_chown or (current_user != user)
+    if group is not None:
+        current_group, _ = container.exec(["stat", "-c", "'%G'", path]).wait_output()
+        needs_chown = needs_chown or (current_group != group)
+    if needs_chown:
+        user_string = user if user is not None else ""
+        group_string = f":{group}" if group is not None else ""
+        _ = container.exec(["chown", f"{user_string}{group_string}", path]).wait_output()
+        made_changes = True
+
+    return made_changes
 
 
-def install_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     container: ops.Container,
     path: Path,
     public_key: str,
@@ -205,7 +240,7 @@ def install_certificates(  # pylint: disable=too-many-arguments,too-many-positio
     root_ca: str,
     user: str,
     group: str,
-) -> None:
+) -> bool:
     """Update TLS certificates.
 
     Arguments:
@@ -216,35 +251,50 @@ def install_certificates(  # pylint: disable=too-many-arguments,too-many-positio
         root_ca: the certifciate's CA public key.
         user: the usesr owning the files.
         group: the group owning the files.
+
+    Returns:
+        bool: True if a change was made, False if certs were already installed
     """
-    container.push(
-        path / "certificate.pem",
-        public_key,
-        make_dirs=True,
-        permissions=0o400,
-        user=user,
-        group=group,
+    pairs = (
+        ("certificate.pem", public_key),
+        ("certificate.key", private_key),
+        ("root-ca.pem", root_ca),
     )
-    container.push(
-        path / "certificate.key",
-        private_key,
-        make_dirs=True,
-        permissions=0o400,
-        user=user,
-        group=group,
-    )
-    container.push(
-        path / "root-ca.pem", root_ca, make_dirs=True, permissions=0o400, user=user, group=group
-    )
+    made_change = False
+    for filename, source in pairs:
+        filepath = path / filename
+        current_content = ""
+        if container.exists(filepath):
+            current_content = container.pull(filepath, encoding="utf-8").read()
+        if current_content != source:
+            made_change = True
+            container.push(
+                filepath, source, make_dirs=True, permissions=0o400, user=user, group=group
+            )
+        else:
+            made_change = made_change or sync_permissions(container, filepath.as_posix(), 0o400)
+    if made_change:
+        logger.info("installed certificates to %s", path)
+    return made_change
 
 
-def configure_agent_password(container: ops.Container, password: str) -> None:
+def sync_agent_password(container: ops.Container, password: str) -> bool:
     """Configure the agent password.
 
     Arguments:
         container: the container for which to update the password.
         password: the password for authenticating the agents.
+
+    Returns:
+        bool: True if password was updated, False if already synced
     """
+    current_value = ""
+    if container.exists(AGENT_PASSWORD_PATH):
+        current_value = container.pull(AGENT_PASSWORD_PATH, encoding="utf-8").read()
+    if current_value == password:
+        logger.info("agent password already up-to-date")
+        return False
+    logger.info("updating agent password")
     container.push(
         AGENT_PASSWORD_PATH,
         password,
@@ -253,6 +303,7 @@ def configure_agent_password(container: ops.Container, password: str) -> None:
         make_dirs=True,
         permissions=0o640,
     )
+    return True
 
 
 def _get_current_repo_url(container: ops.Container) -> str:
@@ -400,7 +451,7 @@ def sync_config_repo(
 
 
 def sync_wazuh_config_files(container: ops.Container) -> None:
-    """Pull configuration files from the repository.
+    """Sync Wazuh configuration files from the local config repository.
 
     Args:
         container: the container to pull the files into.
@@ -408,13 +459,13 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
-    source_path: str = f"{REPO_WAZUH_CONF_PATH.as_posix()}/"
+    source_path = REPO_WAZUH_CONF_PATH
     if not container.exists(source_path):
         logger.info("path '%s' does not exist, no files to patch", source_path)
         return
     try:
         logger.info("patching files from %s to %s", source_path, WAZUH_CONF_PATH)
-        process = container.exec(
+        _ = container.exec(
             [
                 "rsync",
                 "-a",
@@ -435,11 +486,10 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
                 WAZUH_CONF_PATH,
             ],
             timeout=10,
-        )
-        _ = process.wait_output()
+        ).wait_output()
 
         # Copy patch files in ruleset directory
-        process = container.exec(
+        _ = container.exec(
             [
                 "rsync",
                 "-a",
@@ -451,12 +501,11 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
                 WAZUH_CONF_PATH,
             ],
             timeout=10,
-        )
-        _ = process.wait_output()
+        ).wait_output()
 
         # Find all files within the integrations directory and make them executable.
         # This ensures all integration scripts are runnable by the wazuh group.
-        process = container.exec(
+        _ = container.exec(
             [
                 "find",
                 "/var/ossec/integrations",
@@ -469,8 +518,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
                 "+",
             ],
             timeout=10,
-        )
-        _ = process.wait_output()
+        ).wait_output()
 
         # Adds correct permissions to the /etc/shared/default directory
         # 770 required for the manager to create the merged.mg file
@@ -483,36 +531,62 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
         raise WazuhInstallationError from ex
 
 
-def set_filesystem_permissions(container: ops.Container) -> None:
-    """Configure the filesystem permissions.
+def sync_rsyslog_config_files(container: ops.Container) -> None:
+    """Sync rsyslog configuration files from the local config repository.
+
+    Args:
+        container: the container to pull the files into.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while pulling the files.
+    """
+    pairs = (
+        (REPO_RSYSLOG_CONF_PATH, RSYSLOG_CONF_PATH),
+        (REPO_RSYSLOG_CONF_DIR_PATH, RSYSLOG_CONF_DIR_PATH),
+    )
+    for source, dest in pairs:
+        if not container.exists(source):
+            logger.info("path '%s' does not exist, no files to patch", source)
+            continue
+        try:
+            logger.info("patching files from %s to %s", source, dest)
+            if container.isdir(source) and source[-1] != "/":
+                source += "/"
+            # default ownership (root:root) and perms (f: 644 / d: 755) should be sufficient
+            _ = container.exec(["rsync", "-a", source, dest], timeout=10).wait_output()
+        except ops.pebble.ExecError as ex:
+            raise WazuhInstallationError from ex
+
+
+def ensure_rsyslog_output_dir(container: ops.Container) -> bool:
+    """Configure the filesystem to enable writing received rsyslog data to disk.
 
     Args:
         container: the container to configure the user for.
 
-    Raises:
-        WazuhInstallationError: if an error occurs while setting the permissions.
+    Returns:
+        bool: True if changes were made, False if no changes were necessary.
     """
-    try:
-        process = container.exec(
-            ["mkdir", "-p", str(COLLECTORS_RSYSLOG_LOG_PATH)],
-            timeout=1,
+    made_changes = False
+    permissions = 0o750
+    user = "syslog"
+    group = "wazuh"
+    if not container.isdir(RSYSLOG_LOG_DIR):
+        made_changes = True
+        container.make_dir(
+            path=RSYSLOG_LOG_DIR,
+            make_parents=True,
+            permissions=permissions,
+            user=user,
+            group=group,
         )
-        process.wait_output()
-        process = container.exec(
-            ["chmod", "o-rx", str(COLLECTORS_RSYSLOG_LOG_PATH)],
-            timeout=1,
-        )
-        process.wait_output()
-        process = container.exec(
-            ["chown", "syslog:wazuh", str(COLLECTORS_RSYSLOG_LOG_PATH)],
-            timeout=1,
-        )
-        process.wait_output()
-    except ops.pebble.ExecError as ex:
-        raise WazuhInstallationError from ex
+    made_changes = made_changes or sync_permissions(
+        container, RSYSLOG_LOG_DIR.as_posix(), permissions, user, group
+    )
+    return made_changes
 
 
-def configure_filebeat_user(container: ops.Container, username: str, password: str) -> None:
+def sync_filebeat_user(container: ops.Container, username: str, password: str) -> bool:
     """Configure the filebeat user.
 
     Args:
@@ -520,22 +594,33 @@ def configure_filebeat_user(container: ops.Container, username: str, password: s
         username: the username.
         password: the password.
 
+    Returns:
+        bool: True if updates were made, False if user is already configured.
+
     Raises:
         WazuhInstallationError: if an error occurs while configuring the user.
     """
+    try:
+        process = container.exec(["filebeat", "test", "output"], timeout=5)
+        _ = process.wait_output()
+        return False
+    except ops.pebble.ExecError:
+        # current user is not authorized, proceed to configure user
+        pass
     try:
         process = container.exec(
             FILEBEAT_CMD + ["keystore", "add", "username", "--stdin", "--force"],
             stdin=username,
             timeout=1,
         )
-        process.wait_output()
+        _ = process.wait_output()
         process = container.exec(
             FILEBEAT_CMD + ["keystore", "add", "password", "--stdin", "--force"],
             stdin=password,
             timeout=1,
         )
-        process.wait_output()
+        _ = process.wait_output()
+        return True
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
 

@@ -31,7 +31,7 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     act: save the master node configuration with a set of indexer IPs for multiple units.
     assert: the IPs have been persisted in the corresponding files.
     """
-    indexer_ips = ["10.0.0.2:9200", "10.0.0.3:9200"]
+    indexer_endpoints = ["10.0.0.2:9200", "10.0.0.3:9200"]
     master_ip = "10.1.0.2"
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
@@ -46,19 +46,20 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     key = secrets.token_hex(32)
-    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/0", key)
+    wazuh.sync_filebeat_config(container, indexer_endpoints)
+    wazuh.sync_ossec_conf(container, indexer_endpoints, master_ip, "wazuh-server/0", key)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
     assert "output.elasticsearch" in filebeat_config_yaml
     assert "hosts" in filebeat_config_yaml["output.elasticsearch"]
-    assert filebeat_config_yaml["output.elasticsearch"]["hosts"] == indexer_ips
+    assert filebeat_config_yaml["output.elasticsearch"]["hosts"] == indexer_endpoints
     ossec_config = container.pull(wazuh.OSSEC_CONF_PATH, encoding="utf-8").read()
     tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
     hosts = tree.xpath("/root/ossec_config/indexer/hosts//host")
-    assert len(hosts) == len(indexer_ips)
+    assert len(hosts) == len(indexer_endpoints)
     for idx, host in enumerate(hosts):
-        assert host.text == f"https://{indexer_ips[idx]}"
+        assert host.text == f"https://{indexer_endpoints[idx]}"
     assert "wazuh-server-0" == tree.xpath("/root/ossec_config/cluster/node_name")[0].text
     assert "master" == tree.xpath("/root/ossec_config/cluster/node_type")[0].text
     address = tree.xpath("/root/ossec_config/cluster/nodes/node")[0]
@@ -71,7 +72,7 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     act: save the master node configuration with a set of indexer IPs for multiple units.
     assert: the IPs have been persisted in the corresponding files.
     """
-    indexer_ips = ["10.0.0.2:9200", "10.0.0.3:9200"]
+    indexer_endpoints = ["10.0.0.2:9200", "10.0.0.3:9200"]
     master_ip = "10.1.0.2"
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
@@ -86,19 +87,20 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
     key = secrets.token_hex(32)
-    wazuh.update_configuration(container, indexer_ips, master_ip, "wazuh-server/1", key)
+    wazuh.sync_filebeat_config(container, indexer_endpoints)
+    wazuh.sync_ossec_conf(container, indexer_endpoints, master_ip, "wazuh-server/1", key)
 
     filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
     assert "output.elasticsearch" in filebeat_config_yaml
     assert "hosts" in filebeat_config_yaml["output.elasticsearch"]
-    assert filebeat_config_yaml["output.elasticsearch"]["hosts"] == indexer_ips
+    assert filebeat_config_yaml["output.elasticsearch"]["hosts"] == indexer_endpoints
     ossec_config = container.pull(wazuh.OSSEC_CONF_PATH, encoding="utf-8").read()
     tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
     hosts = tree.xpath("/root/ossec_config/indexer/hosts//host")
-    assert len(hosts) == len(indexer_ips)
+    assert len(hosts) == len(indexer_endpoints)
     for idx, host in enumerate(hosts):
-        assert host.text == f"https://{indexer_ips[idx]}"
+        assert host.text == f"https://{indexer_endpoints[idx]}"
     assert "wazuh-server-1" == tree.xpath("/root/ossec_config/cluster/node_name")[0].text
     assert "worker" == tree.xpath("/root/ossec_config/cluster/node_type")[0].text
     address = tree.xpath("/root/ossec_config/cluster/nodes/node")[0]
@@ -114,7 +116,7 @@ def test_install_certificates() -> None:
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    wazuh.install_certificates(
+    wazuh.sync_certificates(
         container,
         path=wazuh.FILEBEAT_CERTIFICATES_PATH,
         private_key="private_key",
@@ -154,7 +156,7 @@ def test_configure_agent_password() -> None:
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     password = secrets.token_hex()
-    wazuh.configure_agent_password(container, password=password)
+    wazuh.sync_agent_password(container, password=password)
 
     assert password == container.pull(wazuh.AGENT_PASSWORD_PATH, encoding="utf-8").read()
 
