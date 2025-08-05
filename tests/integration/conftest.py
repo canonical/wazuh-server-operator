@@ -25,7 +25,10 @@ MACHINE_MODEL_CONFIG = {
     "logging-config": "<root>=INFO;unit=DEBUG",
     "update-status-hook-interval": "5m",
 }
-WAZUH_CHANNEL = "4.11/edge"
+WAZUH_DASHBOARD_CHANNEL = "4.11/edge"
+WAZUH_DASHBOARD_REVISION = 17
+WAZUH_INDEXER_CHANNEL = "4.11/edge"
+WAZUH_INDEXER_REVISION = 9
 
 
 @pytest_asyncio.fixture(scope="module", name="model")
@@ -138,7 +141,8 @@ async def opensearch_provider_fixture(
     application = await machine_model.deploy(
         app_name,
         application_name=app_name,
-        channel=WAZUH_CHANNEL,
+        channel=WAZUH_INDEXER_CHANNEL,
+        revision=WAZUH_INDEXER_REVISION,
         num_units=num_units,
         config={"profile": "testing"},
     )
@@ -173,7 +177,11 @@ async def wazuh_dashboard_fixture(
 
     num_units = 1
     application = await machine_model.deploy(
-        app_name, application_name=app_name, channel=WAZUH_CHANNEL, num_units=num_units
+        app_name,
+        application_name=app_name,
+        channel=WAZUH_DASHBOARD_CHANNEL,
+        revision=WAZUH_DASHBOARD_REVISION,
+        num_units=num_units,
     )
     await machine_model.integrate(self_signed_certificates.name, application.name)
     await machine_model.integrate(opensearch_provider.name, application.name)
