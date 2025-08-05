@@ -151,7 +151,7 @@ resource "juju_integration" "wazuh_server_certificates" {
 }
 
 module "wazuh_indexer" {
-  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev10&depth=1"
+  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev9&depth=1"
 
   model = data.juju_model.wazuh_indexer.name
 
@@ -289,7 +289,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev15&depth=1"
+  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev17&depth=1"
 
   model = data.juju_model.wazuh_dashboard.name
 
