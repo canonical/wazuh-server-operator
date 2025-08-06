@@ -101,8 +101,8 @@ def _fetch_filebeat_configuration(
         raise IncompleteStateError("Indexer secret ID not yet in relation.")
     try:
         filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
-    except ops.SecretNotFoundError as exc:
-        raise InvalidStateError("Indexer secret content not found.") from exc
+    except (ops.SecretNotFoundError, ops.model.ModelError) as exc:
+        raise InvalidStateError("Indexer secret content not found or permission denied.") from exc
     filebeat_username = filebeat_secret_content.get("username", "")
     filebeat_password = filebeat_secret_content.get("password", "")
     endpoint_data = indexer_relation_data.get("endpoints")

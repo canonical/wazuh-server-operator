@@ -136,8 +136,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
     Raises:
         WazuhConfigurationError: if the configuration is invalid or missing required elements.
     """
-    original_bytes: bytes = container.pull(OSSEC_CONF_PATH, encoding=None).read()
-    ossec_config: str = original_bytes.decode("utf-8")
+    ossec_config = container.pull(OSSEC_CONF_PATH, encoding="utf-8").read()
     # Enclose the config file in an element since it might have repeated roots
     ossec_config_tree = etree.fromstring(f"<root>{ossec_config}</root>")
     hosts = ossec_config_tree.xpath("/root/ossec_config/indexer/hosts")
@@ -174,14 +173,17 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
         if hook_url is not None and opencti_url is not None:
             hook_url.text = f"{opencti_url}/graphql"
 
-    new_ossec_conf: bytes = b"".join(
+    new_conf_bytes: bytes = b"".join(
         [etree.tostring(element, pretty_print=True, encoding="utf-8") for element in elements]
     )
-    if original_bytes == new_ossec_conf:
+    conf_string = new_conf_bytes.decode("utf-8")
+    # remove blank lines
+    new_conf = "\n".join([line for line in conf_string.splitlines() if line != ""])
+    if ossec_config == new_conf:
         logger.info("ossec.conf has not changed, nothing to write")
         return False
     logger.info("writing new configuration to %s", OSSEC_CONF_PATH)
-    container.push(OSSEC_CONF_PATH, new_ossec_conf, encoding="utf-8")
+    container.push(OSSEC_CONF_PATH, new_conf, encoding="utf-8")
     return True
 
 
@@ -209,20 +211,20 @@ def sync_permissions(
         logger.warning("cannot sync permissions on '%s', path does not exist", path)
         return made_changes
 
-    stdout, _ = container.exec(["stat", "-c", "'%a'", path]).wait_output()
-    current_permissions = int(stdout, 8)
+    # output has format "'644'\n"
+    stdout: str = container.exec(["stat", "-c", "'%a'", path]).wait_output()[0].strip()
+    current_permissions = int(stdout.replace("'", ""), 8)
     if current_permissions != permissions:
         made_changes = True
-        process = container.exec(["chmod", f"{permissions:o}", path])
-        _ = process.wait_output()
+        _ = container.exec(["chmod", f"{permissions:o}", path]).wait_output()
 
-    needs_chown = False
+    needs_chown: bool = False
     if user is not None:
-        current_user, _ = container.exec(["stat", "-c", "'%U'", path]).wait_output()
-        needs_chown = needs_chown or (current_user != user)
+        current_user: str = container.exec(["stat", "-c", "'%U'", path]).wait_output()[0].strip()
+        needs_chown = needs_chown or (current_user.replace("'", "") != user)
     if group is not None:
-        current_group, _ = container.exec(["stat", "-c", "'%G'", path]).wait_output()
-        needs_chown = needs_chown or (current_group != group)
+        current_group: str = container.exec(["stat", "-c", "'%G'", path]).wait_output()[0].strip()
+        needs_chown = needs_chown or (current_group.replace("'", "") != group)
     if needs_chown:
         user_string = user if user is not None else ""
         group_string = f":{group}" if group is not None else ""
@@ -292,7 +294,7 @@ def sync_agent_password(container: ops.Container, password: str) -> bool:
     if container.exists(AGENT_PASSWORD_PATH):
         current_value = container.pull(AGENT_PASSWORD_PATH, encoding="utf-8").read()
     if current_value == password:
-        logger.info("agent password already up-to-date")
+        logger.info("agent password already up to date")
         return False
     logger.info("updating agent password")
     container.push(
@@ -371,14 +373,12 @@ def pull_config_repo(container: ops.Container, hostname: str, base_url: str, bra
             group=WAZUH_GROUP,
             permissions=0o600,
         )
-        process = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1)
-        _ = process.wait_output()
+        _ = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1).wait_output()
         command = ["git", "clone", "--depth", "1"]
         if branch:
             command = command + ["--branch", branch]
         command = command + [base_url, REPOSITORY_PATH]
-        process = container.exec(command, timeout=60)
-        _ = process.wait_output()
+        _ = container.exec(command, timeout=60).wait_output()
     except ops.pebble.ExecError as ex:
         logger.error("git clone of custom_config_repository failed")
         raise WazuhInstallationError from ex
@@ -522,11 +522,10 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
 
         # Adds correct permissions to the /etc/shared/default directory
         # 770 required for the manager to create the merged.mg file
-        process = container.exec(
+        _ = container.exec(
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
-        )
-        _ = process.wait_output()
+        ).wait_output()
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
 
@@ -601,25 +600,23 @@ def sync_filebeat_user(container: ops.Container, username: str, password: str) -
         WazuhInstallationError: if an error occurs while configuring the user.
     """
     try:
-        process = container.exec(["filebeat", "test", "output"], timeout=5)
-        _ = process.wait_output()
+        _ = container.exec(["filebeat", "test", "output"], timeout=5).wait_output()
+        # configured credentials are correct
         return False
     except ops.pebble.ExecError:
         # current user is not authorized, proceed to configure user
         pass
     try:
-        process = container.exec(
+        _ = container.exec(
             FILEBEAT_CMD + ["keystore", "add", "username", "--stdin", "--force"],
             stdin=username,
             timeout=1,
-        )
-        _ = process.wait_output()
-        process = container.exec(
+        ).wait_output()
+        _ = container.exec(
             FILEBEAT_CMD + ["keystore", "add", "password", "--stdin", "--force"],
             stdin=password,
             timeout=1,
-        )
-        _ = process.wait_output()
+        ).wait_output()
         return True
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
@@ -639,7 +636,6 @@ def _generate_cluster_snippet(
     Returns: the content for the cluster node for the Wazuh configuration.
     """
     return f"""
-
         <cluster>
             <name>wazuh</name>
             <node_name>{node_name}</node_name>
@@ -653,7 +649,6 @@ def _generate_cluster_snippet(
             <hidden>no</hidden>
             <disabled>no</disabled>
         </cluster>
-
     """
 
 
