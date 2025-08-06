@@ -296,7 +296,7 @@ def test_sync_config_repo_when_branch_up_to_date(
     harness.handle_exec(
         "wazuh-server",
         ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
-        result="git@github.com:dummy/url.git",
+        result="git+ssh://git@github.com/fake_repo/url.git",
     )
     harness.handle_exec(
         "wazuh-server",
@@ -312,7 +312,7 @@ def test_sync_config_repo_when_branch_up_to_date(
     container = harness.charm.unit.get_container("wazuh-server")
     _ = wazuh.sync_config_repo(
         container,
-        custom_config_repository="git+ssh://git@github.com:dummy/url.git@main",
+        custom_config_repository="git+ssh://git@github.com/fake_repo/url.git@main",
         custom_config_ssh_key=None,
     )
     assert wazuh_pull_config_repo_mock.called
@@ -331,7 +331,7 @@ def test_sync_config_repo_when_tag_up_to_date(
     harness.handle_exec(
         "wazuh-server",
         ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
-        result="git@github.com:dummy/url.git",
+        result="git+ssh://git@github.com/fake_repo/url.git",
     )
     # if repo was checked out with --depth 1 --branch <tag>
     harness.handle_exec(
@@ -348,7 +348,7 @@ def test_sync_config_repo_when_tag_up_to_date(
     container = harness.charm.unit.get_container("wazuh-server")
     _ = wazuh.sync_config_repo(
         container,
-        custom_config_repository="git+ssh://git@github.com:dummy/url.git@v5",
+        custom_config_repository="git+ssh://git@github.com/fake_repo/url.git@v5",
         custom_config_ssh_key=None,
     )
     assert not wazuh_pull_config_repo_mock.called
