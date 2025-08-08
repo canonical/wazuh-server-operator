@@ -11,6 +11,7 @@ from unittest.mock import ANY, MagicMock, call, patch
 import ops
 import pytest
 from ops.testing import Harness
+from pydantic import AnyUrl
 
 import wazuh
 from certificates_observer import CertificatesObserver
@@ -148,7 +149,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         "prometheus": secrets.token_hex(),
     }
     wazuh_config = WazuhConfig(
-        custom_config_repository=custom_config_repository,
+        custom_config_repository=AnyUrl(custom_config_repository),
         custom_config_ssh_key=secret_id,
         logs_ca_cert="logs_ca",
     )
@@ -218,7 +219,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     ensure_rsyslog_output_dir_mock.assert_called_with(container)
     wazuh_sync_agent_password_mock.assert_called_with(container=container, password=agent_password)
     sync_config_repo_mock.assert_called_with(
-        container, str(wazuh_config.custom_config_repository), "somekey"
+        container, wazuh_config.custom_config_repository, "somekey"
     )
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name

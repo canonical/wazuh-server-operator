@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 import charms.tls_certificates_interface.v3.tls_certificates as certificates
 import ops
-from pydantic import AnyHttpUrl, BaseModel, Field, ValidationError, parse_obj_as
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, parse_obj_as
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     agent_password: str | None = None
-    custom_config_repository: str | None = None
+    custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
     logs_ca_cert: str
 
@@ -284,7 +284,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     filebeat_password: str = Field(..., min_length=1)
     certificate: str = Field(..., min_length=1)
     root_ca: str = Field(..., min_length=1)
-    custom_config_repository: str | None = None
+    custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
     logs_ca_cert: str | None = None
     opencti_url: str | None = None

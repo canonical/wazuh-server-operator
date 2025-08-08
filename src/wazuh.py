@@ -22,6 +22,7 @@ import yaml
 # Bandit classifies this import as vulnerable. For more details, see
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
+from pydantic import AnyUrl
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 COLLECTORS_LOG_PATH = Path("/var/log/collectors")
@@ -386,7 +387,7 @@ def pull_config_repo(container: ops.Container, hostname: str, base_url: str, bra
 
 def sync_config_repo(
     container: ops.Container,
-    custom_config_repository: typing.Optional[str],
+    custom_config_repository: typing.Optional[AnyUrl],
     custom_config_ssh_key: typing.Optional[str],
 ) -> bool:
     """Synchronize a local copy of the custom config repository.
@@ -403,15 +404,17 @@ def sync_config_repo(
     Raises:
         WazuhInstallationError: if an error occurs while configuring git.
     """
-    if not custom_config_repository:
+    if custom_config_repository is None:
         # nothing to do
         return False
+
+    repo_url = str(custom_config_repository)
 
     base_url = ""
     branch = ""
 
     try:
-        url = urlsplit(custom_config_repository)
+        url = urlsplit(repo_url)
         path_parts = url.path.split("@")
         # 'branch' could be either a branch name or tag name
         branch = path_parts[1] if len(path_parts) > 1 else ""

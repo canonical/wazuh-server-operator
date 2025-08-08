@@ -310,12 +310,7 @@ class WazuhServerCharm(CharmBaseWithState):
         reconcile_start_time = time.perf_counter()
         container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
-            logger.warning(
-                (
-                    "Unable to connect to container during reconcile. "
-                    "Waiting for future events which will trigger another reconcile."
-                )
-            )
+            logger.warning("Cannot connect to container during reconcile. Waiting for new events.")
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
         try:
