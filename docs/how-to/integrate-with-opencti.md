@@ -1,4 +1,6 @@
-# Integrate with OpenCTI
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+# How to integrate with OpenCTI
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 Wazuh allows integration with [OpenCTI](https://charmhub.io/opencti) through the [`opencti-connector` interface](https://charmhub.io/opencti/integrations#opencti-connector). This enables you to create [custom integration scripts](https://documentation.wazuh.com/current/user-manual/manager/integration-with-external-apis.html#custom-integration) that query OpenCTI from Wazuh. 
 
@@ -12,7 +14,9 @@ Wazuh allows integration with [OpenCTI](https://charmhub.io/opencti) through the
 - An existing `wazuh-server` deployment. Refer to the [Wazuh tutorial](https://charmhub.io/wazuh-server/docs/tutorial-getting-started) on how to deploy Wazuh.
 - An existing `opencti` deployment. Refer to the [OpenCTI tutorial](https://charmhub.io/opencti/docs/tutorial-getting-started) on the deployment steps.
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 ## Integrate OpenCTI with Wazuh
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 Create an offer from OpenCTI:
 

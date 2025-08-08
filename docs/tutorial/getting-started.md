@@ -22,9 +22,9 @@ The [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/ho
 VM IP in steps that assume you're running locally. To get the IP address of the
 Multipass instance run ```multipass info my-juju-vm```.
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 ## Set up Canonical Kubernetes
-
-### Install Canonical Kubernetes
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 Install, bootstrap, and check the status of Canonical Kubernetes:
 
@@ -111,7 +111,7 @@ wazuh-server           active      1  wazuh-server              latest/edge     
 
 The deployment is complete when the status is `Active`.
 
-## Clean up the Environment
+## Clean up the environment
 
 Well done! You've successfully completed the Wazuh Server tutorial. To remove the
 model environment you created during this tutorial, use the following command.

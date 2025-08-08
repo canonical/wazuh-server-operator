@@ -48,7 +48,9 @@ newgrp lxd
 lxd init --auto
 ```
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 ### Install Canonical Kubernetes
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 ```bash
 snap install k8s --classic
@@ -115,7 +117,9 @@ juju bootstrap k8s
 bash -xe ~/wazuh-server-operator/tests/integration/pre_run_script.sh
 ```
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 ### (Optional) Install rock dependencies
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 If you anticipate changing the rock container image, follow these additional
 steps:
@@ -167,7 +171,9 @@ cd ~/wazuh-server-operator
 charmcraft pack
 ```
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 #### (Optional) Build the rock
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 If you have not made any changes to the rock, you do not need to rebuild it.
 

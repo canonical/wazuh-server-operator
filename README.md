@@ -3,7 +3,9 @@
 [![Promote charm](https://github.com/canonical/wazuh-server-operator/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/wazuh-server-operator/actions/workflows/promote_charm.yaml)
 [![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
 
-# Wazuh Server Operator
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+# Wazuh Server operator
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 A Juju charm deploying and managing Wazuh Server on Kubernetes. Wazuh is an
 open-source XDR and SIEM tool to protect endpoints and cloud workloads. It allows for deployment 

@@ -17,7 +17,7 @@ This shows there are 2 containers:
 
 1. A [Wazuh server](https://wazuh.com/) container, which
 has Wazuh server installed and configured alongside several collectors and
-[filebeat](https://www.elastic.co/beats/filebeat) to ingest and export logs.
+[Filebeat](https://www.elastic.co/beats/filebeat) to ingest and export logs.
 2. A sidecar containing Pebble: a lightweight, API-driven process supervisor that is responsible for
 configuring processes to run in the workload container and controlling those processes
 throughout the workload lifecycle.

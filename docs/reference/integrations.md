@@ -1,6 +1,6 @@
 # Integrations
 
-### ingress
+### `ingress`
 
 _Interface_: traefik_route  
 _Supported charms_: [Traefik Ingress Operator](https://charmhub.io/traefik-k8s)
@@ -12,7 +12,7 @@ Example ingress integrate command:
 juju integrate wazuh-server traefik-k8s
 ```
 
-### logging
+### `logging`
 
 _Interface_: loki_push_api    
 _Supported charms_: [loki-k8s](https://charmhub.io/loki-k8s)
@@ -26,7 +26,7 @@ Example loki_push_api integrate command:
 juju integrate wazuh-server loki-k8s
 ```
 
-### metrics-endpoint
+### `metrics-endpoint`
 
 _Interface_: [prometheus_scrape](https://charmhub.io/interfaces/prometheus_scrape-v0)
 
@@ -41,7 +41,7 @@ Example metrics-endpoint integrate command:
 juju integrate wazuh-server prometheus-k8s
 ```
 
-### opensearch-client
+### `opensearch-client`
 
 _Interface_: opensearch_client  
 _Supported charms_: [OpenSearch](https://charmhub.io/opensearch), [Wazuh Indexer](https://charmhub.io/wazuh-indexer)
