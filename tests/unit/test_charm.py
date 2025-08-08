@@ -11,6 +11,7 @@ from unittest.mock import ANY, MagicMock, call, patch
 import ops
 import pytest
 from ops.testing import Harness
+from pydantic import AnyUrl
 
 import wazuh
 from certificates_observer import CertificatesObserver
@@ -80,6 +81,9 @@ def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
     assert harness.model.unit.status.name == ops.WaitingStatus().name
 
 
+@patch.object(wazuh, "sync_config_repo")
+@patch.object(WazuhServerCharm, "_reconcile_filebeat")
+@patch.object(WazuhServerCharm, "_reconcile_wazuh")
 @patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
@@ -106,29 +110,29 @@ def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
 
 
 # pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
+@patch.object(wazuh, "sync_filebeat_config")
+@patch.object(wazuh, "sync_wazuh_config_files")
 @patch.object(wazuh, "create_readonly_api_user")
 @patch.object(wazuh, "authenticate_user")
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
-@patch.object(wazuh, "configure_git")
-@patch.object(wazuh, "pull_configuration_files")
-@patch.object(wazuh, "update_configuration")
-@patch.object(wazuh, "configure_agent_password")
-@patch.object(wazuh, "install_certificates")
-@patch.object(wazuh, "configure_filebeat_user")
-@patch.object(wazuh, "set_filesystem_permissions")
+@patch.object(wazuh, "sync_config_repo", spec=wazuh.sync_config_repo)
+@patch.object(wazuh, "sync_ossec_conf")
+@patch.object(wazuh, "sync_agent_password")
+@patch.object(wazuh, "sync_certificates")
+@patch.object(wazuh, "sync_filebeat_user")
+@patch.object(wazuh, "ensure_rsyslog_output_dir")
 @patch.object(wazuh, "get_version")
 @patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
     filebeat_csr_mock,
     get_version_mock,
-    set_filesystem_permissions_mock,
-    configure_filebeat_user_mock,
-    wazuh_install_certificates_mock,
-    wazuh_configure_agent_password_mock,
-    wazuh_update_configuration_mock,
-    pull_configuration_files_mock,
-    configure_git_mock,
+    ensure_rsyslog_output_dir_mock,
+    sync_filebeat_user_mock,
+    wazuh_sync_certificates_mock,
+    wazuh_sync_agent_password_mock,
+    wazuh_sync_ossec_conf_mock,
+    sync_config_repo_mock,
     state_from_charm_mock,
     *_,
 ):
@@ -145,8 +149,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         "prometheus": secrets.token_hex(),
     }
     wazuh_config = WazuhConfig(
-        api_credentials=api_credentials,
-        custom_config_repository=custom_config_repository,
+        custom_config_repository=AnyUrl(custom_config_repository),
         custom_config_ssh_key=secret_id,
         logs_ca_cert="logs_ca",
     )
@@ -161,7 +164,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         cluster_key=cluster_key,
         certificate="certificate",
         root_ca="root_ca",
-        indexer_ips=["10.0.0.1"],
+        indexer_endpoints=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
         wazuh_config=wazuh_config,
@@ -180,7 +183,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 
     harness.charm.reconcile(None)
 
-    wazuh_install_certificates_mock.assert_has_calls(
+    wazuh_sync_certificates_mock.assert_has_calls(
         [
             call(
                 container=container,
@@ -200,54 +203,53 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
                 user="syslog",
                 group="syslog",
             ),
-        ]
+        ],
+        any_order=True,
     )
-    wazuh_update_configuration_mock.assert_called_with(
+    wazuh_sync_ossec_conf_mock.assert_called_with(
         container,
         ["10.0.0.1"],
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
-        opencti_url,
-        opencti_token,
+        opencti_url=opencti_url,
+        opencti_token=opencti_token,
     )
-    configure_filebeat_user_mock.assert_called_with(container, "user1", password)
-    set_filesystem_permissions_mock.assert_called_with(container)
-    wazuh_configure_agent_password_mock.assert_called_with(
-        container=container, password=agent_password
+    sync_filebeat_user_mock.assert_called_with(container, "user1", password)
+    ensure_rsyslog_output_dir_mock.assert_called_with(container)
+    wazuh_sync_agent_password_mock.assert_called_with(container=container, password=agent_password)
+    sync_config_repo_mock.assert_called_with(
+        container, wazuh_config.custom_config_repository, "somekey"
     )
-    configure_git_mock.assert_called_with(
-        container, str(wazuh_config.custom_config_repository), "somekey"
-    )
-    pull_configuration_files_mock.assert_called_with(container)
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+@patch.object(wazuh, "sync_filebeat_config")
 @patch.object(wazuh, "create_readonly_api_user")
 @patch.object(wazuh, "authenticate_user")
 @patch.object(wazuh, "change_api_password")
 @patch.object(State, "from_charm")
-@patch.object(wazuh, "configure_git")
-@patch.object(wazuh, "pull_configuration_files")
-@patch.object(wazuh, "update_configuration")
-@patch.object(wazuh, "configure_agent_password")
-@patch.object(wazuh, "install_certificates")
-@patch.object(wazuh, "configure_filebeat_user")
-@patch.object(wazuh, "set_filesystem_permissions")
+@patch.object(wazuh, "pull_config_repo")
+@patch.object(wazuh, "sync_wazuh_config_files")
+@patch.object(wazuh, "sync_ossec_conf")
+@patch.object(wazuh, "sync_agent_password")
+@patch.object(wazuh, "sync_certificates")
+@patch.object(wazuh, "sync_filebeat_user")
+@patch.object(wazuh, "ensure_rsyslog_output_dir")
 @patch.object(wazuh, "get_version")
 @patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
     filebeat_csr_mock,
     get_version_mock,
-    set_filesystem_permissions_mock,
-    configure_filebeat_user_mock,
-    wazuh_install_certificates_mock,
-    wazuh_configure_agent_password_mock,
-    wazuh_update_configuration_mock,
-    pull_configuration_files_mock,
-    configure_git_mock,
+    ensure_rsyslog_output_dir_mock,
+    sync_filebeat_user_mock,
+    wazuh_sync_certificates_mock,
+    wazuh_sync_agent_password_mock,
+    wazuh_sync_ossec_conf_mock,
+    sync_wazuh_config_files_mock,
+    pull_config_repo_mock,
     state_from_charm_mock,
     *_,
 ):
@@ -269,11 +271,10 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         cluster_key=cluster_key,
         certificate="certificate",
         root_ca="root_ca",
-        indexer_ips=["10.0.0.1"],
+        indexer_endpoints=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
         wazuh_config=WazuhConfig(
-            api_credentials=api_credentials,
             custom_config_repository=None,
             custom_config_ssh_key=None,
             logs_ca_cert="logs_ca",
@@ -291,7 +292,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
 
     harness.charm.reconcile(None)
 
-    wazuh_install_certificates_mock.assert_has_calls(
+    wazuh_sync_certificates_mock.assert_has_calls(
         [
             call(
                 container=container,
@@ -311,21 +312,22 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
                 user="syslog",
                 group="syslog",
             ),
-        ]
+        ],
+        any_order=True,
     )
-    configure_filebeat_user_mock.assert_called_with(container, "user1", password)
-    set_filesystem_permissions_mock.assert_called_with(container)
-    wazuh_configure_agent_password_mock.assert_not_called()
-    configure_git_mock.assert_not_called()
-    pull_configuration_files_mock.assert_not_called()
-    wazuh_update_configuration_mock.assert_called_with(
+    sync_filebeat_user_mock.assert_called_with(container, "user1", password)
+    ensure_rsyslog_output_dir_mock.assert_called_with(container)
+    wazuh_sync_agent_password_mock.assert_not_called()
+    pull_config_repo_mock.assert_not_called()
+    sync_wazuh_config_files_mock.assert_not_called()
+    wazuh_sync_ossec_conf_mock.assert_called_with(
         container,
         ["10.0.0.1"],
         "wazuh-server-0.wazuh-server-endpoints",
         "wazuh-server/0",
         cluster_key,
-        None,
-        None,
+        opencti_token=None,
+        opencti_url=None,
     )
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
