@@ -75,12 +75,12 @@ class WazuhServerCharm(CharmBaseWithState):
         """Install event handler."""
         if self.unit.is_leader():
             try:
-                _ = self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
+                self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
             except ops.SecretNotFoundError:
                 logger.info(
                     "Secret with label %s not found. Creating one.", WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
-                _ = self.app.add_secret(
+                self.app.add_secret(
                     {"value": secrets.token_hex(16)}, label=WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
 

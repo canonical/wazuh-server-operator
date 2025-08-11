@@ -217,7 +217,7 @@ def sync_permissions(
     current_permissions = int(stdout.replace("'", ""), 8)
     if current_permissions != permissions:
         made_changes = True
-        _ = container.exec(["chmod", f"{permissions:o}", path]).wait_output()
+        container.exec(["chmod", f"{permissions:o}", path]).wait_output()
 
     needs_chown: bool = False
     if user is not None:
@@ -229,7 +229,7 @@ def sync_permissions(
     if needs_chown:
         user_string = user if user is not None else ""
         group_string = f":{group}" if group is not None else ""
-        _ = container.exec(["chown", f"{user_string}{group_string}", path]).wait_output()
+        container.exec(["chown", f"{user_string}{group_string}", path]).wait_output()
         made_changes = True
 
     return made_changes
@@ -374,12 +374,12 @@ def pull_config_repo(container: ops.Container, hostname: str, base_url: str, bra
             group=WAZUH_GROUP,
             permissions=0o600,
         )
-        _ = container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1).wait_output()
+        container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1).wait_output()
         command = ["git", "clone", "--depth", "1"]
         if branch:
             command = command + ["--branch", branch]
         command = command + [base_url, REPOSITORY_PATH]
-        _ = container.exec(command, timeout=60).wait_output()
+        container.exec(command, timeout=60).wait_output()
     except ops.pebble.ExecError as ex:
         logger.error("git clone of custom_config_repository failed")
         raise WazuhInstallationError from ex
@@ -468,7 +468,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
         return
     try:
         logger.info("patching files from %s to %s", source_path, WAZUH_CONF_PATH)
-        _ = container.exec(
+        container.exec(
             [
                 "rsync",
                 "-a",
@@ -492,7 +492,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
         ).wait_output()
 
         # Copy patch files in ruleset directory
-        _ = container.exec(
+        container.exec(
             [
                 "rsync",
                 "-a",
@@ -508,7 +508,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
 
         # Find all files within the integrations directory and make them executable.
         # This ensures all integration scripts are runnable by the wazuh group.
-        _ = container.exec(
+        container.exec(
             [
                 "find",
                 "/var/ossec/integrations",
@@ -525,7 +525,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
 
         # Adds correct permissions to the /etc/shared/default directory
         # 770 required for the manager to create the merged.mg file
-        _ = container.exec(
+        container.exec(
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         ).wait_output()
@@ -555,7 +555,7 @@ def sync_rsyslog_config_files(container: ops.Container) -> None:
             if container.isdir(source) and source[-1] != "/":
                 source += "/"
             # default ownership (root:root) and perms (f: 644 / d: 755) should be sufficient
-            _ = container.exec(["rsync", "-a", source, dest], timeout=10).wait_output()
+            container.exec(["rsync", "-a", source, dest], timeout=10).wait_output()
         except ops.pebble.ExecError as ex:
             raise WazuhInstallationError from ex
 
@@ -603,19 +603,19 @@ def sync_filebeat_user(container: ops.Container, username: str, password: str) -
         WazuhInstallationError: if an error occurs while configuring the user.
     """
     try:
-        _ = container.exec(["filebeat", "test", "output"], timeout=5).wait_output()
+        container.exec(["filebeat", "test", "output"], timeout=5).wait_output()
         # configured credentials are correct
         return False
     except ops.pebble.ExecError:
         # current user is not authorized, proceed to configure user
         pass
     try:
-        _ = container.exec(
+        container.exec(
             FILEBEAT_CMD + ["keystore", "add", "username", "--stdin", "--force"],
             stdin=username,
             timeout=1,
         ).wait_output()
-        _ = container.exec(
+        container.exec(
             FILEBEAT_CMD + ["keystore", "add", "password", "--stdin", "--force"],
             stdin=password,
             timeout=1,
