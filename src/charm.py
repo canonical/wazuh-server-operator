@@ -140,24 +140,24 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         return traefik_route_relation_data.get("external_host")
 
-    def _start_service(self, container: ops.Container, service_name: str) -> None:
-        """Start a pebble service."""
-        if service_name not in container.get_services().keys():
-            logger.warning('service "%s" cannot be started, it does not exist', service_name)
-            return
-        logger.info('starting service "%s"', service_name)
-        container.start(service_name)
+    def _restart_service(
+        self, container: ops.Container, service_name: str, force: bool = False
+    ) -> None:
+        """Restart a pebble service.
 
-    def _restart_service(self, container: ops.Container, service_name: str) -> None:
-        """Restart a pebble service if it is currently running."""
+        Args:
+            container (ops.Container): the container on which to restart the service.
+            service_name (str): the service to restart.
+            force (bool): restart the service even if it is not running.
+        """
         if service_name not in container.get_services().keys():
             logger.warning('service "%s" cannot be restarted, it does not exist', service_name)
             return
-        if container.get_service(service_name).is_running():
+        if container.get_service(service_name).is_running() or force:
             logger.info('restarting service "%s"', service_name)
             container.restart(service_name)
         else:
-            logger.info('service "%s" cannot be restarted, it is not running', service_name)
+            logger.info('not restarting service "%s" (it is not running)', service_name)
 
     def _reconcile_filebeat(self, container: ops.Container) -> None:
         """Reconcile the filebeat configuration.
@@ -235,8 +235,7 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_url=self.state.opencti_url,
         )
         if any((sync_config_files, changed_password, changed_ossec_conf)):
-            # wazuh cmd (re)starts processes and exits, so we need to start instead of restart
-            self._start_service(container, WAZUH_SERVICE_NAME)
+            self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # It doesn't make sense to split the logic further
     # Ignoring method too complex error from pflake8

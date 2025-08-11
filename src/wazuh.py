@@ -211,20 +211,19 @@ def sync_permissions(
         logger.warning("cannot sync permissions on '%s', path does not exist", path)
         return made_changes
 
-    # output has format "'644'\n"
-    stdout: str = container.exec(["stat", "-c", "'%a'", path]).wait_output()[0].strip()
-    current_permissions = int(stdout.replace("'", ""), 8)
+    stdout: str = container.exec(["stat", "-c", "%a", path]).wait_output()[0].strip()
+    current_permissions = int(stdout, 8)
     if current_permissions != permissions:
         made_changes = True
         container.exec(["chmod", f"{permissions:o}", path]).wait_output()
 
     needs_chown: bool = False
     if user is not None:
-        current_user: str = container.exec(["stat", "-c", "'%U'", path]).wait_output()[0].strip()
-        needs_chown = needs_chown or (current_user.replace("'", "") != user)
+        current_user: str = container.exec(["stat", "-c", "%U", path]).wait_output()[0].strip()
+        needs_chown = needs_chown or (current_user != user)
     if group is not None:
-        current_group: str = container.exec(["stat", "-c", "'%G'", path]).wait_output()[0].strip()
-        needs_chown = needs_chown or (current_group.replace("'", "") != group)
+        current_group: str = container.exec(["stat", "-c", "%G", path]).wait_output()[0].strip()
+        needs_chown = needs_chown or (current_group != group)
     if needs_chown:
         user_string = user if user is not None else ""
         group_string = f":{group}" if group is not None else ""
@@ -294,7 +293,7 @@ def sync_agent_password(container: ops.Container, password: str) -> bool:
     if container.exists(AGENT_PASSWORD_PATH):
         current_value = container.pull(AGENT_PASSWORD_PATH, encoding="utf-8").read()
     if current_value == password:
-        logger.info("agent password already up to date")
+        logger.debug("agent password already up to date")
         return False
     logger.info("updating agent password")
     container.push(
