@@ -306,7 +306,6 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the charm configuration is invalid.
         """
-        logger.debug("Starting reconciliation")
         reconcile_start_time = time.perf_counter()
         container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
@@ -317,8 +316,8 @@ class WazuhServerCharm(CharmBaseWithState):
             _ = self.state  # Ensure the state is valid
             local_repo_updated: bool = wazuh.sync_config_repo(
                 container,
-                custom_config_repository=self.state.custom_config_repository,
-                custom_config_ssh_key=self.state.custom_config_ssh_key,
+                repository=self.state.custom_config_repository,
+                repo_ssh_key=self.state.custom_config_ssh_key,
             )
             self._reconcile_filebeat(container)
             self._reconcile_rsyslog(container, local_repo_updated)
@@ -346,7 +345,7 @@ class WazuhServerCharm(CharmBaseWithState):
             logger.error("Invalid charm configuration, %s", exc)
             raise InvalidStateError from exc
         elapsed = time.perf_counter() - reconcile_start_time
-        logger.info("reconciled charm in %s seconds", elapsed)
+        logger.debug("reconciled charm in %s seconds", elapsed)
 
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:

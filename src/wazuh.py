@@ -12,7 +12,6 @@ import string
 import typing
 from enum import Enum
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
 
 import ops
 import requests
@@ -341,27 +340,29 @@ def _get_current_repo_tag(container: ops.Container) -> str:
     process = container.exec(
         ["git", "-C", REPOSITORY_PATH, "describe", "--tags", "--exact-match"], timeout=1
     )
-    branch = ""
+    tag = ""
     try:
-        branch, _ = process.wait_output()
+        tag, _ = process.wait_output()
     except ops.pebble.ExecError as ex:
         logging.debug(ex)
-    return branch.rstrip()
+    return tag.rstrip()
 
 
-def pull_config_repo(container: ops.Container, hostname: str, base_url: str, branch: str) -> None:
+def pull_config_repo(
+    container: ops.Container, hostname: str, base_url: str, ref: str | None
+) -> None:
     """Pull a local copy of the specified repository.
 
     Args:
         container: the container to configure git for.
         hostname: hostname of the git repository server
         base_url: base_url of the repository
-        branch: branch or tag name to pull. Can be an empty string.
+        ref: branch or tag name to pull. Can be null/None.
 
     Raises:
         WazuhInstallationError: if an error occurs while configuring git.
     """
-    logger.info("cloning the '%s' branch of '%s'", branch, base_url)
+    logger.info("cloning the '%s' ref of '%s'", ref, base_url)
     try:
         process = container.exec(["ssh-keyscan", "-t", "rsa", str(hostname)], timeout=10)
         output, _ = process.wait_output()
@@ -376,8 +377,8 @@ def pull_config_repo(container: ops.Container, hostname: str, base_url: str, bra
         )
         container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1).wait_output()
         command = ["git", "clone", "--depth", "1"]
-        if branch:
-            command = command + ["--branch", branch]
+        if ref is not None:
+            command = command + ["--branch", ref]
         command = command + [base_url, REPOSITORY_PATH]
         container.exec(command, timeout=60).wait_output()
     except ops.pebble.ExecError as ex:
@@ -387,16 +388,16 @@ def pull_config_repo(container: ops.Container, hostname: str, base_url: str, bra
 
 def sync_config_repo(
     container: ops.Container,
-    custom_config_repository: typing.Optional[AnyUrl],
-    custom_config_ssh_key: typing.Optional[str],
+    repository: typing.Optional[AnyUrl],
+    repo_ssh_key: typing.Optional[str],
 ) -> bool:
     """Synchronize a local copy of the custom config repository.
 
     Args:
         container: the container to configure git for.
-        custom_config_repository: the git repository to add to known hosts in format
-        git+ssh://<user>@<url>:<branch|tag>.
-        custom_config_ssh_key: the SSH key for the git repository.
+        repository: the git repository to add to known hosts in format
+        git+ssh://<user>@<host>@<branch|tag>.
+        repo_ssh_key: the SSH key for the git repository.
 
     Returns:
         bool: True if a pull was executed, False if there was nothing to sync
@@ -404,42 +405,32 @@ def sync_config_repo(
     Raises:
         WazuhInstallationError: if an error occurs while configuring git.
     """
-    if custom_config_repository is None:
+    if repository is None:
         # nothing to do
         return False
 
-    repo_url = str(custom_config_repository)
-
-    base_url = ""
-    branch = ""
-
-    try:
-        url = urlsplit(repo_url)
-        path_parts = url.path.split("@")
-        # 'branch' could be either a branch name or tag name
-        branch = path_parts[1] if len(path_parts) > 1 else ""
-        base_url = urlunsplit(url._replace(path=path_parts[0]))
-    except ops.pebble.ExecError as ex:
-        logger.error("custom_config_repository could not be parsed")
-        raise WazuhInstallationError from ex
-
-    if not base_url:
-        logger.error("custom_config_repository base URL was not found")
+    if not (isinstance(repository.host, str) and isinstance(repository.path, str)):
+        logger.error("repository URL (%s) is missing hostname or path", str(repository))
         raise WazuhInstallationError
+
+    path, *ref_string = repository.path.split(sep="@", maxsplit=1)
+    ref = ref_string[0] if len(ref_string) == 1 else None
+    username = f"{repository.username}@" if isinstance(repository.username, str) else ""
+    base_url = f"{repository.scheme}://{username}{repository.host}{path}"
 
     repo = _get_current_repo_url(container)
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
-    is_right_tag: bool = _get_current_repo_tag(container) == branch
+    is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
     already_synced: bool = is_right_repo and is_right_tag
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
         return False
 
-    if custom_config_ssh_key:
+    if repo_ssh_key:
         container.push(
             RSA_PATH,
-            f"{custom_config_ssh_key}\n",
+            f"{repo_ssh_key}\n",
             encoding="utf-8",
             make_dirs=True,
             user=WAZUH_USER,
@@ -447,9 +438,7 @@ def sync_config_repo(
             permissions=0o600,
         )
 
-    pull_config_repo(
-        container, hostname=str(url.hostname), base_url=str(base_url), branch=str(branch)
-    )
+    pull_config_repo(container, hostname=repository.host, base_url=base_url, ref=ref)
     return True
 
 

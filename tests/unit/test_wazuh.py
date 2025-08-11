@@ -9,13 +9,13 @@ import secrets
 import unittest
 import unittest.mock
 from pathlib import Path
-from pydantic import AnyUrl
 
 import ops
 import pytest
 import yaml
 from lxml import etree  # nosec
 from ops.testing import Harness
+from pydantic import AnyUrl
 
 import wazuh
 
@@ -237,7 +237,7 @@ def test_sync_config_repo_when_no_branch_specified(*_) -> None:
         "wazuh-server", ["ssh-keyscan", "-t", "rsa", "git.server"], result="know_host"
     )
     harness.handle_exec("wazuh-server", ["rm", "-Rf", wazuh.REPOSITORY_PATH], result="")
-    custom_config_repository = "git+ssh://user1@git.server/repo_name"
+    custom_config_repository = AnyUrl("git+ssh://user1@git.server/repo_name")
     harness.handle_exec(
         "wazuh-server",
         [
@@ -253,7 +253,7 @@ def test_sync_config_repo_when_no_branch_specified(*_) -> None:
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
     custom_config_ssh_key = "somekey"
-    _ = wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
+    wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
     assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
     assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
 
@@ -313,8 +313,8 @@ def test_sync_config_repo_when_branch_up_to_date(
     container = harness.charm.unit.get_container("wazuh-server")
     wazuh.sync_config_repo(
         container,
-        custom_config_repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@main"),
-        custom_config_ssh_key=None,
+        repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@main"),
+        repo_ssh_key=None,
     )
     assert wazuh_pull_config_repo_mock.called
 
@@ -349,8 +349,8 @@ def test_sync_config_repo_when_tag_up_to_date(
     container = harness.charm.unit.get_container("wazuh-server")
     wazuh.sync_config_repo(
         container,
-        custom_config_repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@v5"),
-        custom_config_ssh_key=None,
+        repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@v5"),
+        repo_ssh_key=None,
     )
     assert not wazuh_pull_config_repo_mock.called
 
