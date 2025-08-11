@@ -211,26 +211,32 @@ def sync_permissions(
         logger.warning("cannot sync permissions on '%s', path does not exist", path)
         return made_changes
 
-    stdout: str = container.exec(["stat", "-c", "%a", path]).wait_output()[0].strip()
-    current_permissions = int(stdout, 8)
-    if current_permissions != permissions:
-        made_changes = True
-        container.exec(["chmod", f"{permissions:o}", path]).wait_output()
+    try:
+        stdout: str = container.exec(["stat", "-c", "%a", path]).wait_output()[0].strip()
+        current_permissions = int(stdout, 8)
+        if current_permissions != permissions:
+            made_changes = True
+            container.exec(["chmod", f"{permissions:o}", path]).wait_output()
 
-    needs_chown: bool = False
-    if user is not None:
-        current_user: str = container.exec(["stat", "-c", "%U", path]).wait_output()[0].strip()
-        needs_chown = needs_chown or (current_user != user)
-    if group is not None:
-        current_group: str = container.exec(["stat", "-c", "%G", path]).wait_output()[0].strip()
-        needs_chown = needs_chown or (current_group != group)
-    if needs_chown:
-        user_string = user if user is not None else ""
-        group_string = f":{group}" if group is not None else ""
-        container.exec(["chown", f"{user_string}{group_string}", path]).wait_output()
-        made_changes = True
+        needs_chown: bool = False
+        if user is not None:
+            current_user: str = container.exec(["stat", "-c", "%U", path]).wait_output()[0].strip()
+            needs_chown = needs_chown or (current_user != user)
+        if group is not None:
+            current_group: str = (
+                container.exec(["stat", "-c", "%G", path]).wait_output()[0].strip()
+            )
+            needs_chown = needs_chown or (current_group != group)
+        if needs_chown:
+            user_string = user if user is not None else ""
+            group_string = f":{group}" if group is not None else ""
+            container.exec(["chown", f"{user_string}{group_string}", path]).wait_output()
+            made_changes = True
 
-    return made_changes
+        return made_changes
+    except ops.pebble.ExecError as ex:
+        logger.warning("Encountered error setting permissions on %s: %s", path, ex)
+        return False
 
 
 def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments
