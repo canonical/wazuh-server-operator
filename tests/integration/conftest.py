@@ -25,7 +25,10 @@ MACHINE_MODEL_CONFIG = {
     "logging-config": "<root>=INFO;unit=DEBUG",
     "update-status-hook-interval": "5m",
 }
-WAZUH_CHANNEL = "4.11/edge"
+WAZUH_DASHBOARD_CHANNEL = "4.11/edge"
+WAZUH_DASHBOARD_REVISION = 17
+WAZUH_INDEXER_CHANNEL = "4.11/edge"
+WAZUH_INDEXER_REVISION = 9
 
 
 @pytest_asyncio.fixture(scope="module", name="model")
@@ -79,20 +82,22 @@ async def traefik_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the traefik charm."""
     app_name = "traefik-k8s"
+    application: Application
     if pytestconfig.getoption("--no-deploy") and app_name in model.applications:
         logger.warning("Using existing application: %s", app_name)
-        yield model.applications[app_name]
-        return
-
-    application = await model.deploy(
-        app_name,
-        application_name=app_name,
-        channel="latest/edge",
-        revision=233,
-        trust=True,
-        config={"external_hostname": "wazuh-server.local"},
-    )
+        application = model.applications[app_name]
+    else:
+        application = await model.deploy(
+            app_name,
+            application_name=app_name,
+            channel="latest/edge",
+            revision=233,
+            trust=True,
+            config={"external_hostname": "wazuh-server.local"},
+        )
     yield application
+    if not pytestconfig.getoption("--keep-models") and app_name in model.applications:
+        await model.applications[app_name].destroy(force=True, no_wait=True)
 
 
 @pytest_asyncio.fixture(scope="module", name="self_signed_certificates")
@@ -102,19 +107,21 @@ async def self_signed_certificates_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the self signed certificates charm."""
     app_name = "self-signed-certificates"
+    application: Application
     if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
         logger.warning("Using existing application: %s", app_name)
-        yield machine_model.applications[app_name]
-        return
-
-    application = await machine_model.deploy(
-        app_name,
-        application_name=app_name,
-        channel="latest/stable",
-        config={"ca-common-name": "Test CA"},
-    )
-    await machine_model.create_offer(f"{application.name}:certificates", application.name)
+        application = machine_model.applications[app_name]
+    else:
+        application = await machine_model.deploy(
+            app_name,
+            application_name=app_name,
+            channel="latest/stable",
+            config={"ca-common-name": "Test CA"},
+        )
+        await machine_model.create_offer(f"{application.name}:certificates", application.name)
     yield application
+    if not pytestconfig.getoption("--keep-models") and app_name in machine_model.applications:
+        await machine_model.applications[app_name].destroy(force=True, no_wait=True)
 
 
 @pytest_asyncio.fixture(scope="module", name="opensearch_provider")
@@ -126,35 +133,35 @@ async def opensearch_provider_fixture(
     """Deploy the opensearch charm."""
     app_name = "wazuh-indexer"
     machine_controller_name = (await machine_model.get_controller()).controller_name
-
+    application: Application
     if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
         logger.warning("Using existing application: %s", app_name)
-        yield machine_model.applications[app_name]
-        return
-
-    num_units = 3
-    if pytestconfig.getoption("--single-node-indexer"):
-        num_units = 1
-    application = await machine_model.deploy(
-        app_name,
-        application_name=app_name,
-        channel=WAZUH_CHANNEL,
-        num_units=num_units,
-        config={"profile": "testing"},
-    )
-    await machine_model.integrate(self_signed_certificates.name, application.name)
-    await machine_model.wait_for_idle(
-        apps=[application.name],
-        status="active",
-        raise_on_error=True,
-        timeout=1800,
-    )
-
-    if num_units == 1:
-        await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
-
-    await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
+        application = machine_model.applications[app_name]
+    else:
+        num_units = 3
+        if pytestconfig.getoption("--single-node-indexer"):
+            num_units = 1
+        application = await machine_model.deploy(
+            app_name,
+            application_name=app_name,
+            channel=WAZUH_INDEXER_CHANNEL,
+            revision=WAZUH_INDEXER_REVISION,
+            num_units=num_units,
+            config={"profile": "testing"},
+        )
+        await machine_model.integrate(self_signed_certificates.name, application.name)
+        await machine_model.wait_for_idle(
+            apps=[application.name],
+            status="active",
+            raise_on_error=True,
+            timeout=1800,
+        )
+        if num_units == 1:
+            await configure_single_node(f"{machine_controller_name}:admin/{machine_model.name}")
+        await machine_model.create_offer(f"{application.name}:opensearch-client", application.name)
     yield application
+    if not pytestconfig.getoption("--keep-models") and app_name in machine_model.applications:
+        await machine_model.applications[app_name].destroy(force=True, no_wait=True)
 
 
 @pytest_asyncio.fixture(scope="module", name="wazuh_dashboard")
@@ -166,21 +173,26 @@ async def wazuh_dashboard_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     app_name = "wazuh-dashboard"
+    application: Application
     if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
         logger.warning("Using existing application: %s", app_name)
-        yield machine_model.applications[app_name]
-        return
-
-    num_units = 1
-    application = await machine_model.deploy(
-        app_name, application_name=app_name, channel=WAZUH_CHANNEL, num_units=num_units
-    )
-    await machine_model.integrate(self_signed_certificates.name, application.name)
-    await machine_model.integrate(opensearch_provider.name, application.name)
+        application = machine_model.applications[app_name]
+    else:
+        num_units = 1
+        application = await machine_model.deploy(
+            app_name,
+            application_name=app_name,
+            channel=WAZUH_DASHBOARD_CHANNEL,
+            revision=WAZUH_DASHBOARD_REVISION,
+            num_units=num_units,
+        )
+        await machine_model.integrate(self_signed_certificates.name, application.name)
+        await machine_model.integrate(opensearch_provider.name, application.name)
     yield application
-    await machine_model.applications[app_name].destroy(
-        destroy_storage=True, force=True, no_wait=False
-    )
+    if not pytestconfig.getoption("--keep-models") and app_name in machine_model.applications:
+        await machine_model.applications[app_name].destroy(
+            destroy_storage=True, force=True, no_wait=False
+        )
 
 
 @pytest_asyncio.fixture(scope="module", name="charm")
@@ -256,24 +268,26 @@ async def opencti_any_charm_fixture(
     application: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy OpenCTI any-charm and integrate with Wazuh Server."""
-    any_app_name = "any-opencti"
+    app_name = "any-opencti"
     any_charm_script = Path("tests/integration/any_charm.py").read_text(encoding="utf-8")
     any_charm_src_overwrite = {"any_charm.py": any_charm_script}
     any_app: Application
-    if pytestconfig.getoption("--no-deploy") and any_app_name in model.applications:
-        logger.warning("Using existing application: %s", any_app_name)
-        any_app = model.applications[any_app_name]
+    if pytestconfig.getoption("--no-deploy") and app_name in model.applications:
+        logger.warning("Using existing application: %s", app_name)
+        any_app = model.applications[app_name]
     else:
         any_app = await model.deploy(
             "any-charm",
-            application_name=any_app_name,
+            application_name=app_name,
             channel="beta",
             config={
                 "src-overwrite": json.dumps(any_charm_src_overwrite),
                 "python-packages": "PyJWT",
             },
         )
-        await model.wait_for_idle(apps=[any_app_name], timeout=600)
+        await model.wait_for_idle(apps=[app_name], timeout=600)
     await model.integrate(any_app.name, f"{application.name}:opencti-connector")
     await model.wait_for_idle(status="active", timeout=600)
     yield any_app
+    if not pytestconfig.getoption("--keep-models") and app_name in model.applications:
+        await model.applications[app_name].destroy(force=True, no_wait=True)

@@ -1,4 +1,6 @@
-# Wazuh Server Operator
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+# Wazuh Server operator
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 A Juju charm deploying and managing the Wazuh Server on Kubernetes. Wazuh is an
 open-source XDR and SIEM tool to protect endpoints and cloud workloads. It allows for deployment on

@@ -24,7 +24,7 @@ Each revision is versioned by the date of the revision.
 
 ### Added
 
-- Add terraform output for oauth integration.
+- Add terraform output for Open Authorization integration.
 
 ## 2025-07-16
 
@@ -47,8 +47,8 @@ Each revision is versioned by the date of the revision.
 
 ### Added
 
-- Adding `<endpoint>-relation-departed` hooks for opensearch_observer, 
-opencti_connector, wazuh_api and wazuh_peer integrations.
+- Adding `<endpoint>-relation-departed` hooks for `opensearch_observer`, 
+`opencti_connector`, `wazuh_api` and `wazuh_peer` integrations.
 
 ## 2025-06-24
 
@@ -71,7 +71,7 @@ opencti_connector, wazuh_api and wazuh_peer integrations.
 
 ### Updated
 
-- Modified the CI and `pre_run_script.sh` to use Canonical K8s instead of Microk8s.
+- Modified the CI and `pre_run_script.sh` to use Canonical K8s instead of MicroK8s.
 
 ## 2025-06-16
 

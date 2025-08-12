@@ -6,7 +6,9 @@ For all use cases and configurations related to the Wazuh product, please refer 
 
 ## Good practices
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 ### Distribute the Certification Authority (CA) to users
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 The charm deploys Wazuh components with a `self-signed-certificate` CA.
 
