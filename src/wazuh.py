@@ -528,6 +528,7 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
 
+
 def sync_rsyslog_config_files(container: ops.Container) -> None:
     """Sync rsyslog configuration files from the local config repository.
 
