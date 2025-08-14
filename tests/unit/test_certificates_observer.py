@@ -60,7 +60,7 @@ class ObservedCharm(state.CharmBaseWithState):
             cluster_key=cluster_key,
             certificate="certificate",
             root_ca="root_ca",
-            indexer_ips=["10.0.0.1"],
+            indexer_endpoints=["10.0.0.1"],
             filebeat_username="user1",
             filebeat_password=password,
             wazuh_config=state.WazuhConfig(

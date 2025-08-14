@@ -102,7 +102,11 @@ def _fetch_filebeat_configuration(
     try:
         filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
     except ops.SecretNotFoundError as exc:
-        raise InvalidStateError("Indexer secret content not found.") from exc
+        raise InvalidStateError("Indexer secret content not found") from exc
+    except ops.model.ModelError as exc:
+        raise InvalidStateError(
+            "Received ops.model.ModelError while requesting Indexer secret content"
+        ) from exc
     filebeat_username = filebeat_secret_content.get("username", "")
     filebeat_password = filebeat_secret_content.get("password", "")
     endpoint_data = indexer_relation_data.get("endpoints")
@@ -263,7 +267,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the agent password.
         api_credentials: a map containing the API credentials.
         cluster_key: the Wazuh key for the cluster nodes.
-        indexer_ips: list of Wazuh indexer IPs.
+        indexer_endpoints: list of Wazuh indexer endpoints.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
         certificate: the TLS certificate for filebeat.
@@ -279,7 +283,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     agent_password: str | None = None
     api_credentials: dict[str, str]
     cluster_key: str = Field(min_length=32, max_length=32)
-    indexer_ips: typing.Annotated[list[str], Field(min_length=1)]
+    indexer_endpoints: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
     certificate: str = Field(..., min_length=1)
@@ -295,7 +299,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: str | None,
         api_credentials: dict[str, str],
         cluster_key: str,
-        indexer_ips: list[str],
+        indexer_endpoints: list[str],
         filebeat_username: str,
         filebeat_password: str,
         certificate: str,
@@ -311,7 +315,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password: the agent password.
             api_credentials: a map ccontaining the API credentials.
             cluster_key: the Wazuh key for the cluster nodes.
-            indexer_ips: list of Wazuh indexer IPs.
+            indexer_endpoints: list of Wazuh indexer endpoints.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
             certificate: the TLS certificate for filebeat.
@@ -325,7 +329,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password=agent_password,
             api_credentials=api_credentials,
             cluster_key=cluster_key,
-            indexer_ips=indexer_ips,
+            indexer_endpoints=indexer_endpoints,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
             certificate=certificate,
@@ -413,7 +417,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     agent_password=agent_password,
                     api_credentials=api_credentials,
                     cluster_key=cluster_key,
-                    indexer_ips=endpoints,
+                    indexer_endpoints=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,
                     certificate=matching_certificates[0].certificate,
