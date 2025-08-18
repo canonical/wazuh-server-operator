@@ -7,6 +7,7 @@
 
 import logging
 import secrets
+import time
 import typing
 
 import ops
@@ -33,6 +34,9 @@ from state import (
 logger = logging.getLogger(__name__)
 
 WAZUH_PEER_RELATION_NAME = "wazuh-peers"
+WAZUH_SERVICE_NAME = "wazuh"
+FILEBEAT_SERVICE_NAME = "filebeat"
+RSYSLOG_SERVICE_NAME = "rsyslog"
 
 
 class WazuhServerCharm(CharmBaseWithState):
@@ -73,7 +77,7 @@ class WazuhServerCharm(CharmBaseWithState):
             try:
                 self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
             except ops.SecretNotFoundError:
-                logger.debug(
+                logger.info(
                     "Secret with label %s not found. Creating one.", WAZUH_CLUSTER_KEY_SECRET_LABEL
                 )
                 self.app.add_secret(
@@ -136,21 +140,32 @@ class WazuhServerCharm(CharmBaseWithState):
         )
         return traefik_route_relation_data.get("external_host")
 
-    def _configure_installation(self, container: ops.Container) -> None:
-        """Configure the Wazuh installation.
+    def _restart_service(
+        self, container: ops.Container, service_name: str, force: bool = False
+    ) -> None:
+        """Restart a pebble service.
+
+        Args:
+            container (ops.Container): the container on which to restart the service.
+            service_name (str): the service to restart.
+            force (bool): restart the service even if it is not running.
+        """
+        if service_name not in container.get_services().keys():
+            logger.warning('service "%s" cannot be restarted, it does not exist', service_name)
+            return
+        if container.get_service(service_name).is_running() or force:
+            logger.info('restarting service "%s"', service_name)
+            container.restart(service_name)
+        else:
+            logger.info('not restarting service "%s" (it is not running)', service_name)
+
+    def _reconcile_filebeat(self, container: ops.Container) -> None:
+        """Reconcile the filebeat configuration.
 
         Args:
             container: the container to configure Wazuh for.
         """
-        if not self.state:
-            return
-
-        if not self.state.logs_ca_cert:
-            raise wazuh.WazuhConfigurationError(
-                "Invalid charm configuration: 'logs-ca-cert' is missing."
-            )
-
-        wazuh.install_certificates(
+        changed_certs: bool = wazuh.sync_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
             private_key=self.certificates.get_private_key(),
@@ -159,7 +174,30 @@ class WazuhServerCharm(CharmBaseWithState):
             user=wazuh.FILEBEAT_USER,
             group=wazuh.FILEBEAT_USER,
         )
-        wazuh.install_certificates(
+        changed_user = wazuh.sync_filebeat_user(
+            container, self.state.filebeat_username, self.state.filebeat_password
+        )
+        changed_config = wazuh.sync_filebeat_config(container, self.state.indexer_endpoints)
+        if any((changed_certs, changed_user, changed_config)):
+            self._restart_service(container, FILEBEAT_SERVICE_NAME)
+
+    def _reconcile_rsyslog(self, container: ops.Container, sync_config_files: bool) -> None:
+        """Reconcile the rsyslog configuration.
+
+        Args:
+            container: the container to configure Wazuh for.
+            sync_config_files: whether rsyslog config should be synced with local repo files.
+
+        Raises:
+            WazuhConfigurationError: if no rsyslog CA certificate has been configured.
+        """
+        if not self.state.logs_ca_cert:
+            raise wazuh.WazuhConfigurationError(
+                "Invalid charm configuration: 'logs-ca-cert' is missing."
+            )
+        if sync_config_files:
+            wazuh.sync_rsyslog_config_files(container)
+        changed_certs: bool = wazuh.sync_certificates(
             container=container,
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
             private_key=self.certificates.get_private_key(),
@@ -168,28 +206,36 @@ class WazuhServerCharm(CharmBaseWithState):
             user=wazuh.SYSLOG_USER,
             group=wazuh.SYSLOG_USER,
         )
-        wazuh.configure_filebeat_user(
-            container, self.state.filebeat_username, self.state.filebeat_password
-        )
-        wazuh.set_filesystem_permissions(container)
+        changed_filesystem = wazuh.ensure_rsyslog_output_dir(container)
+        if any((sync_config_files, changed_certs, changed_filesystem)):
+            self._restart_service(container, RSYSLOG_SERVICE_NAME)
+
+    def _reconcile_wazuh(self, container: ops.Container, sync_config_files: bool) -> None:
+        """Reconcile the Wazuh installation.
+
+        Args:
+            container: the container to configure Wazuh for.
+            sync_config_files: whether local repo files should be synced to Wazuh dir.
+        """
+        if sync_config_files:
+            wazuh.sync_wazuh_config_files(container)
+        changed_password = False
         if self.state.agent_password:
-            wazuh.configure_agent_password(container=container, password=self.state.agent_password)
-        if self.state.custom_config_repository:
-            wazuh.configure_git(
-                container,
-                str(self.state.custom_config_repository),
-                self.state.custom_config_ssh_key,
+            changed_password = wazuh.sync_agent_password(
+                container=container,
+                password=self.state.agent_password,
             )
-            wazuh.pull_configuration_files(container)
-        wazuh.update_configuration(
+        changed_ossec_conf: bool = wazuh.sync_ossec_conf(
             container,
-            self.state.indexer_ips,
+            self.state.indexer_endpoints,
             self.master_fqdn,
             self.unit.name,
             self.state.cluster_key,
-            self.state.opencti_url,
-            self.state.opencti_token,
+            opencti_token=self.state.opencti_token,
+            opencti_url=self.state.opencti_url,
         )
+        if any((sync_config_files, changed_password, changed_ossec_conf)):
+            self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # It doesn't make sense to split the logic further
     # Ignoring method too complex error from pflake8
@@ -259,17 +305,22 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the charm configuration is invalid.
         """
-        container = self.unit.get_container(wazuh.CONTAINER_NAME)
+        reconcile_start_time = time.perf_counter()
+        container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
         if not container.can_connect():
-            logger.warning(
-                "Unable to connect to container during reconcile. "
-                "Waiting for future events which will trigger another reconcile."
-            )
+            logger.warning("Cannot connect to container during reconcile. Waiting for new events.")
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
             return
         try:
             _ = self.state  # Ensure the state is valid
-            self._configure_installation(container)
+            local_repo_updated: bool = wazuh.sync_config_repo(
+                container,
+                repository=self.state.custom_config_repository,
+                repo_ssh_key=self.state.custom_config_ssh_key,
+            )
+            self._reconcile_filebeat(container)
+            self._reconcile_rsyslog(container, local_repo_updated)
+            self._reconcile_wazuh(container, local_repo_updated)
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
             self._configure_users()
@@ -292,6 +343,8 @@ class WazuhServerCharm(CharmBaseWithState):
         except InvalidStateError as exc:
             logger.error("Invalid charm configuration, %s", exc)
             raise InvalidStateError from exc
+        elapsed = time.perf_counter() - reconcile_start_time
+        logger.debug("reconciled charm in %s seconds", elapsed)
 
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:
@@ -311,21 +364,21 @@ class WazuhServerCharm(CharmBaseWithState):
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
             "services": {
-                "wazuh": {
+                WAZUH_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "wazuh manager",
-                    "command": "sh -c 'sleep 1; /var/ossec/bin/wazuh-control start'",
+                    "command": "sh -c 'sleep 1; /var/ossec/bin/wazuh-control reload'",
                     "startup": "enabled",
                     "on-success": "ignore",
                     "environment": environment,
                 },
-                "filebeat": {
+                FILEBEAT_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "filebeat",
                     "command": f"sh -c 'sleep 1; {' '.join(wazuh.FILEBEAT_CMD)}'",
                     "startup": "enabled",
                 },
-                "rsyslog": {
+                RSYSLOG_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "rsyslog",
                     "command": "rsyslogd -n -f /etc/rsyslog.conf",

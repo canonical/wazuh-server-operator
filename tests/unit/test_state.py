@@ -105,7 +105,7 @@ def test_state_without_proxy():
     assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
-    assert charm_state.indexer_ips == endpoints
+    assert charm_state.indexer_endpoints == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
     assert charm_state.certificate == "certificate"
@@ -167,7 +167,7 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
     assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
     assert charm_state.cluster_key == value
-    assert charm_state.indexer_ips == endpoints
+    assert charm_state.indexer_endpoints == endpoints
     assert charm_state.certificate == "certificate"
     assert charm_state.root_ca == "root_ca"
     assert charm_state.filebeat_username == username
@@ -501,7 +501,7 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
     )
 
     assert charm_state.cluster_key == value
-    assert charm_state.indexer_ips == endpoints
+    assert charm_state.indexer_endpoints == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
     assert charm_state.certificate == "certificate"
@@ -567,7 +567,7 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
     )
 
     assert charm_state.cluster_key == value
-    assert charm_state.indexer_ips == endpoints
+    assert charm_state.indexer_endpoints == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
     assert charm_state.certificate == "certificate"
@@ -631,7 +631,7 @@ def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
     )
 
     assert charm_state.cluster_key == value
-    assert charm_state.indexer_ips == endpoints
+    assert charm_state.indexer_endpoints == endpoints
     assert charm_state.filebeat_username == username
     assert charm_state.filebeat_password == password
     assert charm_state.certificate == "certificate"
