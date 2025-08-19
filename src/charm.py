@@ -61,6 +61,7 @@ class WazuhServerCharm(CharmBaseWithState):
         self._observability = observability.Observability(self)
         self._wazuh_api = wazuh_api.WazuhApiProvides(self)
         self._opencti_observer = opencti_connector_observer.OpenCTIObserver(self)
+        self._cached_state = None
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
@@ -112,22 +113,24 @@ class WazuhServerCharm(CharmBaseWithState):
     @property
     def state(self) -> State:
         """The charm state."""
-        opensearch_relation = self.model.get_relation(opensearch_observer.RELATION_NAME)
-        opensearch_relation_data = (
-            opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
-        )
-        opencti_relation = self.model.get_relation(opencti_connector_observer.RELATION_NAME)
-        opencti_relation_data = (
-            opencti_relation.data[opencti_relation.app] if opencti_relation else {}
-        )
-        certificates = self.certificates.certificates.get_provider_certificates()
-        return State.from_charm(
-            self,
-            opensearch_relation_data,
-            opencti_relation_data,
-            certificates,
-            self.certificates.get_csr().decode("utf-8"),
-        )
+        if self._cached_state is None:
+            opensearch_relation = self.model.get_relation(opensearch_observer.RELATION_NAME)
+            opensearch_relation_data = (
+                opensearch_relation.data[opensearch_relation.app] if opensearch_relation else {}
+            )
+            opencti_relation = self.model.get_relation(opencti_connector_observer.RELATION_NAME)
+            opencti_relation_data = (
+                opencti_relation.data[opencti_relation.app] if opencti_relation else {}
+            )
+            certificates = self.certificates.certificates.get_provider_certificates()
+            self._cached_state = State.from_charm(
+                self,
+                opensearch_relation_data,
+                opencti_relation_data,
+                certificates,
+                self.certificates.get_csr().decode("utf-8"),
+            )
+        return self._cached_state
 
     @property
     def external_hostname(self) -> str | None:

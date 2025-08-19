@@ -456,12 +456,14 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
-    source_path = REPO_WAZUH_CONF_PATH
-    if not container.exists(source_path):
-        logger.info("path '%s' does not exist, no files to patch", source_path)
+    source, dest = REPO_WAZUH_CONF_PATH, WAZUH_CONF_PATH
+    if not container.exists(source):
+        logger.info("path '%s' does not exist, no files to patch", source)
         return
+    if container.isdir(source) and source[-1] != "/":
+        source += "/"
     try:
-        logger.info("patching files from %s to %s", source_path, WAZUH_CONF_PATH)
+        logger.info("patching files from %s to %s", source, dest)
         container.exec(
             [
                 "rsync",
@@ -479,8 +481,8 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
                 "--include=etc/shared/**/*.conf",
                 "--include=integrations/***",
                 "--exclude=*",
-                source_path,
-                WAZUH_CONF_PATH,
+                source,
+                dest,
             ],
             timeout=10,
         ).wait_output()
@@ -494,8 +496,8 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
                 "root:wazuh",
                 "--include=ruleset/***",
                 "--exclude=*",
-                source_path,
-                WAZUH_CONF_PATH,
+                source,
+                dest,
             ],
             timeout=10,
         ).wait_output()
