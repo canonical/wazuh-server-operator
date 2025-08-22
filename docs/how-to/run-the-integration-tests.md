@@ -103,9 +103,9 @@ k8s set \
 snap install kubectl --classic
 ```
 
-#### Option 2: Install Microk8s
+#### Option 2: Install MicroK8s
 
-Install Microk8s and configure it to run in a single-node configuration. This
+Install MicroK8s and configure it to run in a single-node configuration. This
 will disable `dqlite` and enable `etcd`.
 
 ```bash
@@ -116,7 +116,7 @@ snap alias microk8s.kubectl k
 microk8s status --wait-ready
 ```
 
-##### Enable Microk8s add-ons.
+##### Enable MicroK8s add-ons
 
 ```bash
 microk8s.enable dns
@@ -134,7 +134,7 @@ microk8s.kubectl rollout status deployment.apps/registry \
   -n container-registry -w --timeout=600s
 ```
 
-##### Enable and configure the load-balancer.
+##### Enable and configure the load-balancer
 
 The following commands will configure the `metallb` plugin to use IP addresses
 between .225 and .250 on the machine's 'real' subnet. If this creates IP address
@@ -165,7 +165,7 @@ If you installed Canonical Kubernetes:
 juju bootstrap k8s
 ```
 
-If you installed Microk8s:
+If you installed MicroK8s:
 
 ```bash
 juju bootstrap microk8s k8s
@@ -327,13 +327,17 @@ tox run -e integration -- \
 
 ## Troubleshooting
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 ### IO
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 Running the integration tests is IO-intensive. If you receive frequent errors
 related to Kubernetes timeouts, it may be related to disk IO limitations. If
 your environment is running on top of ZFS, consider setting `sync=disabled`.
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 ### AppArmor
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 Errors can also be related to the installed snaps' AppArmor restrictions. You
 can review AppArmor 'block' decisions by searching kernel logs:
@@ -342,7 +346,7 @@ can review AppArmor 'block' decisions by searching kernel logs:
 dmesg | grep 'apparmor="DENIED"'
 ```
 
-To test whether AppArmor restrictions are causing an error, you can install each
+To test whether AppArmor restrictions are causing an error, install each
 snap in [developer mode](https://snapcraft.io/docs/install-modes#developer-mode)
 by appending `--devmode` to the installation command. You can further reduce
 AppArmor restrictions by enabling the 'devmode-debug' setting.
