@@ -28,7 +28,7 @@ juju integrate wazuh-server loki-k8s
 
 ### `metrics-endpoint`
 
-_Interface_: [prometheus_scrape](https://charmhub.io/interfaces/prometheus_scrape-v0)
+_Interface_: [prometheus_scrape](https://charmhub.io/integrations/prometheus_scrape)
 
 _Supported charms_: [prometheus-k8s](https://charmhub.io/prometheus-k8s)
 

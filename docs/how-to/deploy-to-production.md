@@ -18,7 +18,7 @@ Open network accesses:
 
 ## Deploy the project
 
-The full stack can be deployed using the terraform module hosted at [https://github.com/canonical/wazuh-server-operator/terraform/product/](https://github.com/canonical/wazuh-server-operator/terraform/product/).
+The full stack can be deployed using the terraform module hosted at [https://github.com/canonical/wazuh-server-operator/tree/main/terraform/product](https://github.com/canonical/wazuh-server-operator/tree/main/terraform/product).
 
 A typical deployment would be configured like this:
 ```
