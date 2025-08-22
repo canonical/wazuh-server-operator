@@ -11,8 +11,10 @@ one created on the GitHub actions runner.
 Starting from a fresh Ubuntu 24.04 LTS (Noble Numbat) virtual machine, follow
 these instructions:
 
-[note] `sudo` has been omitted from all commands, though many of the below
-commands require root access. [/note]
+[note]
+`sudo` has been omitted from all commands, though many of the below
+commands require root access.
+[/note]
 
 ### Clone the repository
 
@@ -51,17 +53,17 @@ lxd init --auto
 The tests can be run with either Canonical Kubernetes or Microk8s.
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
-
 #### Option 1: Install Canonical Kubernetes
-
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 ```bash
 snap install k8s --classic
 ```
 
-[note] If you encounter an error running the next command, log out and log back
-in. [/note]
+[note]
+If you encounter an error running the next command, log out and log back
+in.
+[/note]
 
 ```bash
 cat << EOF | k8s bootstrap --file -
@@ -176,9 +178,7 @@ bash -xe ~/wazuh-server-operator/tests/integration/pre_run_script.sh
 ```
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
-
 ### (Optional) Install rock dependencies
-
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 If you anticipate changing the rock container image, follow these additional
@@ -233,9 +233,7 @@ charmcraft pack
 ```
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
-
 #### (Optional) Build the rock
-
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 If you have not made any changes to the rock, you do not need to rebuild it.
