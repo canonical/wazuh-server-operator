@@ -128,3 +128,23 @@ retrieve the indexer's admin credentials:
 juju switch localhost:admin/test-wazuh-machine
 juju run wazuh-indexer/leader get-password
 ```
+
+## Teardown
+
+To remove the wazuh-server charm:
+
+```bash
+juju switch localhost:admin/test-wazuh-machine
+
+juju remove-saas wazuh-server
+
+juju switch k8s:admin/test-wazuh
+
+juju remove-offer wazuh-server --force --yes
+
+kubectl -n test-wazuh delete statefulset wazuh-server
+
+juju remove-application wazuh-server \
+  --destroy-storage --force \
+  --no-wait --no-prompt
+```
