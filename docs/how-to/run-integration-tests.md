@@ -26,7 +26,7 @@ cd wazuh-sever-operator
 ### Install Charmcraft
 
 ```bash
-snap install charmcraft --channel=3.x/stable --revision=7023 --classic
+snap install charmcraft --classic
 ```
 
 ### Install tox
@@ -43,7 +43,7 @@ pipx install tox
 ### Install LXD
 
 ```bash
-snap install lxd --channel=6/stable --revision=34285
+snap install lxd
 newgrp lxd
 lxd init --auto
 ```
@@ -103,13 +103,15 @@ k8s set \
 snap install kubectl --classic
 ```
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 #### Option 2: Install MicroK8s
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 Install MicroK8s and configure it to run in a single-node configuration. This
 will disable `dqlite` and enable `etcd`.
 
 ```bash
-snap install microk8s --channel=1.32-strict/stable --revision=8155
+snap install microk8s --channel=1.32-strict/stable
 microk8s disable ha-cluster --force
 snap alias microk8s.kubectl kubectl
 snap alias microk8s.kubectl k
@@ -187,7 +189,7 @@ steps:
 #### Install Rockcraft
 
 ```bash
-snap install rockcraft --channel=latest/stable --revision=3466 --classic
+snap install rockcraft --classic
 ```
 
 #### Install and configure Docker
@@ -346,9 +348,9 @@ can review AppArmor 'block' decisions by searching kernel logs:
 dmesg | grep 'apparmor="DENIED"'
 ```
 
-To test whether AppArmor restrictions are causing an error, install each
-snap in [developer mode](https://snapcraft.io/docs/install-modes#developer-mode)
-by appending `--devmode` to the installation command. You can further reduce
+To test whether AppArmor restrictions are causing an error, install each snap in
+[developer mode](https://snapcraft.io/docs/install-modes#developer-mode) by
+appending `--devmode` to the installation command. You can further reduce
 AppArmor restrictions by enabling the 'devmode-debug' setting.
 
 Example:

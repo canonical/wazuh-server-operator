@@ -3,7 +3,7 @@
 The source code for this charm comes with several integration tests that cover
 basic functionality. However, for testing updates to complex functions, such as
 those that may affect the custom configuration repository feature, or for
-testing the affects of particular Wazuh and rsyslog configurations stored in a
+testing the effects of particular Wazuh and rsyslog configurations stored in a
 custom configuration repository, manual testing may be required.
 
 This guide provides the steps to deploy a local testing environment for manual
@@ -26,9 +26,9 @@ the integration test how-to guide.
 ## (Optional) Create configuration secrets
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
-If you wish to test the `wazuh-server` charm with the optional `agent-password` or
-`custom-config-ssh-key` configuration items, create the secrets now. Make note
-of the secret URIs, as these should be the value of the corresponding
+If you wish to test the `wazuh-server` charm with the optional `agent-password`
+or `custom-config-ssh-key` configuration items, create the secrets now. Make
+note of the secret URIs, as these should be the value of the corresponding
 configuration items.
 
 ```bash
@@ -41,8 +41,8 @@ juju add-secret deploy-key value="$(cat PATH_TO_DEPLOY_KEY)"
 
 ## Deploy the `wazuh-server` charm
 
-The integration tests do not retain the `wazuh-server` charm, so you will need to
-re-deploy the version of the charm that you wish to test.
+The integration tests do not retain the `wazuh-server` charm, so you will need
+to re-deploy the version of the charm that you wish to test.
 
 From the root directory of the charm source code, run `charmcraft pack`. This
 will take several minutes on the first run, and will take significantly less
@@ -50,7 +50,7 @@ time on all subsequent runs.
 
 As described in the '(Optional) Build the rock' and 'Set the container location'
 sections of the integration test guide, either rebuild and upload the rock, or
-identify a Github Container Repository (GHCR) image for use and set the
+identify a GitHub Container Repository (GHCR) image for use and set the
 `IMAGE_URL` variable.
 
 The latest available GHCR images can be found
@@ -104,8 +104,8 @@ juju config wazuh-server --file=~/wazuh-conf.yml
 ## (Optional) Deploy the dashboard charm
 
 The integration tests do not deploy the dashboard charm by default. If your
-manual testing would benefit from access to the Wazuh user interface, you may
-deploy the dashboard with the following commands:
+manual testing would benefit from access to the Wazuh user interface, deploy the
+dashboard with the following commands:
 
 ```bash
 juju switch k8s:admin/test-wazuh
@@ -133,7 +133,7 @@ juju run wazuh-indexer/leader get-password
 
 ## Tear down the environment
 
-To remove the wazuh-server charm:
+Remove the `wazuh-server` charm:
 
 ```bash
 juju switch localhost:admin/test-wazuh-machine

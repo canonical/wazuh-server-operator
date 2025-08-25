@@ -48,7 +48,7 @@ Thinking about using the Wazuh Server Operator for your next project? [Get in to
   1. [Integrate with OpenCTI](how-to/integrate-with-opencti.md)
   1. [Redeploy](how-to/redeploy.md)
   1. [Upgrade](how-to/upgrade.md)
-  1. [Run the integration tests](how-to/run-the-integration-tests.md)
+  1. [Run integration tests](how-to/run-integration-tests.md)
   1. [Run manual tests](how-to/run-manual-tests.md)
 1. [Reference](reference)
   1. [Actions](reference/actions.md)
