@@ -14,7 +14,7 @@ For information about how to deploy, integrate, and manage this charm, see the O
 
 | | |
 |--|--|
-|  [Tutorials](https://charmhub.io/wazuh-server/docs/tutorial)</br>  Get started - a hands-on introduction to using the Charmed Wazuh Server operator for new users </br> |  [How-to guides](https://charmhub.io/wazuh-server/docs/how-to-contribute) </br> Step-by-step guides covering key operations and common tasks |
+|  [Tutorials](https://charmhub.io/wazuh-server/docs/tutorial-getting-started)</br>  Get started - a hands-on introduction to using the Charmed Wazuh Server operator for new users </br> |  [How-to guides](https://charmhub.io/wazuh-server/docs/how-to-contribute) </br> Step-by-step guides covering key operations and common tasks |
 | [Reference](https://charmhub.io/wazuh-server/docs/reference-actions) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/wazuh-server/docs/explanation-charm-architecture) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
