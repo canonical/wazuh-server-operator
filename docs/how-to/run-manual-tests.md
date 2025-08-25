@@ -12,7 +12,7 @@ tests.
 ## Follow the integration test setup
 
 The how-to guide for
-[running the integration tests](./run-the-integration-tests.md) provides
+[running the integration tests](./run-integration-tests.md) provides
 instructions for setting up LXD, Kubernetes, and Juju controllers on a Ubuntu
 virtual machine.
 
