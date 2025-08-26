@@ -11,3 +11,4 @@ jobs:
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
       vale-style-check: false
+      pre-run-script: "./tests/unit/pre_run_script.sh"
