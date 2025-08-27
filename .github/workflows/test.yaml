@@ -9,6 +9,7 @@ jobs:
     secrets: inherit
     with:
       self-hosted-runner: true
-      self-hosted-runner-label: "edge"
+      self-hosted-runner-label: self-hosted-linux-amd64-noble-medium
+      self-hosted-runner-arch: amd64
+      self-hosted-runner-image: noble
       vale-style-check: false
-      pre-run-script: "./tests/unit/pre_run_script.sh"
