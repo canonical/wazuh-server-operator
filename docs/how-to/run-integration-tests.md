@@ -48,12 +48,8 @@ newgrp lxd
 lxd init --auto
 ```
 
-### Install Kubernetes
-
-The tests can be run with either Canonical Kubernetes or Microk8s.
-
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
-#### Option 1: Install Canonical Kubernetes
+### Install Canonical Kubernetes
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 ```bash
@@ -77,7 +73,7 @@ mkdir -p ~/.kube
 k8s config > ~/.kube/config
 ```
 
-##### Configure Kubernetes load-balancer
+#### Configure the Kubernetes load-balancer
 
 The following commands will configure the Kubernetes `metallb` plugin to use IP
 addresses between .225 and .250 on the machine's 'real' subnet. If this creates
@@ -97,60 +93,10 @@ k8s set \
   load-balancer.l2-mode=true
 ```
 
-##### Install kubectl
+#### Install kubectl
 
 ```bash
 snap install kubectl --classic
-```
-
-<!-- vale Canonical.007-Headings-sentence-case = NO -->
-#### Option 2: Install MicroK8s
-<!-- vale Canonical.007-Headings-sentence-case = YES -->
-
-Install MicroK8s and configure it to run in a single-node configuration. This
-will disable `dqlite` and enable `etcd`.
-
-```bash
-snap install microk8s --channel=1.32-strict/stable
-microk8s disable ha-cluster --force
-snap alias microk8s.kubectl kubectl
-snap alias microk8s.kubectl k
-microk8s status --wait-ready
-```
-
-##### Enable MicroK8s add-ons
-
-```bash
-microk8s.enable dns
-microk8s.kubectl rollout status deployments/coredns \
-  -n kube-system -w --timeout=600s
-
-microk8s.enable rbac
-
-microk8s.enable hostpath-storage
-microk8s.kubectl rollout status deployments/hostpath-provisioner \
-  -n kube-system -w --timeout=600s
-
-microk8s enable registry
-microk8s.kubectl rollout status deployment.apps/registry \
-  -n container-registry -w --timeout=600s
-```
-
-##### Enable and configure the load-balancer
-
-The following commands will configure the `metallb` plugin to use IP addresses
-between .225 and .250 on the machine's 'real' subnet. If this creates IP address
-conflict(s) in your environment, please modify the commands.
-
-```bash
-IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')
-LB_FIRST_ADDR="$(echo "${IPADDR}" | awk -F'.' '{print $1,$2,$3,225}' OFS='.')"
-LB_LAST_ADDR="$(echo "${IPADDR}" | awk -F'.' '{print $1,$2,$3,250}' OFS='.')"
-LB_ADDR_RANGE="${LB_FIRST_ADDR}-${LB_LAST_ADDR}"
-
-microk8s enable metallb:$LB_ADDR_RANGE
-microk8s.kubectl rollout status daemonset.apps/speaker \
-  -n metallb-system -w --timeout=600s
 ```
 
 ### Install Juju
