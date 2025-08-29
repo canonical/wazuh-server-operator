@@ -107,16 +107,8 @@ snap install juju
 
 ### Bootstrap the Kubernetes controller
 
-If you installed Canonical Kubernetes:
-
 ```bash
 juju bootstrap k8s
-```
-
-If you installed MicroK8s:
-
-```bash
-juju bootstrap microk8s k8s
 ```
 
 ### Run the pre-run script
