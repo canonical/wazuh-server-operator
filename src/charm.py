@@ -9,6 +9,7 @@ import logging
 import secrets
 import time
 import typing
+from socket import getfqdn
 
 import ops
 import pydantic
@@ -43,9 +44,11 @@ class WazuhServerCharm(CharmBaseWithState):
     """Charm the service.
 
     Attributes:
+        external_hostname: the external hostname.
         master_fqdn: the FQDN for unit 0.
         state: the charm state.
-        external_hostname: the external hostname.
+        units: the charm units.
+        units_fqdns: the charm units' FQDNs.
     """
 
     def __init__(self, *args: typing.Any):
@@ -71,6 +74,25 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_departed, self.reconcile)
         self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_changed, self.reconcile)
         self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_broken, self.reconcile)
+
+    @property
+    def units(self) -> list[ops.Unit]:
+        """Retrieve the units of the charm.
+
+        Returns: the charm units.
+        """
+        return self.model.get_relation(WAZUH_PEER_RELATION_NAME).units
+
+    @property
+    def units_fqdns(self) -> list[str]:
+        """Retrieve the IP addresses of the charm units.
+
+        Returns: a list of the IP addresses.
+        """
+        return [
+            getfqdn(f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints")
+            for unit in self.units
+        ]
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -125,10 +147,11 @@ class WazuhServerCharm(CharmBaseWithState):
             certificates = self.certificates.certificates.get_provider_certificates()
             self._cached_state = State.from_charm(
                 self,
-                opensearch_relation_data,
-                opencti_relation_data,
-                certificates,
-                self.certificates.get_csr().decode("utf-8"),
+                certificate_signing_request=self.certificates.get_csr().decode("utf-8"),
+                indexer_relation_data=opensearch_relation_data,
+                opencti_relation_data=opencti_relation_data,
+                provider_certificates=certificates,
+                units_fqdns=self.units_fqdns,
             )
         return self._cached_state
 
@@ -324,6 +347,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self._reconcile_filebeat(container)
             self._reconcile_rsyslog(container, local_repo_updated)
             self._reconcile_wazuh(container, local_repo_updated)
+            self.traefik_route_observer.reconcile()
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
             self._configure_users()

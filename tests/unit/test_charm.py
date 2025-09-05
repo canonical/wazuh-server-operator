@@ -25,6 +25,7 @@ from state import (
 )
 
 
+@patch.object(WazuhServerCharm, "units_fqdns")
 @patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
@@ -42,6 +43,7 @@ def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
         harness.charm.state  # pylint: disable=pointless-statement
 
 
+@patch.object(WazuhServerCharm, "units_fqdns")
 @patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
@@ -61,6 +63,7 @@ def test_invalid_state_reaches_blocked_status(state_from_charm_mock, *_):
     assert harness.model.unit.status.name == ops.BlockedStatus().name
 
 
+@patch.object(WazuhServerCharm, "units_fqdns")
 @patch.object(CertificatesObserver, "get_csr")
 @patch.object(State, "from_charm")
 def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
@@ -81,6 +84,7 @@ def test_incomplete_state_reaches_waiting_status(state_from_charm_mock, *_):
     assert harness.model.unit.status.name == ops.WaitingStatus().name
 
 
+@patch.object(WazuhServerCharm, "units_fqdns")
 @patch.object(wazuh, "sync_config_repo")
 @patch.object(WazuhServerCharm, "_reconcile_filebeat")
 @patch.object(WazuhServerCharm, "_reconcile_wazuh")
@@ -161,12 +165,13 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     state_from_charm_mock.return_value = State(
         agent_password=agent_password,
         api_credentials=api_credentials,
-        cluster_key=cluster_key,
         certificate="certificate",
-        root_ca="root_ca",
+        cluster_key=cluster_key,
         indexer_endpoints=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
+        root_ca="root_ca",
+        units_fqdns=["host1.example"],
         wazuh_config=wazuh_config,
         custom_config_ssh_key="somekey",
         opencti_token=opencti_token,
@@ -268,12 +273,13 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     state_from_charm_mock.return_value = State(
         agent_password=None,
         api_credentials=api_credentials,
-        cluster_key=cluster_key,
         certificate="certificate",
-        root_ca="root_ca",
+        cluster_key=cluster_key,
         indexer_endpoints=["10.0.0.1"],
         filebeat_username="user1",
         filebeat_password=password,
+        root_ca="root_ca",
+        units_fqdns=["host1.example"],
         wazuh_config=WazuhConfig(
             custom_config_repository=None,
             custom_config_ssh_key=None,

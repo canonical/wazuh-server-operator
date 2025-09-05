@@ -48,13 +48,21 @@ def test_state_invalid_opensearch_relation_data(opensearch_relation_data):
     with pytest.raises(state.InvalidStateError):
         state.State.from_charm(
             mock_charm,
-            opensearch_relation_data,
-            {},
-            provider_certificates,
-            "1",
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=provider_certificates,
+            units_fqdns=["host1.example"],
         )
     with pytest.raises(state.RecoverableStateError):
-        state.State.from_charm(mock_charm, opensearch_relation_data, {}, [], "1")
+        state.State.from_charm(
+            mock_charm,
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=[],
+            units_fqdns=["host1.example"],
+        )
 
 
 def test_state_without_proxy():
@@ -96,10 +104,11 @@ def test_state_without_proxy():
 
     charm_state = state.State.from_charm(
         mock_charm,
-        opensearch_relation_data,
-        {},
-        provider_certificates,
-        "1",
+        certificate_signing_request="1",
+        indexer_relation_data=opensearch_relation_data,
+        opencti_relation_data={},
+        provider_certificates=provider_certificates,
+        units_fqdns=["host1.example"],
     )
 
     assert charm_state.api_credentials
@@ -159,10 +168,11 @@ def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
 
     charm_state = state.State.from_charm(
         mock_charm,
-        opensearch_relation_data,
-        {},
-        provider_certificates,
-        "1",
+        certificate_signing_request="1",
+        indexer_relation_data=opensearch_relation_data,
+        opencti_relation_data={},
+        provider_certificates=provider_certificates,
+        units_fqdns=["host1.example"],
     )
     assert charm_state.api_credentials
     assert charm_state.api_credentials["value"] == value
@@ -219,10 +229,11 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
 
     charm_state = state.State.from_charm(
         mock_charm,
-        opensearch_relation_data,
-        {},
-        provider_certificates,
-        "1",
+        certificate_signing_request="1",
+        indexer_relation_data=opensearch_relation_data,
+        opencti_relation_data={},
+        provider_certificates=provider_certificates,
+        units_fqdns=["host1.example"],
     )
     with pytest.raises(state.RecoverableStateError):
         charm_state.proxy  # pylint: disable=pointless-statement
@@ -275,10 +286,11 @@ def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch)
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
             mock_charm,
-            opensearch_relation_data,
-            {},
-            provider_certificates,
-            "1",
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=provider_certificates,
+            units_fqdns=["host1.example"],
         )
 
 
@@ -328,10 +340,11 @@ def test_state_when_agent_password_secret_not_found(monkeypatch: pytest.MonkeyPa
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
             mock_charm,
-            opensearch_relation_data,
-            {},
-            provider_certificates,
-            "1",
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=provider_certificates,
+            units_fqdns=["host1.example"],
         )
 
 
@@ -383,10 +396,11 @@ def test_state_when_repository_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
             mock_charm,
-            opensearch_relation_data,
-            {},
-            provider_certificates,
-            "1",
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=provider_certificates,
+            units_fqdns=["host1.example"],
         )
 
 
@@ -436,10 +450,11 @@ def test_state_when_agent_secret_invalid(monkeypatch: pytest.MonkeyPatch):
     with pytest.raises(state.RecoverableStateError):
         state.State.from_charm(
             mock_charm,
-            opensearch_relation_data,
-            {},
-            provider_certificates,
-            "1",
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=provider_certificates,
+            units_fqdns=["host1.example"],
         )
 
 
@@ -494,10 +509,11 @@ def test_state_when_repository_secret_valid(monkeypatch: pytest.MonkeyPatch):
 
     charm_state = state.State.from_charm(
         mock_charm,
-        opensearch_relation_data,
-        {},
-        provider_certificates,
-        "1",
+        certificate_signing_request="1",
+        indexer_relation_data=opensearch_relation_data,
+        opencti_relation_data={},
+        provider_certificates=provider_certificates,
+        units_fqdns=["host1.example"],
     )
 
     assert charm_state.cluster_key == value
@@ -560,10 +576,11 @@ def test_state_when_agent_password_secret_valid(monkeypatch: pytest.MonkeyPatch)
 
     charm_state = state.State.from_charm(
         mock_charm,
-        opensearch_relation_data,
-        {},
-        provider_certificates,
-        "1",
+        certificate_signing_request="1",
+        indexer_relation_data=opensearch_relation_data,
+        opencti_relation_data={},
+        provider_certificates=provider_certificates,
+        units_fqdns=["host1.example"],
     )
 
     assert charm_state.cluster_key == value
@@ -624,10 +641,11 @@ def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
 
     charm_state = state.State.from_charm(
         mock_charm,
-        opensearch_relation_data,
-        {},
-        provider_certificates,
-        "1",
+        certificate_signing_request="1",
+        indexer_relation_data=opensearch_relation_data,
+        opencti_relation_data={},
+        provider_certificates=provider_certificates,
+        units_fqdns=["host1.example"],
     )
 
     assert charm_state.cluster_key == value
@@ -646,9 +664,9 @@ def test_state_when_logs_ca_cert_valid(monkeypatch: pytest.MonkeyPatch):
 
 def test_state_without_logs_ca_cert():
     """
-    arrange: given valid relation data.
+    arrange: given relation data without logs_ca_cert.
     act: when state is initialized through from_charm method.
-    assert: the state contains the endpoints.
+    assert: a RecoverableStateError is raised.
     """
     mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
     secret_id = f"secret:{secrets.token_hex()}"
@@ -683,10 +701,11 @@ def test_state_without_logs_ca_cert():
     with pytest.raises(state.RecoverableStateError) as exc:
         state.State.from_charm(
             mock_charm,
-            opensearch_relation_data,
-            {},
-            provider_certificates,
-            "1",
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=provider_certificates,
+            units_fqdns=["host1.example"],
         )
 
     assert str(exc.value) == str(
@@ -743,11 +762,65 @@ def test_state_with_opencti_relation_data():
 
     charm_state = state.State.from_charm(
         mock_charm,
-        opensearch_relation_data,
-        opencti_relation_data,
-        provider_certificates,
-        "1",
+        certificate_signing_request="1",
+        indexer_relation_data=opensearch_relation_data,
+        opencti_relation_data=opencti_relation_data,
+        provider_certificates=provider_certificates,
+        units_fqdns=["host1.example"],
     )
 
     assert charm_state.opencti_url == opencti_url
     assert charm_state.opencti_token == opencti_token
+
+
+def test_state_with_invalid_unit_fqdns(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given valid relation data.
+    act: when state is initialized through from_charm method.
+    assert: a RecoverableStateError is raised .
+    """
+    mock_charm = unittest.mock.MagicMock(spec=ops.CharmBase)
+    monkeypatch.setattr(
+        mock_charm,
+        "config",
+        {
+            "logs-ca-cert": "my secret authority",
+        },
+    )
+
+    endpoints = ["10.0.0.1", "10.0.0.2"]
+    username = "user1"
+    password = secrets.token_hex()
+    value = secrets.token_hex(16)
+    opensearch_relation_data = {
+        "endpoints": ",".join(endpoints),
+        "secret-user": f"secret:{secrets.token_hex()}",
+    }
+    secret_id = f"secret:{secrets.token_hex()}"
+    mock_charm.model.get_secret(id=secret_id).get_content.return_value = {
+        "username": username,
+        "password": password,
+        "value": value,
+    }
+    provider_certificates = [
+        certificates.ProviderCertificate(
+            relation_id="certificates-provider/1",
+            application_name="application",
+            csr="1",
+            certificate="certificate",
+            ca="root_ca",
+            chain=[],
+            revoked=False,
+            expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+        )
+    ]
+
+    with pytest.raises(state.InvalidStateError):
+        state.State.from_charm(
+            mock_charm,
+            certificate_signing_request="1",
+            indexer_relation_data=opensearch_relation_data,
+            opencti_relation_data={},
+            provider_certificates=provider_certificates,
+            units_fqdns=[],
+        )

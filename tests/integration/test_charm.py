@@ -53,16 +53,15 @@ async def test_api(model: Model, application: Application):
     assert response.status_code == 401, response.content
 
 
-@pytest.mark.skip
 @pytest.mark.abort_on_fail
-async def test_clustering_ok(model: Model, application: Application):
+async def test_clustering_ok(model: Model, application: Application, traefik: Application):
     """
     Arrange: deploy the charm together with related charms.
     Act: scale up to two units.
     Assert: the clustering config is valid.
     """
     await application.scale(2)
-    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
+    await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
     wazuh_unit = application.units[0]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
     action = await wazuh_unit.run(

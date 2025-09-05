@@ -1,15 +1,19 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+# pylint detects the patches states as duplicate code
+# pylint: disable=duplicate-code
+
 """Traefik route observer unit tests."""
 
-import socket
+import secrets
 import unittest
 
 import ops
 import pytest
 from ops.testing import Harness
 
+import state
 import traefik_route_observer
 import wazuh
 
@@ -21,8 +25,12 @@ requires:
 """
 
 
-class ObservedCharm(ops.CharmBase):
-    """Class for requirer charm testing."""
+class ObservedCharm(state.CharmBaseWithState):
+    """Class for requirer charm testing.
+
+    Attrs:
+        state: the charm state.
+    """
 
     def __init__(self, *args):
         """Construct.
@@ -32,6 +40,40 @@ class ObservedCharm(ops.CharmBase):
         """
         super().__init__(*args)
         self.traefik_route = traefik_route_observer.TraefikRouteObserver(self)
+        self.count = 0
+
+    def reconcile(self, _: ops.HookEvent) -> None:
+        """Reconcile the configuration with charm state."""
+        self.count = self.count + 1
+
+    @property
+    def state(self) -> state.State | None:
+        """The charm state."""
+        password = secrets.token_hex()
+        api_credentials = {
+            "wazuh": secrets.token_hex(),
+            "wazuh-wui": secrets.token_hex(),
+            "prometheus": secrets.token_hex(),
+        }
+        cluster_key = secrets.token_hex(16)
+        return state.State(
+            agent_password=None,
+            api_credentials=api_credentials,
+            certificate="certificate",
+            cluster_key=cluster_key,
+            indexer_endpoints=["10.0.0.1"],
+            filebeat_username="user1",
+            filebeat_password=password,
+            root_ca="root_ca",
+            units_fqdns=["host1.example", "host2.example"],
+            wazuh_config=state.WazuhConfig(
+                api_credentials=api_credentials,
+                custom_config_repository=None,
+                custom_config_ssh_key=None,
+                logs_ca_cert="fakeca",
+            ),
+            custom_config_ssh_key=None,
+        )
 
 
 def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -49,9 +91,8 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
     requirer_mock = unittest.mock.MagicMock()
     requirer_mock.is_ready.return_value = True
     monkeypatch.setattr(harness.charm.traefik_route, "traefik_route", requirer_mock)
-    monkeypatch.setattr(socket, "getfqdn", lambda: "wazuh-server.local")
 
-    harness.charm.traefik_route._configure_traefik_route()  # pylint: disable=W0212
+    harness.charm.traefik_route.reconcile()  # pylint: disable=W0212
 
     requirer_mock.submit_to_traefik.assert_called_once_with(
         {
@@ -81,25 +122,37 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                 "services": {
                     "juju-testing-observer-charm-service-syslog-tcp": {
                         "loadBalancer": {
-                            "servers": [{"address": "wazuh-server.local:6514"}],
+                            "servers": [
+                                {"address": "host1.example:6514"},
+                                {"address": "host2.example:6514"},
+                            ],
                             "terminationDelay": -1,
                         }
                     },
                     "juju-testing-observer-charm-service-conn-tcp": {
                         "loadBalancer": {
-                            "servers": [{"address": "wazuh-server.local:1514"}],
+                            "servers": [
+                                {"address": "host1.example:1514"},
+                                {"address": "host2.example:1514"},
+                            ],
                             "terminationDelay": -1,
                         }
                     },
                     "juju-testing-observer-charm-service-enrole-tcp": {
                         "loadBalancer": {
-                            "servers": [{"address": "wazuh-server.local:1515"}],
+                            "servers": [
+                                {"address": "host1.example:1515"},
+                                {"address": "host2.example:1515"},
+                            ],
                             "terminationDelay": -1,
                         }
                     },
                     "juju-testing-observer-charm-service-api-tcp": {
                         "loadBalancer": {
-                            "servers": [{"address": f"wazuh-server.local:{wazuh.API_PORT}"}],
+                            "servers": [
+                                {"address": f"host1.example:{wazuh.API_PORT}"},
+                                {"address": f"host2.example:{wazuh.API_PORT}"},
+                            ],
                             "terminationDelay": -1,
                         }
                     },
@@ -130,6 +183,6 @@ def test_on_traefik_route_relation_joined_when_not_leader(monkeypatch: pytest.Mo
     mock = unittest.mock.Mock()
     monkeypatch.setattr(harness.charm.traefik_route.traefik_route, "submit_to_traefik", mock)
 
-    harness.charm.traefik_route._configure_traefik_route()  # pylint: disable=W0212
+    harness.charm.traefik_route.reconcile()  # pylint: disable=W0212
 
     mock.assert_not_called()
