@@ -3,6 +3,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+# pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
+
 """Integration tests."""
 
 import logging
@@ -137,7 +139,9 @@ async def test_rsyslog_client_cn(
     )
     assert sent, "Log was not sent."
 
-    found = await found_in_logs(needle, application.model.name)
+    result_0 = await found_in_logs(needle, application.model.name, application.units[0].name)
+    result_1 = await found_in_logs(needle, application.model.name, application.units[1].name)
+    found = result_0 is expect_logs or result_1 is expect_logs
 
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
