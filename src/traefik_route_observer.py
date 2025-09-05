@@ -6,11 +6,12 @@
 import logging
 import typing
 
+import ops
 from charms.traefik_k8s.v0.traefik_route import TraefikRouteRequirer
 from ops.framework import Object
 
 import wazuh
-from state import CharmBaseWithState
+from state import CharmBaseWithState, IncompleteStateError
 
 logger = logging.getLogger(__name__)
 RELATION_NAME = "ingress"
@@ -38,7 +39,9 @@ class TraefikRouteObserver(Object):
         self.traefik_route = TraefikRouteRequirer(
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME, raw=True
         )
-        self.reconcile()
+        self.framework.observe(
+            self._charm.on.traefik_relation_joined, self._on_traefik_relation_joined
+        )
 
     @property
     def _static_ingress_config(self) -> dict[str, dict[str, dict[str, str]]]:
@@ -89,6 +92,18 @@ class TraefikRouteObserver(Object):
                 "services": services,
             },
         }
+
+    def _on_traefik_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
+        """Handle the relation joined event.
+
+        Args:
+            event: the event.
+        """
+        try:
+            self.reconcile()
+        except IncompleteStateError:
+            self._charm.unit.status = ops.WaitingStatus("Charm not ready.")
+            event.defer()
 
     def reconcile(self) -> None:
         """Build a raw ingress configuration for Traefik."""
