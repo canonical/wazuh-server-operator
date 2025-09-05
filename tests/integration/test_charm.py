@@ -110,14 +110,20 @@ async def test_rsyslog_invalid_server_ca(application: Application):
     ],
 )
 async def test_rsyslog_client_cn(
-    application: Application, machine_model: Model, valid_cn: bool, expect_logs: bool
+    model: Model,
+    application: Application,
+    traefik: Application,
+    machine_model: Model,
+    valid_cn: bool,
+    expect_logs: bool,
 ):
     """
     Arrange: a working Wazuh deployment with a log-certification-authority configured
     Act: send a syslog message over tls (with or without a valid CN)
     Assert: the message appears in the log only if the CN is valid
     """
-    assert application
+    await application.scale(2)
+    await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
     machine_controller = await machine_model.get_controller()
     machine_model_url = f"{machine_controller.controller_name}:{machine_model.name}"
     server_ca_cert = await get_ca_certificate(machine_model_url)
