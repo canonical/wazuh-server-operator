@@ -266,79 +266,84 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     Attributes:
         agent_password: the agent password.
         api_credentials: a map containing the API credentials.
+        certificate: the TLS certificate for filebeat.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_endpoints: list of Wazuh indexer endpoints.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
-        certificate: the TLS certificate for filebeat.
         root_ca: the CA certificate for filebeat.
+        units_fqdns: the charm units FQDNs.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
         logs_ca_cert: the CA to authenticate rssyslog clients.
-        opencti_url: the OpenCTI URL.
         opencti_token: the OpenCTI token.
+        opencti_url: the OpenCTI URL.
     """
 
     agent_password: str | None = None
     api_credentials: dict[str, str]
+    certificate: str = Field(..., min_length=1)
     cluster_key: str = Field(min_length=32, max_length=32)
     indexer_endpoints: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
-    certificate: str = Field(..., min_length=1)
     root_ca: str = Field(..., min_length=1)
+    units_fqdns: typing.Annotated[list[str], Field(min_length=1)]
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
     logs_ca_cert: str | None = None
-    opencti_url: str | None = None
     opencti_token: str | None = None
+    opencti_url: str | None = None
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         agent_password: str | None,
         api_credentials: dict[str, str],
+        certificate: str,
         cluster_key: str,
         indexer_endpoints: list[str],
         filebeat_username: str,
         filebeat_password: str,
-        certificate: str,
         root_ca: str,
+        units_fqdns: list[str],
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: str | None,
-        opencti_url: str | None = None,
         opencti_token: str | None = None,
+        opencti_url: str | None = None,
     ):
         """Initialize a new instance of the CharmState class.
 
         Args:
             agent_password: the agent password.
             api_credentials: a map ccontaining the API credentials.
+            certificate: the TLS certificate for filebeat.
             cluster_key: the Wazuh key for the cluster nodes.
             indexer_endpoints: list of Wazuh indexer endpoints.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
-            certificate: the TLS certificate for filebeat.
             root_ca: the CA certificate for filebeat.
+            units_fqdns: the charm units FQDNs.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
-            opencti_url: the OpenCTI URL.
             opencti_token: the OpenCTI token.
+            opencti_url: the OpenCTI URL.
         """
         super().__init__(
             agent_password=agent_password,
             api_credentials=api_credentials,
+            certificate=certificate,
             cluster_key=cluster_key,
             indexer_endpoints=indexer_endpoints,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
-            certificate=certificate,
             root_ca=root_ca,
+            units_fqdns=units_fqdns,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
             logs_ca_cert=wazuh_config.logs_ca_cert,
-            opencti_url=opencti_url,
             opencti_token=opencti_token,
+            opencti_url=opencti_url,
         )
 
     @property
@@ -368,19 +373,21 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     def from_charm(
         cls,
         charm: ops.CharmBase,
+        certificate_signing_request: str,
         indexer_relation_data: dict[str, str],
         opencti_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
-        certificate_signing_request: str,
+        units_fqdns: list[str],
     ) -> "State":
         """Initialize the state from charm.
 
         Args:
             charm: the root charm.
+            certificate_signing_request: the TLS certificate signing request.
             indexer_relation_data: the Wazuh indexer app relation data.
             opencti_relation_data: the OpenCTI relation data.
             provider_certificates: the provider certificates.
-            certificate_signing_request: the TLS certificate signing request.
+            units_fqdns: the FQDNs of the charm units.
 
         Returns:
             Current state of the charm.
@@ -416,12 +423,13 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 return cls(
                     agent_password=agent_password,
                     api_credentials=api_credentials,
+                    certificate=matching_certificates[0].certificate,
                     cluster_key=cluster_key,
                     indexer_endpoints=endpoints,
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,
-                    certificate=matching_certificates[0].certificate,
                     root_ca=matching_certificates[0].ca,
+                    units_fqdns=units_fqdns,
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key,
                     opencti_url=opencti_url,

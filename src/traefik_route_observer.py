@@ -4,7 +4,6 @@
 """The Traefik route relation observer."""
 
 import logging
-import socket
 import typing
 
 import ops
@@ -12,6 +11,7 @@ from charms.traefik_k8s.v0.traefik_route import TraefikRouteRequirer
 from ops.framework import Object
 
 import wazuh
+from state import CharmBaseWithState, IncompleteStateError
 
 logger = logging.getLogger(__name__)
 RELATION_NAME = "ingress"
@@ -26,13 +26,9 @@ PORTS: dict[str, int] = {
 
 
 class TraefikRouteObserver(Object):
-    """The Traefik route relation observer.
+    """The Traefik route relation observer."""
 
-    Attributes:
-            hostname: The unit's hostname.
-    """
-
-    def __init__(self, charm: ops.CharmBase):
+    def __init__(self, charm: CharmBaseWithState):
         """Initialize the observer and register event handlers.
 
         Args:
@@ -43,16 +39,9 @@ class TraefikRouteObserver(Object):
         self.traefik_route = TraefikRouteRequirer(
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME, raw=True
         )
-        self._configure_traefik_route()
-
-    @property
-    def hostname(self) -> str:
-        """Get the unit's hostname.
-
-        Returns:
-            the unit's FQDN.
-        """
-        return socket.getfqdn()
+        self.framework.observe(
+            self._charm.on.traefik_relation_joined, self._on_traefik_relation_joined
+        )
 
     @property
     def _static_ingress_config(self) -> dict[str, dict[str, dict[str, str]]]:
@@ -91,7 +80,9 @@ class TraefikRouteObserver(Object):
             }
             services[service_name] = {
                 "loadBalancer": {
-                    "servers": [{"address": f"{self.hostname}:{port}"}],
+                    "servers": [
+                        {"address": f"{fqdn}:{port}"} for fqdn in self._charm.state.units_fqdns
+                    ],
                     "terminationDelay": -1,
                 }
             }
@@ -102,7 +93,19 @@ class TraefikRouteObserver(Object):
             },
         }
 
-    def _configure_traefik_route(self) -> None:
+    def _on_traefik_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
+        """Handle the relation joined event.
+
+        Args:
+            event: the event.
+        """
+        try:
+            self.reconcile()
+        except IncompleteStateError:
+            self._charm.unit.status = ops.WaitingStatus("Charm not ready.")
+            event.defer()
+
+    def reconcile(self) -> None:
         """Build a raw ingress configuration for Traefik."""
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
