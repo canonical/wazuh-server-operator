@@ -40,7 +40,7 @@ class TraefikRouteObserver(Object):
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME, raw=True
         )
         self.framework.observe(
-            self._charm.on.ingress_relation_joined, self._on_ingress_relation_joined
+            self._charm.on.ingress_relation_created, self._on_ingress_relation_created
         )
 
     @property
@@ -93,8 +93,8 @@ class TraefikRouteObserver(Object):
             },
         }
 
-    def _on_ingress_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
-        """Handle the relation joined event.
+    def _on_ingress_relation_created(self, event: ops.RelationCreatedEvent) -> None:
+        """Handle the relation created event.
 
         Args:
             event: the event.
@@ -109,7 +109,6 @@ class TraefikRouteObserver(Object):
         """Build a raw ingress configuration for Traefik."""
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
-        logger.error(self._ingress_config)
         self.traefik_route.submit_to_traefik(
             self._ingress_config, static=self._static_ingress_config
         )
