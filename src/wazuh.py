@@ -138,7 +138,7 @@ def save_applied_commit_marker(container: ops.Container) -> None:
             f"{head}\n",
             encoding="utf-8",
             make_dirs=True,
-            pemissions=0o644,
+            permissions=0o644,
         )
 
 
