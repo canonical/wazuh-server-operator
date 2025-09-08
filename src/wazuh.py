@@ -89,7 +89,7 @@ class NodeType(Enum):
 
 
 def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
-    """Actual HEAD of the cloned repo, or None if non-existing"""
+    """Actual HEAD of the cloned repo, or None if non-existing."""
     try:
         process = container.exec(
             ["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"]
@@ -103,7 +103,7 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         return None
 
 def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
-    """Read the last commit successfully applied"""
+    """Read the last commit successfully applied."""
     try:
         commit_applied = container.pull(APPLIED_MARKER_PATH).read().strip()
         return commit_applied or None
@@ -112,7 +112,7 @@ def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
         return None
 
 def save_applied_commit_marker(container: ops.Container) -> None:
-    """Save actual HEAD as applied, call only after successful reconciliation"""
+    """Save actual HEAD as applied, call only after successful reconciliation."""
     head = _get_current_repo_commit(container)
     if head:
         container.push(
