@@ -98,7 +98,7 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         head = out.strip()
         return head or None
     
-    except ops.pebble.ExecError:
+    except ops.pebble.APIError:
         logger.error("git rev-parse of the repository failed, unable to access commit's SHA")
         return None
 
@@ -460,9 +460,13 @@ def sync_config_repo(
     username = f"{repository.username}@" if isinstance(repository.username, str) else ""
     base_url = f"{repository.scheme}://{username}{repository.host}{path}"
 
+    repo = _get_current_repo_url(container)
+    is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
+    is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
+
     current_head = _get_current_repo_commit(container)
     applied_head = _read_applied_commit(container)
-    already_synced = current_head == applied_head
+    already_synced: bool = current_head == applied_head and is_right_repo and is_right_tag
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
