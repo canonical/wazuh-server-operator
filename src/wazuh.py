@@ -94,13 +94,14 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         process = container.exec(
             ["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"]
         )
-        out, _=process.wait_output()
+        out, _ = process.wait_output()
         head = out.strip()
         return head or None
-    
+
     except ops.pebble.APIError:
         logger.error("git rev-parse of the repository failed, unable to access commit's SHA")
         return None
+
 
 def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
     """Read the last commit successfully applied."""
@@ -110,6 +111,7 @@ def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
     except ops.pebble.PathError:
         logger.error("unable to find last commit successfully applied")
         return None
+
 
 def save_applied_commit_marker(container: ops.Container) -> None:
     """Save actual HEAD as applied, call only after successful reconciliation."""
