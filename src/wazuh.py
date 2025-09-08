@@ -98,9 +98,7 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         typing.Optional[str]: the actual commit.
     """
     try:
-        process = container.exec(
-            ["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"]
-        )
+        process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
         out, _ = process.wait_output()
         head = out.strip()
         return head or None
