@@ -24,7 +24,6 @@ from lxml import etree  # nosec
 from pydantic import AnyUrl
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-APPLIED_MARKER_PATH = "/root/repository/.custom_config_applied_commit"
 COLLECTORS_LOG_PATH = Path("/var/log/collectors")
 RSYSLOG_LOG_DIR = COLLECTORS_LOG_PATH / "rsyslog"
 CONTAINER_NAME = "wazuh-server"
@@ -47,6 +46,7 @@ LOGS_PATH = Path("/var/ossec/logs")
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
+APPLIED_MARKER_PATH = REPOSITORY_PATH + "/.custom_config_applied_commit"
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
 RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
