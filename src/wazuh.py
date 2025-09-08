@@ -24,6 +24,7 @@ from lxml import etree  # nosec
 from pydantic import AnyUrl
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
+APPLIED_MARKER_PATH = "/root/repository/.custom_config_applied_commit"
 COLLECTORS_LOG_PATH = Path("/var/log/collectors")
 RSYSLOG_LOG_DIR = COLLECTORS_LOG_PATH / "rsyslog"
 CONTAINER_NAME = "wazuh-server"
@@ -85,6 +86,42 @@ class NodeType(Enum):
 
     WORKER = "worker"
     MASTER = "master"
+
+
+def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
+    """Actual HEAD of the cloned repo, or None if non-existing"""
+    try:
+        process = container.exec(
+            ["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"]
+        )
+        out, _=process.wait_output()
+        head = out.strip()
+        return head or None
+    
+    except ops.pebble.ExecError:
+        logger.error("git rev-parse of the repository failed, unable to access commit's SHA")
+        return None
+
+def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
+    """Read the last commit successfully applied"""
+    try:
+        commit_applied = container.pull(APPLIED_MARKER_PATH).read().strip()
+        return commit_applied or None
+    except ops.pebble.PathError:
+        logger.error("unable to find last commit successfully applied")
+        return None
+
+def save_applied_commit_marker(container: ops.Container) -> None:
+    """Save actual HEAD as applied, call only after successful reconciliation"""
+    head = _get_current_repo_commit(container)
+    if head:
+        container.push(
+            APPLIED_MARKER_PATH,
+            f"{head}\n",
+            encoding="utf-8",
+            make_dirs=True,
+            pemissions=0o644,
+        )
 
 
 def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
@@ -423,10 +460,9 @@ def sync_config_repo(
     username = f"{repository.username}@" if isinstance(repository.username, str) else ""
     base_url = f"{repository.scheme}://{username}{repository.host}{path}"
 
-    repo = _get_current_repo_url(container)
-    is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
-    is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
-    already_synced: bool = is_right_repo and is_right_tag
+    current_head = _get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container)
+    already_synced = current_head == applied_head
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
@@ -444,6 +480,7 @@ def sync_config_repo(
         )
 
     pull_config_repo(container, hostname=repository.host, base_url=base_url, ref=ref)
+
     return True
 
 
