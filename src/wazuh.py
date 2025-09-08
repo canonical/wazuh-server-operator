@@ -132,9 +132,6 @@ def save_applied_commit_marker(container: ops.Container) -> None:
 
     Arguments:
         container: the container in which to flag the commit as applied.
-
-    Returns:
-        typing.Optional[str]: the last commit applied.
     """
     head = _get_current_repo_commit(container)
     if head:
