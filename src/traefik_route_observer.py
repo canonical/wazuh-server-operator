@@ -40,7 +40,7 @@ class TraefikRouteObserver(Object):
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME, raw=True
         )
         self.framework.observe(
-            self._charm.on.traefik_relation_joined, self._on_traefik_relation_joined
+            self._charm.on.ingress_relation_joined, self._on_ingress_relation_joined
         )
 
     @property
@@ -93,7 +93,7 @@ class TraefikRouteObserver(Object):
             },
         }
 
-    def _on_traefik_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
+    def _on_ingress_relation_joined(self, event: ops.RelationJoinedEvent) -> None:
         """Handle the relation joined event.
 
         Args:
