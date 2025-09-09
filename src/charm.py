@@ -305,6 +305,9 @@ class WazuhServerCharm(CharmBaseWithState):
 
         This is the main entry for changes that require a restart.
 
+        Args:
+            event: the hook event that launched the reconcile.
+
         Raises:
             InvalidStateError: if the charm configuration is invalid.
         """
