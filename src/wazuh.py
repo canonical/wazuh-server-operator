@@ -484,8 +484,12 @@ def sync_config_repo(
 
     current_head = _get_current_repo_commit(container)
     applied_head = _read_applied_commit(container)
-    already_synced: bool = current_head == applied_head and is_right_repo and is_right_tag
-
+    
+    if not current_head or not applied_head:
+        already_synced = False
+    else:
+        already_synced = (current_head == applied_head) and is_right_repo and is_right_tag
+    
     if already_synced:
         logger.info("custom_config_repository is already up to date")
         return False
