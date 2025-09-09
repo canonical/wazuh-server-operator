@@ -300,13 +300,10 @@ class WazuhServerCharm(CharmBaseWithState):
                 )
                 logger.debug("Added secret %s with API credentials", secret.id)
 
-    def reconcile(self, event: ops.HookEvent) -> None:  # noqa: C901
+    def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.
-
-        Args:
-            event: the hook event that launched the reconcile.
 
         Raises:
             InvalidStateError: if the charm configuration is invalid.
@@ -316,8 +313,6 @@ class WazuhServerCharm(CharmBaseWithState):
         if not container.can_connect():
             logger.warning("Cannot connect to container during reconcile. Waiting for new events.")
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
-            if event is not None:
-                event.defer()
             return
         try:
             _ = self.state  # Ensure the state is valid
