@@ -121,7 +121,7 @@ def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
         commit_applied = container.pull(APPLIED_MARKER_PATH).read().strip()
         return commit_applied or None
     except ops.pebble.PathError:
-        logger.error("unable to find last commit successfully applied")
+        logger.debug("no applied commit marker yet (first run?)")
         return None
 
 
@@ -484,12 +484,15 @@ def sync_config_repo(
 
     current_head = _get_current_repo_commit(container)
     applied_head = _read_applied_commit(container)
-    
-    if not current_head or not applied_head:
-        already_synced = False
+
+    if is_right_repo and is_right_tag:
+        if not current_head or not applied_head:
+            already_synced = True
+        else:
+            already_synced = current_head == applied_head
     else:
-        already_synced = (current_head == applied_head) and is_right_repo and is_right_tag
-    
+        already_synced = False
+
     if already_synced:
         logger.info("custom_config_repository is already up to date")
         return False
