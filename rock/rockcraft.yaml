@@ -62,9 +62,19 @@ parts:
     build-packages:
       - apt-transport-https
       - gnupg
-    stage-packages:
-      - wazuh-manager=4.11.0-1
-      - ca-certificates
+    overlay-script: |
+      mount /etc/resolv.conf $CRAFT_OVERLAY/etc/resolv.conf --bind
+      mount proc $CRAFT_OVERLAY/proc -t proc
+      mount /dev $CRAFT_OVERLAY/dev --rbind --make-private
+      chroot $CRAFT_OVERLAY apt-get update
+      chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install ca-certificates --yes"
+      curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:${CRAFT_OVERLAY}/usr/share/keyrings/wazuh.gpg --import && chmod 644 ${CRAFT_OVERLAY}/usr/share/keyrings/wazuh.gpg
+      chroot $CRAFT_OVERLAY bash -c 'echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list'
+      chroot $CRAFT_OVERLAY apt-get update
+      chroot $CRAFT_OVERLAY bash -c "DEBIAN_FRONTEND=noninteractive apt-get install wazuh-manager=4.11.0-1 --yes"
+      umount --recursive $CRAFT_OVERLAY/dev
+      umount $CRAFT_OVERLAY/proc
+      umount $CRAFT_OVERLAY/etc/resolv.conf
   prometheus-exporter:
     plugin: python
     stage-packages:
