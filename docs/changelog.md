@@ -14,6 +14,7 @@ Each revision is versioned by the date of the revision.
 
 ### Updated
 
+- Fix an issue causing the rock not to be built.
 - Update the Wazuh Grafana dashboard to the one created by @Chiori-Ndukwe.
 
 ## 2025-08-25
