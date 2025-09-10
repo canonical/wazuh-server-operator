@@ -339,6 +339,7 @@ class WazuhServerCharm(CharmBaseWithState):
             return
         try:
             _ = self.state  # Ensure the state is valid
+            self.traefik_route_observer.reconcile()
             local_repo_updated: bool = wazuh.sync_config_repo(
                 container,
                 repository=self.state.custom_config_repository,
@@ -347,7 +348,6 @@ class WazuhServerCharm(CharmBaseWithState):
             self._reconcile_filebeat(container)
             self._reconcile_rsyslog(container, local_repo_updated)
             self._reconcile_wazuh(container, local_repo_updated)
-            self.traefik_route_observer.reconcile()
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
             self._configure_users()

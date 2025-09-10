@@ -39,9 +39,6 @@ class TraefikRouteObserver(Object):
         self.traefik_route = TraefikRouteRequirer(
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME, raw=True
         )
-        self.framework.observe(
-            self._charm.on.ingress_relation_created, self._on_ingress_relation_created
-        )
 
     @property
     def _static_ingress_config(self) -> dict[str, dict[str, dict[str, str]]]:
@@ -93,22 +90,11 @@ class TraefikRouteObserver(Object):
             },
         }
 
-    def _on_ingress_relation_created(self, event: ops.RelationCreatedEvent) -> None:
-        """Handle the relation created event.
-
-        Args:
-            event: the event.
-        """
-        try:
-            self.reconcile()
-        except IncompleteStateError:
-            self._charm.unit.status = ops.WaitingStatus("Charm not ready.")
-            event.defer()
-
     def reconcile(self) -> None:
         """Build a raw ingress configuration for Traefik."""
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
+        logger.error("INGRESS CONFG: %", self._ingress_config)
         self.traefik_route.submit_to_traefik(
             self._ingress_config, static=self._static_ingress_config
         )
