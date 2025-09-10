@@ -88,6 +88,55 @@ class NodeType(Enum):
     MASTER = "master"
 
 
+def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
+    """Actual HEAD of the cloned repo, or None if non-existing.
+    Arguments:
+        container: the container for which to read the actual repo commit.
+    Returns:
+        typing.Optional[str]: the actual commit.
+    """
+    try:
+        process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
+        out, _ = process.wait_output()
+        head = out.strip()
+        return head or None
+
+    except ops.pebble.APIError:
+        logger.error("git rev-parse of the repository failed, unable to access commit's SHA")
+        return None
+
+
+def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
+    """Read the last commit successfully applied.
+    Arguments:
+        container: the container for which to read the commit.
+    Returns:
+        typing.Optional[str]: the last commit applied.
+    """
+    try:
+        commit_applied = container.pull(APPLIED_MARKER_PATH).read().strip()
+        return commit_applied or None
+    except ops.pebble.PathError:
+        logger.debug("no applied commit marker yet (first run?)")
+        return None
+
+
+def save_applied_commit_marker(container: ops.Container) -> None:
+    """Save actual HEAD as applied, call only after successful reconciliation.
+    Arguments:
+        container: the container in which to flag the commit as applied.
+    """
+    head = _get_current_repo_commit(container)
+    if head:
+        container.push(
+            APPLIED_MARKER_PATH,
+            f"{head}\n",
+            encoding="utf-8",
+            make_dirs=True,
+            permissions=0o644,
+        )
+
+
 def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
     """Update Filebeat configuration.
 
