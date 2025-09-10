@@ -77,8 +77,6 @@ parts:
       umount $CRAFT_OVERLAY/etc/resolv.conf
   prometheus-exporter:
     plugin: python
-    stage-packages:
-      - python3-venv
     source: https://github.com/pyToshka/wazuh-prometheus-exporter.git
     source-depth: 1
     source-type: git
@@ -95,6 +93,10 @@ parts:
         owner: 2000
         group: 2000
         mode: "755"
+    stage-packages:
+      - python3-venv
+    stage:
+      - -usr/lib/ssl/*
   rsyslog:
     plugin: nil
     stage-packages:
