@@ -499,10 +499,11 @@ def sync_config_repo(
         if not current_head or not applied_head:
             logger.info(
                 "custom_config_repository not yet applied (head=%s, marker=%s)",
-                current_head, applied_head
+                current_head,
+                applied_head,
             )
         else:
-            already_synced = (current_head == applied_head)
+            already_synced = current_head == applied_head
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
