@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1196,
+  "id": null,
   "links": [
     {
       "icon": "doc",
@@ -45,7 +45,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -111,7 +111,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -129,7 +129,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -179,7 +179,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "wazuh_total_agents{juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -194,7 +194,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -244,7 +244,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "wazuh_active_agents{juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -259,7 +259,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -310,7 +310,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "analysisd_stats{analysisd_stats=\"event_queue_usage\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"} / on(instance, job, juju_application, juju_charm, juju_model, juju_model_uuid, juju_unit) group_right() analysisd_stats{analysisd_stats=\"event_queue_size\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -325,7 +325,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -376,7 +376,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "analysisd_stats{analysisd_stats=\"alerts_queue_usage\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"} / on(instance, job, juju_application, juju_charm, juju_model, juju_model_uuid, juju_unit) group_right() analysisd_stats{analysisd_stats=\"alerts_queue_size\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -391,7 +391,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -468,7 +468,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "wazuh_active_agents{juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -479,7 +479,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "wazuh_disconnected_agents{juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -491,7 +491,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "wazuh_pending_agents{juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -503,7 +503,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "expr": "wazuh_never_connected_agents{juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}",
@@ -519,7 +519,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -578,25 +578,27 @@
           "placement": "bottom",
           "showLegend": true
         },
-        "orientation": "vertical",
-        "showValue": "never",
+        "orientation": "auto",
+        "showValue": "auto",
         "stacking": "none",
         "tooltip": {
           "mode": "single",
           "sort": "none"
         },
         "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 100
+        "xTickLabelSpacing": 0
       },
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "rate(analysisd_stats{analysisd_stats=\"events_received\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}[$__rate_interval])",
+          "expr": "analysisd_stats{analysisd_stats=\"events_received\"}",
+          "format": "time_series",
           "instant": false,
           "interval": "",
           "legendFormat": "Received",
@@ -606,11 +608,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
-          "editorMode": "code",
+          "editorMode": "builder",
           "exemplar": false,
-          "expr": "rate(analysisd_stats{analysisd_stats=\"events_processed\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}[$__rate_interval])",
+          "expr": "analysisd_stats{analysisd_stats=\"events_processed\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -621,10 +623,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "rate(analysisd_stats{analysisd_stats=\"events_dropped\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}[$__rate_interval])",
+          "expr": "analysisd_stats{analysisd_stats=\"events_dropped\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "Dropped",
@@ -638,7 +640,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P9F8F231DC3B5E1F4"
+        "uid": "${prometheusds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -711,11 +713,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P9F8F231DC3B5E1F4"
+            "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "exemplar": true,
-          "expr": "rate(analysisd_stats{analysisd_stats=\"alerts_written\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"}[$__rate_interval])",
+          "exemplar": false,
+          "expr": "analysisd_stats{analysisd_stats=\"alerts_written\"}",
           "instant": false,
           "interval": "",
           "legendFormat": "Received",
@@ -725,18 +727,379 @@
       ],
       "title": "Alerts written",
       "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prometheusds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 13,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "vertical",
+        "showValue": "never",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheusds}"
+          },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "rate(analysisd_stats{analysisd_stats=\"events_received\"}[$__rate_interval])",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "Received",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheusds}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "rate(analysisd_stats{analysisd_stats=\"events_processed\"}[$__rate_interval])",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Processed",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheusds}"
+          },
+          "editorMode": "code",
+          "expr": "rate(analysisd_stats{analysisd_stats=\"events_dropped\"}[$__rate_interval])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Dropped",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Events Processing Rate",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prometheusds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 12,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "vertical",
+        "showValue": "never",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheusds}"
+          },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "rate(analysisd_stats{analysisd_stats=\"alerts_written\"}[$__rate_interval])",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "Received",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Alerts Writing Rate",
+      "type": "barchart"
     }
   ],
   "refresh": "5s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [
-    "wazuh",
-    "wazuh-server",
-    "charm: wazuh-server"
-  ],
+  "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up,juju_model)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju model",
+        "multi": true,
+        "name": "juju_model",
+        "options": [],
+        "query": {
+          "query": "label_values(up,juju_model)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up{juju_model=~\"$juju_model\"},juju_model_uuid)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju model uuid",
+        "multi": true,
+        "name": "juju_model_uuid",
+        "options": [],
+        "query": {
+          "query": "label_values(up{juju_model=~\"$juju_model\"},juju_model_uuid)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\"},juju_application)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju application",
+        "multi": true,
+        "name": "juju_application",
+        "options": [],
+        "query": {
+          "query": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\"},juju_application)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_application=~\"$juju_application\"},juju_unit)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju unit",
+        "multi": true,
+        "name": "juju_unit",
+        "options": [],
+        "query": {
+          "query": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_application=~\"$juju_application\"},juju_unit)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "Prometheus"
+          ],
+          "value": [
+            "Prometheus"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Prometheus datasource",
+        "multi": true,
+        "name": "prometheusds",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Loki datasource",
+        "multi": true,
+        "name": "lokids",
+        "options": [],
+        "query": "loki",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
   },
   "time": {
     "from": "now-2d",
