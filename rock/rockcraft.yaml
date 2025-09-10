@@ -63,9 +63,8 @@ parts:
       - apt-transport-https
       - gnupg
     stage-packages:
-      - ca-certificates
-    overlay-packages:
       - wazuh-manager=4.11.0-1
+      - ca-certificates
   prometheus-exporter:
     plugin: python
     stage-packages:
