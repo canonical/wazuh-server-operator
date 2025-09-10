@@ -476,7 +476,17 @@ def sync_config_repo(
     repo = _get_current_repo_url(container)
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
-    already_synced: bool = is_right_repo and is_right_tag
+    
+    current_head = _get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container)
+
+    if is_right_repo and is_right_tag:
+        if not current_head or not applied_head:
+            already_synced = True
+        else:
+            already_synced = current_head == applied_head
+    else:
+        already_synced = False
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
