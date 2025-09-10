@@ -65,7 +65,7 @@ parts:
     stage-packages:
       - ca-certificates
     overlay-packages:
-      - wazuh-manager
+      - wazuh-manager=4.11.0-1
   prometheus-exporter:
     plugin: python
     stage-packages:
