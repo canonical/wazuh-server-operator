@@ -1,4 +1,4 @@
-# How to test the charm
+# How to run the integration tests
 
 The integration tests for this charm are designed to be run by
 [canonical/operator-workflows/integration_test](https://github.com/canonical/operator-workflows/blob/main/.github/workflows/integration_test.yaml).
@@ -73,11 +73,11 @@ mkdir -p ~/.kube
 k8s config > ~/.kube/config
 ```
 
-#### Configure Kubernetes load-balancer
+#### Configure the Kubernetes load-balancer
 
-The following commands will configure the Kubernetes `metallb` plugin to use IP addresses
-between .225 and .250 on the machine's 'real' subnet. If this creates IP
-address conflict(s) in your environment, please modify the commands.
+The following commands will configure the Kubernetes `metallb` plugin to use IP
+addresses between .225 and .250 on the machine's 'real' subnet. If this creates
+IP address conflict(s) in your environment, please modify the commands.
 
 ```bash
 k8s enable load-balancer
@@ -93,7 +93,7 @@ k8s set \
   load-balancer.l2-mode=true
 ```
 
-### Install kubectl
+#### Install kubectl
 
 ```bash
 snap install kubectl --classic
@@ -150,11 +150,12 @@ This project uses `tox` for managing test environments. There are some
 pre-configured environments that can be used for linting and formatting code
 when you're preparing contributions to the charm:
 
-* ``tox``: Executes all of the basic checks and tests (``lint``, ``unit``, ``static``, and ``format``).
-* ``tox run -e fmt``: Update your code according to linting rules.
-* ``tox run -e lint``: Runs a range of static code analysis to check the code.
-* ``tox run -e static``: Runs other checks such as ``bandit`` for security issues.
-* ``tox run -e unit``: Runs unit tests.
+- `tox`: Executes all of the basic checks and tests (`lint`, `unit`, `static`,
+  and `format`).
+- `tox run -e fmt`: Update your code according to linting rules.
+- `tox run -e lint`: Runs a range of static code analysis to check the code.
+- `tox run -e static`: Runs other checks such as `bandit` for security issues.
+- `tox run -e unit`: Runs unit tests.
 
 ## Integration testing
 
@@ -262,4 +263,39 @@ tox run -e integration -- \
     --single-node-indexer --keep-models \
     --controller k8s --model test-wazuh \
     --no-deploy
+```
+
+## Troubleshooting
+
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+### IO
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
+
+Running the integration tests is IO-intensive. If you receive frequent errors
+related to Kubernetes timeouts, it may be related to disk IO limitations. If
+your environment is running on top of ZFS, consider setting `sync=disabled`.
+
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+### AppArmor
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
+
+Errors can also be related to the installed snaps' AppArmor restrictions. You
+can review AppArmor 'block' decisions by searching kernel logs:
+
+```bash
+dmesg | grep 'apparmor="DENIED"'
+```
+
+To test whether AppArmor restrictions are causing an error, install each snap in
+[developer mode](https://snapcraft.io/docs/install-modes#developer-mode) by
+appending `--devmode` to the installation command. You can further reduce
+AppArmor restrictions by enabling the 'devmode-debug' setting.
+
+Example:
+
+```bash
+snap install lxd --channel=6/stable --revision=34285 --devmode
+snap stop lxd
+snap set lxd devmode-debug=true
+snap start lxd
 ```
