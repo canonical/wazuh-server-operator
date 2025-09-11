@@ -335,7 +335,7 @@ class WazuhServerCharm(CharmBaseWithState):
             container.replan()
 
             # Set new head version
-            wazuh.save_applied_commit_marker(container)
+            #wazuh.save_applied_commit_marker(container)
 
             self.unit.set_workload_version(wazuh.get_version(container))
             self.unit.status = ops.ActiveStatus()
