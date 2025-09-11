@@ -61,13 +61,13 @@ The complete list of available integrations can be found [in the Integrations ta
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_juju"></a> [juju](#requirement\_juju) | >= 0.19.0 |
+| <a name="requirement_juju"></a> [juju](#requirement\_juju) | >= 0.22.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_juju"></a> [juju](#provider\_juju) | >= 0.19.0 |
+| <a name="provider_juju"></a> [juju](#provider\_juju) | >= 0.22.0 |
 
 ## Modules
 
