@@ -1,6 +1,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+# pylint detects the patches states as duplicate code
+# pylint: disable=duplicate-code
 
 """Certificates observer unit tests."""
 
@@ -57,12 +59,13 @@ class ObservedCharm(state.CharmBaseWithState):
         return state.State(
             agent_password=None,
             api_credentials=api_credentials,
-            cluster_key=cluster_key,
             certificate="certificate",
-            root_ca="root_ca",
+            cluster_key=cluster_key,
             indexer_endpoints=["10.0.0.1"],
             filebeat_username="user1",
             filebeat_password=password,
+            root_ca="root_ca",
+            units_fqdns=["host1.example"],
             wazuh_config=state.WazuhConfig(
                 api_credentials=api_credentials,
                 custom_config_repository=None,
