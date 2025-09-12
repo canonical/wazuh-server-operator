@@ -46,6 +46,7 @@ LOGS_PATH = Path("/var/ossec/logs")
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
+APPLIED_MARKER_PATH = REPOSITORY_PATH + "/.custom_config_applied_commit"
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
 RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
@@ -85,6 +86,55 @@ class NodeType(Enum):
 
     WORKER = "worker"
     MASTER = "master"
+
+
+def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
+    """Actual HEAD of the cloned repo, or None if non-existing.
+    Arguments:
+        container: the container for which to read the actual repo commit.
+    Returns:
+        typing.Optional[str]: the actual commit.
+    """
+    try:
+        process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
+        out, _ = process.wait_output()
+        head = out.strip()
+        return head or None
+
+    except ops.pebble.APIError:
+        logger.error("git rev-parse of the repository failed, unable to access commit's SHA")
+        return None
+
+
+def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
+    """Read the last commit successfully applied.
+    Arguments:
+        container: the container for which to read the commit.
+    Returns:
+        typing.Optional[str]: the last commit applied.
+    """
+    try:
+        commit_applied = container.pull(APPLIED_MARKER_PATH).read().strip()
+        return commit_applied or None
+    except ops.pebble.PathError:
+        logger.debug("no applied commit marker yet (first run?)")
+        return None
+
+
+def save_applied_commit_marker(container: ops.Container) -> None:
+    """Save actual HEAD as applied, call only after successful reconciliation.
+    Arguments:
+        container: the container in which to flag the commit as applied.
+    """
+    head = _get_current_repo_commit(container)
+    if head:
+        container.push(
+            APPLIED_MARKER_PATH,
+            f"{head}\n",
+            encoding="utf-8",
+            make_dirs=True,
+            permissions=0o644,
+        )
 
 
 def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
@@ -426,6 +476,18 @@ def sync_config_repo(
     repo = _get_current_repo_url(container)
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
+    
+    # current_head = _get_current_repo_commit(container)
+    # applied_head = _read_applied_commit(container)
+
+    # if is_right_repo and is_right_tag:
+    #     if not current_head or not applied_head:
+    #         already_synced = True
+    #     else:
+    #         already_synced = current_head == applied_head
+    # else:
+    #     already_synced = False
+
     already_synced: bool = is_right_repo and is_right_tag
 
     if already_synced:
