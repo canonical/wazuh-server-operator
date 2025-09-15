@@ -101,8 +101,13 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         head = out.strip()
         return head or None
 
-    except ops.pebble.APIError:
-        logger.error("git rev-parse of the repository failed, unable to access commit's SHA")
+    except ops.pebble.APIError as e:
+        logger.error("git rev-parse of the repository failed, unable to access commit's SHA: %s",str(e))
+        return None
+
+    except ops.pebble.ExecError as e:
+        logger.warning("git rev-parse of the repository failed, probably not initialized yet: %s",
+                     e.stderr.strip() or str(e))
         return None
 
 
