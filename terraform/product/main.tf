@@ -62,7 +62,7 @@ resource "juju_integration" "wazuh_server_api" {
   }
 
   application {
-    offer_url = "${var.server_controller}:${juju_offer.wazuh_server_api.url}"
+    offer_url = juju_offer.wazuh_server_api.url
   }
 
   depends_on = [
@@ -142,7 +142,7 @@ resource "juju_integration" "wazuh_server_certificates" {
   }
 
   application {
-    offer_url = "${var.indexer_controller}:${juju_offer.self_signed_certificates.url}"
+    offer_url = juju_offer.self_signed_certificates.url
   }
 
   depends_on = [
@@ -323,7 +323,7 @@ resource "juju_integration" "wazuh_indexer_dashboard" {
   }
 
   application {
-    offer_url = "${var.indexer_controller}:${juju_offer.wazuh_indexer.url}"
+    offer_url = juju_offer.wazuh_indexer.url
   }
 
   provider = juju.wazuh_dashboard
@@ -337,7 +337,7 @@ resource "juju_integration" "wazuh_dashboard_certificates" {
     endpoint = module.wazuh_dashboard.wazuh_dashboard_requires.certificates
   }
   application {
-    offer_url = "${var.indexer_controller}:${juju_offer.self_signed_certificates.url}"
+    offer_url = juju_offer.self_signed_certificates.url
   }
 
   provider = juju.wazuh_dashboard
@@ -352,7 +352,7 @@ resource "juju_integration" "wazuh_server_indexer" {
   }
 
   application {
-    offer_url = "${var.indexer_controller}:${juju_offer.wazuh_indexer.url}"
+    offer_url = juju_offer.wazuh_indexer.url
   }
 
   depends_on = [
