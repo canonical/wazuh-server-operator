@@ -10,7 +10,7 @@ Each revision is versioned by the date of the revision.
 
 ### Removed
 
-- Support fro cross controller relations in the TF product.
+- Support for cross controller relations in the TF product.
 
 ## 2025-09-11
 
