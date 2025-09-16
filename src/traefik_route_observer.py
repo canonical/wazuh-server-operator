@@ -6,12 +6,11 @@
 import logging
 import typing
 
-import ops
 from charms.traefik_k8s.v0.traefik_route import TraefikRouteRequirer
 from ops.framework import Object
 
 import wazuh
-from state import CharmBaseWithState, IncompleteStateError
+from state import CharmBaseWithState
 
 logger = logging.getLogger(__name__)
 RELATION_NAME = "ingress"
@@ -95,7 +94,7 @@ class TraefikRouteObserver(Object):
         _ = self._charm.state  # Ensure the state is valid
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
-        logger.error("INGRESS CONFG: %", self._ingress_config)
+        logger.error("INGRESS CONFIG: %s", self._ingress_config)
         self.traefik_route.submit_to_traefik(
             self._ingress_config, static=self._static_ingress_config
         )
