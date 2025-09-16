@@ -9,6 +9,7 @@ import logging
 import re
 import secrets
 import string
+import time
 import typing
 from enum import Enum
 from pathlib import Path
@@ -17,7 +18,6 @@ import ops
 import requests
 import requests.adapters
 import yaml
-import time
 
 # Bandit classifies this import as vulnerable. For more details, see
 # https://github.com/PyCQA/bandit/issues/767
@@ -91,8 +91,10 @@ class NodeType(Enum):
 
 def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
     """Actual HEAD of the cloned repo, or None if non-existing.
+
     Arguments:
         container: the container for which to read the actual repo commit.
+
     Returns:
         typing.Optional[str]: the actual commit.
     """
@@ -103,19 +105,24 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         return head or None
 
     except ops.pebble.APIError as e:
-        logger.error("git rev-parse of the repository failed, unable to access commit's SHA: %s",str(e))
+        logger.error(
+            "git rev-parse of the repository failed, unable to access commit's SHA: %s", str(e)
+        )
         return None
 
     except ops.pebble.ExecError as e:
-        logger.warning("git rev-parse of the repository failed, probably not initialized yet: %s",
-                     e.stderr.strip() or str(e))
+        logger.warning(
+            "git rev-parse of the repository failed, probably not initialized yet: %s", str(e)
+        )
         return None
 
 
 def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
     """Read the last commit successfully applied.
+
     Arguments:
         container: the container for which to read the commit.
+
     Returns:
         typing.Optional[str]: the last commit applied.
     """
@@ -129,6 +136,7 @@ def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
 
 def save_applied_commit_marker(container: ops.Container) -> None:
     """Save actual HEAD as applied, call only after successful reconciliation.
+
     Arguments:
         container: the container in which to flag the commit as applied.
     """
@@ -482,17 +490,18 @@ def sync_config_repo(
     repo = _get_current_repo_url(container)
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
-    
-    current_head = _get_current_repo_commit(container)
-    applied_head = _read_applied_commit(container)
 
-    if is_right_repo and is_right_tag:
-        if not current_head or not applied_head:
-            already_synced = True
-        else:
-            already_synced = current_head == applied_head
-    else:
-        already_synced = False
+    already_synced: bool = is_right_repo and is_right_tag
+    # current_head = _get_current_repo_commit(container)
+    # applied_head = _read_applied_commit(container)
+
+    # if is_right_repo and is_right_tag:
+    #     if not current_head or not applied_head:
+    #         already_synced = True
+    #     else:
+    #         already_synced = current_head == applied_head
+    # else:
+    #     already_synced = False
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
@@ -891,11 +900,11 @@ def get_version(container: ops.Container) -> str:
     version = re.search('^WAZUH_VERSION="(.*)"', version_string)
     return version.group(1) if version else ""
 
+
 def wait_until_api_auth_ready(
     username: str,
     default_password: str,
     stored_password: str,
-    timeout: int = 60,
     interval: int = 3,
     fallback_window: int = 15,
 ) -> bool:
@@ -905,32 +914,23 @@ def wait_until_api_auth_ready(
         username: username to check (default 'wazuh').
         default_password: the default password expected on first boot.
         stored_password: the password persisted in state (if already rotated).
-        timeout: total timeout in seconds.
         interval: delay in seconds between attempts.
         fallback_window: extra seconds to try the stored password if default fails.
 
     Returns: True if authentication succeeds, False otherwise.
     """
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        try:
-            _ = authenticate_user(username, default_password)
-            return True
-        except WazuhAuthenticationError:
-            pass
-        except Exception:
-            pass
-        time.sleep(interval)
+    timeout = 60
+    possible_passwords_timeouts = [(default_password, timeout), (stored_password, fallback_window)]
 
-    deadline = time.time() + fallback_window
-    while time.time() < deadline:
-        try:
-            _ = authenticate_user(username, stored_password)
-            return True
-        except WazuhAuthenticationError:
-            pass
-        except Exception:
-            pass
-        time.sleep(interval)
-
+    for password, window in possible_passwords_timeouts:
+        deadline = time.time() + window
+        while time.time() < deadline:
+            try:
+                _ = authenticate_user(username, password)
+                return True
+            except WazuhAuthenticationError:
+                logger.warning("Auth failed with user %s, API unready. Retrying.", username)
+            except WazuhInstallationError as e:
+                logger.warning("API readiness check failed with %s", str(e))
+            time.sleep(interval)
     return False
