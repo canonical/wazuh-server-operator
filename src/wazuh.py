@@ -17,6 +17,7 @@ import ops
 import requests
 import requests.adapters
 import yaml
+import time
 
 # Bandit classifies this import as vulnerable. For more details, see
 # https://github.com/PyCQA/bandit/issues/767
@@ -892,38 +893,46 @@ def get_version(container: ops.Container) -> str:
     version = re.search('^WAZUH_VERSION="(.*)"', version_string)
     return version.group(1) if version else ""
 
-def ping_api(timeout: int = 2) -> bool:
-    """TEMPORARY TEST Check if the Wazuh API is reachable.
+def wait_until_api_auth_ready(
+    username: str,
+    default_password: str,
+    stored_password: str,
+    timeout: int = 60,
+    interval: int = 3,
+    fallback_window: int = 15,
+) -> bool:
+    """Wait until the Wazuh API for login is ready.
 
     Arguments:
-        timeout: maximum time in seconds to wait for a response.
+        username: username to check (default 'wazuh').
+        default_password: the default password expected on first boot.
+        stored_password: the password persisted in state (if already rotated).
+        timeout: total timeout in seconds.
+        interval: delay in seconds between attempts.
+        fallback_window: extra seconds to try the stored password if default fails.
 
-    Returns: True if the API responds, False otherwise.
+    Returns: True if authentication succeeds, False otherwise.
     """
-    try:
-        response = requests.get(
-            f"https://localhost:{API_PORT}/security/roles",
-            timeout=timeout,
-            verify=False,
-        )
-        return 200 <= response.status_code < 500
-    except Exception as exc:
-        logger.debug("Wazuh API ping failed: %s", str(exc))
-        return False
-
-def wait_until_api_ready(timeout: int = 60, interval: int = 3) -> bool:
-    """TEMPORARY TEST Wait until the Wazuh API is ready.
-
-    Arguments:
-        timeout: total timeout in seconds before giving up.
-        interval: delay in seconds between retry attempts.
-
-    Returns: True if the API responds within the timeout, False otherwise.
-    """
-    import time
     deadline = time.time() + timeout
     while time.time() < deadline:
-        if ping_api(timeout=interval):
+        try:
+            _ = authenticate_user(username, default_password)
             return True
+        except WazuhAuthenticationError:
+            pass
+        except Exception:
+            pass
         time.sleep(interval)
+
+    deadline = time.time() + fallback_window
+    while time.time() < deadline:
+        try:
+            _ = authenticate_user(username, stored_password)
+            return True
+        except WazuhAuthenticationError:
+            pass
+        except Exception:
+            pass
+        time.sleep(interval)
+
     return False

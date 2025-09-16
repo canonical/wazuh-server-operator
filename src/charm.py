@@ -328,8 +328,14 @@ class WazuhServerCharm(CharmBaseWithState):
             container.replan()
 
             # TEMPORARY FIX TEST
-            if not wazuh.wait_until_api_ready(timeout=60, interval=3):
-                self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh API")
+            if not wazuh.wait_until_api_auth_ready(
+                username="wazuh",
+                default_password=state.WAZUH_USERS["wazuh"]["default_password"],
+                stored_password=self.state.api_credentials["wazuh"],
+                timeout=60,
+                interval=3,
+            ):
+                self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh API/auth")
                 return
             
             self._configure_users()
