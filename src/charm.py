@@ -326,8 +326,12 @@ class WazuhServerCharm(CharmBaseWithState):
             self._reconcile_wazuh(container, local_repo_updated)
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
-            # TEMPORARY TEST NEED TO REMOVE, check race condition
-            time.sleep(30)
+
+            # TEMPORARY FIX TEST
+            if not wazuh.wait_until_api_ready(timeout=60, interval=3):
+                self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh API")
+                return
+            
             self._configure_users()
             self._populate_wazuh_api_relation_data()
             # Fetch the new wazuh layer, which has different env vars

@@ -891,3 +891,40 @@ def get_version(container: ops.Container) -> str:
     version_string, _ = process.wait_output()
     version = re.search('^WAZUH_VERSION="(.*)"', version_string)
     return version.group(1) if version else ""
+
+def ping_api(timeout: int = 2) -> bool:
+    """TEMPORARY TEST Check if the Wazuh API is reachable.
+
+    Arguments:
+        timeout: maximum time in seconds to wait for a response.
+
+    Returns: True if the API responds, False otherwise.
+    """
+    try:
+        response = requests.get(
+            f"https://localhost:{API_PORT}/security/roles",
+            headers={"Content-Type": "application/json"},
+            timeout=timeout,
+            verify=False,
+        )
+        return response.status_code == 200
+    except Exception as exc:
+        logger.debug("Wazuh API ping failed: %s", str(exc))
+        return False
+
+def wait_until_api_ready(timeout: int = 60, interval: int = 3) -> bool:
+    """TEMPORARY TEST Wait until the Wazuh API is ready.
+
+    Arguments:
+        timeout: total timeout in seconds before giving up.
+        interval: delay in seconds between retry attempts.
+
+    Returns: True if the API responds within the timeout, False otherwise.
+    """
+    import time
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if ping_api(timeout=interval):
+            return True
+        time.sleep(interval)
+    return False
