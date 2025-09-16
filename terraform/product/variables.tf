@@ -1,15 +1,6 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-variable "server_controller" {
-  description = "Reference to the Juju controller where Wazuh server is deployed."
-  type        = string
-}
-variable "indexer_controller" {
-  description = "Reference to the Juju controller where Wazuh indexer is deploy."
-  type        = string
-}
-
 variable "server_model" {
   description = "Reference to the k8s Juju model to deploy Wazuh server to."
   type        = string
