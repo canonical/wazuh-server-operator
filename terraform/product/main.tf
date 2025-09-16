@@ -43,7 +43,7 @@ resource "juju_offer" "wazuh_server_api" {
 
   name             = "wazuh-server-api"
   application_name = var.wazuh_server.app_name
-  endpoint         = module.wazuh_server.provides.wazuh_api
+  endpoints        = [module.wazuh_server.provides.wazuh_api]
 }
 
 resource "juju_access_offer" "wazuh_server_api" {
@@ -120,7 +120,7 @@ resource "juju_offer" "self_signed_certificates" {
 
   name             = "self-signed-certificates"
   application_name = juju_application.self_signed_certificates.name
-  endpoint         = "certificates"
+  endpoints        = ["certificates"]
 
   provider = juju.wazuh_indexer
 }
@@ -151,7 +151,7 @@ resource "juju_integration" "wazuh_server_certificates" {
 }
 
 module "wazuh_indexer" {
-  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev9&depth=1"
+  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev10&depth=1"
 
   model = data.juju_model.wazuh_indexer.name
 
@@ -187,7 +187,7 @@ resource "juju_offer" "wazuh_indexer" {
 
   name             = module.wazuh_indexer.app_name
   application_name = module.wazuh_indexer.app_name
-  endpoint         = module.wazuh_indexer.wazuh_indexer_provides.opensearch_client
+  endpoints        = [module.wazuh_indexer.wazuh_indexer_provides.opensearch_client]
 
   provider = juju.wazuh_indexer
 }

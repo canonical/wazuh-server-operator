@@ -39,7 +39,7 @@ the bundle deployment onto any Kubernetes environment managed by [Juju][Juju].
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_wazuh_dashboard"></a> [wazuh\_dashboard](#module\_wazuh\_dashboard) | git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product | rev17&depth=1 |
-| <a name="module_wazuh_indexer"></a> [wazuh\_indexer](#module\_wazuh\_indexer) | git::https://github.com/canonical/wazuh-indexer-operator//terraform/product | rev9&depth=1 |
+| <a name="module_wazuh_indexer"></a> [wazuh\_indexer](#module\_wazuh\_indexer) | git::https://github.com/canonical/wazuh-indexer-operator//terraform/product | rev10&depth=1 |
 | <a name="module_wazuh_indexer_backup"></a> [wazuh\_indexer\_backup](#module\_wazuh\_indexer\_backup) | ./modules/s3-integrator | n/a |
 | <a name="module_wazuh_server"></a> [wazuh\_server](#module\_wazuh\_server) | ../charm | n/a |
 
