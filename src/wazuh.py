@@ -903,11 +903,10 @@ def ping_api(timeout: int = 2) -> bool:
     try:
         response = requests.get(
             f"https://localhost:{API_PORT}/security/roles",
-            headers={"Content-Type": "application/json"},
             timeout=timeout,
             verify=False,
         )
-        return response.status_code == 200
+        return 200 <= response.status_code < 500
     except Exception as exc:
         logger.debug("Wazuh API ping failed: %s", str(exc))
         return False
