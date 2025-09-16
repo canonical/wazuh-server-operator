@@ -92,7 +92,7 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
     requirer_mock.is_ready.return_value = True
     monkeypatch.setattr(harness.charm.traefik_route, "traefik_route", requirer_mock)
 
-    harness.charm.traefik_route.reconcile()  # pylint: disable=W0212
+    harness.charm.traefik_route.reconcile()
 
     requirer_mock.submit_to_traefik.assert_called_once_with(
         {
@@ -183,6 +183,6 @@ def test_on_traefik_route_relation_joined_when_not_leader(monkeypatch: pytest.Mo
     mock = unittest.mock.Mock()
     monkeypatch.setattr(harness.charm.traefik_route.traefik_route, "submit_to_traefik", mock)
 
-    harness.charm.traefik_route.reconcile()  # pylint: disable=W0212
+    harness.charm.traefik_route.reconcile()
 
     mock.assert_not_called()
