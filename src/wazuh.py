@@ -908,7 +908,6 @@ def wait_until_api_auth_ready(
     default_password: str,
     stored_password: str,
     interval: int = 3,
-    fallback_window: int = 15,
 ) -> bool:
     """Wait until the Wazuh API for login is ready.
 
@@ -917,22 +916,23 @@ def wait_until_api_auth_ready(
         default_password: the default password expected on first boot.
         stored_password: the password persisted in state (if already rotated).
         interval: delay in seconds between attempts.
-        fallback_window: extra seconds to try the stored password if default fails.
 
     Returns: True if authentication succeeds, False otherwise.
     """
-    timeout = 60
-    possible_passwords_timeouts = [(default_password, timeout), (stored_password, fallback_window)]
+    timeout = 90
 
-    for password, window in possible_passwords_timeouts:
-        deadline = time.time() + window
-        while time.time() < deadline:
+    end = time.time() + timeout
+    while time.time() < end:
+        for pwd in [stored_password, default_password]:
+            if not pwd:
+                continue
             try:
-                _ = authenticate_user(username, password)
+                _ = authenticate_user(username, pwd)
                 return True
             except WazuhAuthenticationError:
                 logger.warning("Auth failed with user %s, API unready. Retrying.", username)
             except WazuhInstallationError as e:
                 logger.warning("API readiness check failed with %s", str(e))
-            time.sleep(interval)
+
+        time.sleep(interval)
     return False
