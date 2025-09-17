@@ -9,6 +9,7 @@ import logging
 import re
 import secrets
 import string
+import time
 import typing
 from enum import Enum
 from pathlib import Path
@@ -46,6 +47,7 @@ LOGS_PATH = Path("/var/ossec/logs")
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
+APPLIED_MARKER_PATH = REPOSITORY_PATH + "/.custom_config_applied_commit"
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
 RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
@@ -85,6 +87,68 @@ class NodeType(Enum):
 
     WORKER = "worker"
     MASTER = "master"
+
+
+def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
+    """Actual HEAD of the cloned repo, or None if non-existing.
+
+    Arguments:
+        container: the container for which to read the actual repo commit.
+
+    Returns:
+        typing.Optional[str]: the actual commit.
+    """
+    try:
+        process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
+        out, _ = process.wait_output()
+        head = out.strip()
+        return head or None
+
+    except ops.pebble.APIError as e:
+        logger.error(
+            "git rev-parse of the repository failed, unable to access commit's SHA: %s", str(e)
+        )
+        return None
+
+    except ops.pebble.ExecError as e:
+        logger.warning(
+            "git rev-parse of the repository failed, probably not initialized yet: %s", str(e)
+        )
+        return None
+
+
+def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
+    """Read the last commit successfully applied.
+
+    Arguments:
+        container: the container for which to read the commit.
+
+    Returns:
+        typing.Optional[str]: the last commit applied.
+    """
+    try:
+        commit_applied = container.pull(APPLIED_MARKER_PATH).read().strip()
+        return commit_applied or None
+    except ops.pebble.PathError:
+        logger.debug("no applied commit marker yet (first run?)")
+        return None
+
+
+def save_applied_commit_marker(container: ops.Container) -> None:
+    """Save actual HEAD as applied, call only after successful reconciliation.
+
+    Arguments:
+        container: the container in which to flag the commit as applied.
+    """
+    head = _get_current_repo_commit(container)
+    if head:
+        container.push(
+            APPLIED_MARKER_PATH,
+            f"{head}\n",
+            encoding="utf-8",
+            make_dirs=True,
+            permissions=0o644,
+        )
 
 
 def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
@@ -426,7 +490,20 @@ def sync_config_repo(
     repo = _get_current_repo_url(container)
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
-    already_synced: bool = is_right_repo and is_right_tag
+
+    current_head = _get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container)
+
+    already_synced: bool = False
+    if is_right_repo and is_right_tag:
+        if not current_head or not applied_head:
+            logger.info(
+                "custom_config_repository not yet applied (head=%s, marker=%s)",
+                current_head,
+                applied_head,
+            )
+        else:
+            already_synced = current_head == applied_head
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
@@ -824,3 +901,38 @@ def get_version(container: ops.Container) -> str:
     version_string, _ = process.wait_output()
     version = re.search('^WAZUH_VERSION="(.*)"', version_string)
     return version.group(1) if version else ""
+
+
+def wait_until_api_auth_ready(
+    username: str,
+    default_password: str,
+    stored_password: str,
+    interval: int = 3,
+    fallback_window: int = 15,
+) -> bool:
+    """Wait until the Wazuh API for login is ready.
+
+    Arguments:
+        username: username to check (default 'wazuh').
+        default_password: the default password expected on first boot.
+        stored_password: the password persisted in state (if already rotated).
+        interval: delay in seconds between attempts.
+        fallback_window: extra seconds to try the stored password if default fails.
+
+    Returns: True if authentication succeeds, False otherwise.
+    """
+    timeout = 60
+    possible_passwords_timeouts = [(default_password, timeout), (stored_password, fallback_window)]
+
+    for password, window in possible_passwords_timeouts:
+        deadline = time.time() + window
+        while time.time() < deadline:
+            try:
+                _ = authenticate_user(username, password)
+                return True
+            except WazuhAuthenticationError:
+                logger.warning("Auth failed with user %s, API unready. Retrying.", username)
+            except WazuhInstallationError as e:
+                logger.warning("API readiness check failed with %s", str(e))
+            time.sleep(interval)
+    return False
