@@ -92,10 +92,9 @@ class TraefikRouteObserver(Object):
 
     def reconcile(self) -> None:
         """Build a raw ingress configuration for Traefik."""
-        _ = self._charm.state  # Ensure the state is valid
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
-        logger.error("INGRESS CONFIG: %s", self._ingress_config)
+        _ = self._charm.state  # Ensure the state is valid
         self.traefik_route.submit_to_traefik(
             self._ingress_config, static=self._static_ingress_config
         )
