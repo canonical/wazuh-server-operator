@@ -77,9 +77,7 @@ class TraefikRouteObserver(Object):
             }
             services[service_name] = {
                 "loadBalancer": {
-                    "servers": [
-                        {"address": f"{fqdn}:{port}"} for fqdn in self._charm.state.units_fqdns
-                    ],
+                    "servers": [{"address": f"{fqdn}:{port}"} for fqdn in self._charm.units_fqdns],
                     "terminationDelay": -1,
                 }
             }
@@ -94,7 +92,6 @@ class TraefikRouteObserver(Object):
         """Build a raw ingress configuration for Traefik."""
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
-        _ = self._charm.state  # Ensure the state is valid
         self.traefik_route.submit_to_traefik(
             self._ingress_config, static=self._static_ingress_config
         )

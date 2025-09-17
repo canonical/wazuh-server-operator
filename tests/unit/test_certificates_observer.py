@@ -29,6 +29,7 @@ class ObservedCharm(state.CharmBaseWithState):
 
     Attrs:
         state: the charm state.
+        units_fqdns: the charm units' FQDNs.x
     """
 
     def __init__(self, *args):
@@ -45,6 +46,14 @@ class ObservedCharm(state.CharmBaseWithState):
     def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile the configuration with charm state."""
         self.count = self.count + 1
+
+    @property
+    def units_fqdns(self) -> list[str]:
+        """Retrieve the IP addresses of the charm units.
+
+        Returns: a list of the IP addresses.
+        """
+        return []
 
     @property
     def state(self) -> state.State | None:
@@ -65,7 +74,6 @@ class ObservedCharm(state.CharmBaseWithState):
             filebeat_username="user1",
             filebeat_password=password,
             root_ca="root_ca",
-            units_fqdns=["host1.example"],
             wazuh_config=state.WazuhConfig(
                 api_credentials=api_credentials,
                 custom_config_repository=None,

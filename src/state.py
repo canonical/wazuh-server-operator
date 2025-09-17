@@ -272,7 +272,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
         root_ca: the CA certificate for filebeat.
-        units_fqdns: the charm units FQDNs.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
         proxy: proxy configuration.
@@ -289,7 +288,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
     root_ca: str = Field(..., min_length=1)
-    units_fqdns: typing.Annotated[list[str], Field(min_length=1)]
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
     logs_ca_cert: str | None = None
@@ -306,7 +304,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         filebeat_username: str,
         filebeat_password: str,
         root_ca: str,
-        units_fqdns: list[str],
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: str | None,
         opencti_token: str | None = None,
@@ -323,7 +320,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
             root_ca: the CA certificate for filebeat.
-            units_fqdns: the charm units FQDNs.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
             opencti_token: the OpenCTI token.
@@ -338,7 +334,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
             root_ca=root_ca,
-            units_fqdns=units_fqdns,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
             logs_ca_cert=wazuh_config.logs_ca_cert,
@@ -377,7 +372,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         indexer_relation_data: dict[str, str],
         opencti_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
-        units_fqdns: list[str],
     ) -> "State":
         """Initialize the state from charm.
 
@@ -387,7 +381,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             indexer_relation_data: the Wazuh indexer app relation data.
             opencti_relation_data: the OpenCTI relation data.
             provider_certificates: the provider certificates.
-            units_fqdns: the FQDNs of the charm units.
 
         Returns:
             Current state of the charm.
@@ -429,7 +422,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                     filebeat_username=filebeat_username,
                     filebeat_password=filebeat_password,
                     root_ca=matching_certificates[0].ca,
-                    units_fqdns=units_fqdns,
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key,
                     opencti_url=opencti_url,
@@ -449,6 +441,7 @@ class CharmBaseWithState(ops.CharmBase, ABC):
 
     Attrs:
         state: the charm state.
+        units_fqdns: the charm units' FQDNs.
     """
 
     @abstractmethod
@@ -459,3 +452,11 @@ class CharmBaseWithState(ops.CharmBase, ABC):
     @abstractmethod
     def state(self) -> State | None:
         """The charm state."""
+
+    @property
+    @abstractmethod
+    def units_fqdns(self) -> list[str]:
+        """Retrieve the IP addresses of the charm units.
+
+        Returns: a list of the IP addresses.
+        """

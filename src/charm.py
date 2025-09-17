@@ -151,7 +151,6 @@ class WazuhServerCharm(CharmBaseWithState):
                 indexer_relation_data=opensearch_relation_data,
                 opencti_relation_data=opencti_relation_data,
                 provider_certificates=certificates,
-                units_fqdns=self.units_fqdns,
             )
         return self._cached_state
 

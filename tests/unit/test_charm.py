@@ -171,7 +171,6 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         filebeat_username="user1",
         filebeat_password=password,
         root_ca="root_ca",
-        units_fqdns=["host1.example"],
         wazuh_config=wazuh_config,
         custom_config_ssh_key="somekey",
         opencti_token=opencti_token,
@@ -279,7 +278,6 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         filebeat_username="user1",
         filebeat_password=password,
         root_ca="root_ca",
-        units_fqdns=["host1.example"],
         wazuh_config=WazuhConfig(
             custom_config_repository=None,
             custom_config_ssh_key=None,
