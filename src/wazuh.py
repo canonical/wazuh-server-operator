@@ -509,6 +509,10 @@ def sync_config_repo(
         logger.info("custom_config_repository is already up to date")
         return False
 
+    if already_synced:
+        logger.info("custom_config_repository is already up to date")
+        return False
+
     if repo_ssh_key:
         container.push(
             RSA_PATH,
