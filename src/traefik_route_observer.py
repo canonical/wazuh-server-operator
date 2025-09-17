@@ -38,6 +38,7 @@ class TraefikRouteObserver(Object):
         self.traefik_route = TraefikRouteRequirer(
             charm, self.model.get_relation(RELATION_NAME), RELATION_NAME, raw=True
         )
+        self.reconcile()
 
     @property
     def _static_ingress_config(self) -> dict[str, dict[str, dict[str, str]]]:

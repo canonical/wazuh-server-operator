@@ -339,7 +339,7 @@ class WazuhServerCharm(CharmBaseWithState):
             return
         try:
             _ = self.state  # Ensure the state is valid
-            self.traefik_route_observer.reconcile()
+            # self.traefik_route_observer.reconcile()
             local_repo_updated: bool = wazuh.sync_config_repo(
                 container,
                 repository=self.state.custom_config_repository,
