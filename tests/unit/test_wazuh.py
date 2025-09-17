@@ -320,12 +320,12 @@ def test_sync_config_repo_when_branch_up_to_date(
 
 
 @unittest.mock.patch.object(wazuh, "pull_config_repo")
-def test_sync_config_repo_when_tag_up_to_date(
+def test_sync_config_repo_when_tag_and_head_up_to_date(
     wazuh_pull_config_repo_mock: unittest.mock.Mock,
 ) -> None:
     """
-    arrange: do nothing.
-    act: sync config repo when repo is up to date (based on tag)
+    arrange: repo url/tag are matching and so are HEAD and stored head.
+    act: call sync_config_repo.
     assert: the repo is not fetched.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
@@ -345,14 +345,105 @@ def test_sync_config_repo_when_tag_up_to_date(
         ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
         result="v5",
     )
+    # current head
+    harness.handle_exec(
+        "wazuh-server", ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"], result="abc123"
+    )
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    wazuh.sync_config_repo(
+    # write marker == HEAD
+    container.push(
+        wazuh.APPLIED_MARKER_PATH,
+        "abc123\n",
+        encoding="utf-8",
+        make_dirs=True,
+    )
+    updated: bool = wazuh.sync_config_repo(
         container,
         repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@v5"),
         repo_ssh_key=None,
     )
-    assert not wazuh_pull_config_repo_mock.called
+    assert updated is False
+    wazuh_pull_config_repo_mock.assert_not_called()
+
+
+@unittest.mock.patch.object(wazuh, "pull_config_repo")
+def test_sync_config_repo_when_tag_up_to_date_but_head_mismatch_triggers_pull(
+    wazuh_pull_config_repo_mock: unittest.mock.Mock,
+) -> None:
+    """
+    arrange: repo url/tag do match but HEAD does not match with stored one.
+    act: sync config repo.
+    assert: pull_config_repo is called.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git+ssh://git@github.com/fake_repo/url.git",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="v5",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
+        result="abc123",
+    )
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    # stored head differs
+    container.push(
+        wazuh.APPLIED_MARKER_PATH,
+        "deadbeef\n",
+        encoding="utf-8",
+        make_dirs=True,
+    )
+    changed = wazuh.sync_config_repo(
+        container,
+        repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@v5"),
+        repo_ssh_key=None,
+    )
+    assert changed is True
+    wazuh_pull_config_repo_mock.assert_called_once()
+
+
+@unittest.mock.patch.object(wazuh, "pull_config_repo")
+def test_sync_config_repo_when_tag_up_to_date_but_marker_missing_triggers_pull(
+    pull_config_repo_mock: unittest.mock.Mock,
+) -> None:
+    """
+    arrange: repo url/tag match but applied HEAD is missing (usual first run).
+    act: sync config repo.
+    assert: pull_config_repo is called.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git+ssh://git@github.com/fake_repo/url.git",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="v5",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
+        result="abc123",
+    )
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    changed = wazuh.sync_config_repo(
+        container,
+        repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@v5"),
+        repo_ssh_key=None,
+    )
+    assert changed is True
+    pull_config_repo_mock.assert_called_once()
 
 
 def test_get_version() -> None:
