@@ -85,9 +85,9 @@ class WazuhServerCharm(CharmBaseWithState):
 
     @property
     def units_fqdns(self) -> list[str]:
-        """Retrieve the IP addresses of the charm units.
+        """Retrieve the FQDNs of the charm units.
 
-        Returns: a list of the IP addresses.
+        Returns: a list of FQDNs.
         """
         return (
             [
