@@ -90,10 +90,7 @@ class WazuhServerCharm(CharmBaseWithState):
         Returns: a list of FQDNs.
         """
         return (
-            [
-                f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints"
-                for unit in self.units
-            ]
+            [f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints" for unit in self.units]
             if self.units
             else [getfqdn()]
         )

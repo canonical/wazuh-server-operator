@@ -3,8 +3,6 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
-
 """Integration tests."""
 
 import logging
@@ -112,7 +110,6 @@ async def test_rsyslog_invalid_server_ca(application: Application):
     ],
 )
 async def test_rsyslog_client_cn(
-    model: Model,
     application: Application,
     traefik: Application,
     machine_model: Model,
@@ -125,13 +122,15 @@ async def test_rsyslog_client_cn(
     Assert: the message appears in the log only if the CN is valid
     """
     await application.scale(2)
-    await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
+    await application.model.wait_for_idle(
+        apps=[application.name, traefik.name], status="active", timeout=1400
+    )
     machine_controller = await machine_model.get_controller()
-    machine_model_url = f"{machine_controller.controller_name}:{machine_model.name}"
-    server_ca_cert = await get_ca_certificate(machine_model_url)
+    server_ca_cert = await get_ca_certificate(
+        f"{machine_controller.controller_name}:{machine_model.name}"
+    )
     controller = await application.model.get_controller()
-    model_url = f"{controller.controller_name}:{application.model.name}"
-    wazuh_ip = await get_wazuh_ip(model_url)
+    wazuh_ip = await get_wazuh_ip(f"{controller.controller_name}:{application.model.name}")
 
     needle = secrets.token_hex()
     sent = await send_syslog_over_tls(
