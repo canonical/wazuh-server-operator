@@ -141,7 +141,7 @@ async def test_rsyslog_client_cn(
 
     result_0 = await found_in_logs(needle, application.model.name, application.units[0].name)
     result_1 = await found_in_logs(needle, application.model.name, application.units[1].name)
-    found = result_0 is expect_logs or result_1 is expect_logs
+    found = result_0 or result_1
 
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
