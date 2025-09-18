@@ -89,10 +89,14 @@ class WazuhServerCharm(CharmBaseWithState):
 
         Returns: a list of the IP addresses.
         """
-        return [
-            getfqdn(f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints")
-            for unit in self.units
-        ]
+        return (
+            [
+                getfqdn(f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints")
+                for unit in self.units
+            ]
+            if self.units
+            else [getfqdn()]
+        )
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
