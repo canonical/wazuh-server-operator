@@ -58,13 +58,13 @@ class WazuhServerCharm(CharmBaseWithState):
             args: Arguments passed to the CharmBase parent constructor.
         """
         super().__init__(*args)
-        self._cached_state = None
         self.certificates = certificates_observer.CertificatesObserver(self)
         self.traefik_route_observer = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self._observability = observability.Observability(self)
         self._wazuh_api = wazuh_api.WazuhApiProvides(self)
         self._opencti_observer = opencti_connector_observer.OpenCTIObserver(self)
+        self._cached_state = None
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
