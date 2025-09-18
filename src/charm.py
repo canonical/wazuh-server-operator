@@ -91,7 +91,7 @@ class WazuhServerCharm(CharmBaseWithState):
         """
         return (
             [
-                getfqdn(f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints")
+                f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints"
                 for unit in self.units
             ]
             if self.units
