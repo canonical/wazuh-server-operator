@@ -47,7 +47,6 @@ class WazuhServerCharm(CharmBaseWithState):
         external_hostname: the external hostname.
         master_fqdn: the FQDN for unit 0.
         state: the charm state.
-        units: the charm units.
         units_fqdns: the charm units' FQDNs.
     """
 
@@ -76,24 +75,16 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_broken, self.reconcile)
 
     @property
-    def units(self) -> list[ops.Unit]:
-        """Retrieve the units of the charm.
-
-        Returns: the charm units.
-        """
-        return self.model.get_relation(WAZUH_PEER_RELATION_NAME).units
-
-    @property
     def units_fqdns(self) -> list[str]:
         """Retrieve the FQDNs of the charm units.
 
         Returns: a list of FQDNs.
         """
-        return (
-            [f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints" for unit in self.units]
-            if self.units
-            else [getfqdn()]
-        )
+        peer_relation = self.model.get_relation(WAZUH_PEER_RELATION_NAME)
+        if not peer_relation:
+            return [getfqdn()]
+        peer_units = peer_relation[0].units
+        return [f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints" for unit in peer_units]
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
