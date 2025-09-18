@@ -137,12 +137,16 @@ async def test_rsyslog_client_cn(
         needle, host=wazuh_ip, server_ca=server_ca_cert, valid_cn=valid_cn
     )
     assert sent, "Log was not sent."
+    found_0 = await found_in_logs(needle, application.model.name, application.units[0].name)
 
-    result_0 = await found_in_logs(needle, application.model.name, application.units[0].name)
-    result_1 = await found_in_logs(needle, application.model.name, application.units[1].name)
-    found = result_0 or result_1
+    sent = await send_syslog_over_tls(
+        needle, host=wazuh_ip, server_ca=server_ca_cert, valid_cn=valid_cn
+    )
+    assert sent, "Log was not sent."
+    found_1 = await found_in_logs(needle, application.model.name, application.units[1].name)
 
-    assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
+    assert found_0 is expect_logs, f"Found logs={found_0}, while expected logs={expect_logs}"
+    assert found_1 is expect_logs, f"Found logs={found_1}, while expected logs={expect_logs}"
 
 
 async def test_opencti_integration(
