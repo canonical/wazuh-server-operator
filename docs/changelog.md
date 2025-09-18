@@ -22,7 +22,7 @@ Each revision is versioned by the date of the revision.
 
 ### Added
 
-- Clustering support.
+- Added clustering support.
 
 ### Updated
 
