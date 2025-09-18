@@ -92,6 +92,8 @@ class TraefikRouteObserver(Object):
         """Build a raw ingress configuration for Traefik."""
         if not self._charm.unit.is_leader() or not self.traefik_route.is_ready():
             return
+        logger.error("DYN TRAEFIK CONFIG: %s", self._ingress_config)
+        logger.error("STATIC TRAEFIK CONFIG: %s", self._static_ingress_config)
         self.traefik_route.submit_to_traefik(
             self._ingress_config, static=self._static_ingress_config
         )
