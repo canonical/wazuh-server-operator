@@ -83,8 +83,10 @@ class WazuhServerCharm(CharmBaseWithState):
         peer_relation = self.model.get_relation(WAZUH_PEER_RELATION_NAME)
         if not peer_relation:
             return [getfqdn()]
-        peer_units = peer_relation[0].units
-        return [f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints" for unit in peer_units]
+        return [
+            f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints"
+            for unit in peer_relation.units
+        ]
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
