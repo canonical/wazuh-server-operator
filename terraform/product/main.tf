@@ -359,3 +359,20 @@ resource "juju_integration" "wazuh_server_indexer" {
     juju_access_offer.wazuh_indexer
   ]
 }
+
+resource "juju_integration" "wazuh_server_dashboard" {
+  model = data.juju_model.wazuh_server.name
+
+  application {
+    name     = module.wazuh_server.app_name
+    endpoint = module.wazuh_server.provides.wazuh_api
+  }
+
+  application {
+    offer_url = juju_offer.wazuh_dashboard.url
+  }
+
+  depends_on = [
+    juju_access_offer.wazuh_dashboard
+  ]
+}
