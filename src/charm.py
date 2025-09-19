@@ -81,7 +81,7 @@ class WazuhServerCharm(CharmBaseWithState):
         Returns: a list of FQDNs.
         """
         peer_relation = self.model.get_relation(WAZUH_PEER_RELATION_NAME)
-        if not peer_relation and not peer_relation.units:
+        if not peer_relation or not peer_relation.units:
             return [getfqdn()]
         logger.error("UNITSSSS: %s", peer_relation.units)
         return [
