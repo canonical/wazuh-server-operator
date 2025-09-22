@@ -1,6 +1,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+# pylint detects the patches states as duplicate code
+# pylint: disable=duplicate-code
 
 """Certificates observer unit tests."""
 
@@ -27,6 +29,7 @@ class ObservedCharm(state.CharmBaseWithState):
 
     Attrs:
         state: the charm state.
+        units_fqdns: the charm units' FQDNs.x
     """
 
     def __init__(self, *args):
@@ -45,6 +48,14 @@ class ObservedCharm(state.CharmBaseWithState):
         self.count = self.count + 1
 
     @property
+    def units_fqdns(self) -> list[str]:
+        """Retrieve the FQDNs of the charm units.
+
+        Returns: a list of FQDNs.
+        """
+        return []
+
+    @property
     def state(self) -> state.State | None:
         """The charm state."""
         password = secrets.token_hex()
@@ -57,12 +68,12 @@ class ObservedCharm(state.CharmBaseWithState):
         return state.State(
             agent_password=None,
             api_credentials=api_credentials,
-            cluster_key=cluster_key,
             certificate="certificate",
-            root_ca="root_ca",
+            cluster_key=cluster_key,
             indexer_endpoints=["10.0.0.1"],
             filebeat_username="user1",
             filebeat_password=password,
+            root_ca="root_ca",
             wazuh_config=state.WazuhConfig(
                 api_credentials=api_credentials,
                 custom_config_repository=None,
