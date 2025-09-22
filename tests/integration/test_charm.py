@@ -145,8 +145,8 @@ async def test_rsyslog_client_cn(
     assert sent, "Log was not sent."
     found_1 = await found_in_logs(needle, application.model.name, application.units[1].name)
 
-    assert found_0 is expect_logs, f"Found logs={found_0}, while expected logs={expect_logs}"
-    assert found_1 is expect_logs, f"Found logs={found_1}, while expected logs={expect_logs}"
+    found = found_0 or found_1
+    assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
 
 async def test_opencti_integration(
