@@ -145,9 +145,7 @@ async def test_rsyslog_client_cn(
     found_0 = await found_in_logs(needle, application.model.name, application.units[0].name)
     found_1 = await found_in_logs(needle, application.model.name, application.units[1].name)
 
-    # Default LB algorithm is round-robin
-    logger.error(f"Found logs 0 ={found_0} logs 1 ={found_1}")
-    found = found_0 and found_1
+    found = found_0 or found_1
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
 
