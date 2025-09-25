@@ -53,16 +53,15 @@ async def test_api(model: Model, application: Application):
     assert response.status_code == 401, response.content
 
 
-@pytest.mark.skip
 @pytest.mark.abort_on_fail
-async def test_clustering_ok(model: Model, application: Application):
+async def test_clustering_ok(model: Model, application: Application, traefik: Application):
     """
     Arrange: deploy the charm together with related charms.
     Act: scale up to two units.
     Assert: the clustering config is valid.
     """
     await application.scale(2)
-    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
+    await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
     wazuh_unit = application.units[0]  # type: ignore
     pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
     action = await wazuh_unit.run(
@@ -111,20 +110,27 @@ async def test_rsyslog_invalid_server_ca(application: Application):
     ],
 )
 async def test_rsyslog_client_cn(
-    application: Application, machine_model: Model, valid_cn: bool, expect_logs: bool
+    application: Application,
+    traefik: Application,
+    machine_model: Model,
+    valid_cn: bool,
+    expect_logs: bool,
 ):
     """
     Arrange: a working Wazuh deployment with a log-certification-authority configured
     Act: send a syslog message over tls (with or without a valid CN)
     Assert: the message appears in the log only if the CN is valid
     """
-    assert application
+    await application.scale(2)
+    await application.model.wait_for_idle(
+        apps=[application.name, traefik.name], status="active", timeout=1400
+    )
     machine_controller = await machine_model.get_controller()
-    machine_model_url = f"{machine_controller.controller_name}:{machine_model.name}"
-    server_ca_cert = await get_ca_certificate(machine_model_url)
+    server_ca_cert = await get_ca_certificate(
+        f"{machine_controller.controller_name}:{machine_model.name}"
+    )
     controller = await application.model.get_controller()
-    model_url = f"{controller.controller_name}:{application.model.name}"
-    wazuh_ip = await get_wazuh_ip(model_url)
+    wazuh_ip = await get_wazuh_ip(f"{controller.controller_name}:{application.model.name}")
 
     needle = secrets.token_hex()
     sent = await send_syslog_over_tls(
@@ -132,8 +138,14 @@ async def test_rsyslog_client_cn(
     )
     assert sent, "Log was not sent."
 
-    found = await found_in_logs(needle, application.model.name)
+    sent = await send_syslog_over_tls(
+        needle, host=wazuh_ip, server_ca=server_ca_cert, valid_cn=valid_cn
+    )
+    assert sent, "Log was not sent."
+    found_0 = await found_in_logs(needle, application.model.name, application.units[0].name)
+    found_1 = await found_in_logs(needle, application.model.name, application.units[1].name)
 
+    found = found_0 or found_1
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
 

@@ -20,6 +20,10 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-09-10
 
+### Added
+
+- Added clustering support.
+
 ### Updated
 
 - Fix an issue causing the rock not to be built.
