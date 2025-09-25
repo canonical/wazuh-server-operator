@@ -111,12 +111,13 @@ async def get_wazuh_ip(model_url: str) -> str:
     return output["address"]
 
 
-async def found_in_logs(pattern: str, model_name: str) -> bool:
+async def found_in_logs(pattern: str, model_name: str, unit_name: str) -> bool:
     """Grep logs on the server to see if a pattern is found.
 
     Args:
         pattern: the pattern to look for
         model_name: the name of the Juju model.
+        unit_name: the name of the unit.
 
     Returns:
         bool: True if the pattern was found
@@ -126,7 +127,7 @@ async def found_in_logs(pattern: str, model_name: str) -> bool:
             "-m",
             model_name,
             "--container=wazuh-server",
-            "wazuh-server/0",
+            unit_name,
             f"grep {pattern} /var/log/collectors/rsyslog/rsyslog.log",
         )
         return True
