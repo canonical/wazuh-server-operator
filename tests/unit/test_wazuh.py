@@ -9,6 +9,7 @@ import secrets
 import unittest
 import unittest.mock
 from pathlib import Path
+from unittest.mock import ANY, MagicMock, patch
 
 import ops
 import pytest
@@ -353,7 +354,7 @@ def test_sync_config_repo_when_tag_and_head_up_to_date(
     container = harness.charm.unit.get_container("wazuh-server")
     # write marker == HEAD
     container.push(
-        wazuh.APPLIED_MARKER_PATH,
+        wazuh.WAZUH_APPLIED_COMMIT_PATH,
         "abc123\n",
         encoding="utf-8",
         make_dirs=True,
@@ -367,14 +368,14 @@ def test_sync_config_repo_when_tag_and_head_up_to_date(
     wazuh_pull_config_repo_mock.assert_not_called()
 
 
-@unittest.mock.patch.object(wazuh, "pull_config_repo")
-def test_sync_config_repo_when_tag_up_to_date_but_head_mismatch_triggers_pull(
-    wazuh_pull_config_repo_mock: unittest.mock.Mock,
+@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
+def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit_marker(
+    wazuh_save_applied_commit_marker: unittest.mock.Mock,
 ) -> None:
     """
     arrange: repo url/tag do match but HEAD does not match with stored one.
-    act: sync config repo.
-    assert: pull_config_repo is called.
+    act: sync wazuh config files and store commit marker.
+    assert: save_applied_commit_marker is called.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.handle_exec(
@@ -392,32 +393,43 @@ def test_sync_config_repo_when_tag_up_to_date_but_head_mismatch_triggers_pull(
         ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
         result="abc123",
     )
+
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
+
     # stored head differs
     container.push(
-        wazuh.APPLIED_MARKER_PATH,
+        wazuh.WAZUH_APPLIED_COMMIT_PATH,
         "deadbeef\n",
         encoding="utf-8",
         make_dirs=True,
     )
-    changed = wazuh.sync_config_repo(
+
+    mocked_proc = MagicMock()
+    mocked_proc.wait_output.return_value = ("", "")
+
+    real_exec = container.exec
+    with patch.object(container, "exists", return_value=True), patch.object(
         container,
-        repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@v5"),
-        repo_ssh_key=None,
-    )
+        "exec",
+        side_effect=lambda cmd, *a, **kv: (
+            mocked_proc if cmd[0] in ["rsync", "find", "chmod"] else real_exec(cmd, *a, **kv)
+        ),
+    ):
+        changed = wazuh.sync_wazuh_config_files(container)
+
     assert changed is True
-    wazuh_pull_config_repo_mock.assert_called_once()
+    wazuh_save_applied_commit_marker.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
 
 
-@unittest.mock.patch.object(wazuh, "pull_config_repo")
-def test_sync_config_repo_when_tag_up_to_date_but_marker_missing_triggers_pull(
-    pull_config_repo_mock: unittest.mock.Mock,
+@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
+def test_sync_rsyslog_config_files_when_head_mismatch_triggers_save_applied_commit_marker(
+    wazuh_save_applied_commit_marker: unittest.mock.Mock,
 ) -> None:
     """
-    arrange: repo url/tag match but applied HEAD is missing (usual first run).
-    act: sync config repo.
-    assert: pull_config_repo is called.
+    arrange: repo url/tag do match but HEAD does not match with stored one.
+    act: sync wazuh config files and store commit marker.
+    assert: save_applied_commit_marker is called.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.handle_exec(
@@ -435,15 +447,110 @@ def test_sync_config_repo_when_tag_up_to_date_but_marker_missing_triggers_pull(
         ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
         result="abc123",
     )
+
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    changed = wazuh.sync_config_repo(
-        container,
-        repository=AnyUrl("git+ssh://git@github.com/fake_repo/url.git@v5"),
-        repo_ssh_key=None,
+
+    # stored head differs
+    container.push(
+        wazuh.RSYSLOG_APPLIED_COMMIT_PATH,
+        "deadbeef\n",
+        encoding="utf-8",
+        make_dirs=True,
     )
+
+    changed = wazuh.sync_rsyslog_config_files(container)
+
     assert changed is True
-    pull_config_repo_mock.assert_called_once()
+    wazuh_save_applied_commit_marker.assert_called_once_with(
+        ANY, wazuh.RSYSLOG_APPLIED_COMMIT_PATH
+    )
+
+
+@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
+def test_sync_wazuh_config_files_when_head_match_not_trigger_save_applied_commit_marker(
+    wazuh_save_applied_commit_marker: unittest.mock.Mock,
+) -> None:
+    """
+    arrange: repo url/tag do match but HEAD does not match with stored one.
+    act: sync wazuh config files and store commit marker.
+    assert: save_applied_commit_marker is called.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git+ssh://git@github.com/fake_repo/url.git",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="v5",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
+        result="abc123",
+    )
+
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+
+    # stored head differs
+    container.push(
+        wazuh.WAZUH_APPLIED_COMMIT_PATH,
+        "abc123\n",
+        encoding="utf-8",
+        make_dirs=True,
+    )
+
+    changed = wazuh.sync_wazuh_config_files(container)
+
+    assert changed is False
+    wazuh_save_applied_commit_marker.assert_not_called()
+
+
+@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
+def test_sync_rsyslog_config_files_when_head_match_not_trigger_save_applied_commit_marker(
+    wazuh_save_applied_commit_marker: unittest.mock.Mock,
+) -> None:
+    """
+    arrange: repo url/tag do match but HEAD does not match with stored one.
+    act: sync wazuh config files and store commit marker.
+    assert: save_applied_commit_marker is called.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git+ssh://git@github.com/fake_repo/url.git",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="v5",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
+        result="abc123",
+    )
+
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+
+    # stored head differs
+    container.push(
+        wazuh.RSYSLOG_APPLIED_COMMIT_PATH,
+        "abc123\n",
+        encoding="utf-8",
+        make_dirs=True,
+    )
+
+    changed = wazuh.sync_rsyslog_config_files(container)
+
+    assert changed is False
+    wazuh_save_applied_commit_marker.assert_not_called()
 
 
 def test_get_version() -> None:

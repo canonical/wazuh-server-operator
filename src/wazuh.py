@@ -47,7 +47,8 @@ LOGS_PATH = Path("/var/ossec/logs")
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
-APPLIED_MARKER_PATH = REPOSITORY_PATH + "/.custom_config_applied_commit"
+WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"
+RSYSLOG_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.rsyslog_applied_commit"
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
 RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
@@ -117,33 +118,35 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         return None
 
 
-def _read_applied_commit(container: ops.Container) -> typing.Optional[str]:
+def _read_applied_commit(container: ops.Container, path: str) -> typing.Optional[str]:
     """Read the last commit successfully applied.
 
     Arguments:
         container: the container for which to read the commit.
+        path: the path where the last commit was applied.
 
     Returns:
         typing.Optional[str]: the last commit applied.
     """
     try:
-        commit_applied = container.pull(APPLIED_MARKER_PATH).read().strip()
+        commit_applied = container.pull(path).read().strip()
         return commit_applied or None
     except ops.pebble.PathError:
         logger.debug("no applied commit marker yet (first run?)")
         return None
 
 
-def save_applied_commit_marker(container: ops.Container) -> None:
+def save_applied_commit_marker(container: ops.Container, path: str) -> None:
     """Save actual HEAD as applied, call only after successful reconciliation.
 
     Arguments:
         container: the container in which to flag the commit as applied.
+        path: the path where to save the commit.
     """
     head = _get_current_repo_commit(container)
     if head:
         container.push(
-            APPLIED_MARKER_PATH,
+            path,
             f"{head}\n",
             encoding="utf-8",
             make_dirs=True,
@@ -491,19 +494,7 @@ def sync_config_repo(
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
 
-    current_head = _get_current_repo_commit(container)
-    applied_head = _read_applied_commit(container)
-
-    already_synced: bool = False
-    if is_right_repo and is_right_tag:
-        if not current_head or not applied_head:
-            logger.info(
-                "custom_config_repository not yet applied (head=%s, marker=%s)",
-                current_head,
-                applied_head,
-            )
-        else:
-            already_synced = current_head == applied_head
+    already_synced = is_right_repo and is_right_tag
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
@@ -524,19 +515,28 @@ def sync_config_repo(
     return True
 
 
-def sync_wazuh_config_files(container: ops.Container) -> None:
+def sync_wazuh_config_files(container: ops.Container) -> bool:
     """Sync Wazuh configuration files from the local config repository.
 
     Args:
         container: the container to pull the files into.
 
+    Returns:
+        bool: True if a sync was executed, False if there was nothing to sync.
+
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
+    current_head = _get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container, WAZUH_APPLIED_COMMIT_PATH)
+
+    if current_head is not None and current_head == applied_head:
+        return False
+
     source, dest = REPO_WAZUH_CONF_PATH, WAZUH_CONF_PATH
     if not container.exists(source):
         logger.info("path '%s' does not exist, no files to patch", source)
-        return
+        return False
     if container.isdir(source) and source[-1] != "/":
         source += "/"
     try:
@@ -602,19 +602,31 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         ).wait_output()
+
+        save_applied_commit_marker(container, WAZUH_APPLIED_COMMIT_PATH)
+        return True
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
 
 
-def sync_rsyslog_config_files(container: ops.Container) -> None:
+def sync_rsyslog_config_files(container: ops.Container) -> bool:
     """Sync rsyslog configuration files from the local config repository.
 
     Args:
         container: the container to pull the files into.
 
+    Returns:
+        bool: True if a sync was executed, False if there was nothing to sync.
+
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
+    current_head = _get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container, RSYSLOG_APPLIED_COMMIT_PATH)
+
+    if current_head is not None and current_head == applied_head:
+        return False
+
     pairs = (
         (REPO_RSYSLOG_CONF_PATH, RSYSLOG_CONF_PATH),
         (REPO_RSYSLOG_CONF_DIR_PATH, RSYSLOG_CONF_DIR_PATH),
@@ -631,6 +643,9 @@ def sync_rsyslog_config_files(container: ops.Container) -> None:
             container.exec(["rsync", "-a", source, dest], timeout=10).wait_output()
         except ops.pebble.ExecError as ex:
             raise WazuhInstallationError from ex
+
+    save_applied_commit_marker(container, RSYSLOG_APPLIED_COMMIT_PATH)
+    return True
 
 
 def ensure_rsyslog_output_dir(container: ops.Container) -> bool:

@@ -184,12 +184,11 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((changed_certs, changed_user, changed_config)):
             self._restart_service(container, FILEBEAT_SERVICE_NAME)
 
-    def _reconcile_rsyslog(self, container: ops.Container, sync_config_files: bool) -> None:
+    def _reconcile_rsyslog(self, container: ops.Container) -> None:
         """Reconcile the rsyslog configuration.
 
         Args:
             container: the container to configure Wazuh for.
-            sync_config_files: whether rsyslog config should be synced with local repo files.
 
         Raises:
             WazuhConfigurationError: if no rsyslog CA certificate has been configured.
@@ -198,8 +197,10 @@ class WazuhServerCharm(CharmBaseWithState):
             raise wazuh.WazuhConfigurationError(
                 "Invalid charm configuration: 'logs-ca-cert' is missing."
             )
-        if sync_config_files:
-            wazuh.sync_rsyslog_config_files(container)
+        updated_config: bool = False
+        if self.state.custom_config_repository is not None:
+            updated_config = wazuh.sync_rsyslog_config_files(container)
+
         changed_certs: bool = wazuh.sync_certificates(
             container=container,
             path=wazuh.SYSLOG_CERTIFICATES_PATH,
@@ -210,18 +211,18 @@ class WazuhServerCharm(CharmBaseWithState):
             group=wazuh.SYSLOG_USER,
         )
         changed_filesystem = wazuh.ensure_rsyslog_output_dir(container)
-        if any((sync_config_files, changed_certs, changed_filesystem)):
+        if any((updated_config, changed_certs, changed_filesystem)):
             self._restart_service(container, RSYSLOG_SERVICE_NAME)
 
-    def _reconcile_wazuh(self, container: ops.Container, sync_config_files: bool) -> None:
+    def _reconcile_wazuh(self, container: ops.Container) -> None:
         """Reconcile the Wazuh installation.
 
         Args:
             container: the container to configure Wazuh for.
-            sync_config_files: whether local repo files should be synced to Wazuh dir.
         """
-        if sync_config_files:
-            wazuh.sync_wazuh_config_files(container)
+        updated_config: bool = False
+        if self.state.custom_config_repository is not None:
+            updated_config = wazuh.sync_wazuh_config_files(container)
         changed_password = False
         if self.state.agent_password:
             changed_password = wazuh.sync_agent_password(
@@ -237,7 +238,7 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_token=self.state.opencti_token,
             opencti_url=self.state.opencti_url,
         )
-        if any((sync_config_files, changed_password, changed_ossec_conf)):
+        if any((updated_config, changed_password, changed_ossec_conf)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # It doesn't make sense to split the logic further
@@ -316,14 +317,16 @@ class WazuhServerCharm(CharmBaseWithState):
             return
         try:
             _ = self.state  # Ensure the state is valid
-            local_repo_updated: bool = wazuh.sync_config_repo(
+
+            wazuh.sync_config_repo(
                 container,
                 repository=self.state.custom_config_repository,
                 repo_ssh_key=self.state.custom_config_ssh_key,
             )
+
             self._reconcile_filebeat(container)
-            self._reconcile_rsyslog(container, local_repo_updated)
-            self._reconcile_wazuh(container, local_repo_updated)
+            self._reconcile_rsyslog(container)
+            self._reconcile_wazuh(container)
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
 
@@ -343,9 +346,6 @@ class WazuhServerCharm(CharmBaseWithState):
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
             container.replan()
-
-            # Set new head version
-            wazuh.save_applied_commit_marker(container)
 
             self.unit.set_workload_version(wazuh.get_version(container))
             self.unit.status = ops.ActiveStatus()
