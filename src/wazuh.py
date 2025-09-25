@@ -90,7 +90,7 @@ class NodeType(Enum):
     MASTER = "master"
 
 
-def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
+def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
     """Actual HEAD of the cloned repo, or None if non-existing.
 
     Arguments:
@@ -99,6 +99,9 @@ def _get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
     Returns:
         typing.Optional[str]: the actual commit.
     """
+    if not container.isdir(REPOSITORY_PATH):
+        return None
+
     try:
         process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
         out, _ = process.wait_output()
@@ -128,6 +131,9 @@ def _read_applied_commit(container: ops.Container, path: str) -> typing.Optional
     Returns:
         typing.Optional[str]: the last commit applied.
     """
+    if not container.exists(path):
+        return None
+
     try:
         commit_applied = container.pull(path).read().strip()
         return commit_applied or None
@@ -143,7 +149,7 @@ def save_applied_commit_marker(container: ops.Container, path: str) -> None:
         container: the container in which to flag the commit as applied.
         path: the path where to save the commit.
     """
-    head = _get_current_repo_commit(container)
+    head = get_current_repo_commit(container)
     if head:
         container.push(
             path,
@@ -527,7 +533,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
-    current_head = _get_current_repo_commit(container)
+    current_head = get_current_repo_commit(container)
     applied_head = _read_applied_commit(container, WAZUH_APPLIED_COMMIT_PATH)
 
     if current_head is not None and current_head == applied_head:
@@ -621,7 +627,7 @@ def sync_rsyslog_config_files(container: ops.Container) -> bool:
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
-    current_head = _get_current_repo_commit(container)
+    current_head = get_current_repo_commit(container)
     applied_head = _read_applied_commit(container, RSYSLOG_APPLIED_COMMIT_PATH)
 
     if current_head is not None and current_head == applied_head:
