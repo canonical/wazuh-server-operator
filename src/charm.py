@@ -38,6 +38,7 @@ WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 WAZUH_SERVICE_NAME = "wazuh"
 FILEBEAT_SERVICE_NAME = "filebeat"
 RSYSLOG_SERVICE_NAME = "rsyslog"
+RSYSLOG_DEBUG_LOG_PATH = "/var/log/rsyslog.log"
 
 
 class WazuhServerCharm(CharmBaseWithState):
@@ -379,6 +380,12 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["NO_PROXY"] = proxy.no_proxy
         if not self.state:
             return {}
+ 
+
+        # RSYSLOG ENVIRONMENT 
+        # Set RSYSLOG_DEBUGLOG to capture all debug/pebble output to the specified file
+        environment["RSYSLOG_DEBUGLOG"] = RSYSLOG_DEBUG_LOG_PATH
+
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -402,6 +409,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "summary": "rsyslog",
                     "command": "rsyslogd -n -f /etc/rsyslog.conf",
                     "startup": "enabled",
+                    "environment": environment,
                 },
             },
             "checks": {

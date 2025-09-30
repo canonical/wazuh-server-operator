@@ -1,10 +1,11 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 alert: WazuhFilebeatErrorFound
-expr: rate({%%juju_topology%%, pebble_service="filebeat"} |= " - ERROR - "[5m]) > 0
+expr: rate({%%juju_topology%%} |~ "(?i)error" |~ "(?i)filebeat"[5m]) > 0
 for: 5m
 labels:
   severity: error
 annotations:
   summary: Filebeat errors detected.
-  description: This alert is triggered when Filebeat logs an error level message in the last 5 minutes.
+  description: This alert is triggered when filebeat logs an error level message in the last 5 minutes.
+
