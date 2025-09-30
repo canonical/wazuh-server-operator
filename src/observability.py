@@ -8,12 +8,25 @@ import ops
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v1.loki_push_api import LogProxyConsumer
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
+from pathlib import Path
 
 import wazuh
 
-LOG_PATHS = [(wazuh.LOGS_PATH / "*.log").absolute().as_posix()]
-PROMETHEUS_PORT = 5000
+RSYSLOG_DEBUG_LOG_PATH = "/var/log/rsyslog.log" 
 
+
+LOG_PATHS = [
+    # 1. Wazuh main application logs
+    (wazuh.LOGS_PATH / "*.log").absolute().as_posix(),
+    
+    # 2. Filebeat Logs (current and rotated files)
+    (Path("/var/log/filebeat") / "filebeat").absolute().as_posix(),  
+    (Path("/var/log/filebeat") / "filebeat.*").absolute().as_posix(),
+
+    # 3. Rsyslog Logs
+    Path(RSYSLOG_DEBUG_LOG_PATH).absolute().as_posix(),
+]
+PROMETHEUS_PORT = 5000
 
 class Observability:  # pylint: disable=too-few-public-methods
     """A class representing the observability stack for Wazuh application."""
@@ -47,3 +60,7 @@ class Observability:  # pylint: disable=too-few-public-methods
                 },
             },
         )
+
+
+
+
