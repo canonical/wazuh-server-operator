@@ -28,6 +28,7 @@ class ObservedCharm(state.CharmBaseWithState):
     """Class for requirer charm testing.
 
     Attrs:
+        master_fqdn: the FQDN for unit 0.
         state: the charm state.
         units_fqdns: the charm units' FQDNs.x
     """
@@ -54,6 +55,14 @@ class ObservedCharm(state.CharmBaseWithState):
         Returns: a list of FQDNs.
         """
         return []
+
+    @property
+    def master_fqdn(self) -> str:
+        """Get the FQDN for the unit 0.
+
+        Returns: the FQDN for the unit 0.
+        """
+        return "host1.example"
 
     @property
     def state(self) -> state.State | None:
