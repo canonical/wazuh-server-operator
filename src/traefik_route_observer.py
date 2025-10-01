@@ -16,12 +16,15 @@ logger = logging.getLogger(__name__)
 RELATION_NAME = "ingress"
 
 
-PORTS: dict[str, int] = {
+LB_ENDPOINTS: dict[str, int] = {
     "syslog_tcp": 6514,
     "conn_tcp": 1514,
+}
+NO_LB_ENDPOINTS: dict[str, int] = {
     "enrole_tcp": 1515,
     "api_tcp": wazuh.API_PORT,
 }
+ENDPOINTS = {**LB_ENDPOINTS, **NO_LB_ENDPOINTS}
 
 
 class TraefikRouteObserver(Object):
@@ -48,7 +51,7 @@ class TraefikRouteObserver(Object):
             the ingress static configuration for Traefik.
         """
         entry_points = {}
-        for protocol, port in PORTS.items():
+        for protocol, port in ENDPOINTS.items():
             sanitized_protocol = protocol.replace("_", "-")
             entry_points[sanitized_protocol] = {"address": f":{port}"}
         return {
@@ -64,7 +67,7 @@ class TraefikRouteObserver(Object):
         """
         routers: dict[str, typing.Any] = {}
         services = {}
-        for protocol, port in PORTS.items():
+        for protocol, port in ENDPOINTS.items():
             sanitized_protocol = protocol.replace("_", "-")
             router_name = f"juju-{self.model.name}-{self.model.app.name}-{sanitized_protocol}"
             service_name = (
@@ -75,12 +78,22 @@ class TraefikRouteObserver(Object):
                 "service": service_name,
                 "rule": "ClientIP(`0.0.0.0/0`)",
             }
-            services[service_name] = {
-                "loadBalancer": {
-                    "servers": [{"address": f"{fqdn}:{port}"} for fqdn in self._charm.units_fqdns],
-                    "terminationDelay": -1,
+            if protocol in LB_ENDPOINTS:
+                services[service_name] = {
+                    "loadBalancer": {
+                        "servers": [
+                            {"address": f"{fqdn}:{port}"} for fqdn in self._charm.units_fqdns
+                        ],
+                        "terminationDelay": -1,
+                    }
                 }
-            }
+            if protocol in NO_LB_ENDPOINTS:
+                services[service_name] = {
+                    "loadBalancer": {
+                        "servers": [{"address": f"{self._charm.master_fqdn}:{port}"}],
+                        "terminationDelay": -1,
+                    }
+                }
         return {
             "tcp": {
                 "routers": routers,
