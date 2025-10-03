@@ -13,14 +13,10 @@ from pathlib import Path
 import wazuh
 
 
-SYSLOG_DEBUG_LOG_PATH = "/var/log/rsyslog.log" 
-
-
 LOG_PATHS = [
-    # 1. Wazuh main application logs
     (wazuh.LOGS_PATH / "*.log").absolute().as_posix(),
-    (Path("/var/log/filebeat") / "filebeat").absolute().as_posix(),  
-    Path(RSYSLOG_DEBUG_LOG_PATH).absolute().as_posix(),
+    (wazuh.FILEBEAT_LOG_PATH) / "filebeat").absolute().as_posix(),  
+    (wazuh.RSYSLOG_DEBUG_LOG_PATH).absolute().as_posix(),
 ]
 PROMETHEUS_PORT = 5000
 
