@@ -379,6 +379,11 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["NO_PROXY"] = proxy.no_proxy
         if not self.state:
             return {}
+ 
+        # Write service stdout to the specified file
+        rsyslog_environment = environment.copy()
+        rsyslog_environment["RSYSLOG_DEBUGLOG"] = wazuh.RSYSLOG_DEBUG_LOG_PATH
+        
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -402,6 +407,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     "summary": "rsyslog",
                     "command": "rsyslogd -n -f /etc/rsyslog.conf",
                     "startup": "enabled",
+                    "environment": rsyslog_environment,
                 },
             },
             "checks": {
