@@ -12,18 +12,14 @@ from pathlib import Path
 
 import wazuh
 
-RSYSLOG_DEBUG_LOG_PATH = "/var/log/rsyslog.log" 
+
+SYSLOG_DEBUG_LOG_PATH = "/var/log/rsyslog.log" 
 
 
 LOG_PATHS = [
     # 1. Wazuh main application logs
     (wazuh.LOGS_PATH / "*.log").absolute().as_posix(),
-    
-    # 2. Filebeat Logs (current and rotated files)
     (Path("/var/log/filebeat") / "filebeat").absolute().as_posix(),  
-    (Path("/var/log/filebeat") / "filebeat.*").absolute().as_posix(),
-
-    # 3. Rsyslog Logs
     Path(RSYSLOG_DEBUG_LOG_PATH).absolute().as_posix(),
 ]
 PROMETHEUS_PORT = 5000
@@ -60,7 +56,3 @@ class Observability:  # pylint: disable=too-few-public-methods
                 },
             },
         )
-
-
-
-

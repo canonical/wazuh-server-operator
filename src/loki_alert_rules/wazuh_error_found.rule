@@ -1,7 +1,7 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 alert: WazuhErrorFound
-expr: rate({%%juju_topology%%} |~ "(?i)error" |~ "(?i)wazuh"[5m]) > 0
+expr: count_over_time({%%juju_topology%%} |~ "(?i)error" |~ "(?i)wazuh"[5m]) > 5
 for: 5m
 labels:
   severity: error
