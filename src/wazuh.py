@@ -77,6 +77,8 @@ class WazuhAuthenticationError(Exception):
 class WazuhConfigurationError(WazuhInstallationError):
     """Wazuh configuration errors."""
 
+class WazuhNotReadyError(WazuhInstallationError):
+    """Wazuh errors due to long-running installation process."""
 
 class NodeType(Enum):
     """Enum for the Wazuh node types.
@@ -784,6 +786,9 @@ def authenticate_user(username: str, password: str) -> str:
         if token is None:
             raise WazuhInstallationError(f"Response for {username} does not contain token.")
         return token
+    except requests.exceptions.ConnectionError as exc:
+       logger.warning("Wazuh API authentication failed: %s", exc)
+       raise WazuhNotReadyError from exc
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError from exc
 
@@ -922,38 +927,3 @@ def get_version(container: ops.Container) -> str:
     version_string, _ = process.wait_output()
     version = re.search('^WAZUH_VERSION="(.*)"', version_string)
     return version.group(1) if version else ""
-
-
-def wait_until_api_auth_ready(
-    username: str,
-    default_password: str,
-    stored_password: str,
-    interval: int = 3,
-) -> bool:
-    """Wait until the Wazuh API for login is ready.
-
-    Arguments:
-        username: username to check (default 'wazuh').
-        default_password: the default password expected on first boot.
-        stored_password: the password persisted in state (if already rotated).
-        interval: delay in seconds between attempts.
-
-    Returns: True if authentication succeeds, False otherwise.
-    """
-    timeout = 90
-
-    end = time.time() + timeout
-    while time.time() < end:
-        for pwd in [stored_password, default_password]:
-            if not pwd:
-                continue
-            try:
-                _ = authenticate_user(username, pwd)
-                return True
-            except WazuhAuthenticationError:
-                logger.warning("Auth failed with user %s, API unready. Retrying.", username)
-            except WazuhInstallationError as e:
-                logger.warning("API readiness check failed with %s", str(e))
-
-        time.sleep(interval)
-    return False
