@@ -356,7 +356,7 @@ class WazuhServerCharm(CharmBaseWithState):
 
             self.unit.set_workload_version(wazuh.get_version(container))
             self.unit.status = ops.ActiveStatus()
-        except wazuh.WazuhNotReadyError as exc:
+        except wazuh.WazuhNotReadyError:
             self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh to be ready")
         except wazuh.WazuhConfigurationError as exc:
             self.unit.status = ops.BlockedStatus(str(exc))

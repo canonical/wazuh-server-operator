@@ -9,7 +9,6 @@ import logging
 import re
 import secrets
 import string
-import time
 import typing
 from enum import Enum
 from pathlib import Path
@@ -77,8 +76,10 @@ class WazuhAuthenticationError(Exception):
 class WazuhConfigurationError(WazuhInstallationError):
     """Wazuh configuration errors."""
 
+
 class WazuhNotReadyError(WazuhInstallationError):
     """Wazuh errors due to long-running installation process."""
+
 
 class NodeType(Enum):
     """Enum for the Wazuh node types.
@@ -763,6 +764,7 @@ def authenticate_user(username: str, password: str) -> str:
     Raises:
         WazuhAuthenticationError: if the user can't authenticate.
         WazuhInstallationError: if any error occurs.
+        WazuhNotReadyError: if wazuh is not yet ready to accept requests.
     .
     """
     # The certificates might be self signed and there's no security hardening in
@@ -787,8 +789,8 @@ def authenticate_user(username: str, password: str) -> str:
             raise WazuhInstallationError(f"Response for {username} does not contain token.")
         return token
     except requests.exceptions.ConnectionError as exc:
-       logger.warning("Wazuh API authentication failed: %s", exc)
-       raise WazuhNotReadyError from exc
+        logger.warning("Wazuh API authentication failed: %s", exc)
+        raise WazuhNotReadyError from exc
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError from exc
 
