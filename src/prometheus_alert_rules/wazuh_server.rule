@@ -25,13 +25,13 @@ groups:
     labels:
       severity: critical
     annotations:
-      summary: No external events have been received for the last 5 minutes 
+      summary: Fewer than expected external events have been received for the last 5 minutes 
       description: "Wazuh server has not received any external events for the last 5 minutes, only internal logs. The instance might not be reachable.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
   - alert: WazuhServerNoEventsProcessed
-    expr: increase(analysisd_stats{analysisd_stats="events_processed"}[5m]) == 0
+    expr: increase(analysisd_stats{analysisd_stats="events_processed"}[5m]) <= 50
     for: 5m
     labels:
       severity: critical
     annotations:
-      summary: No events have been processed for the last 5 minutes (instance {{ $labels.instance }})
+      summary: Fewer than expected events have been processed for the last 5 minutes (instance {{ $labels.instance }})
       description: "Wazuh server has not processed any events for the last 5 minutes. The instance might be misbehaving.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"

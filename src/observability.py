@@ -11,13 +11,13 @@ from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 
 import wazuh
 
-
 LOG_PATHS = [
     (wazuh.LOGS_PATH / "*.log").absolute().as_posix(),
-    (wazuh.FILEBEAT_LOG_PATH) / "filebeat").absolute().as_posix(),  
-    (wazuh.RSYSLOG_DEBUG_LOG_PATH).absolute().as_posix(),
+    (wazuh.FILEBEAT_LOG_PATH / "filebeat").absolute().as_posix(),
+    (wazuh.RSYSLOG_SERVICE_LOG_PATH).absolute().as_posix(),
 ]
 PROMETHEUS_PORT = 5000
+
 
 class Observability:  # pylint: disable=too-few-public-methods
     """A class representing the observability stack for Wazuh application."""

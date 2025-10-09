@@ -7,5 +7,5 @@ labels:
   severity: error
 annotations:
   summary: Filebeat errors detected.
-  description: This alert is triggered when filebeat logs an error level message in the last 5 minutes.
+  description: This alert is triggered when filebeat logs more than the specified number of error messages in the specified time frame.
 

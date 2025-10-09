@@ -1,10 +1,10 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 alert: WazuhErrorFound
-expr: count_over_time({%%juju_topology%%} |~ "(?i)error" |~ "(?i)wazuh"[5m]) > 5
+expr: count_over_time({%%juju_topology%%, filename=~"/var/ossec/logs/.*"} |~ "(?i)error"[5m]) > 5
 for: 5m
 labels:
   severity: error
 annotations:
   summary: Wazuh errors detected.
-  description: This alert is triggered when the Wazuh charm logs an error level message in the last 5 minutes.
+  description: This alert is triggered when Wazuh logs more than the specified number of error messages in the specified time frame.
