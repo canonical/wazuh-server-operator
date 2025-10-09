@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-10-01
+
+### Updated
+<!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
+- Use only the master node as backend for API and agent enrollment.
+<!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
 ## 2025-09-16
 
 ### Removed
