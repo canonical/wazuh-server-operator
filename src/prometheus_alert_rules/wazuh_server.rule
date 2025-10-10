@@ -20,18 +20,18 @@ groups:
       summary: Invalid Wazuh server configuration (instance {{ $labels.instance }})
       description: "Wazuh server configuration is invalid. Invalid configuration might have been pulled from the repository.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
   - alert: WazuhServerNoEventsReceived
-    expr: rate(analysisd_stats{analysisd_stats="events_received"}[5m]) == 0
-    for: 0m
+    expr: increase(analysisd_stats{analysisd_stats="events_received"}[5m]) <= 50
+    for: 5m
     labels:
       severity: critical
     annotations:
-      summary: No events have been received for the last 5 minutes (instance {{ $labels.instance }})
-      description: "Wazuh server has not received any events for the last 5 minutes. The instance might not be reachable.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+      summary: Fewer than expected external events have been received for the last 5 minutes 
+      description: "Wazuh server has not received any external events for the last 5 minutes, only internal logs. The instance might not be reachable.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
   - alert: WazuhServerNoEventsProcessed
-    expr: rate(analysisd_stats{analysisd_stats="events_processed"}[5m]) == 0
-    for: 0m
+    expr: increase(analysisd_stats{analysisd_stats="events_processed"}[5m]) <= 50
+    for: 5m
     labels:
       severity: critical
     annotations:
-      summary: No events have been processed for the last 5 minutes (instance {{ $labels.instance }})
+      summary: Fewer than expected events have been processed for the last 5 minutes (instance {{ $labels.instance }})
       description: "Wazuh server has not processed any events for the last 5 minutes. The instance might be misbehaving.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"

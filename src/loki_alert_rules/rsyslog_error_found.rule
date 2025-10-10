@@ -1,0 +1,10 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+alert: WazuhRsyslogErrorFound
+expr: count_over_time({%%juju_topology%%, filename="/var/log/rsyslog.log"} |~ "(?i)error"[5m]) > 5
+for: 5m
+labels:
+  severity: error
+annotations:
+  summary: Rsyslog errors detected.
+  description: This alert is triggered when rsyslog logs more than the specified number of error messages in the specified time frame.
