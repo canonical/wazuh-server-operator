@@ -8,7 +8,8 @@ output "wazuh_server_name" {
 
 output "wazuh_server_requires" {
   value = {
-    logging = "logging"
+    logging      = "logging"
+    certificates = "certificates"
   }
 }
 
