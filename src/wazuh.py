@@ -112,10 +112,8 @@ def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         return head or None
 
     except ops.pebble.APIError as e:
-        logger.error(
-            "git rev-parse of the repository failed, unable to access commit's SHA: %s", str(e)
-        )
-        return None
+        logger.debug("Pebble API error while reading applied commit marker at %s: %s", REPOSITORY_PATH, e)
+        raise
 
     except ops.pebble.ExecError as e:
         logger.warning(
@@ -141,7 +139,7 @@ def _read_applied_commit(container: ops.Container, path: str) -> typing.Optional
         commit_applied = container.pull(path).read().strip()
         return commit_applied or None
     except ops.pebble.PathError:
-        logger.debug("no applied commit marker yet (first run?)")
+        logger.debug("Failed to read applied commit though path was confirmed to exist (%s)", path)
         return None
 
 
