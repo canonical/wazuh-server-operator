@@ -133,23 +133,6 @@ resource "juju_access_offer" "self_signed_certificates" {
   provider = juju.wazuh_indexer
 }
 
-resource "juju_integration" "wazuh_server_certificates" {
-  model = data.juju_model.wazuh_server.name
-
-  application {
-    name     = module.wazuh_server.app_name
-    endpoint = module.wazuh_server.requires.certificates
-  }
-
-  application {
-    offer_url = juju_offer.self_signed_certificates.url
-  }
-
-  depends_on = [
-    juju_access_offer.self_signed_certificates
-  ]
-}
-
 module "wazuh_indexer" {
   source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev10&depth=1"
 
