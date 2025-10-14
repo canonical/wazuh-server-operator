@@ -59,7 +59,6 @@ the bundle deployment onto any Kubernetes environment managed by [Juju][Juju].
 | [juju_integration.wazuh_indexer_dashboard](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/integration) | resource |
 | [juju_integration.wazuh_indexer_data_integrator](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/integration) | resource |
 | [juju_integration.wazuh_server_api](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/integration) | resource |
-| [juju_integration.wazuh_server_certificates](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/integration) | resource |
 | [juju_integration.wazuh_server_indexer](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/integration) | resource |
 | [juju_integration.wazuh_server_traefik_ingress](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/integration) | resource |
 | [juju_offer.self_signed_certificates](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/offer) | resource |
