@@ -13,6 +13,7 @@ from state import CharmBaseWithState, IncompleteStateError
 
 logger = logging.getLogger(__name__)
 RELATION_NAME = "certificates"
+SECRET_LABEL = "certificates-secret"  # nosec
 
 
 class CertificatesObserver(Object):
@@ -37,6 +38,9 @@ class CertificatesObserver(Object):
         self.framework.observe(
             self.certificates.on.certificate_invalidated, self._on_certificate_invalidated
         )
+        self.framework.observe(
+            self._charm.on.certificates_relation_broken, self._on_certificates_relation_broken
+        )
 
     def get_private_key(self, renew: bool = False) -> str:
         """Fetch the private key for filebeat.
@@ -46,7 +50,7 @@ class CertificatesObserver(Object):
 
         Returns: the private key.
         """
-        return self._get_private_key(label="certificates-secret", renew=renew)
+        return self._get_private_key(label=SECRET_LABEL, renew=renew)
 
     def _get_private_key(self, label: str, renew: bool) -> str:
         """Fetch the private key.
@@ -88,7 +92,7 @@ class CertificatesObserver(Object):
         if not subject:
             raise IncompleteStateError("External hostname is not yet present.")
         return self._get_certificate_signing_request(
-            label="certificates-secret",
+            label=SECRET_LABEL,
             subject=subject,
             renew=renew,
         )
@@ -140,6 +144,14 @@ class CertificatesObserver(Object):
         except IncompleteStateError:
             self._charm.unit.status = ops.WaitingStatus("Charm not ready to make a CSR.")
             event.defer()
+
+    def _on_certificates_relation_broken(self, _: ops.RelationBrokenEvent) -> None:
+        """Relation broken event handler."""
+        try:
+            secret = self._charm.model.get_secret(label=SECRET_LABEL)
+            secret.remove_all_revisions()
+        except ops.SecretNotFoundError:
+            logger.debug("Secret for private key not found. Skipping deletion.")
 
     def _on_certificate_expiring(self, event: certificates.CertificateExpiringEvent) -> None:
         """Certificate expiring event handler.
