@@ -103,6 +103,9 @@ def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
 
     Returns:
         typing.Optional[str]: the actual commit.
+
+    Raises:
+       ExecError: Git rev-parse of the repo failed.
     """
     if not container.isdir(REPOSITORY_PATH):
         return None
@@ -114,7 +117,9 @@ def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
         return head or None
 
     except ops.pebble.APIError as e:
-        logger.debug("Pebble API error while reading applied commit marker at %s: %s", REPOSITORY_PATH, e)
+        logger.debug(
+            "Pebble API error while reading applied commit marker at %s: %s", REPOSITORY_PATH, e
+        )
         raise
 
     except ops.pebble.ExecError as e:
