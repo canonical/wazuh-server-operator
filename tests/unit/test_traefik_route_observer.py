@@ -29,6 +29,7 @@ class ObservedCharm(state.CharmBaseWithState):
     """Class for requirer charm testing.
 
     Attrs:
+        master_fqdn: the FQDN for unit 0.
         state: the charm state.
         units_fqdns: the charm units' FQDNs.
     """
@@ -54,6 +55,14 @@ class ObservedCharm(state.CharmBaseWithState):
         Returns: a list of FQDNs.
         """
         return ["host1.example", "host2.example"]
+
+    @property
+    def master_fqdn(self) -> str:
+        """Get the FQDN for the unit 0.
+
+        Returns: the FQDN for the unit 0.
+        """
+        return "host1.example"
 
     @property
     def state(self) -> state.State | None:
@@ -150,7 +159,6 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                         "loadBalancer": {
                             "servers": [
                                 {"address": "host1.example:1515"},
-                                {"address": "host2.example:1515"},
                             ],
                             "terminationDelay": -1,
                         }
@@ -159,7 +167,6 @@ def test_on_traefik_route_relation_joined_when_leader(monkeypatch: pytest.Monkey
                         "loadBalancer": {
                             "servers": [
                                 {"address": f"host1.example:{wazuh.API_PORT}"},
-                                {"address": f"host2.example:{wazuh.API_PORT}"},
                             ],
                             "terminationDelay": -1,
                         }

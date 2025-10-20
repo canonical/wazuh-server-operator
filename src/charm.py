@@ -390,6 +390,10 @@ class WazuhServerCharm(CharmBaseWithState):
             environment["NO_PROXY"] = proxy.no_proxy
         if not self.state:
             return {}
+
+        rsyslog_log_path = str(wazuh.RSYSLOG_SERVICE_LOG_PATH)
+        rsyslog_cmd = f"rsyslogd -n -f /etc/rsyslog.conf &>> {rsyslog_log_path}"
+
         return {
             "summary": "wazuh manager layer",
             "description": "pebble config layer for wazuh-manager",
@@ -411,8 +415,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 RSYSLOG_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "rsyslog",
-                    "command": "rsyslogd -n -f /etc/rsyslog.conf",
+                    "command": f"/bin/bash -c '{rsyslog_cmd}'",
                     "startup": "enabled",
+                    "environment": environment,
                 },
             },
             "checks": {

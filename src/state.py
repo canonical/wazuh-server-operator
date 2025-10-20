@@ -440,6 +440,7 @@ class CharmBaseWithState(ops.CharmBase, ABC):
     """CharmBase than can build a CharmState.
 
     Attrs:
+        master_fqdn: the FQDN for unit 0.
         state: the charm state.
         units_fqdns: the charm units' FQDNs.
     """
@@ -459,4 +460,12 @@ class CharmBaseWithState(ops.CharmBase, ABC):
         """Retrieve the FQDNs of the charm units.
 
         Returns: a list of FQDNs.
+        """
+
+    @property
+    @abstractmethod
+    def master_fqdn(self) -> list[str]:
+        """Get the FQDN for the unit 0.
+
+        Returns: the FQDN for the unit 0.
         """
