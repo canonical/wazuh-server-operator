@@ -28,3 +28,8 @@ jobs:
       tmate-timeout: 20
       use-canonical-k8s: true
       provider: 'k8s'
+  allure-report:
+    if: always() && !cancelled()
+    needs:
+      - integration-tests
+    uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
