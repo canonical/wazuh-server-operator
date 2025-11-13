@@ -755,13 +755,16 @@ def generate_api_password() -> str:
     return "".join(password)
 
 
-def create_readonly_api_user(username: str, password: str, token: str) -> None:
+def create_api_user(
+    username: str, password: str, token: str, rolename: str = "readonly"
+) -> None:
     """Create a new readonly user for Wazuh's API.
 
     Args:
         username: the username for the user.
         password: the password for the user.
         token: the auth token for the API.
+        rolename: (optional) the user's rbac role. default: readonly.
 
     Raises:
         WazuhInstallationError: if an error occurs while processing the requests.
@@ -804,7 +807,7 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
         response.raise_for_status()
         data = response.json()["data"]
         role_id = [
-            role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
+            role["id"] for role in data["affected_items"] if data and role["name"] == rolename
         ][0]
         response = requests.post(  # nosec
             f"https://localhost:{API_PORT}/security/users/{user_id}/roles?role_ids={role_id}",

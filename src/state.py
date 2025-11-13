@@ -24,16 +24,13 @@ WAZUH_USERS = OrderedDict(
     {
         "wazuh": {
             "default_password": "wazuh",
-            "default": True,
         },
         "wazuh-wui": {
             "default_password": "wazuh-wui",
-            "default": True,
         },
         # This user will be created by the charm
         "prometheus": {
             "default_password": "",
-            "default": False,
         },
     }
 )
