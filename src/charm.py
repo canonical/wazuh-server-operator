@@ -341,7 +341,8 @@ class WazuhServerCharm(CharmBaseWithState):
             self._reconcile_wazuh(container, local_repo_updated)
             container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
             container.replan()
-            self._configure_users()
+
+            self._reconcile_users()
             self._populate_wazuh_api_relation_data()
 
             container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
