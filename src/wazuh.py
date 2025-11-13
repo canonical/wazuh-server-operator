@@ -16,12 +16,17 @@ from pathlib import Path
 import ops
 import requests
 import requests.adapters
+import urllib3
 import yaml
 
 # Bandit classifies this import as vulnerable. For more details, see
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 from pydantic import AnyUrl
+
+# reduce unhelpful log volume
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 COLLECTORS_LOG_PATH = Path("/var/log/collectors")
@@ -687,6 +692,7 @@ def authenticate_user(username: str, password: str) -> str:
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
             raise WazuhInstallationError(f"Response for {username} does not contain token.")
+        logger.debug("Got Wazuh API auth token for username %s", username)
         return token
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError from exc
@@ -768,16 +774,15 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
         response = requests.get(  # nosec
             f"https://localhost:{API_PORT}/security/users",
             headers=headers,
-            json={"username": username, "password": password},
             timeout=10,
             verify=False,
         )
-        logger.debug(response.json())
+        response.raise_for_status()
         data = response.json()["data"]
         user_id = [
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ]
-        if not user_id:
+        if not user_id:  # user has not been created yet
             response = requests.post(  # nosec
                 f"https://localhost:{API_PORT}/security/users",
                 headers=headers,
@@ -786,7 +791,6 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
                 verify=False,
             )
             response.raise_for_status()
-            logger.debug(response.json())
             data = response.json()["data"]
         user_id = [
             user["id"] for user in data["affected_items"] if data and user["username"] == username
@@ -798,7 +802,6 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
-        logger.debug(response.json())
         data = response.json()["data"]
         role_id = [
             role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
