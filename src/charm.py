@@ -118,11 +118,10 @@ class WazuhServerCharm(CharmBaseWithState):
                 secret.set_content(api_secret_content)
                 logger.debug("Updated secret %s with API credentials", secret.id or secret.label)
         except ops.SecretNotFoundError:
-            if self.unit.is_leader():
-                secret = self.app.add_secret(
-                    api_secret_content, label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL
-                )
-                logger.debug("Added secret %s with API credentials", secret.id)
+            secret = self.app.add_secret(
+                api_secret_content, label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL
+            )
+            logger.debug("Added secret %s with API credentials", secret.id)
 
         relation_data = wazuh_api.WazuhApiRelationData(
             endpoint=pydantic.AnyHttpUrl(f"https://{self.external_hostname}:{wazuh.API_PORT}"),
