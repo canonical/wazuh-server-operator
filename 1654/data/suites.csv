@@ -1,0 +1,36 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"
+    Arrange: a working Wazuh deployment with a log-certification-authority configured
+    Act: send a syslog message over tls (with or without a valid CN)
+    Assert: the message appears in the log only if the CN is valid
+    ","0","test_rsyslog_client_cn[invalid]","tests.integration","2025-11-14","skipped","2025-11-14","","test_charm","",""
+"
+    Arrange: NA, leverage prior test's arrangement.
+    Act: retrieve leader-created API credentials, test against leader and non-leader API.
+    Assert: the API credentials are valid.
+    ","0","test_cluster_api_credentials","tests.integration","2025-11-14","skipped","2025-11-14","","test_charm","",""
+"
+    Arrange: A working Wazuh deployment integrated with OpenCTI any-charm.
+    Act: Get the unit data for both wazuh-server and any-opencti charms.
+    Assert: The required opencti data is present.
+    ","0","test_opencti_integration","tests.integration","2025-11-14","skipped","2025-11-14","","test_charm","",""
+"
+    Arrange: a working Wazuh deployment with a CA not matching the client CA
+    Act: send a syslog message over tls
+    Assert: the client raises an error
+    ","0","test_rsyslog_invalid_server_ca","tests.integration","2025-11-14","skipped","2025-11-14","","test_charm","",""
+"
+    Arrange: deploy the charm together with related charms.
+    Act: do nothing.
+    Assert: the default credentials are no longer valid for the API.
+    ","16560","test_api","tests.integration","2025-11-14","passed","2025-11-14","","test_charm","",""
+"
+    Arrange: a working Wazuh deployment with a log-certification-authority configured
+    Act: send a syslog message over tls (with or without a valid CN)
+    Assert: the message appears in the log only if the CN is valid
+    ","0","test_rsyslog_client_cn[valid]","tests.integration","2025-11-14","skipped","2025-11-14","","test_charm","",""
+"
+    Arrange: deploy the charm together with related charms.
+    Act: scale up to two units.
+    Assert: the clustering config is valid.
+    ","50140","test_clustering_ok","tests.integration","2025-11-14","failed","2025-11-14","","test_charm","",""
