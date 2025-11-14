@@ -16,12 +16,17 @@ from pathlib import Path
 import ops
 import requests
 import requests.adapters
+import urllib3
 import yaml
 
 # Bandit classifies this import as vulnerable. For more details, see
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 from pydantic import AnyUrl
+
+# reduce unhelpful log volume
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 COLLECTORS_LOG_PATH = Path("/var/log/collectors")
@@ -792,6 +797,7 @@ def authenticate_user(username: str, password: str) -> str:
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
             raise WazuhInstallationError(f"Response for {username} does not contain token.")
+        logger.debug("Got Wazuh API auth token for username %s", username)
         return token
     except requests.exceptions.ConnectionError as exc:
         logger.warning("Wazuh API authentication failed: %s", exc)
@@ -835,6 +841,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
+        logger.info("Changed API password for user %s", username)
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
@@ -857,35 +864,37 @@ def generate_api_password() -> str:
     return "".join(password)
 
 
-def create_readonly_api_user(username: str, password: str, token: str) -> None:
+def create_api_user(username: str, password: str, token: str, rolename: str = "readonly") -> None:
     """Create a new readonly user for Wazuh's API.
 
     Args:
         username: the username for the user.
         password: the password for the user.
         token: the auth token for the API.
+        rolename: (optional) the user's rbac role. default: readonly.
 
     Raises:
-        WazuhInstallationError: if an error occurs while processing the requests.
+        WazuhAuthenticationError: if a 401 error occurs while processing the requests.
+        WazuhInstallationError: if any non-401 error occurs while processing the requests.
     """
     # The certificates might be self signed and there's no security hardening in
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
+    response = None
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
             f"https://localhost:{API_PORT}/security/users",
             headers=headers,
-            json={"username": username, "password": password},
             timeout=10,
             verify=False,
         )
-        logger.debug(response.json())
+        response.raise_for_status()
         data = response.json()["data"]
         user_id = [
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ]
-        if not user_id:
+        if not user_id:  # user has not been created yet
             response = requests.post(  # nosec
                 f"https://localhost:{API_PORT}/security/users",
                 headers=headers,
@@ -894,7 +903,6 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
                 verify=False,
             )
             response.raise_for_status()
-            logger.debug(response.json())
             data = response.json()["data"]
         user_id = [
             user["id"] for user in data["affected_items"] if data and user["username"] == username
@@ -906,10 +914,9 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
-        logger.debug(response.json())
         data = response.json()["data"]
         role_id = [
-            role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
+            role["id"] for role in data["affected_items"] if data and role["name"] == rolename
         ][0]
         response = requests.post(  # nosec
             f"https://localhost:{API_PORT}/security/users/{user_id}/roles?role_ids={role_id}",
@@ -918,7 +925,10 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
+        logger.info("Created user %s", username)
     except requests.exceptions.RequestException as exc:
+        if isinstance(response, requests.Response) and response.status_code == 401:
+            raise WazuhAuthenticationError("401 error creating an API user") from exc
         raise WazuhInstallationError("Error creating a readonly user.") from exc
 
 
