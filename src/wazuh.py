@@ -733,6 +733,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
+        logger.info("Changed API password for user %s", username)
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
@@ -772,6 +773,7 @@ def create_api_user(
     # The certificates might be self signed and there's no security hardening in
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
+    response = None
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
@@ -816,7 +818,10 @@ def create_api_user(
             verify=False,
         )
         response.raise_for_status()
+        logger.info("Created user %s", username)
     except requests.exceptions.RequestException as exc:
+        if isinstance(response, requests.Response) and response.status_code == 401:
+            raise WazuhAuthenticationError("401 error creating an API user") from exc
         raise WazuhInstallationError("Error creating a readonly user.") from exc
 
 

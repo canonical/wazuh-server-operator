@@ -61,20 +61,23 @@ class CertificatesObserver(Object):
 
         Returns: the private key.
         """
-        private_key = None
+        private_key = ""
         try:
             secret = self._charm.model.get_secret(label=label)
             content = secret.get_content()
-            if not content or renew:
+            if self._charm.unit.is_leader() and (not content or renew):
                 private_key = certificates.generate_private_key().decode()
                 content["key"] = private_key
                 if dict(secret.get_content(refresh=True)) != content:
                     secret.set_content(content=content)
-            private_key = secret.get_content().get("key")
+            private_key = secret.get_content().get("key", "")
         except ops.SecretNotFoundError:
-            logger.debug("Secret for private key not found. One will be generated.")
-            private_key = certificates.generate_private_key().decode()
-            self._charm.app.add_secret(content={"key": private_key}, label=label)
+            if self._charm.unit.is_leader():
+                logger.debug("Secret for private key not found. One will be generated.")
+                private_key = certificates.generate_private_key().decode()
+                self._charm.app.add_secret(content={"key": private_key}, label=label)
+            else:
+                logger.debug("Secret for private key not found and we are not leader.")
         return private_key
 
     def get_csr(self, renew: bool = False) -> bytes:

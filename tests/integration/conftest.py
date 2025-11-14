@@ -257,6 +257,12 @@ async def application_fixture(
         timeout=1800,
     )
     yield application
+    # cleanup secrets (library does not give us convenient methods for this)
+    for unit in application.units:
+        await unit.run(
+            "while IFS= read -r secret; do secret-remove $secret; done < <(secret-ids)",
+            timeout=30
+        )
     await application.destroy(
         destroy_storage=True, force=True, no_wait=False
     )

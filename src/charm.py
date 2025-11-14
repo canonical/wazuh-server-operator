@@ -38,6 +38,7 @@ WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 WAZUH_SERVICE_NAME = "wazuh"
 FILEBEAT_SERVICE_NAME = "filebeat"
 RSYSLOG_SERVICE_NAME = "rsyslog"
+PROMETHEUS_SERVICE_NAME = "prometheus_exporter"
 
 
 class WazuhServerCharm(CharmBaseWithState):
@@ -107,7 +108,6 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the secret doesn't exist.
         """
-        _ = self.state  # Ensure the state is valid
         if not self.unit.is_leader():
             return
 
@@ -283,17 +283,26 @@ class WazuhServerCharm(CharmBaseWithState):
             current_password = credentials[username]
             password_to_save = None
 
-            # create users if they don't exist yet
-            if not current_password:
-                token = wazuh.authenticate_user(
-                    "wazuh", credentials["wazuh"]
-                )
-                new_password = wazuh.generate_api_password()
-                wazuh.create_api_user(username, new_password, token)
-                password_to_save = new_password
+            # create user if it doesn't exist yet
+            retries = 5
+            while not current_password and retries > 0:
+                try:
+                    token = wazuh.authenticate_user(
+                        "wazuh", credentials["wazuh"]
+                    )
+                    new_password = wazuh.generate_api_password()
+                    wazuh.create_api_user(username, new_password, token)
+                    current_password = new_password
+                    password_to_save = new_password
+                except wazuh.WazuhAuthenticationError as exc:
+                    retries -= 1
+                    logger.error(
+                        "Failed to create user %s: %s. %s retries remaining.", username, exc, retries
+                    )
+                    time.sleep(1)
 
             # change credentials if they've never been changed
-            elif current_password == user_details["default_password"]:
+            if current_password == user_details["default_password"]:
                 new_password = wazuh.generate_api_password()
                 token = wazuh.authenticate_user(
                     username, user_details["default_password"]
@@ -310,10 +319,17 @@ class WazuhServerCharm(CharmBaseWithState):
                         secret.set_content(credentials)
                     logger.debug("Updated secret %s with credentials", secret.id)
                 except ops.SecretNotFoundError:
-                    secret = self.unit.add_secret(
+                    secret = self.app.add_secret(
                         credentials, label=state.WAZUH_API_CREDENTIALS
                     )
                     logger.debug("Added secret %s with credentials", secret.id)
+
+    def _reconcile_prometheus(self, container: ops.Container) -> None:
+        if not self.state.api_credentials.get("prometheus"):
+            logger.warning("Prometheus API user not created. Won't create service.")
+            return
+        container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
+        self._restart_service(container, PROMETHEUS_SERVICE_NAME, force=True)
 
     def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
         """Reconcile Wazuh configuration with charm state.
@@ -344,9 +360,7 @@ class WazuhServerCharm(CharmBaseWithState):
 
             self._reconcile_users()
             self._populate_wazuh_api_relation_data()
-
-            container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
-            self._restart_service(container, "prometheus", force=True)
+            self._reconcile_prometheus(container)
 
             self.unit.set_workload_version(wazuh.get_version(container))
             self.unit.status = ops.ActiveStatus()
@@ -421,13 +435,11 @@ class WazuhServerCharm(CharmBaseWithState):
     @property
     def _prometheus_pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer for the Prometheus exporter."""
-        if not self.state:
-            return {}
         return {
             "summary": "wazuh exporter layer",
             "description": "pebble config layer for wazuh-exporter",
             "services": {
-                "prometheus-exporter": {
+                PROMETHEUS_SERVICE_NAME: {
                     "override": "replace",
                     "summary": "prometheus exporter",
                     "command": (
