@@ -24,16 +24,13 @@ WAZUH_USERS = OrderedDict(
     {
         "wazuh": {
             "default_password": "wazuh",
-            "default": True,
         },
         "wazuh-wui": {
             "default_password": "wazuh-wui",
-            "default": True,
         },
         # This user will be created by the charm
         "prometheus": {
             "default_password": "",
-            "default": False,
         },
     }
 )
@@ -151,15 +148,20 @@ def _fetch_matching_certificates(
     Returns:
         the certificates matching the CSR.
     """
-    logger.debug(
-        "Matching CSR %s for certificates %s", certificate_signing_request, provider_certificates
-    )
-    return [
+    csr_to_match = certificate_signing_request.replace("\n", "")
+    matching_certificates = [
         certificate
         for certificate in provider_certificates
-        if certificate.csr.replace("\n", "") == certificate_signing_request.replace("\n", "")
-        and not certificate.revoked
+        if certificate.csr.replace("\n", "") == csr_to_match and not certificate.revoked
     ]
+
+    abbreviated_csr = f"{csr_to_match[:80]}..."
+    if not matching_certificates:
+        logger.debug("Could not find matching certificate for CSR %s", abbreviated_csr)
+    else:
+        logger.debug("Found matching certificate for CSR %s", abbreviated_csr)
+
+    return matching_certificates
 
 
 def _fetch_ssh_repository_key(model: ops.Model, config: WazuhConfig) -> str | None:

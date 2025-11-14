@@ -12,9 +12,11 @@ from pathlib import Path
 
 import pytest
 import requests
+import requests.adapters
 import yaml
 from juju.application import Application
 from juju.model import Model
+from juju.unit import Unit
 from pytest_operator.plugin import OpsTest
 
 import state
@@ -88,6 +90,78 @@ async def test_clustering_ok(model: Model, application: Application, traefik: Ap
 
 
 @pytest.mark.abort_on_fail
+async def test_cluster_api_credentials(
+    model: Model, application: Application, traefik: Application
+):
+    """
+    Arrange: NA, leverage prior test's arrangement.
+    Act: retrieve leader-created API credentials, test against leader and non-leader API.
+    Assert: the API credentials are valid.
+    """
+    await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
+
+    wazuh_leader = None
+    wazuh_followers = []
+    for unit in application.units:
+        if await unit.is_leader_from_status():
+            wazuh_leader = unit
+        else:
+            wazuh_followers.append(unit)
+
+    assert isinstance(wazuh_leader, Unit), "Could not find Wazuh leader"
+
+    # get API password for wazuh
+    action = await wazuh_leader.run(
+        f"secret-get --label {state.WAZUH_API_CREDENTIALS} | grep -oP 'wazuh: \\K.*'", timeout=10
+    )
+    await action.wait()
+    code = action.results.get("return-code")
+    stdout = action.results.get("stdout")
+    stderr = action.results.get("stderr")
+    assert code == 0, f"Failed to get Wazuh API credentials: {stderr or stdout}"
+    password = stdout.strip()
+
+    # test API connection
+    for unit in application.units:
+        action = await unit.run(
+            "ip -o -4 addr show dev eth0 | grep -oP 'inet \\K[^/]+'", timeout=10
+        )
+        await action.wait()
+        code = action.results.get("return-code")
+        stdout = action.results.get("stdout")
+        stderr = action.results.get("stderr")
+        assert code == 0, f"Failed to get unit IP: {stderr or stdout}"
+        ip = stdout.strip()
+
+        logger.info(
+            "Attempting auth with Wazuh API on unit %s (IP %s) with password %s",
+            unit.name,
+            ip,
+            password,
+        )
+        retries = 5
+        while retries:
+            response = requests.get(  # nosec
+                f"https://{ip}:55000/security/user/authenticate",
+                auth=("wazuh", password),
+                timeout=10,
+                verify=False,
+            )
+
+            if response.status_code == 200:
+                break
+
+            logger.warning(
+                "Wazuh API authentication failed with status %s. %s retries remaining.",
+                response.status_code,
+                retries,
+            )
+            retries -= 1
+        assert response.status_code == 200, f"Wazuh API authentication failed for {unit.name}."
+        logger.info("Successfully authenticated to API on unit %s", unit.name)
+
+
+@pytest.mark.abort_on_fail
 async def test_rsyslog_invalid_server_ca(application: Application):
     """
     Arrange: a working Wazuh deployment with a CA not matching the client CA
@@ -149,6 +223,7 @@ async def test_rsyslog_client_cn(
     assert found is expect_logs, f"Found logs={found}, while expected logs={expect_logs}"
 
 
+@pytest.mark.abort_on_fail
 async def test_opencti_integration(
     any_opencti: Application,
     application: Application,
