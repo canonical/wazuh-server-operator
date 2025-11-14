@@ -116,7 +116,7 @@ class WazuhServerCharm(CharmBaseWithState):
             secret = self.model.get_secret(label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL)
             if dict(secret.get_content(refresh=True)) != api_secret_content:
                 secret.set_content(api_secret_content)
-            logger.debug("Updated secret %s with API credentials", secret.id)
+                logger.debug("Updated secret %s with API credentials", secret.id or secret.label)
         except ops.SecretNotFoundError:
             if self.unit.is_leader():
                 secret = self.app.add_secret(
@@ -310,7 +310,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
                     if dict(secret.get_content(refresh=True)) != credentials:
                         secret.set_content(credentials)
-                    logger.debug("Updated secret %s with credentials", secret.id)
+                    logger.debug("Updated secret %s with credentials", secret.id or secret.label)
                 except ops.SecretNotFoundError:
                     secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
