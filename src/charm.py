@@ -132,7 +132,6 @@ class WazuhServerCharm(CharmBaseWithState):
         relation = self.model.get_relation(wazuh_api.RELATION_NAME)
         if relation:
             self._wazuh_api.update_relation_data(relation, relation_data)
-        if relation and secret:
             secret.grant(relation)
 
     @property
