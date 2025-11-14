@@ -328,6 +328,18 @@ class WazuhServerCharm(CharmBaseWithState):
         if not self.state.api_credentials.get("prometheus"):
             logger.warning("Prometheus API user not created. Won't create service.")
             return
+
+        # check if service needs to be (re)started
+        old_password = ""
+        service = container.get_plan().services.get(PROMETHEUS_SERVICE_NAME, None)
+        if isinstance(service, ops.pebble.Service):
+            old_env = service.to_dict().get("environment", {})
+            old_password = old_env.get("WAZUH_API_PASSWORD", "")
+
+        if old_password == self.state.api_credentials.get("prometheus"):
+            return
+
+        # prometheus layer did not exist or the creds have changed:
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         self._restart_service(container, PROMETHEUS_SERVICE_NAME, force=True)
 
