@@ -1,0 +1,8 @@
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-server/0 [idle] active: 
+  wazuh-server/1 [idle] active: 
+  traefik-k8s/0 [idle] active: Serving at wazuh-server.local
+[32mINFO    [0m integration.test_charm:test_charm.py:136 Attempting auth with Wazuh API on unit wazuh-server/0 (IP 10.1.0.191) with password VwXG,D$%:5PFncS
+[32mINFO    [0m integration.test_charm:test_charm.py:161 Successfully authenticated to API on unit wazuh-server/0
+[32mINFO    [0m integration.test_charm:test_charm.py:136 Attempting auth with Wazuh API on unit wazuh-server/1 (IP 10.1.0.222) with password VwXG,D$%:5PFncS
+[32mINFO    [0m integration.test_charm:test_charm.py:161 Successfully authenticated to API on unit wazuh-server/1
