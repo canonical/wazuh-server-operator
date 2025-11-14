@@ -1,0 +1,35 @@
+[32mINFO    [0m juju.model:__init__.py:2301 Deploying ch:amd64/noble/any-charm-100
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  any-opencti/0 [allocating] waiting: installing agent
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  any-opencti/0 [idle] active: 
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  traefik-k8s/0 [idle] active: Serving at wazuh-server.local
+  wazuh-server/0 [idle] active: 
+  wazuh-server/1 [idle] active: 
+  any-opencti/0 [executing] active:
+[32mINFO    [0m pytest_operator.plugin:plugin.py:951 Model status:
+
+Model    Controller           Cloud/Region  Version  SLA          Timestamp
+testing  github-pr-a05dd-k8s  k8s           3.6.11   unsupported  22:20:24Z
+
+SAAS                      Status  Store      URL
+self-signed-certificates  active  localhost  admin/testing-machine.self-signed-certificates
+wazuh-indexer             active  localhost  admin/testing-machine.wazuh-indexer
+
+App           Version  Status  Scale  Charm         Channel      Rev  Address         Exposed  Message
+any-opencti            active      1  any-charm     latest/beta  100  10.152.183.218  no       
+traefik-k8s   2.11.0   active      1  traefik-k8s   latest/edge  233  10.152.183.151  no       Serving at wazuh-server.local
+wazuh-server  v4.11.0  active    2/0  wazuh-server                 0  10.152.183.195  no       
+
+Unit             Workload  Agent      Address     Ports  Message
+any-opencti/0*   active    executing  10.1.0.232         
+traefik-k8s/0*   active    executing  10.1.0.124         Serving at wazuh-server.local
+wazuh-server/0*  active    executing  10.1.0.151         
+wazuh-server/1   active    executing  10.1.0.24          
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:957 Juju error logs:
+
+unit-wazuh-server-0: 22:16:02 ERROR unit.wazuh-server/0.juju-log Charm configuration not ready, External hostname is not yet present.
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:1039 Forgetting model main...
