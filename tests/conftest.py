@@ -14,3 +14,4 @@ def pytest_addoption(parser):
     parser.addoption("--kube-config", action="store", default="~/.kube/config")
     parser.addoption("--wazuh-server-image", action="store")
     parser.addoption("--single-node-indexer", action="store_true")
+    parser.addoption("--keep-wazuh", action="store_true")
