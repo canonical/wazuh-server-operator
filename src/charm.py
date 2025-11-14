@@ -325,7 +325,7 @@ class WazuhServerCharm(CharmBaseWithState):
             return
 
         # check if service needs to be (re)started
-        old_password = ""
+        old_password = ""  # nosec # (not a hard-coded password)
         service = container.get_plan().services.get(PROMETHEUS_SERVICE_NAME, None)
         if isinstance(service, ops.pebble.Service):
             old_env = service.to_dict().get("environment", {})
