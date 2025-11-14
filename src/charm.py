@@ -103,11 +103,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 )
 
     def _populate_wazuh_api_relation_data(self) -> None:
-        """Wazuh client API relation created event handler.
-
-        Raises:
-            InvalidStateError: if the secret doesn't exist.
-        """
+        """Wazuh client API relation created event handler."""
         if not self.unit.is_leader():
             return
 
@@ -121,7 +117,7 @@ class WazuhServerCharm(CharmBaseWithState):
             if dict(secret.get_content(refresh=True)) != api_secret_content:
                 secret.set_content(api_secret_content)
             logger.debug("Updated secret %s with API credentials", secret.id)
-        except ops.SecretNotFoundError as exc:
+        except ops.SecretNotFoundError:
             if self.unit.is_leader():
                 secret = self.app.add_secret(
                     api_secret_content, label=wazuh_api.WAZUH_API_KEY_SECRET_LABEL
@@ -129,9 +125,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 logger.debug("Added secret %s with API credentials", secret.id)
 
         relation_data = wazuh_api.WazuhApiRelationData(
-            endpoint=pydantic.AnyHttpUrl(
-                f"https://{self.external_hostname}:{wazuh.API_PORT}"
-            ),
+            endpoint=pydantic.AnyHttpUrl(f"https://{self.external_hostname}:{wazuh.API_PORT}"),
             user="wazuh-wui",
             password=self.state.api_credentials["wazuh-wui"],
             user_credentials_secret=secret.get_info().id if secret else "",
@@ -272,7 +266,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((sync_config_files, changed_password, changed_ossec_conf)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
-    def _reconcile_users(self) -> None:
+    def _reconcile_users(self) -> None:  # noqa: C901
         """Configure Wazuh users."""
         if not self.unit.is_leader():
             return  # Wazuh handles cluster syncing, only the leader should make changes
@@ -287,9 +281,7 @@ class WazuhServerCharm(CharmBaseWithState):
             retries = 5
             while not current_password and retries > 0:
                 try:
-                    token = wazuh.authenticate_user(
-                        "wazuh", credentials["wazuh"]
-                    )
+                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
                     new_password = wazuh.generate_api_password()
                     wazuh.create_api_user(username, new_password, token)
                     current_password = new_password
@@ -297,16 +289,17 @@ class WazuhServerCharm(CharmBaseWithState):
                 except wazuh.WazuhAuthenticationError as exc:
                     retries -= 1
                     logger.error(
-                        "Failed to create user %s: %s. %s retries remaining.", username, exc, retries
+                        "Failed to create user %s: %s. %s retries remaining.",
+                        username,
+                        exc,
+                        retries,
                     )
                     time.sleep(1)
 
             # change credentials if they've never been changed
             if current_password == user_details["default_password"]:
                 new_password = wazuh.generate_api_password()
-                token = wazuh.authenticate_user(
-                    username, user_details["default_password"]
-                )
+                token = wazuh.authenticate_user(username, user_details["default_password"])
                 wazuh.change_api_password(username, new_password, token)
                 password_to_save = new_password
 
@@ -319,12 +312,15 @@ class WazuhServerCharm(CharmBaseWithState):
                         secret.set_content(credentials)
                     logger.debug("Updated secret %s with credentials", secret.id)
                 except ops.SecretNotFoundError:
-                    secret = self.app.add_secret(
-                        credentials, label=state.WAZUH_API_CREDENTIALS
-                    )
+                    secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
                     logger.debug("Added secret %s with credentials", secret.id)
 
     def _reconcile_prometheus(self, container: ops.Container) -> None:
+        """Reconcile the Wazuh installation.
+
+        Args:
+            container: the container to configure Wazuh for.
+        """
         if not self.state.api_credentials.get("prometheus"):
             logger.warning("Prometheus API user not created. Won't create service.")
             return

@@ -756,9 +756,7 @@ def generate_api_password() -> str:
     return "".join(password)
 
 
-def create_api_user(
-    username: str, password: str, token: str, rolename: str = "readonly"
-) -> None:
+def create_api_user(username: str, password: str, token: str, rolename: str = "readonly") -> None:
     """Create a new readonly user for Wazuh's API.
 
     Args:
@@ -768,7 +766,8 @@ def create_api_user(
         rolename: (optional) the user's rbac role. default: readonly.
 
     Raises:
-        WazuhInstallationError: if an error occurs while processing the requests.
+        WazuhAuthenticationError: if a 401 error occurs while processing the requests.
+        WazuhInstallationError: if any non-401 error occurs while processing the requests.
     """
     # The certificates might be self signed and there's no security hardening in
     # passing them to the request since tampering with `localhost` would mean the

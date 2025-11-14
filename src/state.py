@@ -152,19 +152,17 @@ def _fetch_matching_certificates(
     matching_certificates = [
         certificate
         for certificate in provider_certificates
-        if certificate.csr.replace("\n", "") == csr_to_match
-        and not certificate.revoked
+        if certificate.csr.replace("\n", "") == csr_to_match and not certificate.revoked
     ]
 
     abbreviated_csr = f"{csr_to_match[:80]}..."
     if not matching_certificates:
-        logger.debug(
-            "Could not find matching certificate for CSR %s", abbreviated_csr
-        )
+        logger.debug("Could not find matching certificate for CSR %s", abbreviated_csr)
     else:
         logger.debug("Found matching certificate for CSR %s", abbreviated_csr)
 
     return matching_certificates
+
 
 def _fetch_ssh_repository_key(model: ops.Model, config: WazuhConfig) -> str | None:
     """Fetch the SSH key for the repository.

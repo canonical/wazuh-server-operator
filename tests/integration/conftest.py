@@ -260,12 +260,9 @@ async def application_fixture(
     # cleanup secrets (library does not give us convenient methods for this)
     for unit in application.units:
         await unit.run(
-            "while IFS= read -r secret; do secret-remove $secret; done < <(secret-ids)",
-            timeout=30
+            "while IFS= read -r secret; do secret-remove $secret; done < <(secret-ids)", timeout=30
         )
-    await application.destroy(
-        destroy_storage=True, force=True, no_wait=False
-    )
+    await application.destroy(destroy_storage=True, force=True, no_wait=False)
 
 
 @pytest_asyncio.fixture(scope="module", name="any_opencti")

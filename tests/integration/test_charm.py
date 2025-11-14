@@ -147,15 +147,16 @@ async def test_cluster_api_credentials(
                 timeout=10,
                 verify=False,
             )
+
             if response.status_code == 200:
                 break
-            else:
-                logger.warning(
-                    "Wazuh API authentication failed with status %s. %s retries remaining.",
-                    response.status_code,
-                    retries,
-                )
-                retries -= 1
+
+            logger.warning(
+                "Wazuh API authentication failed with status %s. %s retries remaining.",
+                response.status_code,
+                retries,
+            )
+            retries -= 1
         assert response.status_code == 200, f"Wazuh API authentication failed for {unit.name}."
         logger.info("Successfully authenticated to API on unit %s", unit.name)
 
