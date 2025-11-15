@@ -1,0 +1,1 @@
+[32mINFO    [0m sh.command:sh.py:576 <Command '/snap/bin/juju show-unit wazuh-server/0 -m testing --format=yaml', pid 112418>: process started
