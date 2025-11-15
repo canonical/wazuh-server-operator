@@ -43,7 +43,7 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     exec_mock = unittest.mock.MagicMock(return_value=exec_process)
     monkeypatch.setattr(container, "exec", exec_mock)
     filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text(encoding="utf-8")
-    container.push(wazuh.FILEBEAT_CONF_PATH, filebeat_content, make_dirs=True)
+    container.push(wazuh.FILEBEAT_CONFIG_FILE, filebeat_content, make_dirs=True)
     ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
@@ -51,7 +51,7 @@ def test_update_configuration_when_on_master(monkeypatch: pytest.MonkeyPatch) ->
     wazuh.sync_filebeat_config(container, indexer_endpoints)
     wazuh.sync_ossec_conf(container, indexer_endpoints, master_ip, "wazuh-server/0", key)
 
-    filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
+    filebeat_config = container.pull(wazuh.FILEBEAT_CONFIG_FILE, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
     assert "output.elasticsearch" in filebeat_config_yaml
     assert "hosts" in filebeat_config_yaml["output.elasticsearch"]
@@ -84,7 +84,7 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     exec_mock = unittest.mock.MagicMock(return_value=exec_process)
     monkeypatch.setattr(container, "exec", exec_mock)
     filebeat_content = Path("tests/unit/resources/filebeat.yml").read_text(encoding="utf-8")
-    container.push(wazuh.FILEBEAT_CONF_PATH, filebeat_content, make_dirs=True)
+    container.push(wazuh.FILEBEAT_CONFIG_FILE, filebeat_content, make_dirs=True)
     ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
     container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
 
@@ -92,7 +92,7 @@ def test_update_configuration_when_on_worker(monkeypatch: pytest.MonkeyPatch) ->
     wazuh.sync_filebeat_config(container, indexer_endpoints)
     wazuh.sync_ossec_conf(container, indexer_endpoints, master_ip, "wazuh-server/1", key)
 
-    filebeat_config = container.pull(wazuh.FILEBEAT_CONF_PATH, encoding="utf-8").read()
+    filebeat_config = container.pull(wazuh.FILEBEAT_CONFIG_FILE, encoding="utf-8").read()
     filebeat_config_yaml = yaml.safe_load(filebeat_config)
     assert "output.elasticsearch" in filebeat_config_yaml
     assert "hosts" in filebeat_config_yaml["output.elasticsearch"]
