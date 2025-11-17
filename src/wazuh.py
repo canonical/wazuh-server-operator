@@ -28,15 +28,13 @@ from pydantic import AnyUrl
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
 CONTAINER_NAME = "wazuh-server"
+INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
+REPOSITORY_PATH = "/root/repository"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
-REPOSITORY_PATH = "/root/repository"
 
 # wazuh service config vars
-WAZUH_USER = "wazuh"
-WAZUH_GROUP = "wazuh"
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 API_PORT = 55000
 AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
@@ -44,10 +42,14 @@ WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"
+WAZUH_GROUP = "wazuh"
+WAZUH_USER = "wazuh"
 
 # filebeat service config vars
 FILEBEAT_USER = "root"
 FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
+FILEBEAT_CONFIG_DIR = "/etc/filebeat"
+FILEBEAT_CONFIG_FILE = FILEBEAT_CONFIG_DIR + "/filebeat.yml"
 FILEBEAT_CMD = [
     "/usr/share/filebeat/bin/filebeat",
     "--path.home",
@@ -60,26 +62,24 @@ FILEBEAT_CMD = [
     "/var/log/filebeat",
 ]
 FILEBEAT_HOME_DIR = "/usr/share/filebeat"
-FILEBEAT_CONFIG_DIR = "/etc/filebeat"
-FILEBEAT_CONFIG_FILE = FILEBEAT_CONFIG_DIR + "/filebeat.yml"
-REPO_FILEBEAT_HOME_DIR = REPOSITORY_PATH + FILEBEAT_HOME_DIR
+FILEBEAT_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.filebeat_applied_commit"
 REPO_FILEBEAT_CONFIG_DIR = REPOSITORY_PATH + FILEBEAT_CONFIG_DIR
 REPO_FILEBEAT_CONFIG_FILE = REPOSITORY_PATH + FILEBEAT_CONFIG_FILE
-FILEBEAT_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.filebeat_applied_commit"
+REPO_FILEBEAT_HOME_DIR = REPOSITORY_PATH + FILEBEAT_HOME_DIR
 
 # rsyslog vars
-RSYSLOG_USER = "syslog"
+RSYSLOG_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.rsyslog_applied_commit"
 RSYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
 RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
 RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
+RSYSLOG_USER = "syslog"
 REPO_RSYSLOG_CONF_PATH = REPOSITORY_PATH + RSYSLOG_CONF_PATH
 REPO_RSYSLOG_CONF_DIR_PATH = REPOSITORY_PATH + RSYSLOG_CONF_DIR_PATH
-RSYSLOG_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.rsyslog_applied_commit"
 
 # log paths for service monitoring
-WAZUH_SERVICE_LOG_DIR = Path("/var/ossec/logs")
 FILEBEAT_SERVICE_LOG_PATH = Path("/var/log/filebeat")
 RSYSLOG_SERVICE_LOG_PATH = Path("/var/log/rsyslog.log")
+WAZUH_SERVICE_LOG_DIR = Path("/var/ossec/logs")
 
 logger = logging.getLogger(__name__)
 
