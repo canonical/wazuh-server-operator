@@ -646,13 +646,11 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
         raise WazuhInstallationError from ex
 
 
-def sync_config_files(
-    container: ops.Container, pairs: typing.Iterable[typing.Tuple[str, str]]
-) -> None:
+def sync_config_files(container: ops.Container, pairs: typing.Iterable[(str, str)]) -> None:
     """Sync configuration files.
 
     Args:
-        container: the container on which to sync files.
+        container: the container on which to sync files.s
         pairs: an iterable of (source, destination) filepaths.
 
     Raises:
@@ -870,7 +868,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while processing the requests.
     """
-    # certificates may be self signed and there's no value in verifying them
+    # certificates may be self-signed and there's no value in verifying them
     # as a compromised localhost service would indicate we're already compromised
     try:
         headers = {"Authorization": f"Bearer {token}"}
