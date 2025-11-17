@@ -260,7 +260,7 @@ async def application_fixture(
         timeout=1800,
     )
     yield application
-    if not pytestconfig.getoption("--keep-wazuh"):
+    if not pytestconfig.getoption("--keep-models"):
         # cleanup secrets (library does not give us convenient methods for this)
         for unit in application.units:
             await unit.run(
