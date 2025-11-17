@@ -228,12 +228,13 @@ async def application_fixture(
         yield model.applications[wazuh_server_app]
         return
 
-    application = await model.deploy(
+    await model.deploy(
         f"./{charm}",
         config={"logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text()},
         resources=resources,
         trust=True,
     )
+    application = model.applications[wazuh_server_app]
     await model.integrate(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
@@ -256,9 +257,12 @@ async def application_fixture(
         timeout=1800,
     )
     yield application
-    await model.applications[wazuh_server_app].destroy(
-        destroy_storage=True, force=True, no_wait=False
-    )
+    # cleanup secrets (library does not give us convenient methods for this)
+    for unit in application.units:
+        await unit.run(
+            "while IFS= read -r secret; do secret-remove $secret; done < <(secret-ids)", timeout=30
+        )
+    await application.destroy(destroy_storage=True, force=True, no_wait=False)
 
 
 @pytest_asyncio.fixture(scope="module", name="any_opencti")

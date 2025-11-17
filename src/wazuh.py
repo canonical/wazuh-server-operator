@@ -16,12 +16,17 @@ from pathlib import Path
 import ops
 import requests
 import requests.adapters
+import urllib3
 import yaml
 
 # Bandit classifies this import as vulnerable. For more details, see
 # https://github.com/PyCQA/bandit/issues/767
 from lxml import etree  # nosec
 from pydantic import AnyUrl
+
+# reduce unhelpful log volume
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
 COLLECTORS_LOG_PATH = Path("/var/log/collectors")
@@ -48,6 +53,8 @@ FILEBEAT_LOG_PATH = Path("/var/log/filebeat")
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
 REPOSITORY_PATH = "/root/repository"
+WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"
+RSYSLOG_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.rsyslog_applied_commit"
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
 RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
@@ -77,6 +84,10 @@ class WazuhConfigurationError(WazuhInstallationError):
     """Wazuh configuration errors."""
 
 
+class WazuhNotReadyError(WazuhInstallationError):
+    """Wazuh errors due to long-running installation process."""
+
+
 class NodeType(Enum):
     """Enum for the Wazuh node types.
 
@@ -87,6 +98,79 @@ class NodeType(Enum):
 
     WORKER = "worker"
     MASTER = "master"
+
+
+def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
+    """Actual HEAD of the cloned repo, or None if non-existing.
+
+    Arguments:
+        container: the container for which to read the actual repo commit.
+
+    Returns:
+        typing.Optional[str]: the actual commit.
+
+    Raises:
+       ExecError: Git rev-parse of the repo failed.
+    """
+    if not container.isdir(REPOSITORY_PATH):
+        return None
+
+    try:
+        process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
+        out, _ = process.wait_output()
+        head = out.strip()
+        return head or None
+
+    except ops.pebble.APIError as e:
+        logger.debug(
+            "Pebble API error while reading applied commit marker at %s: %s", REPOSITORY_PATH, e
+        )
+        raise
+
+    except ops.pebble.ExecError as e:
+        logger.warning(
+            "git rev-parse of the repository failed, probably not initialized yet: %s", str(e)
+        )
+        return None
+
+
+def _read_applied_commit(container: ops.Container, path: str) -> typing.Optional[str]:
+    """Read the last commit successfully applied.
+
+    Arguments:
+        container: the container for which to read the commit.
+        path: the path where the last commit was applied.
+
+    Returns:
+        typing.Optional[str]: the last commit applied.
+    """
+    if not container.exists(path):
+        return None
+
+    try:
+        commit_applied = container.pull(path).read().strip()
+        return commit_applied or None
+    except ops.pebble.PathError:
+        logger.debug("Failed to read applied commit though path was confirmed to exist (%s)", path)
+        return None
+
+
+def save_applied_commit_marker(container: ops.Container, path: str) -> None:
+    """Save actual HEAD as applied, call only after successful reconciliation.
+
+    Arguments:
+        container: the container in which to flag the commit as applied.
+        path: the path where to save the commit.
+    """
+    head = get_current_repo_commit(container)
+    if head:
+        container.push(
+            path,
+            f"{head}\n",
+            encoding="utf-8",
+            make_dirs=True,
+            permissions=0o644,
+        )
 
 
 def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
@@ -428,7 +512,8 @@ def sync_config_repo(
     repo = _get_current_repo_url(container)
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
-    already_synced: bool = is_right_repo and is_right_tag
+
+    already_synced = is_right_repo and is_right_tag
 
     if already_synced:
         logger.info("custom_config_repository is already up to date")
@@ -449,19 +534,28 @@ def sync_config_repo(
     return True
 
 
-def sync_wazuh_config_files(container: ops.Container) -> None:
+def sync_wazuh_config_files(container: ops.Container) -> bool:
     """Sync Wazuh configuration files from the local config repository.
 
     Args:
         container: the container to pull the files into.
 
+    Returns:
+        bool: True if a sync was executed, False if there was nothing to sync.
+
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
+    current_head = get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container, WAZUH_APPLIED_COMMIT_PATH)
+
+    if current_head is not None and current_head == applied_head:
+        return False
+
     source, dest = REPO_WAZUH_CONF_PATH, WAZUH_CONF_PATH
     if not container.exists(source):
         logger.info("path '%s' does not exist, no files to patch", source)
-        return
+        return False
     if container.isdir(source) and source[-1] != "/":
         source += "/"
     try:
@@ -527,19 +621,31 @@ def sync_wazuh_config_files(container: ops.Container) -> None:
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         ).wait_output()
+
+        save_applied_commit_marker(container, WAZUH_APPLIED_COMMIT_PATH)
+        return True
     except ops.pebble.ExecError as ex:
         raise WazuhInstallationError from ex
 
 
-def sync_rsyslog_config_files(container: ops.Container) -> None:
+def sync_rsyslog_config_files(container: ops.Container) -> bool:
     """Sync rsyslog configuration files from the local config repository.
 
     Args:
         container: the container to pull the files into.
 
+    Returns:
+        bool: True if a sync was executed, False if there was nothing to sync.
+
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
+    current_head = get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container, RSYSLOG_APPLIED_COMMIT_PATH)
+
+    if current_head is not None and current_head == applied_head:
+        return False
+
     pairs = (
         (REPO_RSYSLOG_CONF_PATH, RSYSLOG_CONF_PATH),
         (REPO_RSYSLOG_CONF_DIR_PATH, RSYSLOG_CONF_DIR_PATH),
@@ -556,6 +662,9 @@ def sync_rsyslog_config_files(container: ops.Container) -> None:
             container.exec(["rsync", "-a", source, dest], timeout=10).wait_output()
         except ops.pebble.ExecError as ex:
             raise WazuhInstallationError from ex
+
+    save_applied_commit_marker(container, RSYSLOG_APPLIED_COMMIT_PATH)
+    return True
 
 
 def ensure_rsyslog_output_dir(container: ops.Container) -> bool:
@@ -665,6 +774,7 @@ def authenticate_user(username: str, password: str) -> str:
     Raises:
         WazuhAuthenticationError: if the user can't authenticate.
         WazuhInstallationError: if any error occurs.
+        WazuhNotReadyError: if wazuh is not yet ready to accept requests.
     .
     """
     # The certificates might be self signed and there's no security hardening in
@@ -687,7 +797,11 @@ def authenticate_user(username: str, password: str) -> str:
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
             raise WazuhInstallationError(f"Response for {username} does not contain token.")
+        logger.debug("Got Wazuh API auth token for username %s", username)
         return token
+    except requests.exceptions.ConnectionError as exc:
+        logger.warning("Wazuh API authentication failed: %s", exc)
+        raise WazuhNotReadyError from exc
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError from exc
 
@@ -727,6 +841,7 @@ def change_api_password(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
+        logger.info("Changed API password for user %s", username)
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
@@ -749,35 +864,37 @@ def generate_api_password() -> str:
     return "".join(password)
 
 
-def create_readonly_api_user(username: str, password: str, token: str) -> None:
+def create_api_user(username: str, password: str, token: str, rolename: str = "readonly") -> None:
     """Create a new readonly user for Wazuh's API.
 
     Args:
         username: the username for the user.
         password: the password for the user.
         token: the auth token for the API.
+        rolename: (optional) the user's rbac role. default: readonly.
 
     Raises:
-        WazuhInstallationError: if an error occurs while processing the requests.
+        WazuhAuthenticationError: if a 401 error occurs while processing the requests.
+        WazuhInstallationError: if any non-401 error occurs while processing the requests.
     """
     # The certificates might be self signed and there's no security hardening in
     # passing them to the request since tampering with `localhost` would mean the
     # container filesystem is compromised
+    response = None
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
             f"https://localhost:{API_PORT}/security/users",
             headers=headers,
-            json={"username": username, "password": password},
             timeout=10,
             verify=False,
         )
-        logger.debug(response.json())
+        response.raise_for_status()
         data = response.json()["data"]
         user_id = [
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ]
-        if not user_id:
+        if not user_id:  # user has not been created yet
             response = requests.post(  # nosec
                 f"https://localhost:{API_PORT}/security/users",
                 headers=headers,
@@ -786,7 +903,6 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
                 verify=False,
             )
             response.raise_for_status()
-            logger.debug(response.json())
             data = response.json()["data"]
         user_id = [
             user["id"] for user in data["affected_items"] if data and user["username"] == username
@@ -798,10 +914,9 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
-        logger.debug(response.json())
         data = response.json()["data"]
         role_id = [
-            role["id"] for role in data["affected_items"] if data and role["name"] == "readonly"
+            role["id"] for role in data["affected_items"] if data and role["name"] == rolename
         ][0]
         response = requests.post(  # nosec
             f"https://localhost:{API_PORT}/security/users/{user_id}/roles?role_ids={role_id}",
@@ -810,7 +925,10 @@ def create_readonly_api_user(username: str, password: str, token: str) -> None:
             verify=False,
         )
         response.raise_for_status()
+        logger.info("Created user %s", username)
     except requests.exceptions.RequestException as exc:
+        if isinstance(response, requests.Response) and response.status_code == 401:
+            raise WazuhAuthenticationError("401 error creating an API user") from exc
         raise WazuhInstallationError("Error creating a readonly user.") from exc
 
 
