@@ -832,7 +832,7 @@ def authenticate_user(username: str, password: str) -> str:
         WazuhNotReadyError: if wazuh is not yet ready to accept requests.
     .
     """
-    # certificates may be self signed and there's no value in verifying them
+    # certificates may be self-signed and there's no value in verifying them
     # as a compromised localhost service would indicate we're already compromised
     try:
         session = requests.Session()
@@ -929,7 +929,7 @@ def create_api_user(username: str, password: str, token: str, rolename: str = "r
         WazuhAuthenticationError: if a 401 error occurs while processing the requests.
         WazuhInstallationError: if any non-401 error occurs while processing the requests.
     """
-    # certificates may be self signed and there's no value in verifying them
+    # certificates may be self-signed and there's no value in verifying them
     # as a compromised localhost service would indicate we're already compromised
     response = None
     try:
