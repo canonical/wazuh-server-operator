@@ -128,13 +128,14 @@ config:
         To create the secret, run the following command: 
         `juju add-secret my-custom-config-ssh-key value=<ssh-key> && juju grant-secret my-custom-config-ssh-key wazuh-server`,
         and use the secret ID output to configure this option.
-    disable-vulnerability-detection:
+    enable-vulnerability-detection:
       type: boolean
       description: >
         If true, the charm will ensure that Wazuh's vulnerability detection module is disabled.
         This overrides any configuration in the custom-config-repository. The primary purpose is
         to prevent the automatic download of Wazuh's vulnerability database upon initial installation
-        if that feature is not going to be utilized. If not set, defaults to 'false'.
+        if that feature is not going to be utilized. If not set, defaults to 'true'.
+      default: true
     logs-ca-cert:
       type: string
       description: >

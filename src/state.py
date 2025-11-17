@@ -69,14 +69,14 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the secret key corresponding to the agent secret.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the secret key corresponding to the SSH key for the git repository.
-        disable_vulnerability_detection: whether to disable Wazuh's vulnerability detection module.
+        enable_vulnerability_detection: whether to enable Wazuh's vulnerability detection module.
         logs_ca_cert: the CA used to authenticate rsyslog clients.
     """
 
     agent_password: str | None = None
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
-    disable_vulnerability_detection: bool | None = False
+    enable_vulnerability_detection: bool | None = True
     logs_ca_cert: str
 
 
@@ -278,7 +278,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         root_ca: the CA certificate for filebeat.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
-        disable_vulnerability_detection: whether to disable Wazuh's vulnerability detection module.
+        enable_vulnerability_detection: whether to enable Wazuh's vulnerability detection module.
         proxy: proxy configuration.
         logs_ca_cert: the CA to authenticate rssyslog clients.
         opencti_token: the OpenCTI token.
@@ -295,7 +295,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     root_ca: str = Field(..., min_length=1)
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
-    disable_vulnerability_detection: bool | None = None
+    enable_vulnerability_detection: bool | None = None
     logs_ca_cert: str | None = None
     opencti_token: str | None = None
     opencti_url: str | None = None
@@ -342,7 +342,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             root_ca=root_ca,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
-            disable_vulnerability_detection=wazuh_config.disable_vulnerability_detection,
+            enable_vulnerability_detection=wazuh_config.enable_vulnerability_detection,
             logs_ca_cert=wazuh_config.logs_ca_cert,
             opencti_token=opencti_token,
             opencti_url=opencti_url,

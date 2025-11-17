@@ -204,7 +204,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
     *,
     opencti_token: str | None = None,
     opencti_url: str | None = None,
-    disable_vulnerability_detection: bool = False,
+    enable_vulnerability_detection: bool = False,
 ) -> bool:
     """Update Wazuh configuration.
 
@@ -216,7 +216,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
         cluster_key: the Wazuh key for the cluster nodes.
         opencti_token: OpenCTI API token.
         opencti_url: OpenCTI URL.
-        disable_vulnerability_detection: whether to disable Wazuh's vulnerability detection module.
+        enable_vulnerability_detection: whether to enable Wazuh's vulnerability detection module.
 
     Returns:
         bool: True if config has changed, False if no updates were made
@@ -261,7 +261,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
         if hook_url is not None and opencti_url is not None:
             hook_url.text = f"{opencti_url}/graphql"
 
-    if disable_vulnerability_detection:
+    if not enable_vulnerability_detection:
         new_conf = etree.fromstring(
             (
                 "<vulnerability-detection>"

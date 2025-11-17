@@ -232,7 +232,7 @@ async def application_fixture(
         f"./{charm}",
         config={
             "logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text(),
-            "disable-vulnerability-detection": True,
+            "enable-vulnerability-detection": False,
         },
         resources=resources,
         trust=True,
