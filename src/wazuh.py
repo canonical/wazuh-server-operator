@@ -646,7 +646,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
         raise WazuhInstallationError from ex
 
 
-def sync_config_files(container: ops.Container, pairs: typing.Iterable[(str, str)]) -> None:
+def sync_config_files(container: ops.Container, pairs: typing.Iterable[typing.Tuple[str, str]]) -> None:
     """Sync configuration files.
 
     Args:
