@@ -652,7 +652,7 @@ def sync_config_files(
     """Sync configuration files.
 
     Args:
-        container: the container on which to sync files.s
+        container: the container on which to sync files
         pairs: an iterable of (source, destination) filepaths.
 
     Raises:
