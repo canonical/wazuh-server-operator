@@ -111,15 +111,14 @@ config:
     custom-config-repository:
       type: string
       description: >
-        A repository URL where configurations are stored for Wazuh, rsyslog, or both.
-        The URL has to be provided in the format git+ssh://username@repository@ref, where
-        'username' is mandatory and 'ref' is optional and may be either a branch name or tag name.
-        Tags are encouraged for reproducibility and for efficiency.
-        If a branch is provided, the charm will re-pull the configuration on most charm events,
-        as it cannot guarantee that it has the latest commits otherwise.
-        The charm checks for the paths var/ossec/, etc/rsyslog.conf, and etc/rsyslog.d/ within
-        the configuration repository and patches those configuration files over the corresponding
-        paths on the live system: /var/ossec, /etc/rsyslog.conf, and /etc/rsyslog.d/, respectively.
+        A repository URL where configuration files are stored. The URL must be provided in the
+        format git+ssh://username@repository@ref, where 'username' is mandatory and 'ref' is
+        optional and may be either a branch name or tag name. Tags are encouraged for
+        reproducibility and for efficiency. If a branch is provided, the charm will re-pull the
+        configuration on most charm events, as it cannot guarantee that it has the latest commits
+        otherwise. The following paths, if they exist in the repository, will be synced over the
+        corresponding paths in the charm filesystem: var/ossec/, etc/rsyslog.conf, etc/rsyslog.d/,
+        usr/share/filebeat/, etc/filebeat/
     custom-config-ssh-key:
       type: secret
       description: >

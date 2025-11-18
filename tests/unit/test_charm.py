@@ -125,13 +125,13 @@ def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
 @patch.object(wazuh, "sync_agent_password")
 @patch.object(wazuh, "sync_certificates")
 @patch.object(wazuh, "sync_filebeat_user")
-@patch.object(wazuh, "ensure_rsyslog_output_dir")
+@patch.object(wazuh, "ensure_log_ingestion_dir")
 @patch.object(wazuh, "get_version")
 @patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_configured(
     filebeat_csr_mock,
     get_version_mock,
-    ensure_rsyslog_output_dir_mock,
+    ensure_log_ingestion_dir_mock,
     sync_filebeat_user_mock,
     wazuh_sync_certificates_mock,
     wazuh_sync_agent_password_mock,
@@ -200,7 +200,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
             ),
             call(
                 container=container,
-                path=wazuh.SYSLOG_CERTIFICATES_PATH,
+                path=wazuh.RSYSLOG_CERTIFICATES_PATH,
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="logs_ca",
@@ -221,7 +221,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         enable_vulnerability_detection=True,
     )
     sync_filebeat_user_mock.assert_called_with(container, "user1", password)
-    ensure_rsyslog_output_dir_mock.assert_called_with(container)
+    ensure_log_ingestion_dir_mock.assert_called_with(container)
     wazuh_sync_agent_password_mock.assert_called_with(container=container, password=agent_password)
     sync_config_repo_mock.assert_called_with(
         container, wazuh_config.custom_config_repository, "somekey"
@@ -242,13 +242,13 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 @patch.object(wazuh, "sync_agent_password")
 @patch.object(wazuh, "sync_certificates")
 @patch.object(wazuh, "sync_filebeat_user")
-@patch.object(wazuh, "ensure_rsyslog_output_dir")
+@patch.object(wazuh, "ensure_log_ingestion_dir")
 @patch.object(wazuh, "get_version")
 @patch.object(CertificatesObserver, "get_csr")
 def test_reconcile_reaches_active_status_when_repository_and_password_not_configured(
     filebeat_csr_mock,
     get_version_mock,
-    ensure_rsyslog_output_dir_mock,
+    ensure_log_ingestion_dir_mock,
     sync_filebeat_user_mock,
     wazuh_sync_certificates_mock,
     wazuh_sync_agent_password_mock,
@@ -310,7 +310,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
             ),
             call(
                 container=container,
-                path=wazuh.SYSLOG_CERTIFICATES_PATH,
+                path=wazuh.RSYSLOG_CERTIFICATES_PATH,
                 private_key=ANY,
                 public_key="certificate",
                 root_ca="logs_ca",
@@ -321,7 +321,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         any_order=True,
     )
     sync_filebeat_user_mock.assert_called_with(container, "user1", password)
-    ensure_rsyslog_output_dir_mock.assert_called_with(container)
+    ensure_log_ingestion_dir_mock.assert_called_with(container)
     wazuh_sync_agent_password_mock.assert_not_called()
     pull_config_repo_mock.assert_not_called()
     sync_wazuh_config_files_mock.assert_not_called()

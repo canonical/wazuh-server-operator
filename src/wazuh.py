@@ -28,12 +28,28 @@ from pydantic import AnyUrl
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
-COLLECTORS_LOG_PATH = Path("/var/log/collectors")
-RSYSLOG_LOG_DIR = COLLECTORS_LOG_PATH / "rsyslog"
 CONTAINER_NAME = "wazuh-server"
-FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
+INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
+REPOSITORY_PATH = "/root/repository"
+KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
+RSA_PATH = "/root/.ssh/id_rsa"
+
+# wazuh service config vars
+AGENT_PASSWORD_PATH = Path("/var/ossec/etc/authd.pass")
+API_PORT = 55000
+AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
+WAZUH_CONF_PATH = "/var/ossec"
+OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
+REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
+WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"
+WAZUH_GROUP = "wazuh"
+WAZUH_USER = "wazuh"
+
+# filebeat service config vars
 FILEBEAT_USER = "root"
+FILEBEAT_CERTIFICATES_PATH = Path("/etc/filebeat/certs")
+FILEBEAT_CONFIG_DIR = "/etc/filebeat"
+FILEBEAT_CONFIG_FILE = FILEBEAT_CONFIG_DIR + "/filebeat.yml"
 FILEBEAT_CMD = [
     "/usr/share/filebeat/bin/filebeat",
     "--path.home",
@@ -45,29 +61,25 @@ FILEBEAT_CMD = [
     "--path.logs",
     "/var/log/filebeat",
 ]
-FILEBEAT_CONF_PATH = Path("/etc/filebeat/filebeat.yml")
-KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
-LOGS_PATH = Path("/var/ossec/logs")
-RSYSLOG_SERVICE_LOG_PATH = Path("/var/log/rsyslog.log")
-FILEBEAT_LOG_PATH = Path("/var/log/filebeat")
-WAZUH_CONF_PATH = "/var/ossec"
-OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
-REPOSITORY_PATH = "/root/repository"
-WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"
+FILEBEAT_HOME_DIR = "/usr/share/filebeat"
+FILEBEAT_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.filebeat_applied_commit"
+REPO_FILEBEAT_CONFIG_DIR = REPOSITORY_PATH + FILEBEAT_CONFIG_DIR
+REPO_FILEBEAT_CONFIG_FILE = REPOSITORY_PATH + FILEBEAT_CONFIG_FILE
+REPO_FILEBEAT_HOME_DIR = REPOSITORY_PATH + FILEBEAT_HOME_DIR
+
+# rsyslog vars
 RSYSLOG_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.rsyslog_applied_commit"
-REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
+RSYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
 RSYSLOG_CONF_PATH = "/etc/rsyslog.conf"
 RSYSLOG_CONF_DIR_PATH = "/etc/rsyslog.d"
+RSYSLOG_USER = "syslog"
 REPO_RSYSLOG_CONF_PATH = REPOSITORY_PATH + RSYSLOG_CONF_PATH
 REPO_RSYSLOG_CONF_DIR_PATH = REPOSITORY_PATH + RSYSLOG_CONF_DIR_PATH
-RSA_PATH = "/root/.ssh/id_rsa"
-SYSLOG_CERTIFICATES_PATH = Path("/etc/rsyslog.d/certs")
-SYSLOG_USER = "syslog"
-API_PORT = 55000
-AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
-WAZUH_GROUP = "wazuh"
-WAZUH_USER = "wazuh"
 
+# log paths for service monitoring
+FILEBEAT_SERVICE_LOG_PATH = Path("/var/log/filebeat")
+RSYSLOG_SERVICE_LOG_PATH = Path("/var/log/rsyslog.log")
+WAZUH_SERVICE_LOG_DIR = Path("/var/ossec/logs")
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +186,7 @@ def save_applied_commit_marker(container: ops.Container, path: str) -> None:
 
 
 def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
-    """Update Filebeat configuration.
+    """Update the core Filebeat configuration.
 
     Arguments:
         container: the container for which to update the configuration.
@@ -183,14 +195,23 @@ def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str])
     Returns:
         bool: True if updates were made, False if config was already up to date.
     """
-    filebeat_config = container.pull(FILEBEAT_CONF_PATH, encoding="utf-8").read()
-    filebeat_config_yaml = yaml.safe_load(filebeat_config)
-    if set(filebeat_config_yaml["output.elasticsearch"]["hosts"]) == set(indexer_endpoints):
+    # generate a correct filebeat config
+    starting_point = FILEBEAT_CONFIG_FILE
+    if container.exists(REPO_FILEBEAT_CONFIG_FILE):
+        starting_point = REPO_FILEBEAT_CONFIG_FILE
+    source_contents = container.pull(starting_point, encoding="utf-8").read()
+    source_data = yaml.safe_load(source_contents)
+    source_data["output.elasticsearch"]["hosts"] = indexer_endpoints
+    new_config_str = yaml.safe_dump(source_data, sort_keys=False).strip()
+    new_config = "\n".join([line for line in new_config_str.splitlines() if line != ""])
+
+    # get existing config
+    current_config = container.pull(FILEBEAT_CONFIG_FILE, encoding="utf-8").read()
+
+    if current_config == new_config:  # no changes necessary
         return False
-    filebeat_config_yaml["output.elasticsearch"]["hosts"] = indexer_endpoints
-    container.push(
-        FILEBEAT_CONF_PATH, yaml.safe_dump(filebeat_config_yaml, sort_keys=False), encoding="utf-8"
-    )
+
+    container.push(FILEBEAT_CONFIG_FILE, new_config, encoding="utf-8")
     return True
 
 
@@ -236,9 +257,9 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
         new_host.text = f"https://{ip_port}"
         hosts[0].append(new_host)
 
-    cluster = ossec_config_tree.xpath("/root/ossec_config/cluster")
-    if cluster:
+    if cluster := ossec_config_tree.xpath("/root/ossec_config/cluster"):
         cluster[0].getparent().remove(cluster[0])
+
     node_name = unit_name.replace("/", "-")
     # Unit 0 is always present, so the presence of a master node is guaranteed
     node_type = NodeType.MASTER if unit_name.split("/")[1] == "0" else NodeType.WORKER
@@ -613,8 +634,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             timeout=10,
         ).wait_output()
 
-        # Find all files within the integrations directory and make them executable.
-        # This ensures all integration scripts are runnable by the wazuh group.
+        # ensure all integration scripts are executable
         container.exec(
             [
                 "find",
@@ -630,7 +650,6 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             timeout=10,
         ).wait_output()
 
-        # Adds correct permissions to the /etc/shared/default directory
         # 770 required for the manager to create the merged.mg file
         container.exec(
             ["chmod", "770", "/var/ossec/etc/shared/default"],
@@ -643,6 +662,32 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
         raise WazuhInstallationError from ex
 
 
+def sync_config_files(
+    container: ops.Container, pairs: typing.Iterable[typing.Tuple[str, str]]
+) -> None:
+    """Sync configuration files.
+
+    Args:
+        container: the container on which to sync files
+        pairs: an iterable of (source, destination) filepaths.
+
+    Raises:
+        WazuhInstallationError: if an error occurs while pulling the files.
+    """
+    for source, dest in pairs:
+        if not container.exists(source):
+            logger.info("path '%s' does not exist, no files to patch", source)
+            continue
+        try:
+            logger.info("patching files from %s to %s", source, dest)
+            if container.isdir(source) and source[-1] != "/":
+                source += "/"
+            # default ownership is (root:root) and perms (f: 644 / d: 755)
+            container.exec(["rsync", "-a", source, dest], timeout=10).wait_output()
+        except ops.pebble.ExecError as ex:
+            raise WazuhInstallationError from ex
+
+
 def sync_rsyslog_config_files(container: ops.Container) -> bool:
     """Sync rsyslog configuration files from the local config repository.
 
@@ -651,9 +696,6 @@ def sync_rsyslog_config_files(container: ops.Container) -> bool:
 
     Returns:
         bool: True if a sync was executed, False if there was nothing to sync.
-
-    Raises:
-        WazuhInstallationError: if an error occurs while pulling the files.
     """
     current_head = get_current_repo_commit(container)
     applied_head = _read_applied_commit(container, RSYSLOG_APPLIED_COMMIT_PATH)
@@ -665,28 +707,42 @@ def sync_rsyslog_config_files(container: ops.Container) -> bool:
         (REPO_RSYSLOG_CONF_PATH, RSYSLOG_CONF_PATH),
         (REPO_RSYSLOG_CONF_DIR_PATH, RSYSLOG_CONF_DIR_PATH),
     )
-    for source, dest in pairs:
-        if not container.exists(source):
-            logger.info("path '%s' does not exist, no files to patch", source)
-            continue
-        try:
-            logger.info("patching files from %s to %s", source, dest)
-            if container.isdir(source) and source[-1] != "/":
-                source += "/"
-            # default ownership (root:root) and perms (f: 644 / d: 755) should be sufficient
-            container.exec(["rsync", "-a", source, dest], timeout=10).wait_output()
-        except ops.pebble.ExecError as ex:
-            raise WazuhInstallationError from ex
+    sync_config_files(container, pairs)
 
     save_applied_commit_marker(container, RSYSLOG_APPLIED_COMMIT_PATH)
     return True
 
 
-def ensure_rsyslog_output_dir(container: ops.Container) -> bool:
-    """Configure the filesystem to enable writing received rsyslog data to disk.
+def sync_filebeat_config_files(container: ops.Container) -> bool:
+    """Sync filebeat configuration files from the local config repository.
 
     Args:
-        container: the container to configure the user for.
+        container: the container to pull the files into.
+
+    Returns:
+        bool: True if a sync was executed, False if there was nothing to sync.
+    """
+    current_head = get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container, FILEBEAT_APPLIED_COMMIT_PATH)
+
+    if current_head is not None and current_head == applied_head:
+        return False
+
+    pairs = (
+        (REPO_FILEBEAT_CONFIG_DIR, FILEBEAT_CONFIG_DIR),
+        (REPO_FILEBEAT_HOME_DIR, FILEBEAT_HOME_DIR),
+    )
+    sync_config_files(container, pairs)
+
+    save_applied_commit_marker(container, FILEBEAT_APPLIED_COMMIT_PATH)
+    return True
+
+
+def ensure_log_ingestion_dir(container: ops.Container) -> bool:
+    """Configure the filesystem to enable writing received logs to disk.
+
+    Args:
+        container: the container to configure.
 
     Returns:
         bool: True if changes were made, False if no changes were necessary.
@@ -695,17 +751,17 @@ def ensure_rsyslog_output_dir(container: ops.Container) -> bool:
     permissions = 0o750
     user = "syslog"
     group = "wazuh"
-    if not container.isdir(RSYSLOG_LOG_DIR):
+    if not container.isdir(INGEST_LOG_DIR):
         made_changes = True
         container.make_dir(
-            path=RSYSLOG_LOG_DIR,
+            path=INGEST_LOG_DIR,
             make_parents=True,
             permissions=permissions,
             user=user,
             group=group,
         )
     made_changes = made_changes or sync_permissions(
-        container, RSYSLOG_LOG_DIR.as_posix(), permissions, user, group
+        container, INGEST_LOG_DIR, permissions, user, group
     )
     return made_changes
 
@@ -792,9 +848,8 @@ def authenticate_user(username: str, password: str) -> str:
         WazuhNotReadyError: if wazuh is not yet ready to accept requests.
     .
     """
-    # The certificates might be self signed and there's no security hardening in
-    # passing them to the request since tampering with `localhost` would mean the
-    # container filesystem is compromised
+    # certificates may be self-signed and there's no value in verifying them
+    # as a compromised localhost service would indicate we're already compromised
     try:
         session = requests.Session()
         retries = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
@@ -805,7 +860,6 @@ def authenticate_user(username: str, password: str) -> str:
             timeout=10,
             verify=False,
         )
-        # The old password has already been changed. Nothing to do.
         if response.status_code == 401:
             raise WazuhAuthenticationError(f"The provided password for {username} is not valid.")
         response.raise_for_status()
@@ -832,9 +886,8 @@ def change_api_password(username: str, password: str, token: str) -> None:
     Raises:
         WazuhInstallationError: if an error occurs while processing the requests.
     """
-    # The certificates might be self signed and there's no security hardening in
-    # passing them to the request since tampering with `localhost` would mean the
-    # container filesystem is compromised
+    # certificates may be self-signed and there's no value in verifying them
+    # as a compromised localhost service would indicate we're already compromised
     try:
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(  # nosec
@@ -892,9 +945,8 @@ def create_api_user(username: str, password: str, token: str, rolename: str = "r
         WazuhAuthenticationError: if a 401 error occurs while processing the requests.
         WazuhInstallationError: if any non-401 error occurs while processing the requests.
     """
-    # The certificates might be self signed and there's no security hardening in
-    # passing them to the request since tampering with `localhost` would mean the
-    # container filesystem is compromised
+    # certificates may be self-signed and there's no value in verifying them
+    # as a compromised localhost service would indicate we're already compromised
     response = None
     try:
         headers = {"Authorization": f"Bearer {token}"}
