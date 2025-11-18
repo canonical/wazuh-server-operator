@@ -76,7 +76,7 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
     agent_password: str | None = None
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
-    enable_vulnerability_detection: bool | None = True
+    enable_vulnerability_detection: bool = True
     logs_ca_cert: str
 
 
@@ -295,7 +295,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     root_ca: str = Field(..., min_length=1)
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
-    enable_vulnerability_detection: bool | None = None
+    enable_vulnerability_detection: bool = True
     logs_ca_cert: str | None = None
     opencti_token: str | None = None
     opencti_url: str | None = None
