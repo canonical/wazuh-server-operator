@@ -204,7 +204,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
     *,
     opencti_token: str | None = None,
     opencti_url: str | None = None,
-    enable_vulnerability_detection: bool = False,
+    enable_vulnerability_detection: bool = True,
 ) -> bool:
     """Update Wazuh configuration.
 
@@ -261,6 +261,8 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
         if hook_url is not None and opencti_url is not None:
             hook_url.text = f"{opencti_url}/graphql"
 
+    if vuln_conf := ossec_config_tree.xpath("/root/ossec_config/vulnerability-detection"):
+        elements[0].remove(vuln_conf[0])
     if not enable_vulnerability_detection:
         new_conf = etree.fromstring(
             (
@@ -270,10 +272,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
                 + "</vulnerability-detection>"
             )
         )
-        if vuln_conf := ossec_config_tree.xpath("/root/ossec_config/vulnerability-detection"):
-            vuln_conf[0].getparent().replace(vuln_conf[0], new_conf)
-        else:
-            ossec_config_tree.xpath("/root/ossec_config").append(new_conf)
+        elements[0].append(new_conf)
 
     new_conf_bytes: bytes = b"".join(
         [etree.tostring(element, pretty_print=True, encoding="utf-8") for element in elements]
