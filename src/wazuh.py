@@ -213,6 +213,7 @@ def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str])
 
 
 # Won't sacrify cohesion and readability to make pylint happier
+# Excluding function too complex check from pflake8
 def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # noqa: C901
     container: ops.Container,
     ip_ports: list[str],
