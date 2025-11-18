@@ -230,7 +230,10 @@ async def application_fixture(
 
     await model.deploy(
         f"./{charm}",
-        config={"logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text()},
+        config={
+            "logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text(),
+            "enable-vulnerability-detection": False,
+        },
         resources=resources,
         trust=True,
     )
@@ -257,12 +260,14 @@ async def application_fixture(
         timeout=1800,
     )
     yield application
-    # cleanup secrets (library does not give us convenient methods for this)
-    for unit in application.units:
-        await unit.run(
-            "while IFS= read -r secret; do secret-remove $secret; done < <(secret-ids)", timeout=30
-        )
-    await application.destroy(destroy_storage=True, force=True, no_wait=False)
+    if not pytestconfig.getoption("--keep-models"):
+        # cleanup secrets (library does not give us convenient methods for this)
+        for unit in application.units:
+            await unit.run(
+                "while IFS= read -r secret; do secret-remove $secret; done < <(secret-ids)",
+                timeout=30,
+            )
+        await application.destroy(destroy_storage=True, force=True, no_wait=False)
 
 
 @pytest_asyncio.fixture(scope="module", name="any_opencti")

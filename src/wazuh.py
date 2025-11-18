@@ -195,7 +195,6 @@ def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str])
     Returns:
         bool: True if updates were made, False if config was already up to date.
     """
-    # generate a correct filebeat config
     starting_point = FILEBEAT_CONFIG_FILE
     if container.exists(REPO_FILEBEAT_CONFIG_FILE):
         starting_point = REPO_FILEBEAT_CONFIG_FILE
@@ -205,9 +204,7 @@ def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str])
     new_config_str = yaml.safe_dump(source_data, sort_keys=False).strip()
     new_config = "\n".join([line for line in new_config_str.splitlines() if line != ""])
 
-    # get existing config
     current_config = container.pull(FILEBEAT_CONFIG_FILE, encoding="utf-8").read()
-
     if current_config == new_config:  # no changes necessary
         return False
 
@@ -215,7 +212,9 @@ def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str])
     return True
 
 
-def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
+# Won't sacrify cohesion and readability to make pylint happier
+# Excluding function too complex check from pflake8
+def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # noqa: C901
     container: ops.Container,
     ip_ports: list[str],
     master_address: str,
@@ -224,6 +223,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
     *,
     opencti_token: str | None = None,
     opencti_url: str | None = None,
+    enable_vulnerability_detection: bool = True,
 ) -> bool:
     """Update Wazuh configuration.
 
@@ -235,6 +235,7 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
         cluster_key: the Wazuh key for the cluster nodes.
         opencti_token: OpenCTI API token.
         opencti_url: OpenCTI URL.
+        enable_vulnerability_detection: whether to enable Wazuh's vulnerability detection module.
 
     Returns:
         bool: True if config has changed, False if no updates were made
@@ -265,7 +266,6 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
         _generate_cluster_snippet(node_name, node_type, master_address, cluster_key)
     )
     elements[0].append(new_cluster)
-
     integrations = ossec_config_tree.xpath(".//integration[starts-with(name, 'custom-opencti-')]")
     if integrations and (not opencti_token or not opencti_url):
         logger.warning("Missing OpenCTI token or url for custom-opencti integrations.")
@@ -278,6 +278,19 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments
         hook_url = integration.find("hook_url")
         if hook_url is not None and opencti_url is not None:
             hook_url.text = f"{opencti_url}/graphql"
+
+    if vuln_conf := ossec_config_tree.xpath("/root/ossec_config/vulnerability-detection"):
+        elements[0].remove(vuln_conf[0])
+    if not enable_vulnerability_detection:
+        new_conf = etree.fromstring(
+            (
+                "<vulnerability-detection>"
+                "<enabled>no</enabled>"
+                "<index-status>no</index-status>"
+                "</vulnerability-detection>"
+            )
+        )
+        elements[0].append(new_conf)
 
     new_conf_bytes: bytes = b"".join(
         [etree.tostring(element, pretty_print=True, encoding="utf-8") for element in elements]
@@ -323,7 +336,6 @@ def sync_permissions(
         if current_permissions != permissions:
             made_changes = True
             container.exec(["chmod", f"{permissions:o}", path]).wait_output()
-
         needs_chown: bool = False
         if user is not None:
             current_user: str = container.exec(["stat", "-c", "%U", path]).wait_output()[0].strip()
@@ -338,7 +350,6 @@ def sync_permissions(
             group_string = f":{group}" if group is not None else ""
             container.exec(["chown", f"{user_string}{group_string}", path]).wait_output()
             made_changes = True
-
         return made_changes
     except ops.pebble.ExecError as ex:
         logger.warning("Encountered error setting permissions on %s: %s", path, ex)
@@ -517,9 +528,7 @@ def sync_config_repo(
         WazuhInstallationError: if an error occurs while configuring git.
     """
     if repository is None:
-        # nothing to do
         return False
-
     if not (isinstance(repository.host, str) and isinstance(repository.path, str)):
         logger.error("repository URL (%s) is missing hostname or path", str(repository))
         raise WazuhInstallationError
@@ -528,13 +537,11 @@ def sync_config_repo(
     ref = ref_string[0] if len(ref_string) == 1 else None
     username = f"{repository.username}@" if isinstance(repository.username, str) else ""
     base_url = f"{repository.scheme}://{username}{repository.host}{path}"
-
     repo = _get_current_repo_url(container)
     is_right_repo: bool = base_url in (repo, f"git+ssh://{repo}")
     is_right_tag: bool = ref is not None and _get_current_repo_tag(container) == ref
 
     already_synced = is_right_repo and is_right_tag
-
     if already_synced:
         logger.info("custom_config_repository is already up to date")
         return False
@@ -566,12 +573,8 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
     Raises:
         WazuhInstallationError: if an error occurs while pulling the files.
     """
-    current_head = get_current_repo_commit(container)
-    applied_head = _read_applied_commit(container, WAZUH_APPLIED_COMMIT_PATH)
-
-    if current_head is not None and current_head == applied_head:
+    if not _needs_sync(container, WAZUH_APPLIED_COMMIT_PATH):
         return False
-
     source, dest = REPO_WAZUH_CONF_PATH, WAZUH_CONF_PATH
     if not container.exists(source):
         logger.info("path '%s' does not exist, no files to patch", source)
@@ -672,6 +675,13 @@ def sync_config_files(
             raise WazuhInstallationError from ex
 
 
+def _needs_sync(container: ops.Container, applied_commit_path: str) -> bool:
+    """Check if a config sync is needed."""
+    current_head = get_current_repo_commit(container)
+    applied_head = _read_applied_commit(container, applied_commit_path)
+    return current_head is not None and current_head != applied_head
+
+
 def sync_rsyslog_config_files(container: ops.Container) -> bool:
     """Sync rsyslog configuration files from the local config repository.
 
@@ -681,18 +691,13 @@ def sync_rsyslog_config_files(container: ops.Container) -> bool:
     Returns:
         bool: True if a sync was executed, False if there was nothing to sync.
     """
-    current_head = get_current_repo_commit(container)
-    applied_head = _read_applied_commit(container, RSYSLOG_APPLIED_COMMIT_PATH)
-
-    if current_head is not None and current_head == applied_head:
+    if not _needs_sync(container, RSYSLOG_APPLIED_COMMIT_PATH):
         return False
-
     pairs = (
         (REPO_RSYSLOG_CONF_PATH, RSYSLOG_CONF_PATH),
         (REPO_RSYSLOG_CONF_DIR_PATH, RSYSLOG_CONF_DIR_PATH),
     )
     sync_config_files(container, pairs)
-
     save_applied_commit_marker(container, RSYSLOG_APPLIED_COMMIT_PATH)
     return True
 
@@ -706,18 +711,13 @@ def sync_filebeat_config_files(container: ops.Container) -> bool:
     Returns:
         bool: True if a sync was executed, False if there was nothing to sync.
     """
-    current_head = get_current_repo_commit(container)
-    applied_head = _read_applied_commit(container, FILEBEAT_APPLIED_COMMIT_PATH)
-
-    if current_head is not None and current_head == applied_head:
+    if not _needs_sync(container, FILEBEAT_APPLIED_COMMIT_PATH):
         return False
-
     pairs = (
         (REPO_FILEBEAT_CONFIG_DIR, FILEBEAT_CONFIG_DIR),
         (REPO_FILEBEAT_HOME_DIR, FILEBEAT_HOME_DIR),
     )
     sync_config_files(container, pairs)
-
     save_applied_commit_marker(container, FILEBEAT_APPLIED_COMMIT_PATH)
     return True
 

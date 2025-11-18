@@ -218,6 +218,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
         cluster_key,
         opencti_url=opencti_url,
         opencti_token=opencti_token,
+        enable_vulnerability_detection=True,
     )
     sync_filebeat_user_mock.assert_called_with(container, "user1", password)
     ensure_log_ingestion_dir_mock.assert_called_with(container)
@@ -332,6 +333,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
         cluster_key,
         opencti_token=None,
         opencti_url=None,
+        enable_vulnerability_detection=True,
     )
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
