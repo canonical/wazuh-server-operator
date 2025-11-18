@@ -204,8 +204,13 @@ class WazuhServerCharm(CharmBaseWithState):
         changed_user = wazuh.sync_filebeat_user(
             container, self.state.filebeat_username, self.state.filebeat_password
         )
+
+        changed_config_files: bool = False
+        if self.state.custom_config_repository is not None:
+            changed_config_files = wazuh.sync_filebeat_config_files(container)
+
         changed_config = wazuh.sync_filebeat_config(container, self.state.indexer_endpoints)
-        if any((changed_certs, changed_user, changed_config)):
+        if any((changed_certs, changed_user, changed_config_files, changed_config)):
             self._restart_service(container, FILEBEAT_SERVICE_NAME)
 
     def _reconcile_rsyslog(self, container: ops.Container) -> None:
@@ -227,14 +232,14 @@ class WazuhServerCharm(CharmBaseWithState):
 
         changed_certs: bool = wazuh.sync_certificates(
             container=container,
-            path=wazuh.SYSLOG_CERTIFICATES_PATH,
+            path=wazuh.RSYSLOG_CERTIFICATES_PATH,
             private_key=self.certificates.get_private_key(),
             public_key=self.state.certificate,
             root_ca=self.state.logs_ca_cert,
-            user=wazuh.SYSLOG_USER,
-            group=wazuh.SYSLOG_USER,
+            user=wazuh.RSYSLOG_USER,
+            group=wazuh.RSYSLOG_USER,
         )
-        changed_filesystem = wazuh.ensure_rsyslog_output_dir(container)
+        changed_filesystem = wazuh.ensure_log_ingestion_dir(container)
         if any((updated_config, changed_certs, changed_filesystem)):
             self._restart_service(container, RSYSLOG_SERVICE_NAME)
 

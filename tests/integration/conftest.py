@@ -105,7 +105,7 @@ async def self_signed_certificates_fixture(
     machine_model: Model,
     pytestconfig: pytest.Config,
 ) -> typing.AsyncGenerator[Application, None]:
-    """Deploy the self signed certificates charm."""
+    """Deploy the self-signed certificates charm."""
     app_name = "self-signed-certificates"
     application: Application
     if pytestconfig.getoption("--no-deploy") and app_name in machine_model.applications:
