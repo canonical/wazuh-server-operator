@@ -283,12 +283,12 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
         elements[0].remove(vuln_conf[0])
     if not enable_vulnerability_detection:
         new_conf = etree.fromstring(
-            (
+
                 "<vulnerability-detection>"
                 "<enabled>no</enabled>"
                 "<index-status>no</index-status>"
                 "</vulnerability-detection>"
-            )
+
         )
         elements[0].append(new_conf)
 

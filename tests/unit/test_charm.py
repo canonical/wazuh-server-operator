@@ -5,6 +5,7 @@
 # pylint: disable=duplicate-code,too-many-locals
 
 """Charm unit tests."""
+
 import secrets
 from unittest.mock import ANY, MagicMock, call, patch
 

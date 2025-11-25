@@ -2,7 +2,7 @@ name: Load tests
 
 on:
   schedule:
-    - cron: "0 12 * * 0"
+  - cron: "0 12 * * 0"
 
 jobs:
   load-tests:
@@ -10,4 +10,5 @@ jobs:
     with:
       load-test-enabled: true
       load-test-run-args: "-e LOAD_TEST_HOST=localhost"
+      with-uv: true
     secrets: inherit
