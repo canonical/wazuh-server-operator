@@ -2,14 +2,18 @@ name: Integration tests
 
 on:
   pull_request:
+  schedule:
+  - cron: "0 15 * * SAT"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 
+    github.ref }}
   cancel-in-progress: true
 
 jobs:
   integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    uses: 
+      canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       channel: 1.33-classic/stable
@@ -29,7 +33,7 @@ jobs:
       use-canonical-k8s: true
       provider: 'k8s'
   allure-report:
-    if: always() && !cancelled()
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:
-      - integration-tests
+    - integration-tests
     uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
