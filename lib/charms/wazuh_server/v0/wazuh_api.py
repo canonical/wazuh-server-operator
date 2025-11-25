@@ -157,7 +157,7 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
             return (user, password)
         except ops.SecretNotFoundError as exc:
             raise SecretError(
-                f'Could not consume secret {relation_data.get("user_credentials_secret")}'
+                f"Could not consume secret {relation_data.get('user_credentials_secret')}"
             ) from exc
 
     @property
