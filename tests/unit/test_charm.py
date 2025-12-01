@@ -41,7 +41,7 @@ def test_invalid_state_reaches_error_status(state_from_charm_mock, *_):
     harness.begin()
 
     with pytest.raises(InvalidStateError):
-        harness.charm.state  # pylint: disable=pointless-statement
+        harness.charm.state  # noqa: B018
 
 
 @patch.object(WazuhServerCharm, "units_fqdns")

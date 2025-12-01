@@ -283,12 +283,10 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
         elements[0].remove(vuln_conf[0])
     if not enable_vulnerability_detection:
         new_conf = etree.fromstring(
-
-                "<vulnerability-detection>"
-                "<enabled>no</enabled>"
-                "<index-status>no</index-status>"
-                "</vulnerability-detection>"
-
+            "<vulnerability-detection>"
+            "<enabled>no</enabled>"
+            "<index-status>no</index-status>"
+            "</vulnerability-detection>"
         )
         elements[0].append(new_conf)
 
@@ -500,8 +498,8 @@ def pull_config_repo(
         container.exec(["rm", "-Rf", REPOSITORY_PATH], timeout=1).wait_output()
         command = ["git", "clone", "--depth", "1"]
         if ref is not None:
-            command = command + ["--branch", ref]
-        command = command + [base_url, REPOSITORY_PATH]
+            command = [*command, "--branch", ref]
+        command = [*command, base_url, REPOSITORY_PATH]
         container.exec(command, timeout=60).wait_output()
     except ops.pebble.ExecError as ex:
         logger.error("git clone of custom_config_repository failed")
@@ -773,12 +771,12 @@ def sync_filebeat_user(container: ops.Container, username: str, password: str) -
         pass
     try:
         container.exec(
-            FILEBEAT_CMD + ["keystore", "add", "username", "--stdin", "--force"],
+            [*FILEBEAT_CMD, "keystore", "add", "username", "--stdin", "--force"],
             stdin=username,
             timeout=1,
         ).wait_output()
         container.exec(
-            FILEBEAT_CMD + ["keystore", "add", "password", "--stdin", "--force"],
+            [*FILEBEAT_CMD, "keystore", "add", "password", "--stdin", "--force"],
             stdin=password,
             timeout=1,
         ).wait_output()
@@ -878,19 +876,19 @@ def change_api_password(username: str, password: str, token: str) -> None:
             f"https://localhost:{API_PORT}/security/users",
             headers=headers,
             timeout=10,
-            verify=False,
+            verify=False,  # nosec  # noqa: S501
         )
         response.raise_for_status()
         data = response.json()["data"]
-        user_id = [
+        user_id = next(
             user["id"] for user in data["affected_items"] if data and user["username"] == username
-        ][0]
+        )
         response = requests.put(  # nosec
             f"https://localhost:{API_PORT}/security/users/{user_id}",
             headers=headers,
             json={"password": password},
             timeout=10,
-            verify=False,
+            verify=False,  # nosec  # noqa: S501
         )
         response.raise_for_status()
         logger.info("Changed API password for user %s", username)
@@ -938,7 +936,7 @@ def create_api_user(username: str, password: str, token: str, rolename: str = "r
             f"https://localhost:{API_PORT}/security/users",
             headers=headers,
             timeout=10,
-            verify=False,
+            verify=False,  # nosec  # noqa: S501
         )
         response.raise_for_status()
         data = response.json()["data"]
@@ -951,29 +949,29 @@ def create_api_user(username: str, password: str, token: str, rolename: str = "r
                 headers=headers,
                 json={"username": username, "password": password},
                 timeout=10,
-                verify=False,
+                verify=False,  # nosec  # noqa: S501
             )
             response.raise_for_status()
             data = response.json()["data"]
-        user_id = [
+        user_id = next(
             user["id"] for user in data["affected_items"] if data and user["username"] == username
-        ][0]
+        )
         response = requests.get(  # nosec
             f"https://localhost:{API_PORT}/security/roles",
             headers=headers,
             timeout=10,
-            verify=False,
+            verify=False,  # nosec  # noqa: S501
         )
         response.raise_for_status()
         data = response.json()["data"]
-        role_id = [
+        role_id = next(
             role["id"] for role in data["affected_items"] if data and role["name"] == rolename
-        ][0]
+        )
         response = requests.post(  # nosec
             f"https://localhost:{API_PORT}/security/users/{user_id}/roles?role_ids={role_id}",
             headers=headers,
             timeout=10,
-            verify=False,
+            verify=False,  # nosec  # noqa: S501
         )
         response.raise_for_status()
         logger.info("Created user %s", username)

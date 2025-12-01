@@ -118,9 +118,7 @@ def test_install_certificates() -> None:
         == "public_key"
     )
     assert (
-        container.pull(
-            wazuh.FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8"
-        ).read()
+        container.pull(wazuh.FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8").read()
         == "root_ca"
     )
 

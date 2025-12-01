@@ -177,7 +177,7 @@ class WazuhServerCharm(CharmBaseWithState):
             service_name (str): the service to restart.
             force (bool): restart the service even if it is not running.
         """
-        if service_name not in container.get_services().keys():
+        if service_name not in container.get_services():
             logger.warning('service "%s" cannot be restarted, it does not exist', service_name)
             return
         if container.get_service(service_name).is_running() or force:

@@ -66,18 +66,18 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 3
+LIBPATCH = 4
 
 PYDEPS = ["pydantic>=2"]
 
 # pylint: disable=wrong-import-position
-import itertools
-import logging
-import typing
-from typing import Dict, Optional
+import itertools  # noqa: E402
+import logging  # noqa: E402
+import typing  # noqa: E402
+from typing import Dict, Optional  # noqa: E402
 
-import ops
-from pydantic import AnyHttpUrl, BaseModel, ValidationError
+import ops  # noqa: E402
+from pydantic import AnyHttpUrl, BaseModel, ValidationError  # noqa: E402
 
 # The wazuh dashboard charm dependencies require pydantic<2
 # Disable used-before-assignment as parse_obj_as will not be recognized pylint
@@ -136,7 +136,7 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     @property
     def endpoint(self) -> AnyHttpUrl:
         """Fetch the endpoint from the relation."""
-        assert self.relation.app
+        assert self.relation.app  # noqa: S101
         url = typing.cast(str, self.relation.data[self.relation.app].get("endpoint"))
         try:
             return TypeAdapter(AnyHttpUrl).validate_python(url)
@@ -146,7 +146,7 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     @property
     def _credentials(self) -> tuple[str, str]:
         """Fetch the API credentials from the relation."""
-        assert self.relation.app
+        assert self.relation.app  # noqa: S101
         relation_data = self.relation.data[self.relation.app]
         try:
             credentials = self.framework.model.get_secret(
@@ -163,13 +163,13 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     @property
     def user(self) -> str:
         """Fetch the user from the relation."""
-        assert self.relation.app
+        assert self.relation.app  # noqa: S101
         return self._credentials[0]
 
     @property
     def password(self) -> str:
         """Fetch the password from the relation."""
-        assert self.relation.app
+        assert self.relation.app  # noqa: S101
         return self._credentials[1]
 
 
@@ -226,7 +226,7 @@ class WazuhApiRequires(ops.Object):
         Returns:
             WazuhApiRelationData: the relation data if found.
         """
-        assert relation.app
+        assert relation.app  # noqa: S101
         relation_data = relation.data[relation.app]
         if not relation_data:
             return None
@@ -277,13 +277,10 @@ class WazuhApiRequires(ops.Object):
         Args:
             event: event triggering this handler.
         """
-        assert event.relation.app
+        assert event.relation.app  # noqa: S101
         relation_data = event.relation.data[event.relation.app]
-        if relation_data:
-            if self._is_relation_data_valid(event.relation):
-                self.on.wazuh_api_data_available.emit(
-                    event.relation, app=event.app, unit=event.unit
-                )
+        if relation_data and self._is_relation_data_valid(event.relation):
+            self.on.wazuh_api_data_available.emit(event.relation, app=event.app, unit=event.unit)
 
 
 class WazuhApiProvides(ops.Object):
