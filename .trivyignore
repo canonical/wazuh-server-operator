@@ -5,6 +5,7 @@ CVE-2025-58183  # also in filebeat
 CVE-2025-58186  # also in filebeat
 CVE-2025-58187  # also in filebeat
 CVE-2025-58188  # also in filebeat
+CVE-2025-61729  # also in filebeat
 # golang
 CVE-2025-22869
 CVE-2025-47907
@@ -71,5 +72,10 @@ CVE-2023-45287
 CVE-2023-45288
 CVE-2025-47907
 CVE-2024-25621
+CVE-2025-65637
 # oauth
 CVE-2025-22868
+# urllib3
+CVE-2025-66418
+CVE-2025-66471
+
