@@ -100,8 +100,8 @@ async def traefik_fixture(
         await model.applications[app_name].destroy(force=True, no_wait=True)
 
 
-@pytest_asyncio.fixture(scope="module", name="self_signed_certificates")
-async def self_signed_certificates_fixture(
+@pytest_asyncio.fixture(scope="module", name="machine_self_signed_certificates")
+async def machine_self_signed_certificates_fixture(
     machine_model: Model,
     pytestconfig: pytest.Config,
 ) -> typing.AsyncGenerator[Application, None]:
@@ -116,19 +116,41 @@ async def self_signed_certificates_fixture(
             app_name,
             application_name=app_name,
             channel="latest/stable",
-            config={"ca-common-name": "Test CA"},
+            config={"ca-common-name": "machine test CA"},
         )
-        await machine_model.create_offer(f"{application.name}:certificates", application.name)
     yield application
     if not pytestconfig.getoption("--keep-models") and app_name in machine_model.applications:
         await machine_model.applications[app_name].destroy(force=True, no_wait=True)
+
+
+@pytest_asyncio.fixture(scope="module", name="k8s_self_signed_certificates")
+async def k8s_self_signed_certificates_fixture(
+    model: Model,
+    pytestconfig: pytest.Config,
+) -> typing.AsyncGenerator[Application, None]:
+    """Deploy the self-signed certificates charm."""
+    app_name = "self-signed-certificates"
+    application: Application
+    if pytestconfig.getoption("--no-deploy") and app_name in model.applications:
+        logger.warning("Using existing application: %s", app_name)
+        application = model.applications[app_name]
+    else:
+        application = await model.deploy(
+            app_name,
+            application_name=app_name,
+            channel="latest/stable",
+            config={"ca-common-name": "k8s test CA"},
+        )
+    yield application
+    if not pytestconfig.getoption("--keep-models") and app_name in model.applications:
+        await model.applications[app_name].destroy(force=True, no_wait=True)
 
 
 @pytest_asyncio.fixture(scope="module", name="opensearch_provider")
 async def opensearch_provider_fixture(
     machine_model: Model,
     pytestconfig: pytest.Config,
-    self_signed_certificates: Application,
+    machine_self_signed_certificates: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     app_name = "wazuh-indexer"
@@ -149,7 +171,7 @@ async def opensearch_provider_fixture(
             num_units=num_units,
             config={"profile": "testing"},
         )
-        await machine_model.integrate(self_signed_certificates.name, application.name)
+        await machine_model.integrate(machine_self_signed_certificates.name, application.name)
         await machine_model.wait_for_idle(
             apps=[application.name],
             status="active",
@@ -169,7 +191,7 @@ async def wazuh_dashboard_fixture(
     machine_model: Model,
     pytestconfig: pytest.Config,
     opensearch_provider: Application,
-    self_signed_certificates: Application,
+    machine_self_signed_certificates: Application,
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the opensearch charm."""
     app_name = "wazuh-dashboard"
@@ -186,7 +208,7 @@ async def wazuh_dashboard_fixture(
             revision=WAZUH_DASHBOARD_REVISION,
             num_units=num_units,
         )
-        await machine_model.integrate(self_signed_certificates.name, application.name)
+        await machine_model.integrate(machine_self_signed_certificates.name, application.name)
         await machine_model.integrate(opensearch_provider.name, application.name)
     yield application
     if not pytestconfig.getoption("--keep-models") and app_name in machine_model.applications:
@@ -212,7 +234,7 @@ async def application_fixture(
     charm: str,
     machine_model: Model,
     model: Model,
-    self_signed_certificates: Application,
+    k8s_self_signed_certificates: Application,
     opensearch_provider: Application,
     pytestconfig: pytest.Config,
     traefik: Application,
@@ -242,10 +264,7 @@ async def application_fixture(
         f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
     )
-    await model.integrate(
-        f"localhost:admin/{self_signed_certificates.model.name}.{self_signed_certificates.name}",
-        application.name,
-    )
+    await model.integrate(k8s_self_signed_certificates.name, application.name)
     await model.integrate(traefik.name, application.name)
     await model.wait_for_idle(
         apps=[traefik.name, application.name],

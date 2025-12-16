@@ -359,11 +359,11 @@ def sync_permissions(
 def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     container: ops.Container,
     path: Path,
-    public_key: str,
-    private_key: str,
-    root_ca: str,
-    user: str,
-    group: str,
+    public_key: str | None = None,
+    private_key: str | None = None,
+    root_ca: str | None = None,
+    user: str | None = None,
+    group: str | None = None,
 ) -> bool:
     """Update TLS certificates.
 
@@ -373,7 +373,7 @@ def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional
         public_key: the certificate's public key.
         private_key: the certificate's private key.
         root_ca: the certifciate's CA public key.
-        user: the usesr owning the files.
+        user: the user owning the files.
         group: the group owning the files.
 
     Returns:
@@ -386,6 +386,9 @@ def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional
     )
     made_change = False
     for filename, source in pairs:
+        if not source:
+            continue  # certs passed as arguments may be None, skip these
+
         filepath = path / filename
         current_content = ""
         if container.exists(filepath):

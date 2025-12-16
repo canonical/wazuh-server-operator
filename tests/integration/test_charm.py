@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"))
 APP_NAME = CHARMCRAFT["name"]
 
+PEBBLE_SOCKET = "/charm/containers/wazuh-server/pebble.socket"
+PEBBLE_EXEC = f"PEBBLE_SOCKET={PEBBLE_SOCKET} /charm/bin/pebble exec"
+
 
 @pytest.mark.abort_on_fail
 async def test_api(model: Model, application: Application):
@@ -65,9 +68,8 @@ async def test_clustering_ok(model: Model, application: Application, traefik: Ap
     await application.scale(2)
     await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
     wazuh_unit = application.units[0]  # type: ignore
-    pebble_exec = "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket pebble exec"
     action = await wazuh_unit.run(
-        f"{pebble_exec} -- /var/ossec/bin/cluster_control -l", timeout=10
+        f"{PEBBLE_EXEC} -- /var/ossec/bin/cluster_control -l", timeout=10
     )
     await action.wait()
     code = action.results.get("return-code")
@@ -78,7 +80,7 @@ async def test_clustering_ok(model: Model, application: Application, traefik: Ap
     assert "worker" in stdout, stdout
 
     action = await wazuh_unit.run(
-        f"{pebble_exec} -- /var/ossec/bin/cluster_control -i", timeout=10
+        f"{PEBBLE_EXEC} -- /var/ossec/bin/cluster_control -i", timeout=10
     )
     await action.wait()
     code = action.results.get("return-code")
@@ -112,7 +114,8 @@ async def test_cluster_api_credentials(
 
     # get API password for wazuh
     action = await wazuh_leader.run(
-        f"secret-get --label {state.WAZUH_API_CREDENTIALS} | grep -oP 'wazuh: \\K.*'", timeout=10
+        f"secret-get --label {state.WAZUH_API_CREDENTIAL_SECRET_LABEL} | grep -oP 'wazuh: \\K.*'",
+        timeout=10,
     )
     await action.wait()
     code = action.results.get("return-code")
@@ -255,3 +258,28 @@ async def test_opencti_integration(
             app_data = relation["application-data"]
     for key in ["opencti_url", "opencti_token"]:
         assert key in app_data, f"Missing key in app data: {key}"
+
+
+@pytest.mark.abort_on_fail
+async def test_filebeat_credentials(
+    model: Model,
+    application: Application,
+    opensearch_provider: Application,
+):
+    """
+    Arrange: A working Wazuh deployment integrated with the Wazuh indexer.
+    Act: Validate filebeat output configuration.
+    Assert: Filebeat successfully authenticates to and trusts the indexer.
+    """
+    assert application
+
+    await model.wait_for_idle(
+        apps=[application.name, opensearch_provider.name], status="active", timeout=1400
+    )
+    wazuh_unit = application.units[0]  # type: ignore
+    action = await wazuh_unit.run(f"{PEBBLE_EXEC} -- /usr/bin/filebeat test output", timeout=10)
+    await action.wait()
+    code = action.results.get("return-code")
+    stdout = action.results.get("stdout")
+    stderr = action.results.get("stderr")
+    assert code == 0, f"filebeat output test failed with code {code}: {stderr or stdout}"

@@ -17,8 +17,8 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, ValidationError, pars
 logger = logging.getLogger(__name__)
 
 
-WAZUH_API_CREDENTIALS = "wazuh-api-credentials"
-# Bandit mistakenly thinks this is a password
+# Bandit mistakenly thinks these are passwords
+WAZUH_API_CREDENTIAL_SECRET_LABEL = "wazuh-api-credentials"  # nosec
 WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
 WAZUH_USERS = OrderedDict(
     {
@@ -82,35 +82,42 @@ class WazuhConfig(BaseModel):  # pylint: disable=too-few-public-methods
 
 def _fetch_filebeat_configuration(
     model: ops.Model, indexer_relation_data: dict[str, str]
-) -> tuple[str, str, list[str]]:
+) -> tuple[str, str, list[str], str]:
     """Fetch the filebeat configuration from the relation data.
 
     Args:
         model: the Juju model.
         indexer_relation_data: the Wazuh indexer app relation data.
 
-    Returns: a tuple with the username, password and a list of endpoints.
+    Returns: a tuple with the username, password, list of endpoints, and CA cert.
 
     Raises:
         InvalidStateError: if the secret is invalid.
         IncompleteStateError: if the secret has not yet been passed.
     """
-    filebeat_secret_id = indexer_relation_data.get("secret-user")
-    if not filebeat_secret_id:
-        raise IncompleteStateError("Indexer secret ID not yet in relation.")
+    user_secret_id = indexer_relation_data.get("secret-user")
+    ca_secret_id = indexer_relation_data.get("secret-tls")
+    if not user_secret_id or not ca_secret_id:
+        raise IncompleteStateError("Indexer secret IDs not yet in relation.")
     try:
-        filebeat_secret_content = model.get_secret(id=filebeat_secret_id).get_content()
+        user_secret_content = model.get_secret(id=user_secret_id).get_content()
+        tls_secret_content = model.get_secret(id=ca_secret_id).get_content()
     except ops.SecretNotFoundError as exc:
         raise InvalidStateError("Indexer secret content not found") from exc
     except ops.model.ModelError as exc:
         raise InvalidStateError(
             "Received ops.model.ModelError while requesting Indexer secret content"
         ) from exc
-    filebeat_username = filebeat_secret_content.get("username", "")
-    filebeat_password = filebeat_secret_content.get("password", "")
+    filebeat_username = user_secret_content.get("username", "")
+    filebeat_password = user_secret_content.get("password", "")
+    filebeat_ca = ""
+    ca_cert_text = tls_secret_content.get("tls-ca", "")
+    if len(certs := ca_cert_text.split("-----BEGIN CERTIFICATE-----")) > 1:
+        filebeat_ca = ("-----BEGIN CERTIFICATE-----" + certs[1]).strip()
+
     endpoint_data = indexer_relation_data.get("endpoints")
     endpoints = list(endpoint_data.split(",")) if endpoint_data else []
-    return filebeat_username, filebeat_password, endpoints
+    return filebeat_username, filebeat_password, endpoints, filebeat_ca
 
 
 def _fetch_opencti_details(
@@ -254,7 +261,7 @@ def _fetch_api_credentials(model: ops.Model) -> dict[str, str]:
         username: str(details["default_password"]) for username, details in WAZUH_USERS.items()
     }
     try:
-        api_credentials_secret = model.get_secret(label=WAZUH_API_CREDENTIALS)
+        api_credentials_secret = model.get_secret(label=WAZUH_API_CREDENTIAL_SECRET_LABEL)
         api_credentials_content = api_credentials_secret.get_content(refresh=True)
         if not api_credentials_content:
             raise InvalidStateError("API credentials secret is empty.")
@@ -270,12 +277,12 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     Attributes:
         agent_password: the agent password.
         api_credentials: a map containing the API credentials.
-        certificate: the TLS certificate for filebeat.
+        rsyslog_public_cert: the public TLS certificate for rsyslog.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_endpoints: list of Wazuh indexer endpoints.
         filebeat_username: the filebeat username.
         filebeat_password: the filebeat password.
-        root_ca: the CA certificate for filebeat.
+        filebeat_ca: the CA certificate for filebeat.
         custom_config_repository: the git repository where the configuration is.
         custom_config_ssh_key: the SSH key for the git repository.
         enable_vulnerability_detection: whether to enable Wazuh's vulnerability detection module.
@@ -287,12 +294,12 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
     agent_password: str | None = None
     api_credentials: dict[str, str]
-    certificate: str = Field(..., min_length=1)
+    rsyslog_public_cert: str = Field(..., min_length=1)
     cluster_key: str = Field(min_length=32, max_length=32)
     indexer_endpoints: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
     filebeat_password: str = Field(..., min_length=1)
-    root_ca: str = Field(..., min_length=1)
+    filebeat_ca: str = Field(..., min_length=1)
     custom_config_repository: AnyUrl | None = None
     custom_config_ssh_key: str | None = None
     enable_vulnerability_detection: bool = True
@@ -304,12 +311,12 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         self,
         agent_password: str | None,
         api_credentials: dict[str, str],
-        certificate: str,
+        rsyslog_public_cert: str,
         cluster_key: str,
         indexer_endpoints: list[str],
         filebeat_username: str,
         filebeat_password: str,
-        root_ca: str,
+        filebeat_ca: str,
         wazuh_config: WazuhConfig,
         custom_config_ssh_key: str | None,
         opencti_token: str | None = None,
@@ -320,12 +327,12 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         Args:
             agent_password: the agent password.
             api_credentials: a map ccontaining the API credentials.
-            certificate: the TLS certificate for filebeat.
+            rsyslog_public_cert: the public TLS certificate for rsyslog.
             cluster_key: the Wazuh key for the cluster nodes.
             indexer_endpoints: list of Wazuh indexer endpoints.
             filebeat_username: the filebeat username.
             filebeat_password: the filebeat password.
-            root_ca: the CA certificate for filebeat.
+            filebeat_ca: the CA certificate for filebeat.
             wazuh_config: Wazuh configuration.
             custom_config_ssh_key: the SSH key for the git repository.
             opencti_token: the OpenCTI token.
@@ -334,12 +341,12 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         super().__init__(
             agent_password=agent_password,
             api_credentials=api_credentials,
-            certificate=certificate,
+            rsyslog_public_cert=rsyslog_public_cert,
             cluster_key=cluster_key,
             indexer_endpoints=indexer_endpoints,
             filebeat_username=filebeat_username,
             filebeat_password=filebeat_password,
-            root_ca=root_ca,
+            filebeat_ca=filebeat_ca,
             custom_config_repository=wazuh_config.custom_config_repository,
             custom_config_ssh_key=custom_config_ssh_key,
             enable_vulnerability_detection=wazuh_config.enable_vulnerability_detection,
@@ -375,7 +382,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     def from_charm(
         cls,
         charm: ops.CharmBase,
-        certificate_signing_request: str,
+        rsyslog_csr: str,
         indexer_relation_data: dict[str, str],
         opencti_relation_data: dict[str, str],
         provider_certificates: list[certificates.ProviderCertificate],
@@ -384,7 +391,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
 
         Args:
             charm: the root charm.
-            certificate_signing_request: the TLS certificate signing request.
+            rsyslog_csr: the TLS certificate signing request.
             indexer_relation_data: the Wazuh indexer app relation data.
             opencti_relation_data: the OpenCTI relation data.
             provider_certificates: the provider certificates.
@@ -396,7 +403,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             InvalidStateError: if the state is invalid and unrecoverable.
             RecoverableStateError: if the state is invalid and recoverable.
         """
-        filebeat_username, filebeat_password, endpoints = _fetch_filebeat_configuration(
+        filebeat_user, filebeat_password, endpoints, filebeat_ca = _fetch_filebeat_configuration(
             charm.model, indexer_relation_data
         )
         args = {key.replace("-", "_"): value for key, value in charm.config.items()}
@@ -414,21 +421,19 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password = _fetch_password(charm.model, valid_config.agent_password)
         api_credentials = _fetch_api_credentials(charm.model)
         cluster_key = _fetch_cluster_key(charm.model)
-        matching_certificates = _fetch_matching_certificates(
-            provider_certificates, certificate_signing_request
-        )
+        matching_certificates = _fetch_matching_certificates(provider_certificates, rsyslog_csr)
         opencti_url, opencti_token = _fetch_opencti_details(charm.model, opencti_relation_data)
         try:
             if matching_certificates:
                 return cls(
                     agent_password=agent_password,
                     api_credentials=api_credentials,
-                    certificate=matching_certificates[0].certificate,
+                    rsyslog_public_cert=matching_certificates[0].certificate,
                     cluster_key=cluster_key,
                     indexer_endpoints=endpoints,
-                    filebeat_username=filebeat_username,
+                    filebeat_username=filebeat_user,
                     filebeat_password=filebeat_password,
-                    root_ca=matching_certificates[0].ca,
+                    filebeat_ca=filebeat_ca,
                     wazuh_config=valid_config,
                     custom_config_ssh_key=custom_config_ssh_key,
                     opencti_url=opencti_url,
