@@ -76,8 +76,8 @@ async def machine_model_fixture(
     await model.set_constraints(
         {
             "virt-type": "virtual-machine",
-            "mem": "2G",
-            "root-disk": "10G",
+            "mem": 2048,
+            "root-disk": 10240,
             "cores": 2,
         }
     )
