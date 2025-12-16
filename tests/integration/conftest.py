@@ -170,6 +170,12 @@ async def opensearch_provider_fixture(
             revision=WAZUH_INDEXER_REVISION,
             num_units=num_units,
             config={"profile": "testing"},
+            constraints={
+                "virt-type": "virtual-machine",
+                "mem": "2G",
+                "root-disk": "10G",
+                "cores": "2",
+            },
         )
         await machine_model.integrate(machine_self_signed_certificates.name, application.name)
         await machine_model.wait_for_idle(
@@ -207,6 +213,12 @@ async def wazuh_dashboard_fixture(
             channel=WAZUH_DASHBOARD_CHANNEL,
             revision=WAZUH_DASHBOARD_REVISION,
             num_units=num_units,
+            constraints={
+                "virt-type": "virtual-machine",
+                "mem": "2G",
+                "root-disk": "10G",
+                "cores": "2",
+            },
         )
         await machine_model.integrate(machine_self_signed_certificates.name, application.name)
         await machine_model.integrate(opensearch_provider.name, application.name)
