@@ -217,7 +217,7 @@ async def wazuh_dashboard_fixture(
                 "virt-type": "virtual-machine",
                 "mem": "2G",
                 "root-disk": "10G",
-                "cores": "2",
+                "cores": 2,
             },
         )
         await machine_model.integrate(machine_self_signed_certificates.name, application.name)
