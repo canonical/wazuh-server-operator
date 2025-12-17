@@ -314,7 +314,10 @@ async def opencti_any_charm_fixture(
             },
         )
         await model.wait_for_idle(apps=[app_name], timeout=600)
-    await model.integrate(any_app.name, f"{application.name}:opencti-connector")
+
+    if len(application.related_applications(endpoint_name="opencti-connector")) == 0:
+        await model.integrate(any_app.name, f"{application.name}:opencti-connector")
+
     await model.wait_for_idle(status="active", timeout=600)
     yield any_app
     if not pytestconfig.getoption("--keep-models") and app_name in model.applications:
