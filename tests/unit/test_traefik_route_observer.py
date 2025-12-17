@@ -8,6 +8,7 @@
 
 import secrets
 import unittest
+import unittest.mock
 
 import ops
 import pytest
