@@ -77,21 +77,25 @@ parts:
       umount $CRAFT_OVERLAY/etc/resolv.conf
   prometheus-exporter:
     plugin: python
-    source: ./prometheus_exporter/
-    stage-packages: [python3-venv]
+    source: ./prometheus_exporter
+    source-type: local
     python-requirements: [requirements.txt]
     override-build: |
       craftctl default
       cp -r $CRAFT_PART_SRC/* $CRAFT_PART_INSTALL/
     organize:
-      prometheus_exporter: srv/prometheus
+      main.py: srv/prometheus/prometheus_exporter.py
+      wazuh_metrics_collector.py: srv/prometheus/wazuh_metrics_collector.py
     permissions:
       - path: srv/prometheus/prometheus_exporter.py
         owner: 2000
         group: 2000
         mode: "755"
+    stage-packages:
+      - python3-venv
     stage:
       - -usr/lib/ssl/*
+      - -requirements.txt
   rsyslog:
     plugin: nil
     stage-packages:

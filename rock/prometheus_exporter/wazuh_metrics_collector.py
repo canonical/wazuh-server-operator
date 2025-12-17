@@ -3,7 +3,6 @@
 # based on https://github.com/pyToshka/wazuh-prometheus-exporter
 
 import http.client
-import json
 import logging
 import os
 from base64 import b64encode
@@ -59,7 +58,18 @@ class Wazuh:
             "Authorization": f"Basic {b64encode(basic_auth).decode()}",
         }
         response = requests.get(login_url, headers=login_headers, verify=False)  # nosec
-        token = json.loads(response.content.decode())["data"]["token"]
+
+        try:
+            data = response.json()
+        except requests.JSONDecodeError:
+            logger.error("Could not authenticate: %s", response.content)
+            return None
+
+        token = data.get("data", {}).get("token")
+        if not token:
+            logger.error("Got auth response, but no token: %s", data)
+            return None
+
         requests_headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token}",

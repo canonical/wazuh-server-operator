@@ -5,12 +5,11 @@ import sys
 import time
 from typing import Iterable
 
+import wazuh_metrics_collector as wmc
 from packaging.version import Version
 from prometheus_client import REGISTRY, Metric, start_http_server
 from prometheus_client.metrics_core import GaugeMetricFamily, InfoMetricFamily
 from prometheus_client.registry import Collector
-
-from . import wazuh_metrics_collector as wmc
 
 logger = wmc.get_logger()
 
@@ -57,6 +56,11 @@ class WazuhCollector(Collector):
 
     def collect(self):  # noqa: C901
         auth = self.connection.login()
+        if not auth:
+            logger.warning("Could not authenticate, sleeping 10s and returning")
+            time.sleep(10)
+            return
+
         agents = self.connection.wazuh_get_agents_overview(auth)
         mgr_stats_hourly = self.connection.wazuh_get_hourly_stats(auth)
         manager_stats = self.connection.wazuh_get_stats(auth)
