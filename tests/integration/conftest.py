@@ -15,6 +15,7 @@ import pytest
 import pytest_asyncio
 from juju.application import Application
 from juju.model import Controller, Model
+from juju.relation import Endpoint
 from pytest_operator.plugin import OpsTest
 
 from tests.integration.helpers import configure_single_node
@@ -315,7 +316,9 @@ async def opencti_any_charm_fixture(
         )
         await model.wait_for_idle(apps=[app_name], timeout=600)
 
-    if len(application.related_applications(endpoint_name="opencti-connector")) == 0:
+    endpoints: list[Endpoint] = sum([rel.endpoints for rel in application.relations], [])
+    interfaces = {e.interface for e in endpoints}
+    if "opencti_connector" not in interfaces:
         await model.integrate(any_app.name, f"{application.name}:opencti-connector")
 
     await model.wait_for_idle(status="active", timeout=600)
