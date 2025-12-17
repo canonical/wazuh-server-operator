@@ -113,8 +113,8 @@ def _fetch_filebeat_configuration(
     filebeat_ca = ""
     ca_cert_text = tls_secret_content.get("tls-ca", "")
     if len(certs := ca_cert_text.split("-----BEGIN CERTIFICATE-----")) > 1:
-        # split will result in ['', first_cert, second_cert], we want the second
-        filebeat_ca = ("-----BEGIN CERTIFICATE-----" + certs[2]).strip()
+        # split will result in ['', first_cert, second_cert, ...], we want the last
+        filebeat_ca = ("-----BEGIN CERTIFICATE-----" + certs[-1]).strip()
 
     endpoint_data = indexer_relation_data.get("endpoints")
     endpoints = list(endpoint_data.split(",")) if endpoint_data else []
