@@ -189,7 +189,6 @@ async def test_rsyslog_invalid_server_ca(application: Application):
 async def test_rsyslog_client_cn(
     application: Application,
     traefik: Application,
-    machine_model: Model,
     valid_cn: bool,
     expect_logs: bool,
 ):
@@ -202,11 +201,10 @@ async def test_rsyslog_client_cn(
     await application.model.wait_for_idle(
         apps=[application.name, traefik.name], status="active", timeout=1400
     )
-    machine_controller = await machine_model.get_controller()
-    server_ca_cert = await get_ca_certificate(
-        f"{machine_controller.controller_name}:{machine_model.name}"
-    )
     controller = await application.model.get_controller()
+    server_ca_cert = await get_ca_certificate(
+        f"{controller.controller_name}:{application.model.name}"
+    )
     wazuh_ip = await get_wazuh_ip(f"{controller.controller_name}:{application.model.name}")
 
     needle = secrets.token_hex()
@@ -263,6 +261,7 @@ async def test_opencti_integration(
 @pytest.mark.abort_on_fail
 async def test_filebeat_credentials(
     model: Model,
+    machine_model: Model,
     application: Application,
     opensearch_provider: Application,
 ):
@@ -273,8 +272,9 @@ async def test_filebeat_credentials(
     """
     assert application
 
-    await model.wait_for_idle(
-        apps=[application.name, opensearch_provider.name], status="active", timeout=1400
+    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
+    await machine_model.wait_for_idle(
+        apps=[opensearch_provider.name], status="active", timeout=1400
     )
     wazuh_unit = application.units[0]  # type: ignore
     action = await wazuh_unit.run(f"{PEBBLE_EXEC} -- /usr/bin/filebeat test output", timeout=10)
