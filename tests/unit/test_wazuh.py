@@ -77,13 +77,13 @@ def test_update_configuration(
         unit_name.replace("/", "-") == tree.xpath("/root/ossec_config/cluster/node_name")[0].text
     )
     node_type = tree.xpath("/root/ossec_config/cluster/node_type")[0].text
-    assert "master" == node_type if unit_name == "wazuh-server/0" else "worker"
+    assert node_type == "master" if unit_name == "wazuh-server/0" else "worker"
     address = tree.xpath("/root/ossec_config/cluster/nodes/node")[0]
     assert address.text == master_ip
     if enable_vulnerability_detection:
         assert not tree.xpath("/root/ossec_config/vulnerability-detection")
     else:
-        assert "no" == tree.xpath("/root/ossec_config/vulnerability-detection/enabled")[0].text
+        assert tree.xpath("/root/ossec_config/vulnerability-detection/enabled")[0].text == "no"
 
 
 def test_install_certificates() -> None:
@@ -106,22 +106,20 @@ def test_install_certificates() -> None:
     )
 
     assert (
-        "private_key"
-        == container.pull(
+        container.pull(
             wazuh.FILEBEAT_CERTIFICATES_PATH / "certificate.key", encoding="utf-8"
         ).read()
+        == "private_key"
     )
     assert (
-        "public_key"
-        == container.pull(
+        container.pull(
             wazuh.FILEBEAT_CERTIFICATES_PATH / "certificate.pem", encoding="utf-8"
         ).read()
+        == "public_key"
     )
     assert (
-        "root_ca"
-        == container.pull(
-            wazuh.FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8"
-        ).read()
+        container.pull(wazuh.FILEBEAT_CERTIFICATES_PATH / "root-ca.pem", encoding="utf-8").read()
+        == "root_ca"
     )
 
 
@@ -185,8 +183,8 @@ def test_sync_config_repo_when_branch_specified() -> None:
     container = harness.charm.unit.get_container("wazuh-server")
     custom_config_ssh_key = "somekey"
     wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
-    assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
-    assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
+    assert container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read() == "know_host"
+    assert container.pull(wazuh.RSA_PATH, encoding="utf-8").read() == "somekey\n"
 
 
 def test_sync_config_repo_when_no_branch_specified(*_) -> None:
@@ -232,8 +230,8 @@ def test_sync_config_repo_when_no_branch_specified(*_) -> None:
     container = harness.charm.unit.get_container("wazuh-server")
     custom_config_ssh_key = "somekey"
     wazuh.sync_config_repo(container, custom_config_repository, custom_config_ssh_key)
-    assert "know_host" == container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read()
-    assert "somekey\n" == container.pull(wazuh.RSA_PATH, encoding="utf-8").read()
+    assert container.pull(wazuh.KNOWN_HOSTS_PATH, encoding="utf-8").read() == "know_host"
+    assert container.pull(wazuh.RSA_PATH, encoding="utf-8").read() == "somekey\n"
 
 
 def test_sync_config_repo_when_no_key_no_repository_specified() -> None:
@@ -386,11 +384,14 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
     mocked_proc.wait_output.return_value = ("", "")
 
     real_exec = container.exec
-    with patch.object(container, "exists", return_value=True), patch.object(
-        container,
-        "exec",
-        side_effect=lambda cmd, *a, **kv: (
-            mocked_proc if cmd[0] in ["rsync", "find", "chmod"] else real_exec(cmd, *a, **kv)
+    with (
+        patch.object(container, "exists", return_value=True),
+        patch.object(
+            container,
+            "exec",
+            side_effect=lambda cmd, *a, **kv: (
+                mocked_proc if cmd[0] in ["rsync", "find", "chmod"] else real_exec(cmd, *a, **kv)
+            ),
         ),
     ):
         changed = wazuh.sync_wazuh_config_files(container)
@@ -597,4 +598,4 @@ def test_get_version() -> None:
     )
     container = harness.charm.unit.get_container("wazuh-server")
     version = wazuh.get_version(container)
-    assert "v4.11.0" == version
+    assert version == "v4.11.0"

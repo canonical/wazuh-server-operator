@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 """Wazuh API library unit tests"""
+
 import secrets
 
 import ops

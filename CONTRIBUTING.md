@@ -1,6 +1,6 @@
 # Contributing
 
-This document explains the processes and practices recommended for contributing enhancements to the Wazuh server charm.
+This document explains the processes and practices recommended for contributing enhancements to the wazuh server charm.
 
 ## Overview
 
@@ -9,7 +9,7 @@ This document explains the processes and practices recommended for contributing 
 - If you would like to chat with us about your use-cases or proposed implementation, you can reach
   us at [Canonical Matrix public channel](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
   or [Discourse](https://discourse.charmhub.io/).
-- Familiarizing yourself with the [Juju documentation](https://canonical-juju.readthedocs-hosted.com/en/latest/user/howto/manage-charms/)
+- Familiarizing yourself with the [Juju documentation](https://documentation.ubuntu.com/juju/3.6/howto/manage-charms/)
   will help you a lot when working on new features or bug fixes.
 - All enhancements require review before being merged. Code review typically examines
   - code quality
@@ -20,172 +20,167 @@ This document explains the processes and practices recommended for contributing 
 - For further information on contributing, please refer to our
   [Contributing Guide](https://github.com/canonical/is-charms-contributing-guide).
 
-## Developing
+## Code of conduct
+
+When contributing, you must abide by the
+[Ubuntu Code of Conduct](https://ubuntu.com/community/ethos/code-of-conduct).
+
+## Changelog
+
+Please ensure that any new feature, fix, or significant change is documented by
+adding an entry to the [CHANGELOG.md](./CHANGELOG.md) file. Use the date of the
+contribution as the header for new entries.
+
+To learn more about changelog best practices, visit [Keep a Changelog](https://keepachangelog.com/).
+
+## Submissions
+
+If you want to address an issue or a bug in this project,
+notify in advance the people involved to avoid confusion;
+also, reference the issue or bug number when you submit the changes.
+
+- [Fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/about-forks)
+  our [GitHub repository](https://github.com/canonical/wazuh-server-operator)
+  and add the changes to your fork, properly structuring your commits,
+  providing detailed commit messages and signing your commits.
+- Make sure the updated project builds and runs without warnings or errors;
+  this includes linting, documentation, code and tests.
+- Submit the changes as a
+  [pull request (PR)](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
+
+Your changes will be reviewed in due time; if approved, they will be eventually merged.
+
+### Describing pull requests
+
+To be properly considered, reviewed and merged,
+your pull request must provide the following details:
+
+- **Title**: Summarize the change in a short, descriptive title.
+
+- **Overview**: Describe the problem that your pull request solves.
+  Mention any new features, bug fixes or refactoring.
+
+- **Rationale**: Explain why the change is needed.
+
+- **Juju Events Changes**: Describe any changes made to Juju events, or
+  "None" if the pull request does not change any Juju events.
+
+- **Module Changes**: Describe any changes made to the module, or "None"
+  if your pull request does not change the module.
+
+- **Library Changes**: Describe any changes made to the library,
+  or "None" is the library is not affected.
+
+- **Checklist**: Complete the following items:
+
+  - The [charm style guide](https://documentation.ubuntu.com/juju/3.6/reference/charm/charm-development-best-practices/) was applied
+  - The [contributing guide](https://github.com/canonical/is-charms-contributing-guide) was applied
+  - The changes are compliant with [ISD054 - Managing Charm Complexity](https://discourse.charmhub.io/t/specification-isd014-managing-charm-complexity/11619)
+  - The documentation is updated
+  - The PR is tagged with appropriate label (trivial, senior-review-required)
+  - The changelog has been updated
+
+### Signing commits
+
+To improve contribution tracking,
+we use the [Canonical contributor license agreement](https://assets.ubuntu.com/v1/ff2478d1-Canonical-HA-CLA-ANY-I_v1.2.pdf)
+(CLA) as a legal sign-off, and we require all commits to have verified signatures.
+
+#### Canonical contributor agreement
+
+Canonical welcomes contributions to the wazuh server charm. Please check out our
+[contributor agreement](https://ubuntu.com/legal/contributors) if you're interested in contributing to the solution.
+
+The CLA sign-off is simple line at the
+end of the commit message certifying that you wrote it
+or have the right to commit it as an open-source contribution.
+
+#### Verified signatures on commits
+
+All commits in a pull request must have cryptographic (verified) signatures.
+To add signatures on your commits, follow the
+[GitHub documentation](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
+
+## Develop
+
+To make contributions to this charm, you'll need a working
+[development setup](https://documentation.ubuntu.com/juju/latest/user/howto/manage-your-deployment/manage-your-deployment-environment/).
 
 The code for this charm can be downloaded as follows:
 
-```bash
+```
 git clone https://github.com/canonical/wazuh-server-operator
 ```
 
-You can use the environments created by `tox` for development:
+Make sure to install [`uv`](https://docs.astral.sh/uv/). For example, you can install `uv` on Ubuntu using:
 
-```shell
-tox --notest -e unit
-source .tox/unit/bin/activate
+```bash
+sudo snap install astral-uv --classic
 ```
 
-## Testing
+For other systems, follow the [`uv` installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
-To test this charm, you'll need a working development setup.
+Then install `tox` with its extensions, and install a range of Python versions:
 
-A full setup guide is provided [here](/docs/how-to/development-env-setup.md).
+```bash
+uv python install
+uv tool install tox --with tox-uv
+uv tool update-shell
+```
 
-Alternatively, the following external documentation should cover all
-requirements:
+To create a development environment, run:
 
-- Juju 3 installed and bootstrapped to an LXD controller. You can accomplish
-  this process by using a [Multipass](https://multipass.run/) VM as outlined in
-  this guide:
-  [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/).
-  Note that this tutorial provides documentation for both manual and automatic
-  deployment management. You would have to follow the manual steps only to avoid
-  installing MicroK8s in your setup.
-- Canonical Kubernetes installed and bootstrapped to Juju. This can be
-  accomplished by following the
-  [Set up Canonical Kubernetes](https://charmhub.io/wazuh-server/docs/tutorial-getting-started#p-38194-set-up-canonical-kubernetes)
-  section in the getting started tutorial for Wazuh server.
+```bash
+uv sync --all-groups
+source .venv/bin/activate
+```
 
-Note that if you follow the external documentation, you must still refer to the
-local documentation for (optionally) building the rock and running the tests.
+### Test
 
-## Deploy
+This project uses `tox` for managing test environments. There are some pre-configured environments
+that can be used for linting and formatting code when you're preparing contributions to the charm:
 
-A typical deployment would look like:
+* ``tox``: Executes all of the basic checks and tests (``lint``, ``unit``, ``static``, and ``coverage-report``).
+* ``tox -e fmt``: Runs formatting using ``ruff``.
+* ``tox -e lint``: Runs a range of static code analysis to check the code.
+* ``tox -e static``: Runs other checks such as ``bandit`` for security issues.
+* ``tox -e unit``: Runs the unit tests.
+* ``tox -e integration``: Runs the integration tests.
+
+### Build the rock and charm
+
+Use [Rockcraft](https://documentation.ubuntu.com/rockcraft/stable/) to create an
+OCI image for the wazuh server app, and then upload the image to a MicroK8s registry,
+which stores OCI archives so they can be downloaded and deployed.
+
+Enable the MicroK8s registry:
+
+```bash
+microk8s enable registry
+```
+
+The following commands pack the OCI image and push it into
+the MicroK8s registry:
+
+```bash
+cd <project_dir>
+rockcraft pack
+skopeo --insecure-policy copy --dest-tls-verify=false oci-archive:<rock-name>.rock docker://localhost:32000/<app-name>:latest
+```
+
+Build the charm in this git repository using:
+
+```shell
+charmcraft pack
+```
+
+### Deploy
 
 ```bash
 # Create a model
-juju add-model wazuh-server-dev
+juju add-model charm-dev
 # Enable DEBUG logging
 juju model-config logging-config="<root>=INFO;unit=DEBUG"
-# Deploy the charm (assuming you're on amd64)
-juju deploy ./wazuh_server_ubuntu-22.04-amd64.charm \
-  --resource wazuh-server-image=localhost:5000/wazuh-server:latest
+# Deploy the charm
+juju deploy ./wazuh-server*.charm
 ```
-
-## How to upgrade Wazuh version
-
-The Wazuh product is deployed using three charms:
-
-- `wazuh-server`: this repository.
-- [`wazuh-indexer`](https://github.com/canonical/wazuh-indexer-operator/): a
-  fork of
-  [`opensearch-operator`](https://github.com/canonical/opensearch-operator)
-  relying on [`opensearch-snap`](https://github.com/canonical/opensearch-snap)
-- [`wazuh-dashboard`](https://github.com/canonical/wazuh-dashboard-operator/): a
-  fork of
-  [`opensearch-dashboards-operator`](https://github.com/canonical/opensearch-dashboards-operator)
-  relying on
-  [`opensearch-dashboards-snap`](https://github.com/canonical/opensearch-dashboards-snap)
-
-To upgrade the Wazuh version, the snaps and charms must be updated in the
-following order:
-
-1. `wazuh-indexer-snap`: merge upstream changes, then upgrade Wazuh version.
-1. `wazuh-dashboard-snap`: merge upstream changes, then upgrade Wazuh version.
-1. `wazuh-indexer-operator`: merge upstream changes, then upgrade Wazuh version.
-1. `wazuh-dashboard-operator`: merge upstream changes, then upgrade Wazuh
-   version.
-1. `wazuh-server-operator`: upgrade Wazuh version.
-
-> [!IMPORTANT] GitHub incorrectly shows that the forks are based on the `main`
-> branch of the `opensearch` snaps and charms. It's a known issue when an
-> upstream project renames its default branch after a fork and the fork doesn't.
-> Unfortunately, the upstream branch cannot be updated on the fork. They are
-> based on the `2/edge` branch.
-
-### How to merge upstream changes
-
-This is the generic approach to merge upstream changes using the example for
-`wazuh-indexer-snap`. Specific details for each repository are provided in the
-following sections.
-
-#### Prepare
-
-- Clone the repository:
-  `git clone https://github.com/canonical/wazuh-indexer-snap.git`
-- Prepare your working branch: `git checkout -b chore/merge_upstream`
-- To ensure that no external dependency is breaking the CI, it's safer to run it
-  before changing anything. You can trigger the CI with an empty commit:
-  `git commit --allow-empty -m 'Trigger CI' && git push -u origin chore/merge_upstream`.
-- Fetch the upstream branch:
-
-```shell
-git remote add upstream https://github.com/canonical/opensearch-dashboards-operator.git
-git fetch upstream 2/edge
-```
-
-#### Merge
-
-Start the merge with `git merge upstream/2/edge`.
-
-There will be conflicts, try to minimize them for future merges :
-
-- Apply all upstream changes to the Wazuh repository, even comments.
-- Propose changes upstream that would simplify future merges (use of constants
-  instead of hard coded strings for instance).
-
-Here are few tips to fix the conflicts:
-
-- Keep the changes where `opensearch` is replaced by `wazuh`.
-- Keep the changes referring to Wazuh channels, revisions or versions.
-- Keep the changes explicitly mentioning `wazuh` (including comments).
-
-When all conflicts are resolved and the merge is completed, run the CI to ensure
-all tests pass.
-
-#### Extra checks
-
-See if the skipped tests are still relevant. You can list them with
-`grep -ri 'skip.*wazuh' tests/`.
-
-### How to upgrade Wazuh version
-
-All repositories must be updated to the same Wazuh version.
-
-For Wazuh, we currently have a track for the minor version (e.g. `4.11/edge`) as
-we have seen some breaking changes between minor versions in the past. We may
-switch back to a track per major version in the future (e.g. `5/edge`).
-
-## `wazuh-indexer-snap`
-
-- Look for references to the previous version: `grep -r 4.11`.
-- Update them to the version you want to deploy.
-
-## `wazuh-dashboard-snap`
-
-- Look for references to the previous version: `grep -r 4.11`.
-- Update them to the version you want to deploy.
-- Update `workflows/ci.yaml`, to use the latest `wazuh-indexer` release.
-
-If the Wazuh team has implemented a variable to refer to the Wazuh
-configuration, you may replace the last four lines in `snapcraft.yaml` which are
-temporary workarounds.
-
-## `wazuh-indexer-operator`
-
-- Look for references to the previous version: `grep -r 4.11`.
-- Update them to the version you want to deploy.
-- Update `OPENSEARCH_SNAP_REVISION` in
-  `lib/charms/opensearch/v0/constants_charm.py`
-
-## `wazuh-dashboard-operator`
-
-- Look for references to the previous version: `grep -r 4.11`.
-- Update them to the version you want to deploy.
-- Update `OPENSEARCH_DASHBOARDS_SNAP_REVISION` in `src/literals.py`.
-
-## `wazuh-server-operator`
-
-- Look for references to the previous version: `grep -r 4.11`.
-- Update them to the version you want to deploy.

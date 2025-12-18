@@ -13,3 +13,4 @@ jobs:
       self-hosted-runner-arch: amd64
       self-hosted-runner-image: noble
       vale-style-check: false
+      with-uv: true

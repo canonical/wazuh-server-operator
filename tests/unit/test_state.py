@@ -231,7 +231,7 @@ def test_proxyconfig_invalid(monkeypatch: pytest.MonkeyPatch):
         provider_certificates=provider_certificates,
     )
     with pytest.raises(state.RecoverableStateError):
-        charm_state.proxy  # pylint: disable=pointless-statement
+        charm_state.proxy  # noqa: B018
 
 
 def test_state_when_repository_secret_not_found(monkeypatch: pytest.MonkeyPatch):
