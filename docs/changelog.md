@@ -8,6 +8,10 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-11-14
 
+- Upgrade the Juju Terraform provider to version 1.
+
+## 2025-11-14
+
 - Added enable-vulnerability-detection config option.
 
 ## 2025-10-15
