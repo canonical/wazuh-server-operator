@@ -2,16 +2,19 @@
 # See LICENSE file for licensing details.
 
 data "juju_model" "wazuh_server" {
+  name = var.server_model_name
   uuid = var.server_model_uuid
 }
 
 data "juju_model" "wazuh_indexer" {
+  name = var.indexer_model_name
   uuid = var.indexer_model_uuid
 
   provider = juju.wazuh_indexer
 }
 
 data "juju_model" "wazuh_dashboard" {
+  name = var.dashboard_model_name
   uuid = var.dashboard_model_uuid
 
   provider = juju.wazuh_dashboard
@@ -48,8 +51,8 @@ resource "juju_offer" "wazuh_server_api" {
 
 resource "juju_access_offer" "wazuh_server_api" {
   offer_url = juju_offer.wazuh_server_api.url
-  admin     = [data.juju_model.wazuh_server.uuid]
-  consume   = [data.juju_model.wazuh_dashboard.uuid]
+  admin     = [data.juju_model.wazuh_server.name]
+  consume   = [data.juju_model.wazuh_dashboard.name]
 }
 
 resource "juju_integration" "wazuh_server_api" {
@@ -127,8 +130,8 @@ resource "juju_offer" "self_signed_certificates" {
 
 resource "juju_access_offer" "self_signed_certificates" {
   offer_url = juju_offer.self_signed_certificates.url
-  admin     = [data.juju_model.wazuh_indexer.uuid]
-  consume   = [data.juju_model.wazuh_server.uuid, data.juju_model.wazuh_dashboard.uuid]
+  admin     = [data.juju_model.wazuh_indexer.name]
+  consume   = [data.juju_model.wazuh_server.name, data.juju_model.wazuh_dashboard.name]
 
   provider = juju.wazuh_indexer
 }
@@ -177,8 +180,8 @@ resource "juju_offer" "wazuh_indexer" {
 
 resource "juju_access_offer" "wazuh_indexer" {
   offer_url = juju_offer.wazuh_indexer.url
-  admin     = [data.juju_model.wazuh_indexer.uuid]
-  consume   = [data.juju_model.wazuh_server.uuid, data.juju_model.wazuh_dashboard.uuid]
+  admin     = [data.juju_model.wazuh_indexer.name]
+  consume   = [data.juju_model.wazuh_server.name, data.juju_model.wazuh_dashboard.name]
 
   provider = juju.wazuh_indexer
 }

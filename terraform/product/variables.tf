@@ -1,18 +1,33 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-variable "server_model_uuid" {
-  description = "Reference to the k8s Juju model to deploy Wazuh server to."
-  type        = string
-}
-
-variable "indexer_model_uuid" {
-  description = "Reference to the VM Juju model to deploy the indexer charms to."
+variable "dashboard_model_name" {
+  description = "Juju model for Wazuh Dashboard"
   type        = string
 }
 
 variable "dashboard_model_uuid" {
-  description = "Reference to the VM Juju model to deploy the dashboard charms to."
+  description = "Juju model UUID for Wazuh Dashboard"
+  type        = string
+}
+
+variable "indexer_model_name" {
+  description = "Juju model for Wazuh Indexer"
+  type        = string
+}
+
+variable "indexer_model_uuid" {
+  description = "Juju model UUID for Wazuh Indexer"
+  type        = string
+}
+
+variable "server_model_name" {
+  description = "Juju model for Wazuh Server"
+  type        = string
+}
+
+variable "server_model_uuid" {
+  description = "Juju model UUID for Wazuh Server"
   type        = string
 }
 
