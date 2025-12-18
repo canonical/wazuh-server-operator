@@ -1,4 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+"""Prometheus exporter for Wazuh.
+
+forked from https://github.com/pyToshka/wazuh-prometheus-exporter
+"""
+
 import logging
 import os
 import sys

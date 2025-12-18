@@ -1,6 +1,10 @@
-"""Helper class for Wazuh Prometheus exporter."""
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
 
-# based on https://github.com/pyToshka/wazuh-prometheus-exporter
+"""Helper class for Wazuh Prometheus exporter.
+
+forked from https://github.com/pyToshka/wazuh-prometheus-exporter
+"""
 
 import http.client
 import logging
