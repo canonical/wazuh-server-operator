@@ -162,7 +162,7 @@ class CertificatesObserver(Object):
         Args:
             event: the event triggering the handler.
         """
-        if event.certificate == self._charm.state.certificate:
+        if event.certificate == self._charm.state.rsyslog_public_cert:
             try:
                 self.certificates.request_certificate_creation(
                     certificate_signing_request=self.get_csr()
@@ -180,7 +180,7 @@ class CertificatesObserver(Object):
         Args:
             event: the event triggering the handler.
         """
-        if event.certificate == self._charm.state.certificate:
+        if event.certificate == self._charm.state.rsyslog_public_cert:
             try:
                 self.certificates.request_certificate_renewal(
                     old_certificate_signing_request=self.get_csr(),
