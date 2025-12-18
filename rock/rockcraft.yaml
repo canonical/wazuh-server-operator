@@ -77,17 +77,15 @@ parts:
       umount $CRAFT_OVERLAY/etc/resolv.conf
   prometheus-exporter:
     plugin: python
-    source: https://github.com/pyToshka/wazuh-prometheus-exporter.git
-    source-depth: 1
-    source-type: git
-    source-commit: 4749621aa30e51df48ec071921b4acbd41a811e2
+    source: ./prometheus_exporter
+    source-type: local
     python-requirements: [requirements.txt]
     override-build: |
       craftctl default
       cp -r $CRAFT_PART_SRC/* $CRAFT_PART_INSTALL/
     organize:
-      wazuh: srv/prometheus/wazuh
       main.py: srv/prometheus/prometheus_exporter.py
+      wazuh_metrics_collector.py: srv/prometheus/wazuh_metrics_collector.py
     permissions:
       - path: srv/prometheus/prometheus_exporter.py
         owner: 2000
@@ -97,6 +95,7 @@ parts:
       - python3-venv
     stage:
       - -usr/lib/ssl/*
+      - -requirements.txt
   rsyslog:
     plugin: nil
     stage-packages:
