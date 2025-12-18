@@ -19,7 +19,7 @@ For information about how to deploy, integrate, and manage this charm, see the O
 
 ## Contributing to this documentation
 
-Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions and constructive feedback on our documentation. Our documentation is hosted on the [Charmhub forum](https://discourse.charmhub.io/t/wazuh-server-documentation-overview/16070) to enable easy collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, ask a question, or make a suggestion about a potential change via the comments section.
+Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions and constructive feedback on our documentation. Our documentation is hosted on the [Charmhub forum](https://discourse.charmhub.io/t/wazuh-server-documentation-overview/16070) to enable easy collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, ask a question, or make a suggestion about a potential change in the comments section.
 
 If there's a particular area of documentation that you'd like to see that's missing, please [file a bug](https://github.com/canonical/wazuh-server-operator/issues).
 
@@ -52,11 +52,11 @@ Thinking about using the Wazuh Server Operator for your next project? [Get in to
   1. [Run manual tests](how-to/run-manual-tests.md)
 1. [Reference](reference)
   1. [Actions](reference/actions.md)
+  1. [Charm architecture](reference/charm-architecture.md)
   1. [Configurations](reference/configurations.md)
   1. [External access](reference/external-access.md)
   1. [Integrations](reference/integrations.md)
 1. [Explanation](explanation)
   1. [Architecture overview](explanation/architecture-overview.md)
-  1. [Charm architecture](explanation/charm-architecture.md)
   1. [Security](explanation/security.md)
 1. [Changelog](changelog.md)

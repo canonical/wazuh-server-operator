@@ -155,7 +155,7 @@ All repositories must be updated to the same Wazuh version.
 
 For Wazuh, we currently have a track for the minor version (e.g. `4.11/edge`) as
 we have seen some breaking changes between minor versions in the past. We may
-switch back to a track per major version in the future (e.g. `5/edge`).
+switch back to a track for each major version in the future (e.g. `5/edge`).
 
 ## `wazuh-indexer-snap`
 
