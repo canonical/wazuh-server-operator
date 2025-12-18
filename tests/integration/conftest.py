@@ -76,9 +76,9 @@ async def machine_model_fixture(
     await model.set_constraints(
         {
             "virt-type": "virtual-machine",
-            "mem": 2048,
-            "root-disk": 10240,
-            "cores": 2,
+            "mem": 4096,
+            "root-disk": 15000,
+            "cores": 4,
         }
     )
     yield model
