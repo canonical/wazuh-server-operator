@@ -26,4 +26,4 @@ The Wazuh dashboards charm has a stateless workload. It can safely be upgraded t
 This is where all data are persisted so upgrades should be done carefully.
 ```
 
-The recommendation is to follow the [Upgrade guide](https://charmhub.io/opensearch/docs/h-minor-upgrade) from the OpenSearch charm documentation.
+The recommendation is to follow the [Upgrade guide](https://canonical-charmed-opensearch.readthedocs-hosted.com/2/how-to/upgrade/) from the OpenSearch charm documentation.
