@@ -30,4 +30,5 @@ header:
     - 'tests/unit/resources/**'
     - 'tests/integration/certs/**'
     - 'icon.svg'
+    - 'rock/prometheus_exporter/LICENSE.ORIGINAL'
   comment: on-failure
