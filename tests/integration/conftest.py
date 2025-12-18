@@ -73,6 +73,15 @@ async def machine_model_fixture(
         model = await machine_controller.add_model(machine_model_name)
     await model.connect(f"localhost:admin/{model.name}")
     await model.set_config(MACHINE_MODEL_CONFIG)
+    logger.info("Using VM for deployment until LXD+SNAP+Kernel 6.14 bug is fixed")
+    await model.set_constraints(
+        {
+            "virt-type": "virtual-machine",
+            "mem": 4096,
+            "root-disk": 15000,
+            "cores": 4,
+        }
+    )
     yield model
     await model.disconnect()
 
