@@ -2,11 +2,13 @@
 
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
+#
+# This file contains original code from https://github.com/pyToshka/wazuh-prometheus-exporter,
+# modified by Canonical.
+# Copyright (c) 2024, IM
+# See LICENSE.ORIGINAL for licensing details.
 
-"""Prometheus exporter for Wazuh.
-
-forked from https://github.com/pyToshka/wazuh-prometheus-exporter
-"""
+"""Prometheus exporter for Wazuh."""
 
 import logging
 import os
