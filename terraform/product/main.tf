@@ -2,23 +2,23 @@
 # See LICENSE file for licensing details.
 
 data "juju_model" "wazuh_server" {
-  name = var.server_model
+  uuid = var.server_model_uuid
 }
 
 data "juju_model" "wazuh_indexer" {
-  name = var.indexer_model
+  uuid = var.indexer_model_uuid
 
   provider = juju.wazuh_indexer
 }
 
 data "juju_model" "wazuh_dashboard" {
-  name = var.dashboard_model
+  uuid = var.dashboard_model_uuid
 
   provider = juju.wazuh_dashboard
 }
 
 # resource "juju_secret" "agent_password" {
-#   model = local.juju_model_name
+#   model_uuid = data.juju_model.wazuh_server.uuid
 #   name  = "agent_password"
 #   value = var.wazuh_server.config
 #     value = data.vault_generic_secret.agent_password.data["agent-password"]
@@ -31,7 +31,7 @@ module "wazuh_server" {
   app_name    = var.wazuh_server.app_name
   channel     = var.wazuh_server.channel
   config      = var.wazuh_server.config
-  model       = data.juju_model.wazuh_server.name
+  model_uuid  = data.juju_model.wazuh_server.uuid
   constraints = var.wazuh_server.constraints
   revision    = var.wazuh_server.revision
   base        = var.wazuh_server.base
@@ -39,7 +39,7 @@ module "wazuh_server" {
 }
 
 resource "juju_offer" "wazuh_server_api" {
-  model = data.juju_model.wazuh_server.name
+  model_uuid = data.juju_model.wazuh_server.uuid
 
   name             = "wazuh-server-api"
   application_name = var.wazuh_server.app_name
@@ -48,13 +48,13 @@ resource "juju_offer" "wazuh_server_api" {
 
 resource "juju_access_offer" "wazuh_server_api" {
   offer_url = juju_offer.wazuh_server_api.url
-  admin     = [data.juju_model.wazuh_server.name]
-  consume   = [data.juju_model.wazuh_dashboard.name]
+  admin     = [data.juju_model.wazuh_server.uuid]
+  consume   = [data.juju_model.wazuh_dashboard.uuid]
 }
 
 resource "juju_integration" "wazuh_server_api" {
-  provider = juju.wazuh_dashboard
-  model    = data.juju_model.wazuh_dashboard.name
+  provider   = juju.wazuh_dashboard
+  model_uuid = data.juju_model.wazuh_dashboard.uuid
 
   application {
     name     = module.wazuh_dashboard.app_name
@@ -71,9 +71,9 @@ resource "juju_integration" "wazuh_server_api" {
 }
 
 resource "juju_application" "traefik_k8s" {
-  name  = var.traefik_k8s.app_name
-  model = data.juju_model.wazuh_server.name
-  trust = true
+  name       = var.traefik_k8s.app_name
+  model_uuid = data.juju_model.wazuh_server.uuid
+  trust      = true
   charm {
     name     = "traefik-k8s"
     channel  = var.traefik_k8s.channel
@@ -84,7 +84,7 @@ resource "juju_application" "traefik_k8s" {
 }
 
 resource "juju_integration" "wazuh_server_traefik_ingress" {
-  model = data.juju_model.wazuh_server.name
+  model_uuid = data.juju_model.wazuh_server.uuid
 
   application {
     name     = module.wazuh_server.app_name
@@ -98,8 +98,8 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
 }
 
 resource "juju_application" "self_signed_certificates" {
-  name  = var.self_signed_certificates.app_name
-  model = data.juju_model.wazuh_indexer.name
+  name       = var.self_signed_certificates.app_name
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   charm {
     name     = "self-signed-certificates"
@@ -116,7 +116,7 @@ resource "juju_application" "self_signed_certificates" {
 }
 
 resource "juju_offer" "self_signed_certificates" {
-  model = data.juju_model.wazuh_indexer.name
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   name             = "self-signed-certificates"
   application_name = juju_application.self_signed_certificates.name
@@ -127,16 +127,16 @@ resource "juju_offer" "self_signed_certificates" {
 
 resource "juju_access_offer" "self_signed_certificates" {
   offer_url = juju_offer.self_signed_certificates.url
-  admin     = [data.juju_model.wazuh_indexer.name]
-  consume   = [data.juju_model.wazuh_server.name, data.juju_model.wazuh_dashboard.name]
+  admin     = [data.juju_model.wazuh_indexer.uuid]
+  consume   = [data.juju_model.wazuh_server.uuid, data.juju_model.wazuh_dashboard.uuid]
 
   provider = juju.wazuh_indexer
 }
 
 module "wazuh_indexer" {
-  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=rev10&depth=1"
+  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=upgrade-tf-provider&depth=1"
 
-  model = data.juju_model.wazuh_indexer.name
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   grafana_agent = {
     app_name = var.wazuh_indexer_grafana_agent.app_name
@@ -166,7 +166,7 @@ module "wazuh_indexer" {
 }
 
 resource "juju_offer" "wazuh_indexer" {
-  model = data.juju_model.wazuh_indexer.name
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   name             = module.wazuh_indexer.app_name
   application_name = module.wazuh_indexer.app_name
@@ -177,14 +177,14 @@ resource "juju_offer" "wazuh_indexer" {
 
 resource "juju_access_offer" "wazuh_indexer" {
   offer_url = juju_offer.wazuh_indexer.url
-  admin     = [data.juju_model.wazuh_indexer.name]
-  consume   = [data.juju_model.wazuh_server.name, data.juju_model.wazuh_dashboard.name]
+  admin     = [data.juju_model.wazuh_indexer.uuid]
+  consume   = [data.juju_model.wazuh_server.uuid, data.juju_model.wazuh_dashboard.uuid]
 
   provider = juju.wazuh_indexer
 }
 
 resource "juju_integration" "wazuh_indexer_certificates" {
-  model = data.juju_model.wazuh_indexer.name
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   application {
     name     = module.wazuh_indexer.app_name
@@ -200,9 +200,9 @@ resource "juju_integration" "wazuh_indexer_certificates" {
 }
 
 resource "juju_application" "data_integrator" {
-  name  = "data-integrator"
-  model = data.juju_model.wazuh_indexer.name
-  units = 1
+  name       = "data-integrator"
+  model_uuid = data.juju_model.wazuh_indexer.uuid
+  units      = 1
 
   charm {
     name     = "data-integrator"
@@ -220,7 +220,7 @@ resource "juju_application" "data_integrator" {
 }
 
 resource "juju_integration" "wazuh_indexer_data_integrator" {
-  model = data.juju_model.wazuh_indexer.name
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   application {
     name     = module.wazuh_indexer.app_name
@@ -235,8 +235,8 @@ resource "juju_integration" "wazuh_indexer_data_integrator" {
 }
 
 module "wazuh_indexer_backup" {
-  source = "./modules/s3-integrator"
-  model  = data.juju_model.wazuh_indexer.name
+  source     = "./modules/s3-integrator"
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   app_name    = "${var.wazuh_indexer.app_name}-backup"
   channel     = var.wazuh_indexer_backup.channel
@@ -256,7 +256,7 @@ module "wazuh_indexer_backup" {
 }
 
 resource "juju_integration" "wazuh_indexer_backup" {
-  model = data.juju_model.wazuh_indexer.name
+  model_uuid = data.juju_model.wazuh_indexer.uuid
 
   application {
     name     = module.wazuh_indexer.app_name
@@ -272,9 +272,9 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev17&depth=1"
+  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=upgrade-tf-provider&depth=1"
 
-  model = data.juju_model.wazuh_dashboard.name
+  model_uuid = data.juju_model.wazuh_dashboard.uuid
 
   grafana_agent = {
     app_name = var.wazuh_dashboard_grafana_agent.app_name
@@ -298,7 +298,7 @@ module "wazuh_dashboard" {
 }
 
 resource "juju_integration" "wazuh_indexer_dashboard" {
-  model = data.juju_model.wazuh_dashboard.name
+  model_uuid = data.juju_model.wazuh_dashboard.uuid
 
   application {
     name     = module.wazuh_dashboard.app_name
@@ -313,7 +313,7 @@ resource "juju_integration" "wazuh_indexer_dashboard" {
 }
 
 resource "juju_integration" "wazuh_dashboard_certificates" {
-  model = data.juju_model.wazuh_dashboard.name
+  model_uuid = data.juju_model.wazuh_dashboard.uuid
 
   application {
     name     = module.wazuh_dashboard.app_name
@@ -327,7 +327,7 @@ resource "juju_integration" "wazuh_dashboard_certificates" {
 }
 
 resource "juju_integration" "wazuh_server_indexer" {
-  model = data.juju_model.wazuh_server.name
+  model_uuid = data.juju_model.wazuh_server.uuid
 
   application {
     name     = module.wazuh_server.app_name
