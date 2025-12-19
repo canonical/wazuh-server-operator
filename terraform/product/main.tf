@@ -134,7 +134,7 @@ resource "juju_access_offer" "self_signed_certificates" {
 }
 
 module "wazuh_indexer" {
-  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=a5b74a2"
+  source = "git::https://github.com/canonical/wazuh-indexer-operator//terraform/product?ref=&depth=1"
 
   model_uuid = data.juju_model.wazuh_indexer.uuid
 
@@ -272,7 +272,11 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
+<<<<<<< HEAD
   source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=9443c61"
+=======
+  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev20&depth=1"
+>>>>>>> 62ca10d (update dashboard ref)
 
   model_uuid = data.juju_model.wazuh_dashboard.uuid
 
