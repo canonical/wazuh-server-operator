@@ -120,7 +120,7 @@ resource "juju_offer" "self_signed_certificates" {
 
   name             = "self-signed-certificates"
   application_name = juju_application.self_signed_certificates.name
-  endpoints        = ["certificates"]
+  endpoints        = ["certificates", "send-ca-cert"]
 
   provider = juju.wazuh_indexer
 }
