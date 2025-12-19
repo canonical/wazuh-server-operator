@@ -9,7 +9,7 @@ output "self_signed_certificates_app_name" {
 output "self_signed_certificates_provides" {
   value = {
     certificates = "certificates"
-    send-ca-cert = "send-ca-cert"
+    send_ca_cert = "send-ca-cert"
   }
 }
 
