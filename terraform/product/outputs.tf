@@ -6,11 +6,8 @@ output "self_signed_certificates_app_name" {
   value       = juju_application.self_signed_certificates.name
 }
 
-output "self_signed_certificates_provides" {
-  value = {
-    certificates = "certificates"
-    send_ca_cert = "send-ca-cert"
-  }
+output "self_signed_certificates_offer_url" {
+  value = juju_offer.self_signed_certificates.url
 }
 
 output "traefik_name" {
