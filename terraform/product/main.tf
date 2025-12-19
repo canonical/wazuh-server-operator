@@ -272,11 +272,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 }
 
 module "wazuh_dashboard" {
-<<<<<<< HEAD
-  source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=9443c61"
-=======
   source = "git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product?ref=rev20&depth=1"
->>>>>>> 62ca10d (update dashboard ref)
 
   model_uuid = data.juju_model.wazuh_dashboard.uuid
 
