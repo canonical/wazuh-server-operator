@@ -24,22 +24,22 @@ the bundle deployment onto any Kubernetes environment managed by [Juju][Juju].
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.7.2 |
-| <a name="requirement_juju"></a> [juju](#requirement\_juju) | >= 0.19.0 |
+| <a name="requirement_juju"></a> [juju](#requirement\_juju) | ~> 1.1.1 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_juju"></a> [juju](#provider\_juju) | >= 0.19.0 |
-| <a name="provider_juju.wazuh_dashboard"></a> [juju.wazuh\_dashboard](#provider\_juju.wazuh\_dashboard) | >= 0.19.0 |
-| <a name="provider_juju.wazuh_indexer"></a> [juju.wazuh\_indexer](#provider\_juju.wazuh\_indexer) | >= 0.19.0 |
+| <a name="provider_juju"></a> [juju](#provider\_juju) | ~> 1.1.1 |
+| <a name="provider_juju.wazuh_dashboard"></a> [juju.wazuh\_dashboard](#provider\_juju.wazuh\_dashboard) | ~> 1.1.1 |
+| <a name="provider_juju.wazuh_indexer"></a> [juju.wazuh\_indexer](#provider\_juju.wazuh\_indexer) | ~> 1.1.1 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_wazuh_dashboard"></a> [wazuh\_dashboard](#module\_wazuh\_dashboard) | git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product | rev17&depth=1 |
-| <a name="module_wazuh_indexer"></a> [wazuh\_indexer](#module\_wazuh\_indexer) | git::https://github.com/canonical/wazuh-indexer-operator//terraform/product | rev10&depth=1 |
+| <a name="module_wazuh_dashboard"></a> [wazuh\_dashboard](#module\_wazuh\_dashboard) | git::https://github.com/canonical/wazuh-dashboard-operator//terraform/product | rev20&depth=1 |
+| <a name="module_wazuh_indexer"></a> [wazuh\_indexer](#module\_wazuh\_indexer) | git::https://github.com/canonical/wazuh-indexer-operator//terraform/product | rev11&depth=1 |
 | <a name="module_wazuh_indexer_backup"></a> [wazuh\_indexer\_backup](#module\_wazuh\_indexer\_backup) | ./modules/s3-integrator | n/a |
 | <a name="module_wazuh_server"></a> [wazuh\_server](#module\_wazuh\_server) | ../charm | n/a |
 
@@ -72,10 +72,13 @@ the bundle deployment onto any Kubernetes environment managed by [Juju][Juju].
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_dashboard_model"></a> [dashboard\_model](#input\_dashboard\_model) | Reference to the VM Juju model to deploy the dashboard charms to. | `string` | n/a | yes |
-| <a name="input_indexer_model"></a> [indexer\_model](#input\_indexer\_model) | Reference to the VM Juju model to deploy the indexer charms to. | `string` | n/a | yes |
+| <a name="input_dashboard_model_name"></a> [dashboard\_model\_name](#input\_dashboard\_model\_name) | Juju model for Wazuh Dashboard | `string` | n/a | yes |
+| <a name="input_dashboard_model_uuid"></a> [dashboard\_model\_uuid](#input\_dashboard\_model\_uuid) | Juju model UUID for Wazuh Dashboard | `string` | n/a | yes |
+| <a name="input_indexer_model_name"></a> [indexer\_model\_name](#input\_indexer\_model\_name) | Juju model for Wazuh Indexer | `string` | n/a | yes |
+| <a name="input_indexer_model_uuid"></a> [indexer\_model\_uuid](#input\_indexer\_model\_uuid) | Juju model UUID for Wazuh Indexer | `string` | n/a | yes |
 | <a name="input_self_signed_certificates"></a> [self\_signed\_certificates](#input\_self\_signed\_certificates) | n/a | <pre>object({<br/>    app_name    = optional(string, "self-signed-certificates")<br/>    channel     = optional(string, "latest/stable")<br/>    config      = optional(map(string), {})<br/>    constraints = optional(string, "arch=amd64")<br/>    revision    = optional(number)<br/>    base        = optional(string, "ubuntu@24.04")<br/>    units       = optional(number, 1)<br/>    storage     = optional(map(string), {})<br/>  })</pre> | n/a | yes |
-| <a name="input_server_model"></a> [server\_model](#input\_server\_model) | Reference to the k8s Juju model to deploy Wazuh server to. | `string` | n/a | yes |
+| <a name="input_server_model_name"></a> [server\_model\_name](#input\_server\_model\_name) | Juju model for Wazuh Server | `string` | n/a | yes |
+| <a name="input_server_model_uuid"></a> [server\_model\_uuid](#input\_server\_model\_uuid) | Juju model UUID for Wazuh Server | `string` | n/a | yes |
 | <a name="input_sysconfig"></a> [sysconfig](#input\_sysconfig) | n/a | <pre>object({<br/>    app_name = optional(string, "sysconfig")<br/>    channel  = optional(string, "latest/stable")<br/>    revision = optional(number)<br/>  })</pre> | n/a | yes |
 | <a name="input_traefik_k8s"></a> [traefik\_k8s](#input\_traefik\_k8s) | n/a | <pre>object({<br/>    app_name    = optional(string, "traefik-k8s")<br/>    channel     = optional(string, "latest/edge")<br/>    config      = optional(map(string), {})<br/>    constraints = optional(string, "arch=amd64")<br/>    revision    = optional(number)<br/>    base        = optional(string, "ubuntu@20.04")<br/>    units       = optional(number, 1)<br/>    storage     = optional(map(string), {})<br/>  })</pre> | n/a | yes |
 | <a name="input_wazuh_dashboard"></a> [wazuh\_dashboard](#input\_wazuh\_dashboard) | n/a | <pre>object({<br/>    app_name    = optional(string, "wazuh-dashboard")<br/>    channel     = optional(string, "4.11/edge")<br/>    config      = optional(map(string), {})<br/>    constraints = optional(string, "arch=amd64")<br/>    revision    = optional(number)<br/>    base        = optional(string, "ubuntu@22.04")<br/>    units       = optional(number, 3)<br/>  })</pre> | n/a | yes |
@@ -89,6 +92,8 @@ the bundle deployment onto any Kubernetes environment managed by [Juju][Juju].
 
 | Name | Description |
 |------|-------------|
+| <a name="output_self_signed_certificates_app_name"></a> [self\_signed\_certificates\_app\_name](#output\_self\_signed\_certificates\_app\_name) | Name of the deployed self-signed-certificates application. |
+| <a name="output_self_signed_certificates_offer_url"></a> [self\_signed\_certificates\_offer\_url](#output\_self\_signed\_certificates\_offer\_url) | n/a |
 | <a name="output_traefik_name"></a> [traefik\_name](#output\_traefik\_name) | Name of the deployed Traefik application. |
 | <a name="output_traefik_provides"></a> [traefik\_provides](#output\_traefik\_provides) | n/a |
 | <a name="output_traefik_requires"></a> [traefik\_requires](#output\_traefik\_requires) | n/a |
