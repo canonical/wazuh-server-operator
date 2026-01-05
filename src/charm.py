@@ -58,7 +58,7 @@ class WazuhServerCharm(CharmBaseWithState):
             args: Arguments passed to the CharmBase parent constructor.
         """
         super().__init__(*args)
-        self.certificates = certificates_observer.CertificatesObserver(self)
+        self.rsyslog_certificates = certificates_observer.CertificatesObserver(self)
         self.traefik_route_observer = traefik_route_observer.TraefikRouteObserver(self)
         self.opensearch = opensearch_observer.OpenSearchObserver(self)
         self._observability = observability.Observability(self)
@@ -146,10 +146,10 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_relation_data = (
                 opencti_relation.data[opencti_relation.app] if opencti_relation else {}
             )
-            certificates = self.certificates.certificates.get_provider_certificates()
+            certificates = self.rsyslog_certificates.certificates.get_provider_certificates()
             self._cached_state = State.from_charm(
                 self,
-                certificate_signing_request=self.certificates.get_csr().decode("utf-8"),
+                rsyslog_csr=self.rsyslog_certificates.get_csr().decode("utf-8"),
                 indexer_relation_data=opensearch_relation_data,
                 opencti_relation_data=opencti_relation_data,
                 provider_certificates=certificates,
@@ -195,9 +195,7 @@ class WazuhServerCharm(CharmBaseWithState):
         changed_certs: bool = wazuh.sync_certificates(
             container=container,
             path=wazuh.FILEBEAT_CERTIFICATES_PATH,
-            private_key=self.certificates.get_private_key(),
-            public_key=self.state.certificate,
-            root_ca=self.state.root_ca,
+            root_ca=self.state.filebeat_ca,
             user=wazuh.FILEBEAT_USER,
             group=wazuh.FILEBEAT_USER,
         )
@@ -233,8 +231,8 @@ class WazuhServerCharm(CharmBaseWithState):
         changed_certs: bool = wazuh.sync_certificates(
             container=container,
             path=wazuh.RSYSLOG_CERTIFICATES_PATH,
-            private_key=self.certificates.get_private_key(),
-            public_key=self.state.certificate,
+            public_key=self.state.rsyslog_public_cert,
+            private_key=self.rsyslog_certificates.get_private_key(),
             root_ca=self.state.logs_ca_cert,
             user=wazuh.RSYSLOG_USER,
             group=wazuh.RSYSLOG_USER,
@@ -312,12 +310,14 @@ class WazuhServerCharm(CharmBaseWithState):
             if password_to_save:
                 credentials[username] = password_to_save
                 try:
-                    secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIALS)
+                    secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIAL_SECRET_LABEL)
                     if dict(secret.get_content(refresh=True)) != credentials:
                         secret.set_content(credentials)
                     logger.debug("Updated secret %s with credentials", secret.id or secret.label)
                 except ops.SecretNotFoundError:
-                    secret = self.app.add_secret(credentials, label=state.WAZUH_API_CREDENTIALS)
+                    secret = self.app.add_secret(
+                        credentials, label=state.WAZUH_API_CREDENTIAL_SECRET_LABEL
+                    )
                     logger.debug("Added secret %s with credentials", secret.id)
 
     def _reconcile_prometheus(self, container: ops.Container) -> None:

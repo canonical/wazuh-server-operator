@@ -1,24 +1,13 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-output "wazuh_server_name" {
-  description = "Name of the deployed Wazuh server application."
-  value       = module.wazuh_server.app_name
+output "self_signed_certificates_app_name" {
+  description = "Name of the deployed self-signed-certificates application."
+  value       = juju_application.self_signed_certificates.name
 }
 
-output "wazuh_server_requires" {
-  value = {
-    logging      = "logging"
-    certificates = "certificates"
-  }
-}
-
-output "wazuh_server_provides" {
-  value = {
-    grafana_dashboard = "grafana-dashboard"
-    metrics_endpoint  = "metrics-endpoint"
-    opencti_connector = "opencti-connector"
-  }
+output "self_signed_certificates_offer_url" {
+  value = juju_offer.self_signed_certificates.url
 }
 
 output "traefik_name" {
@@ -36,6 +25,26 @@ output "traefik_provides" {
   value = {
     grafana_dashboard = "grafana-dashboard"
     metrics_endpoint  = "metrics-endpoint"
+  }
+}
+
+output "wazuh_server_name" {
+  description = "Name of the deployed Wazuh server application."
+  value       = module.wazuh_server.app_name
+}
+
+output "wazuh_server_requires" {
+  value = {
+    logging      = "logging"
+    certificates = "certificates"
+  }
+}
+
+output "wazuh_server_provides" {
+  value = {
+    grafana_dashboard = "grafana-dashboard"
+    metrics_endpoint  = "metrics-endpoint"
+    opencti_connector = "opencti-connector"
   }
 }
 
