@@ -43,6 +43,9 @@ class UnitTestHelper:  # pylint: disable=too-many-instance-attributes
                 "-----BEGIN CERTIFICATE-----",
                 secrets.token_hex(),
                 "-----END CERTIFICATE-----",
+                "-----BEGIN CERTIFICATE-----",
+                secrets.token_hex(),
+                "-----END CERTIFICATE-----",
             )
         )
         self.logs_ca: str = "\n".join(
