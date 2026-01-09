@@ -9,6 +9,7 @@ Each revision is versioned by the date of the revision.
 ## 2025-01-09
 
 - Store the complete certificate chain CA certificate from the Wazuh indexer.
+- Upgrade the Wazuh Indexer TF module to rev12.
 
 ## 2025-12-19
 
