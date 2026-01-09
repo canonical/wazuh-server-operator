@@ -43,6 +43,9 @@ class UnitTestHelper:  # pylint: disable=too-many-instance-attributes
                 "-----BEGIN CERTIFICATE-----",
                 secrets.token_hex(),
                 "-----END CERTIFICATE-----",
+                "-----BEGIN CERTIFICATE-----",
+                secrets.token_hex(),
+                "-----END CERTIFICATE-----",
             )
         )
         self.logs_ca: str = "\n".join(
@@ -181,7 +184,7 @@ class UnitTestHelper:  # pylint: disable=too-many-instance-attributes
             unittest.mock.Mock()
         """
         mock = unittest.mock.Mock()
-        mock.get_content.return_value = {"tls-ca": "\n".join((self.indexer_ca, self.indexer_ca))}
+        mock.get_content.return_value = {"tls-ca": self.indexer_ca}
         return mock
 
     def get_agent_password_secret(self):
