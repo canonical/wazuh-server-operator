@@ -110,12 +110,7 @@ def _fetch_filebeat_configuration(
         ) from exc
     filebeat_username = user_secret_content.get("username", "")
     filebeat_password = user_secret_content.get("password", "")
-    filebeat_ca = ""
-    ca_cert_text = tls_secret_content.get("tls-ca", "")
-    if len(certs := ca_cert_text.split("-----BEGIN CERTIFICATE-----")) > 1:
-        # split will result in ['', first_cert, second_cert, ...], we want the last
-        filebeat_ca = ("-----BEGIN CERTIFICATE-----" + certs[-1]).strip()
-
+    filebeat_ca = tls_secret_content.get("tls-ca", "")
     endpoint_data = indexer_relation_data.get("endpoints")
     endpoints = list(endpoint_data.split(",")) if endpoint_data else []
     return filebeat_username, filebeat_password, endpoints, filebeat_ca
