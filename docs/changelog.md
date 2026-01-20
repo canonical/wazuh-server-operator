@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-01-20
+
+- Mount storage for /var/ossec/logs
+- Remove storage for /var/log/collectors since nothing is written in this path anymore
+
 ## 2025-01-09
 
 - Store the complete certificate chain CA certificate from the Wazuh indexer.
