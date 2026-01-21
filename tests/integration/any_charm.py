@@ -5,6 +5,7 @@
 # pylint: disable=import-error,too-few-public-methods
 
 """This code snippet is used to be loaded into any-charm which is used for integration tests."""
+
 import jwt
 from any_charm_base import AnyCharmBase
 

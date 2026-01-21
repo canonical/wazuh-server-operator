@@ -8,8 +8,9 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-01-20
 
-- Mount storage for /var/ossec/logs
-- Remove storage for /var/log/collectors since nothing is written in this path anymore
+- Mount storage for /var/ossec/logs.
+- Remove storage for /var/log/collectors since nothing is written in this path anymore.
+- Change the default Wazuh configuration so that a Unix socket is used instead of the filesystem.
 
 ## 2025-01-09
 
