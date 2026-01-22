@@ -126,13 +126,11 @@ def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
     """
     if not container.isdir(REPOSITORY_PATH):
         return None
-
     try:
         process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
         out, _ = process.wait_output()
         head = out.strip()
         return head or None
-
     except ops.pebble.APIError as e:
         logger.debug(
             "Pebble API error while reading applied commit marker at %s: %s", REPOSITORY_PATH, e
