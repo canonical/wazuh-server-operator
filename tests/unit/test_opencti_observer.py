@@ -3,6 +3,8 @@
 
 """OpenCTI observer unit tests."""
 
+import secrets
+
 import ops
 from ops.testing import Harness
 
@@ -77,6 +79,7 @@ def test_relation_changed_calls_reconcile() -> None:
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     rel_id = harness.add_relation(RELATION_NAME, "opencti")
-    harness.update_relation_data(rel_id, "opencti", {"token": "abcd1234"})
+    token = secrets.token_hex(8)
+    harness.update_relation_data(rel_id, "opencti", {"token": token})
 
     assert harness.charm.count == 1
