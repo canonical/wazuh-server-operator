@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 """Wazuh API library unit tests"""
+
 import secrets
 
 import ops
@@ -24,11 +25,10 @@ provides:
     interface: wazuh_api_client
 """
 
+TOKEN = secrets.token_hex(8)
 SAMPLE_RELATION_DATA = {
     "endpoint": f"https://example.wazuh:{wazuh.API_PORT}/",
-    "user_credentials_secret": (
-        "secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0"
-    ),
+    "user_credentials_secret": f"secret://59060ecc-0495-4a80-8006-5f1fc13fd783/{TOKEN}",
 }
 
 
