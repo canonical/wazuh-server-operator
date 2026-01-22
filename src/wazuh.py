@@ -586,6 +586,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
         source += "/"
     try:
         logger.info("patching files from %s to %s", source, dest)
+        # destructive copy
         container.exec(
             [
                 "rsync",
@@ -609,7 +610,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             timeout=10,
         ).wait_output()
 
-        # Copy patch files in ruleset directory
+        # non-destructive copy / patch
         container.exec(
             [
                 "rsync",
@@ -617,6 +618,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
                 "--chown",
                 "root:wazuh",
                 "--include=ruleset/***",
+                "--include=etc/***",
                 "--exclude=*",
                 source,
                 dest,
