@@ -1,0 +1,9 @@
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-server/0 [idle] active: 
+  wazuh-server/1 [idle] active: 
+  traefik-k8s/0 [idle] active: Serving at wazuh-server.local
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[32mINFO    [0m sh.command:sh.py:576 <Command '/snap/bin/juju run self-signed-certificates/0 get-ca-certificate --no-color --model=github-pr-fd280-k8s:testing --format=yaml', pid 50248>: process started
+[32mINFO    [0m sh.command:sh.py:576 <Command '/snap/bin/juju show-unit wazuh-server/0 -m github-pr-fd280-k8s:testing --format=yaml', pid 50374>: process started
+[32mINFO    [0m sh.command:sh.py:576 <Command "/snap/bin/juju ssh -m testing --container=wazuh-server wazuh-server/0 'grep 335643f843cca4949ba9a45bff107bd96950e5b856dfebe9cce2c33e7001b644 /var/log/collectors/rsyslog/rsyslog.log'", pid 50424>: process started
+[32mINFO    [0m sh.command:sh.py:576 <Command "/snap/bin/juju ssh -m testing --container=wazuh-server wazuh-server/1 'grep 335643f843cca4949ba9a45bff107bd96950e5b856dfebe9cce2c33e7001b644 /var/log/collectors/rsyslog/rsyslog.log'", pid 50500>: process started
