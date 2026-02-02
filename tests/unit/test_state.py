@@ -138,30 +138,32 @@ class UnitTestHelper:  # pylint: disable=too-many-instance-attributes
 
     # R1710: inconsistent-return-statements
     # R0911: too many return statements
-    # W0622: redefining built-in 'id'; necessary bc ops library will call function with 'id'
-    def get_secret_handler(self, id=None, label=None):  # pylint: disable=R0911,R1710,W0622
+    def get_secret_handler(self, **kwargs):  # pylint: disable=R0911,R1710
         """Handle get_secret according to the id or label provided as an arg.
 
         Arguments:
-            id (str): secret id.
-            label (str): secret label.
+            id (str): secret id (passed as keyword argument).
+            label (str): secret label (passed as keyword argument).
 
         Returns:
             unittest.mock.Mock() | None
         """
-        if id == self.secret_user_secret_id:
+        secret_id = kwargs.get("id")
+        label = kwargs.get("label")
+
+        if secret_id == self.secret_user_secret_id:
             return self.get_secret_user_secret()
-        if id == self.secret_tls_secret_id:
+        if secret_id == self.secret_tls_secret_id:
             return self.get_secret_tls_secret()
-        if id == self.agent_password_secret_id:
+        if secret_id == self.agent_password_secret_id:
             return self.get_agent_password_secret()
-        if id == self.custom_config_ssh_key_secret_id:
+        if secret_id == self.custom_config_ssh_key_secret_id:
             return self.get_custom_config_ssh_key_secret()
         if label == state.WAZUH_CLUSTER_KEY_SECRET_LABEL:
             return self.get_cluster_key_secret()
         if label == state.WAZUH_API_CREDENTIAL_SECRET_LABEL:
             return self.get_wazuh_api_credentials_secret()
-        if id == self.opencti_token_secret_id:
+        if secret_id == self.opencti_token_secret_id:
             return self.get_opencti_token_secret()
 
     def get_secret_user_secret(self):
@@ -445,7 +447,7 @@ def test_state_when_repository_secret_not_found():
     """
     helper = UnitTestHelper(repo=True)
 
-    def secret_missing():  # noqa: DCO010
+    def secret_missing():
         raise ops.SecretNotFoundError
 
     helper.get_custom_config_ssh_key_secret = secret_missing  # type: ignore[method-assign]
@@ -462,7 +464,7 @@ def test_state_when_agent_password_secret_not_found():
     """
     helper = UnitTestHelper()
 
-    def secret_missing():  # noqa: DCO010
+    def secret_missing():
         raise ops.SecretNotFoundError
 
     helper.get_agent_password_secret = secret_missing  # type: ignore[method-assign]
