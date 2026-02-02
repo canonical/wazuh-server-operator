@@ -78,12 +78,12 @@ class ObservedCharm(state.CharmBaseWithState):
         return state.State(
             agent_password=None,
             api_credentials=api_credentials,
-            certificate="certificate",
+            rsyslog_public_cert="certificate",
             cluster_key=cluster_key,
             indexer_endpoints=["10.0.0.1"],
             filebeat_username="user1",
             filebeat_password=password,
-            root_ca="root_ca",
+            filebeat_ca="root_ca",
             wazuh_config=state.WazuhConfig(
                 api_credentials=api_credentials,
                 custom_config_repository=None,

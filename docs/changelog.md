@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-01-09
+
+- Store the complete certificate chain CA certificate from the Wazuh indexer.
+- Upgrade the Wazuh Indexer TF module to rev12.
+
+## 2025-12-19
+
+- Add the self-signed-certificates outputs to the Terraform product.
+
+## 2025-12-17
+
+- Moved charm-architecture.md from Explanation to Reference category.
+
+## 2025-11-14
+
+- Upgrade the Juju Terraform provider to version 1.
+
 ## 2025-11-14
 
 - Added enable-vulnerability-detection config option.

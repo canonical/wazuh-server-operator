@@ -92,7 +92,7 @@ juju integrate any-opencti wazuh-server:opencti-connector
 
 Deploy the desired charm configuration values. No configuration items are
 mandatory. Configuration items may be specified one-by-one on the command-line
-or via a YAML file.
+or using a YAML file.
 
 Refer to `juju config`
 [documentation](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/config/).

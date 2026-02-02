@@ -3,32 +3,36 @@ header:
     spdx-id: Apache-2.0
     copyright-owner: Canonical Ltd.
     content: |
-      Copyright [year] [owner]
+      Copyright \d{4} [owner]
+      See LICENSE file for licensing details.
+    pattern: |
+      Copyright \d{4} Canonical Ltd.
       See LICENSE file for licensing details.
   paths:
-  - '**'
+    - '**'
   paths-ignore:
-  - '.github/**'
-  - '**/*.json'
-  - '**/*.md'
-  - '**/*.txt'
-  - '.jujuignore'
-  - '.gitignore'
-  - '.licenserc.yaml'
-  - '.woke.yaml'
-  - '.woke.yml'
-  - 'CODEOWNERS'
-  - 'LICENSE'
-  - 'trivy.yaml'
-  - 'pyproject.toml'
-  - '.trivyignore'
-  - 'zap_rules.tsv'
-  - 'lib/**'
-  - 'rock/logrotate.conf'
-  - 'rock/wazuh.conf'
-  - 'src/prometheus_alert_rules/**'
-  - 'tests/unit/resources/**'
-  - 'tests/integration/certs/**'
-  - 'icon.svg'
-  - 'uv.lock'
+    - '.github/**'
+    - '**/*.json'
+    - '**/*.md'
+    - '**/*.txt'
+    - '.jujuignore'
+    - '.gitignore'
+    - '.licenserc.yaml'
+    - '.woke.yaml'
+    - '.woke.yml'
+    - 'CODEOWNERS'
+    - 'LICENSE'
+    - 'trivy.yaml'
+    - 'pyproject.toml'
+    - '.trivyignore'
+    - 'zap_rules.tsv'
+    - 'lib/**'
+    - 'rock/logrotate.conf'
+    - 'rock/wazuh.conf'
+    - 'src/prometheus_alert_rules/**'
+    - 'tests/unit/resources/**'
+    - 'tests/integration/certs/**'
+    - 'icon.svg'
+    - 'rock/prometheus_exporter/LICENSE.ORIGINAL'
+    - 'uv.lock'
   comment: on-failure

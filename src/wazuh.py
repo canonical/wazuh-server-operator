@@ -126,13 +126,11 @@ def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
     """
     if not container.isdir(REPOSITORY_PATH):
         return None
-
     try:
         process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
         out, _ = process.wait_output()
         head = out.strip()
         return head or None
-
     except ops.pebble.APIError as e:
         logger.debug(
             "Pebble API error while reading applied commit marker at %s: %s", REPOSITORY_PATH, e
@@ -357,11 +355,11 @@ def sync_permissions(
 def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     container: ops.Container,
     path: Path,
-    public_key: str,
-    private_key: str,
-    root_ca: str,
-    user: str,
-    group: str,
+    public_key: str | None = None,
+    private_key: str | None = None,
+    root_ca: str | None = None,
+    user: str | None = None,
+    group: str | None = None,
 ) -> bool:
     """Update TLS certificates.
 
@@ -371,7 +369,7 @@ def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional
         public_key: the certificate's public key.
         private_key: the certificate's private key.
         root_ca: the certifciate's CA public key.
-        user: the usesr owning the files.
+        user: the user owning the files.
         group: the group owning the files.
 
     Returns:
@@ -384,6 +382,9 @@ def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional
     )
     made_change = False
     for filename, source in pairs:
+        if not source:
+            continue  # certs passed as arguments may be None, skip these
+
         filepath = path / filename
         current_content = ""
         if container.exists(filepath):
@@ -581,6 +582,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
         source += "/"
     try:
         logger.info("patching files from %s to %s", source, dest)
+        # destructive copy
         container.exec(
             [
                 "rsync",
@@ -604,7 +606,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             timeout=10,
         ).wait_output()
 
-        # Copy patch files in ruleset directory
+        # non-destructive copy / patch
         container.exec(
             [
                 "rsync",
@@ -612,6 +614,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
                 "--chown",
                 "root:wazuh",
                 "--include=ruleset/***",
+                "--include=etc/***",
                 "--exclude=*",
                 source,
                 dest,
