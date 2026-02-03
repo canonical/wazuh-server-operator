@@ -42,9 +42,10 @@ def test_on_opensearch_client_relation_changed() -> None:
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
-    harness.add_relation(opensearch_observer.RELATION_NAME, "opensearch-client-provider")
-    relation = harness.charm.framework.model.get_relation(opensearch_observer.RELATION_NAME, 0)
+    relation_id = harness.add_relation(
+        opensearch_observer.RELATION_NAME, "opensearch-client-provider"
+    )
 
-    harness.charm.on.opensearch_client_relation_changed.emit(relation)
+    harness.update_relation_data(relation_id, "opensearch-client-provider", {"data": "{}"})
 
     assert harness.charm.count == 1
