@@ -23,14 +23,14 @@ WAZUH_CLUSTER_KEY_SECRET_LABEL = "wazuh-cluster-key"  # nosec
 WAZUH_USERS = OrderedDict(
     {
         "wazuh": {
-            "default_password": "wazuh",
+            "default_password": "wazuh",  # nosec
         },
         "wazuh-wui": {
-            "default_password": "wazuh-wui",
+            "default_password": "wazuh-wui",  # nosec
         },
         # This user will be created by the charm
         "prometheus": {
-            "default_password": "",
+            "default_password": "",  # nosec
         },
     }
 )

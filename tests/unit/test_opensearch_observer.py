@@ -3,7 +3,6 @@
 
 """Certificates observer unit tests."""
 
-
 import ops
 from ops.testing import Harness
 

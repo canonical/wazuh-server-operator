@@ -126,13 +126,11 @@ def get_current_repo_commit(container: ops.Container) -> typing.Optional[str]:
     """
     if not container.isdir(REPOSITORY_PATH):
         return None
-
     try:
         process = container.exec(["git", "-C", REPOSITORY_PATH, "rev-parse", "HEAD"])
         out, _ = process.wait_output()
         head = out.strip()
         return head or None
-
     except ops.pebble.APIError as e:
         logger.debug(
             "Pebble API error while reading applied commit marker at %s: %s", REPOSITORY_PATH, e
@@ -586,6 +584,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
         source += "/"
     try:
         logger.info("patching files from %s to %s", source, dest)
+        # destructive copy
         container.exec(
             [
                 "rsync",
@@ -609,7 +608,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             timeout=10,
         ).wait_output()
 
-        # Copy patch files in ruleset directory
+        # non-destructive copy / patch
         container.exec(
             [
                 "rsync",
@@ -617,6 +616,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
                 "--chown",
                 "root:wazuh",
                 "--include=ruleset/***",
+                "--include=etc/***",
                 "--exclude=*",
                 source,
                 dest,

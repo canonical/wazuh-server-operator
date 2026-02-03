@@ -75,5 +75,5 @@ CVE-2025-22868
 CVE-2025-58183
 # gpgv
 CVE-2025-68973
-# python-pkg
+# jaraco.context
 GHSA-58pv-8j8x-9vj2
