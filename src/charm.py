@@ -177,7 +177,7 @@ class WazuhServerCharm(CharmBaseWithState):
             service_name (str): the service to restart.
             force (bool): restart the service even if it is not running.
         """
-        if service_name not in container.get_services().keys():
+        if service_name not in container.get_services():
             logger.warning('service "%s" cannot be restarted, it does not exist', service_name)
             return
         if container.get_service(service_name).is_running() or force:
@@ -269,7 +269,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((updated_config, changed_password, changed_ossec_conf)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
-    def _reconcile_users(self) -> None:  # noqa: C901
+    def _reconcile_users(self) -> None:
         """Configure Wazuh users."""
         if not self.unit.is_leader():
             return  # Wazuh handles cluster syncing, only the leader should make changes
@@ -344,7 +344,7 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         self._restart_service(container, PROMETHEUS_SERVICE_NAME, force=True)
 
-    def reconcile(self, _: ops.HookEvent) -> None:  # noqa: C901
+    def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
 
         This is the main entry for changes that require a restart.

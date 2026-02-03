@@ -13,24 +13,10 @@ bases:
         channel: "22.04"
 parts:
   charm:
-    build-packages:
-      - libffi-dev
-      - libssl-dev
-      - libxml2-dev
-      - libxslt-dev
-      - pkg-config
-      - python3-dev
+    source: .
+    plugin: uv
     build-snaps:
-      - rustup
-    charm-requirements:
-      - requirements-charmcraft.txt
-    override-build: |
-      rustup default stable
-      craftctl default
-      $CRAFT_PART_BUILD/staging-venv/bin/pip \
-        install --target $CRAFT_PART_INSTALL/venv -v \
-        -r requirements-lxml.txt
-
+    - astral-uv
 name: wazuh-server
 summary: A charm deploying the Wazuh Server.
 links:

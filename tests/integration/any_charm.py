@@ -31,9 +31,9 @@ class AnyCharm(AnyCharmBase):
             event: The event that triggered the method.
         """
         relation = event.relation
-        relation.data[self.app][
-            "opencti_url"
-        ] = f"http://{self.app.name}-endpoints.{self.model.name}.svc:8080"
+        relation.data[self.app]["opencti_url"] = (
+            f"http://{self.app.name}-endpoints.{self.model.name}.svc:8080"
+        )
         sample_token = jwt.encode({"sub": "sample-user"}, "sample-key", algorithm="HS256")
         opencti_token_id = relation.data[self.app].get("opencti_token")
         if not opencti_token_id:
