@@ -42,9 +42,7 @@ def test_on_opensearch_client_relation_changed() -> None:
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
-    relation_id = harness.add_relation(
-        opensearch_observer.RELATION_NAME, "opensearch"
-    )
+    relation_id = harness.add_relation(opensearch_observer.RELATION_NAME, "opensearch")
 
     harness.update_relation_data(relation_id, "opensearch", {"data": "{}"})
 
