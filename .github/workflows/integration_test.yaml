@@ -6,14 +6,12 @@ on:
   - cron: "0 15 * * SAT"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 
-    github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   integration-tests:
-    uses: 
-      canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       channel: 1.33-classic/stable
@@ -32,6 +30,7 @@ jobs:
       tmate-timeout: 20
       use-canonical-k8s: true
       provider: 'k8s'
+      with-uv: true
   allure-report:
     if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:

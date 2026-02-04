@@ -4,6 +4,7 @@
 """General configuration module for integration tests."""
 
 import asyncio
+import itertools
 import json
 import logging
 import os.path
@@ -325,7 +326,9 @@ async def opencti_any_charm_fixture(
         )
         await model.wait_for_idle(apps=[app_name], timeout=600)
 
-    endpoints: list[Endpoint] = sum([rel.endpoints for rel in application.relations], [])
+    endpoints: list[Endpoint] = list(
+        itertools.chain.from_iterable(rel.endpoints for rel in application.relations)
+    )
     interfaces = {e.interface for e in endpoints}
     if "opencti_connector" not in interfaces:
         await model.integrate(any_app.name, f"{application.name}:opencti-connector")
