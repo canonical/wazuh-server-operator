@@ -19,7 +19,7 @@ dependencies = [
   "cosl==1.4.0",
   "cryptography==46.0.4",
   "jsonschema==4.26.0",
-  "lxml==5.4.0",
+  "lxml==6.0.2",
   "ops==3.5.1",
   "pydantic==2.12.5",
   "requests==2.32.5",
