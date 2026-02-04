@@ -93,7 +93,7 @@ class WazuhServerCharm(CharmBaseWithState):
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
         if self.unit.is_leader():
-            shutil.chown("/var/log/ossec", user="root", group="wazuh")
+            shutil.chown("/var/log/ossec", user="wazuh", group="wazuh")
             try:
                 self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
             except ops.SecretNotFoundError:
