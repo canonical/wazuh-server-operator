@@ -29,7 +29,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 CONTAINER_NAME = "wazuh-server"
-INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
 REPOSITORY_PATH = "/root/repository"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
@@ -643,7 +642,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         ).wait_output()
-        container.exec(["chown", "wazuh:wazuh", "/var/log/ossec"], timeout=10).wait_output()
+        container.exec(["chown", "wazuh:wazuh", "/var/ossec/logs"], timeout=10).wait_output()
         save_applied_commit_marker(container, WAZUH_APPLIED_COMMIT_PATH)
         return True
     except ops.pebble.ExecError as ex:
@@ -721,34 +720,6 @@ def sync_filebeat_config_files(container: ops.Container) -> bool:
     sync_config_files(container, pairs)
     save_applied_commit_marker(container, FILEBEAT_APPLIED_COMMIT_PATH)
     return True
-
-
-def ensure_log_ingestion_dir(container: ops.Container) -> bool:
-    """Configure the filesystem to enable writing received logs to disk.
-
-    Args:
-        container: the container to configure.
-
-    Returns:
-        bool: True if changes were made, False if no changes were necessary.
-    """
-    made_changes = False
-    permissions = 0o750
-    user = "syslog"
-    group = "wazuh"
-    if not container.isdir(INGEST_LOG_DIR):
-        made_changes = True
-        container.make_dir(
-            path=INGEST_LOG_DIR,
-            make_parents=True,
-            permissions=permissions,
-            user=user,
-            group=group,
-        )
-    made_changes = made_changes or sync_permissions(
-        container, INGEST_LOG_DIR, permissions, user, group
-    )
-    return made_changes
 
 
 def sync_filebeat_user(container: ops.Container, username: str, password: str) -> bool:
