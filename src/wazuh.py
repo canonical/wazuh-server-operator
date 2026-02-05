@@ -643,7 +643,9 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         ).wait_output()
-
+        container.exec(
+            ["chown", "wazuh:wazuh", "/var/log/ossec"], timeout=10
+        ).wait_output()
         save_applied_commit_marker(container, WAZUH_APPLIED_COMMIT_PATH)
         return True
     except ops.pebble.ExecError as ex:

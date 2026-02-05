@@ -266,7 +266,6 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_url=self.state.opencti_url,
             enable_vulnerability_detection=self.state.enable_vulnerability_detection,
         )
-        container.exec(["chown", "wazuh:wazuh", "/var/log/ossec"]).wait_output()
         if any((updated_config, changed_password, changed_ossec_conf)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
