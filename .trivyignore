@@ -75,6 +75,9 @@ CVE-2025-65637
 CVE-2025-22868
 # stdlib
 CVE-2025-58183
-CVE-2025-61726
-CVE-2025-61728
-
+# gpgv
+CVE-2025-68973
+# jaraco.context
+GHSA-58pv-8j8x-9vj2
+# python wheel
+CVE-2026-24049
