@@ -79,3 +79,5 @@ CVE-2025-58183
 CVE-2025-68973
 # jaraco.context
 GHSA-58pv-8j8x-9vj2
+# python wheel
+CVE-2026-24049
