@@ -52,7 +52,7 @@ containers:
     resource: wazuh-server-image
     mounts:
       - storage: data
-        location: /var/log/collectors
+        location: /var/ossec/logs
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"

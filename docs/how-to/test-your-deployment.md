@@ -52,16 +52,7 @@ You will need to send some logs first to see `wazuh-archives-*` listed in the `D
 
 ## Test the logs
 
-First, let's monitor the logs:
-
-- Go to the model where your `wazuh-server` is deployed: `juju switch <wazuh-server-model>`
-- Open a shell on the leader unit:
-```
-juju ssh --container wazuh-server wazuh-server/leader
-```
-- Monitor the logs: `tail -f /var/log/collectors/rsyslog/rsyslog.log`
-
-In parallel, open another terminal to send some traffic to Wazuh:
+Open a terminal to send some traffic to Wazuh:
 
 - Fetch your public IP for `rsyslog`:
 ```shell
@@ -81,9 +72,7 @@ You should now be able to send logs with a certificate issued by the CA configur
 echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -key good-client.key
 ```
 
-You should see `TEST123` in the logs on the server.
-
-After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm this, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"`.
+After landing in the socket `/var/ossec/queue/sockets/queue`, your log should be processed by Wazuh. To confirm this, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"`.
 
 From there, they should be processed by `filebeat` and `filebeat` will send them to `wazuh-indexer`. To check:
 

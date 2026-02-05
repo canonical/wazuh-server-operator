@@ -50,3 +50,8 @@ variable "units" {
   default     = 1
 }
 
+variable "storage" {
+  description = "Storage used by the application"
+  type        = string
+}
+
