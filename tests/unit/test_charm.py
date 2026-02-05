@@ -7,6 +7,7 @@
 """Charm unit tests."""
 
 import secrets
+import shutil
 from unittest.mock import ANY, MagicMock, call, patch
 
 import ops
@@ -115,6 +116,7 @@ def test_no_logs_ca_cert_reaches_blocked_status(state_from_charm_mock, *_):
 
 
 # pylint: disable=too-many-arguments, too-many-locals, too-many-positional-arguments
+@patch.object(shutil, "chown")
 @patch.object(wazuh, "sync_filebeat_config")
 @patch.object(wazuh, "sync_wazuh_config_files")
 @patch.object(wazuh, "create_api_user")
@@ -230,6 +232,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
 
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+@patch.object(shutil, "chown")
 @patch.object(wazuh, "sync_filebeat_config")
 @patch.object(wazuh, "create_api_user")
 @patch.object(wazuh, "authenticate_user")
