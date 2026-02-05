@@ -76,11 +76,13 @@ async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn
     )
     context.check_hostname = False
 
-    with socket.create_connection((host, 6514)) as sock:
-        with context.wrap_socket(sock, server_hostname=host) as tls_sock:
-            syslog_message = f"test-client testlogger: {message}\n"
-            tls_sock.sendall(syslog_message.encode("utf-8"))
-            return True
+    with (
+        socket.create_connection((host, 6514)) as sock,
+        context.wrap_socket(sock, server_hostname=host) as tls_sock,
+    ):
+        syslog_message = f"test-client testlogger: {message}\n"
+        tls_sock.sendall(syslog_message.encode("utf-8"))
+        return True
 
     return False
 

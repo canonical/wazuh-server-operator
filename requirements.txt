@@ -1,2 +1,0 @@
--r requirements-charmcraft.txt
--r requirements-lxml.txt

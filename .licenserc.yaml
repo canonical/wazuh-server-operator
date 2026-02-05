@@ -34,4 +34,5 @@ header:
     - 'tests/integration/certs/**'
     - 'icon.svg'
     - 'rock/prometheus_exporter/LICENSE.ORIGINAL'
+    - 'uv.lock'
   comment: on-failure
