@@ -93,7 +93,6 @@ class WazuhServerCharm(CharmBaseWithState):
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
         if self.unit.is_leader():
-            shutil.chown("/var/log/ossec", user="wazuh", group="wazuh")
             try:
                 self.model.get_secret(label=WAZUH_CLUSTER_KEY_SECRET_LABEL)
             except ops.SecretNotFoundError:
@@ -268,6 +267,7 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_url=self.state.opencti_url,
             enable_vulnerability_detection=self.state.enable_vulnerability_detection,
         )
+        shutil.chown("/var/log/ossec", user="wazuh", group="wazuh")
         if any((updated_config, changed_password, changed_ossec_conf)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
