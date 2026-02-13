@@ -277,10 +277,23 @@ class WazuhServerCharm(CharmBaseWithState):
         credentials = self.state.api_credentials
 
         for username, user_details in state.WAZUH_USERS.items():
-            current_password = credentials[username]
-            password_to_save = None
+            # Try to authenticate with the current credentials. If it fails, password is invalid.
+            retries = 5
+            valid = False
+            try:
+                if credentials[username] and not valid and retries > 0:
+                    wazuh.authenticate_user(username, credentials[username])
+                    valid = True
+            except wazuh.WazuhAuthenticationError as exc:
+                retries -= 1
+
+            # Secret exists but users are the default. Force recreation.
+            if not valid:
+                credentials[username] = state.WAZUH_USERS[username]["default_password"]
 
             # create user if it doesn't exist yet
+            current_password = credentials[username]
+            password_to_save = None
             retries = 5
             while not current_password and retries > 0:
                 try:
@@ -299,8 +312,8 @@ class WazuhServerCharm(CharmBaseWithState):
                     )
                     time.sleep(1)
 
-            # change credentials if they've never been changed
-            if current_password == user_details["default_password"]:
+            # change credentials if they've never been changed or are invalid
+            if current_password == user_details["default_password"] or not valid:
                 new_password = wazuh.generate_api_password()
                 token = wazuh.authenticate_user(username, user_details["default_password"])
                 wazuh.change_api_password(username, new_password, token)
