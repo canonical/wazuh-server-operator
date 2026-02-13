@@ -269,7 +269,8 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((updated_config, changed_password, changed_ossec_conf)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
-    def _reconcile_users(self) -> None:
+    # Excluding function too complex check from pflake8
+    def _reconcile_users(self) -> None:  # noqa: C901
         """Configure Wazuh users."""
         if not self.unit.is_leader():
             return  # Wazuh handles cluster syncing, only the leader should make changes
@@ -280,12 +281,12 @@ class WazuhServerCharm(CharmBaseWithState):
             # Try to authenticate with the current credentials. If it fails, password is invalid.
             retries = 5
             valid = False
-            try:
-                if credentials[username] and not valid and retries > 0:
+            while credentials[username] and not valid and retries > 0:
+                try:
                     wazuh.authenticate_user(username, credentials[username])
                     valid = True
-            except wazuh.WazuhAuthenticationError:
-                retries -= 1
+                except wazuh.WazuhAuthenticationError:
+                    retries -= 1
 
             # Secret exists but users are the default. Force recreation.
             if not valid:
