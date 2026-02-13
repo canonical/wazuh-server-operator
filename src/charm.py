@@ -287,6 +287,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     valid = True
                 except wazuh.WazuhAuthenticationError:
                     retries -= 1
+                    time.sleep(1)
 
             # Secret exists but users are the default. Force recreation.
             if not valid:
