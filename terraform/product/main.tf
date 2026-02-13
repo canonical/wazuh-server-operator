@@ -36,6 +36,7 @@ module "wazuh_server" {
   revision    = var.wazuh_server.revision
   base        = var.wazuh_server.base
   units       = var.wazuh_server.units
+  storage     = var.wazuh_server.storage
 }
 
 resource "juju_offer" "wazuh_server_api" {

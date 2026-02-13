@@ -237,8 +237,7 @@ class WazuhServerCharm(CharmBaseWithState):
             user=wazuh.RSYSLOG_USER,
             group=wazuh.RSYSLOG_USER,
         )
-        changed_filesystem = wazuh.ensure_log_ingestion_dir(container)
-        if any((updated_config, changed_certs, changed_filesystem)):
+        if any((updated_config, changed_certs)):
             self._restart_service(container, RSYSLOG_SERVICE_NAME)
 
     def _reconcile_wazuh(self, container: ops.Container) -> None:
