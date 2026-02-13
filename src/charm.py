@@ -284,7 +284,7 @@ class WazuhServerCharm(CharmBaseWithState):
                 if credentials[username] and not valid and retries > 0:
                     wazuh.authenticate_user(username, credentials[username])
                     valid = True
-            except wazuh.WazuhAuthenticationError as exc:
+            except wazuh.WazuhAuthenticationError:
                 retries -= 1
 
             # Secret exists but users are the default. Force recreation.
