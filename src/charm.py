@@ -314,8 +314,8 @@ class WazuhServerCharm(CharmBaseWithState):
                     )
                     time.sleep(1)
 
-            # change credentials if they've never been changed or are invalid
-            if current_password == user_details["default_password"] or not valid:
+            # change credentials if they've never been changed
+            if current_password == user_details["default_password"]:
                 new_password = wazuh.generate_api_password()
                 token = wazuh.authenticate_user(username, user_details["default_password"])
                 wazuh.change_api_password(username, new_password, token)
