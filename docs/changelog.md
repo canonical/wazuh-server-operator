@@ -6,11 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
-## 2025-01-20
+## 2025-02-18
 
 - Mount storage for /var/ossec/logs.
 - Remove storage for /var/log/collectors since nothing is written in this path anymore.
 - Change the default Wazuh configuration so that a Unix socket is used instead of the filesystem.
+
+## 2025-02-13
+
+- Fix API users when pod is restarted.
 
 ## 2025-01-09
 
