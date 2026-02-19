@@ -53,6 +53,8 @@ containers:
     mounts:
       - storage: data
         location: /var/log/collectors
+      - storage: logs
+        location: /var/ossec/logs
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"
@@ -131,4 +133,6 @@ peers:
     interface: wazuh-instance
 storage:
   data:
+    type: filesystem
+  logs:
     type: filesystem
