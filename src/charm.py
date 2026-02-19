@@ -237,7 +237,8 @@ class WazuhServerCharm(CharmBaseWithState):
             user=wazuh.RSYSLOG_USER,
             group=wazuh.RSYSLOG_USER,
         )
-        if any((updated_config, changed_certs)):
+        changed_filesystem = wazuh.ensure_log_ingestion_dir(container)
+        if any((updated_config, changed_certs, changed_filesystem)):
             self._restart_service(container, RSYSLOG_SERVICE_NAME)
 
     def _reconcile_wazuh(self, container: ops.Container) -> None:
@@ -268,8 +269,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((updated_config, changed_password, changed_ossec_conf)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
-    # Excluding function too complex check from pflake8
-    def _reconcile_users(self) -> None:  # noqa: C901
+    def _reconcile_users(self) -> None:
         """Configure Wazuh users."""
         if not self.unit.is_leader():
             return  # Wazuh handles cluster syncing, only the leader should make changes
@@ -277,24 +277,10 @@ class WazuhServerCharm(CharmBaseWithState):
         credentials = self.state.api_credentials
 
         for username, user_details in state.WAZUH_USERS.items():
-            # Try to authenticate with the current credentials. If it fails, password is invalid.
-            retries = 5
-            valid = False
-            while credentials[username] and not valid and retries > 0:
-                try:
-                    wazuh.authenticate_user(username, credentials[username])
-                    valid = True
-                except wazuh.WazuhAuthenticationError:
-                    retries -= 1
-                    time.sleep(1)
-
-            # Secret exists but users are the default. Force recreation.
-            if not valid:
-                credentials[username] = state.WAZUH_USERS[username]["default_password"]
-
-            # create user if it doesn't exist yet
             current_password = credentials[username]
             password_to_save = None
+
+            # create user if it doesn't exist yet
             retries = 5
             while not current_password and retries > 0:
                 try:
