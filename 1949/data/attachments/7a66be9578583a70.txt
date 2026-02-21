@@ -1,0 +1,96 @@
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[32mINFO    [0m pytest_operator.plugin:plugin.py:806 Connecting to existing model github-pr-b0096-k8s:testing on unspecified cloud
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHSession received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHTunneler received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHSession received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHTunneler received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHSession received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHTunneler received from the controller
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[32mINFO    [0m integration.conftest:conftest.py:77 Using VM for deployment until LXD+SNAP+Kernel 6.14 bug is fixed
+[32mINFO    [0m juju.model:__init__.py:2301 Deploying ch:amd64/jammy/self-signed-certificates-264
+[32mINFO    [0m juju.model:__init__.py:2301 Deploying ch:amd64/jammy/self-signed-certificates-264
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[32mINFO    [0m juju.model:__init__.py:2301 Deploying ch:amd64/jammy/wazuh-indexer-9
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [allocating] waiting: waiting for machine
+  wazuh-indexer/1 [allocating] waiting: waiting for machine
+  wazuh-indexer/2 [allocating] waiting: waiting for machine
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [allocating] waiting: waiting for machine
+  wazuh-indexer/1 [allocating] waiting: waiting for machine
+  wazuh-indexer/2 [allocating] waiting: waiting for machine
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [allocating] waiting: waiting for machine
+  wazuh-indexer/1 [allocating] waiting: waiting for machine
+  wazuh-indexer/2 [allocating] waiting: waiting for machine
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [allocating] waiting: waiting for machine
+  wazuh-indexer/1 [allocating] waiting: waiting for machine
+  wazuh-indexer/2 [allocating] waiting: waiting for machine
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [allocating] waiting: waiting for machine
+  wazuh-indexer/1 [allocating] waiting: waiting for machine
+  wazuh-indexer/2 [allocating] waiting: waiting for machine
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [allocating] waiting: agent initialising
+  wazuh-indexer/1 [executing] waiting: agent initialising
+  wazuh-indexer/2 [executing] maintenance: Installing OpenSearch...
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [executing] maintenance: Installing OpenSearch...
+  wazuh-indexer/1 [executing] maintenance: Installing OpenSearch...
+  wazuh-indexer/2 [executing] maintenance: Installing OpenSearch...
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [executing] maintenance: Installing OpenSearch...
+  wazuh-indexer/1 [executing] maintenance: Installing OpenSearch...
+  wazuh-indexer/2 [executing] maintenance: Installing OpenSearch...
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [executing] maintenance: Installing OpenSearch...
+  wazuh-indexer/1 [executing] maintenance: Installing OpenSearch...
+  wazuh-indexer/2 [executing] maintenance: Installing OpenSearch...
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [executing] active: 
+  wazuh-indexer/1 [executing] active: 
+  wazuh-indexer/2 [executing] active: 
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [idle] waiting: Requesting lock on operation: start
+  wazuh-indexer/1 [idle] waiting: Requesting lock on operation: start
+  wazuh-indexer/2 [executing] active: 
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [idle] waiting: Requesting lock on operation: start
+  wazuh-indexer/1 [executing] waiting: Waiting for OpenSearch to start...
+  wazuh-indexer/2 [idle] active: 
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [executing] active: 
+  wazuh-indexer/1 [idle] active: 
+  wazuh-indexer/2 [idle] active: 
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[32mINFO    [0m juju.model:__init__.py:2301 Deploying ch:amd64/focal/traefik-k8s-233
+[32mINFO    [0m juju.model:__init__.py:2301 Deploying local:wazuh-server-0
+[33mWARNING [0m juju.client.connection:connection.py:858 unexpected facade SSHServer received from the controller
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  traefik-k8s/0 [allocating] waiting: installing agent
+  wazuh-server/0 [allocating] waiting: installing agent
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  traefik-k8s/0 [executing] maintenance: installing charm software
+  wazuh-server/0 [idle] waiting: Charm not ready to make a CSR.
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-server/0 [idle] waiting: Waiting for pebble.
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-server/0 [idle] waiting: Waiting for pebble.
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-server/0 [idle] waiting: Waiting for pebble.
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-indexer/0 [idle] active: 
+  wazuh-indexer/1 [idle] active: 
+  wazuh-indexer/2 [idle] active:
+[32mINFO    [0m juju.model:__init__.py:3254 Waiting for model:
+  wazuh-server/0 [idle] active: 
+[32mINFO    [0m sh.command:sh.py:576 <Command "/snap/bin/kubectl get service traefik-k8s-lb --namespace=testing -o 'jsonpath={.status.loadBalancer.ingress[0].ip}'", pid 37131>: process started
