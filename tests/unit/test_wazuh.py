@@ -394,7 +394,8 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
             side_effect=lambda cmd, *a, **kv: (
                 mocked_proc
                 if cmd[0] in ["chmod", "chown", "find", "rsync"]
-                else mocked_proc if cmd[0] in ["stat"]
+                else mocked_proc
+                if cmd[0] in ["stat"]
                 else real_exec(cmd, *a, **kv)
             ),
         ),
