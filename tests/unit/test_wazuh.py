@@ -383,7 +383,7 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
     mocked_proc = MagicMock()
     mocked_proc.wait_output.return_value = ("", "")
     mocked_stat = MagicMock()
-    mocked_stat.wait_output.return_value = ("wazuh", "")
+    mocked_stat.wait_output.return_value = ("770", "")
 
     real_exec = container.exec
     with (
