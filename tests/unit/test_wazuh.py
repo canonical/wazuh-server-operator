@@ -398,15 +398,6 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
                 else real_exec(cmd, *a, **kv)
             ),
         ),
-        patch.object(
-            container,
-            "exec",
-            side_effect=lambda cmd, *a, **kv: (
-                mocked_proc
-                if cmd[0] in ["chmod", "chown", "find", "rsync", "stat"]
-                else real_exec(cmd, *a, **kv)
-            ),
-        ),
     ):
         changed = wazuh.sync_wazuh_config_files(container)
 
