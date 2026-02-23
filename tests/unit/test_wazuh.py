@@ -382,10 +382,22 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
 
     mocked_proc = MagicMock()
     mocked_proc.wait_output.return_value = ("", "")
+    mocked_stat = MagicMock()
+    mocked_stat.wait_output.return_value = ("750", "")
 
     real_exec = container.exec
     with (
         patch.object(container, "exists", return_value=True),
+        patch.object(
+            container,
+            "exec",
+            side_effect=lambda cmd, *a, **kv: (
+                mocked_proc
+                if cmd[0] in ["chmod", "chown", "find", "rsync"]
+                else mocked_proc if cmd[0] in ["stat"]
+                else real_exec(cmd, *a, **kv)
+            ),
+        ),
         patch.object(
             container,
             "exec",
