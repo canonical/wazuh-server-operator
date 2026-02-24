@@ -5,7 +5,6 @@
 
 """Wazuh operational logic."""
 
-from importlib.resources import path
 import logging
 import re
 import secrets
