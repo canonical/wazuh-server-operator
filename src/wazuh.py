@@ -644,9 +644,6 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         ).wait_output()
-        made_change = sync_permissions(container, WAZUH_SERVICE_LOG_DIR.as_posix(), 0o770, "root", "wazuh")
-        if made_change:
-            logger.info("Updated permissions of %s", WAZUH_SERVICE_LOG_DIR.as_posix())
         save_applied_commit_marker(container, WAZUH_APPLIED_COMMIT_PATH)
         return True
     except ops.pebble.ExecError as ex:

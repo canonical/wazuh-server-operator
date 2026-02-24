@@ -248,7 +248,7 @@ class WazuhServerCharm(CharmBaseWithState):
             container: the container to configure Wazuh for.
         """
         updated_config: bool = False
-        changed_filesystem = wazuh.ensure_wazuh_filesystem(container)
+        changed_filesystem = wazuh.ensure_ossec_logs_dir(container)
         if self.state.custom_config_repository is not None:
             updated_config = wazuh.sync_wazuh_config_files(container)
         changed_password = False
