@@ -750,6 +750,7 @@ def ensure_log_ingestion_dir(container: ops.Container) -> bool:
     )
     return made_changes
 
+
 def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     """Configure the filesystem to enable writing ossec logs to disk.
 
@@ -762,9 +763,7 @@ def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     permissions = 0o750
     user = "root"
     group = "wazuh"
-    return sync_permissions(
-        container, WAZUH_SERVICE_LOG_DIR.as_posix(), permissions, user, group
-    )
+    return sync_permissions(container, WAZUH_SERVICE_LOG_DIR.as_posix(), permissions, user, group)
 
 
 def sync_filebeat_user(container: ops.Container, username: str, password: str) -> bool:
