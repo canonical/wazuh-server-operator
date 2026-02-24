@@ -759,7 +759,7 @@ def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     Returns:
         bool: True if changes were made, False if no changes were necessary.
     """
-    permissions = 0o750
+    permissions = 0o770
     user = "wazuh"
     group = "wazuh"
     return sync_permissions(container, WAZUH_SERVICE_LOG_DIR.as_posix(), permissions, user, group)
