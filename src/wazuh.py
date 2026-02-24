@@ -759,10 +759,25 @@ def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     Returns:
         bool: True if changes were made, False if no changes were necessary.
     """
-    permissions = 0o770
+    permissions = 0o750
     user = "wazuh"
     group = "wazuh"
-    return sync_permissions(container, WAZUH_SERVICE_LOG_DIR.as_posix(), permissions, user, group)
+    made_changes = False
+    for dir in ["alerts", "api", "archives", "cluster", "firewall", "wazuh"]:
+        if not container.isdir(dir):
+            made_changes = True
+            container.make_dir(
+                path=dir,
+                make_parents=True,
+                permissions=permissions,
+                user=user,
+                group=group,
+            )
+    permissions = 0o770
+    made_changes = made_changes or sync_permissions(
+        container, WAZUH_SERVICE_LOG_DIR.as_posix(), permissions, user, group
+    )
+    return made_changes
 
 
 def sync_filebeat_user(container: ops.Container, username: str, password: str) -> bool:
