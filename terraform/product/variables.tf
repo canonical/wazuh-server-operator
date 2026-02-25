@@ -31,6 +31,12 @@ variable "server_model_uuid" {
   type        = string
 }
 
+variable "other_indexer_consumers" {
+  type        = list(string)
+  description = "Additional model names that need consume access to the indexer offer"
+  default     = []
+}
+
 variable "wazuh_indexer" {
   type = object({
     app_name    = optional(string, "wazuh-indexer")

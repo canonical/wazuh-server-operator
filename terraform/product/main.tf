@@ -179,7 +179,10 @@ resource "juju_offer" "wazuh_indexer" {
 resource "juju_access_offer" "wazuh_indexer" {
   offer_url = juju_offer.wazuh_indexer.url
   admin     = [var.indexer_model_name]
-  consume   = [var.server_model_name, var.dashboard_model_name]
+  consume   = concat(
+    [var.server_model_name, var.dashboard_model_name],
+    var.other_indexer_consumers
+  )
 
   provider = juju.wazuh_indexer
 }
