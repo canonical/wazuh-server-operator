@@ -248,6 +248,7 @@ class WazuhServerCharm(CharmBaseWithState):
             container: the container to configure Wazuh for.
         """
         updated_config: bool = False
+        changed_filesystem = wazuh.ensure_ossec_logs_dir(container)
         if self.state.custom_config_repository is not None:
             updated_config = wazuh.sync_wazuh_config_files(container)
         changed_password = False
@@ -266,7 +267,7 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_url=self.state.opencti_url,
             enable_vulnerability_detection=self.state.enable_vulnerability_detection,
         )
-        if any((updated_config, changed_password, changed_ossec_conf)):
+        if any((updated_config, changed_password, changed_ossec_conf, changed_filesystem)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # Excluding function too complex check from pflake8

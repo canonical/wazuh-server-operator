@@ -12,7 +12,8 @@ resource "juju_application" "wazuh_server" {
     base     = var.base
   }
 
-  config      = var.config
-  constraints = var.constraints
-  units       = var.units
+  config             = var.config
+  constraints        = var.constraints
+  units              = var.units
+  storage_directives = var.storage
 }

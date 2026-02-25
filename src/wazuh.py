@@ -643,7 +643,6 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             ["chmod", "770", "/var/ossec/etc/shared/default"],
             timeout=10,
         ).wait_output()
-
         save_applied_commit_marker(container, WAZUH_APPLIED_COMMIT_PATH)
         return True
     except ops.pebble.ExecError as ex:
@@ -747,6 +746,36 @@ def ensure_log_ingestion_dir(container: ops.Container) -> bool:
         )
     made_changes = made_changes or sync_permissions(
         container, INGEST_LOG_DIR, permissions, user, group
+    )
+    return made_changes
+
+
+def ensure_ossec_logs_dir(container: ops.Container) -> bool:
+    """Configure the filesystem to enable writing ossec logs to disk.
+
+    Args:
+        container: the container to configure.
+
+    Returns:
+        bool: True if changes were made, False if no changes were necessary.
+    """
+    permissions = 0o750
+    user = "wazuh"
+    group = "wazuh"
+    made_changes = False
+    for subdir in ["alerts", "api", "archives", "cluster", "firewall", "wazuh"]:
+        if not container.isdir(WAZUH_SERVICE_LOG_DIR / subdir):
+            made_changes = True
+            container.make_dir(
+                path=WAZUH_SERVICE_LOG_DIR / subdir,
+                make_parents=True,
+                permissions=permissions,
+                user=user,
+                group=group,
+            )
+    permissions = 0o770
+    made_changes = made_changes or sync_permissions(
+        container, WAZUH_SERVICE_LOG_DIR.as_posix(), permissions, user, group
     )
     return made_changes
 
