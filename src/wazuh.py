@@ -764,10 +764,10 @@ def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     group = "wazuh"
     made_changes = False
     for dir in ["alerts", "api", "archives", "cluster", "firewall", "wazuh"]:
-        if not container.isdir(dir):
+        if not container.isdir(WAZUH_SERVICE_LOG_DIR / dir):
             made_changes = True
             container.make_dir(
-                path=dir,
+                path=WAZUH_SERVICE_LOG_DIR / dir,
                 make_parents=True,
                 permissions=permissions,
                 user=user,
