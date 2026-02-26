@@ -31,7 +31,7 @@ variable "server_model_uuid" {
   type        = string
 }
 
-variable "other_indexer_consumers" {
+variable "indexer_consumers" {
   type        = list(string)
   description = "Additional model names that need consume access to the indexer offer"
   default     = []
