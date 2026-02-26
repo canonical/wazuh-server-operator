@@ -775,7 +775,7 @@ def ensure_ossec_logs_dir(container: ops.Container) -> bool:
             )
     permissions = 0o770
     made_changes = made_changes or sync_permissions(
-        container, WAZUH_SERVICE_LOG_DIR.as_posix(), permissions, user, group
+        container, WAZUH_SERVICE_LOG_DIR.as_posix(), 0o770, user, group
     )
     return made_changes
 
