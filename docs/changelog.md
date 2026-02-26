@@ -8,7 +8,7 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-02-26
 
-- Mount storage for /var/ossec/logs.
+- Fix storage permissions for /var/ossec/logs.
 
 ## 2025-02-18
 
