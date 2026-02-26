@@ -91,6 +91,7 @@ No modules.
 | <a name="input_constraints"></a> [constraints](#input\_constraints) | Juju constraints to apply for this application. | `string` | `""` | no |
 | <a name="input_model_uuid"></a> [model\_uuid](#input\_model\_uuid) | Reference to a `juju_model`. | `string` | `""` | no |
 | <a name="input_revision"></a> [revision](#input\_revision) | Revision number of the charm | `number` | `null` | no |
+| <a name="input_storage"></a> [storage](#input\_storage) | Storage used by the application | `string` | n/a | yes |
 | <a name="input_units"></a> [units](#input\_units) | Number of units to deploy | `number` | `1` | no |
 
 ## Outputs
