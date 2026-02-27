@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2025-02-17
+
+- Fix logrotate configuration for Wazuh logs.
+
 ## 2025-02-18
 
 - Mount storage for /var/ossec/logs.
