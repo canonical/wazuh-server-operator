@@ -32,6 +32,7 @@ parts:
     plugin: nil
     stage-packages:
       - git-core
+      - logrotate
       - rsync
       - ssh
     override-stage: |
@@ -107,11 +108,9 @@ parts:
       sed -i '/imklog/s/^/#/' $CRAFT_PART_INSTALL/etc/rsyslog.conf
       sed -i 's/$PrivDropToGroup syslog/$PrivDropToGroup wazuh/g' $CRAFT_PART_INSTALL/etc/rsyslog.conf
       craftctl default
-  rsyslog-config:
+  logs-config:
     plugin: dump
     source: .
-    stage-packages:
-      - logrotate
     organize:
       wazuh.conf: etc/rsyslog.d/wazuh.conf
       logrotate.conf: etc/logrotate.d/wazuh
