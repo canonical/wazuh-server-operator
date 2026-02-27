@@ -32,7 +32,6 @@ parts:
     plugin: nil
     stage-packages:
       - git-core
-      - logrotate
       - rsync
       - ssh
     override-stage: |
@@ -113,7 +112,5 @@ parts:
     source: .
     organize:
       wazuh.conf: etc/rsyslog.d/wazuh.conf
-      logrotate.conf: etc/logrotate.d/wazuh
     prime:
       - etc/rsyslog.d/wazuh.conf
-      - etc/logrotate.d/wazuh
