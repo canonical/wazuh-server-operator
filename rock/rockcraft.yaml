@@ -114,7 +114,7 @@ parts:
       - logrotate
     organize:
       wazuh.conf: etc/rsyslog.d/wazuh.conf
-      logrotate.conf: etc/logrotate.d/wazuh
+      logrotate.conf: etc/logrotate.d/wazuh.conf
     prime:
-      - etc/rsyslog.d/wazuh.conf
+      - etc/rsyslog.d/wazuh
       - etc/logrotate.d/wazuh
