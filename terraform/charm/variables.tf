@@ -52,6 +52,6 @@ variable "units" {
 
 variable "storage" {
   description = "Storage used by the application"
-  type        = string
+  type        = map(string)
 }
 

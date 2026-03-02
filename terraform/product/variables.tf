@@ -96,7 +96,7 @@ variable "wazuh_server" {
     revision    = optional(number)
     base        = optional(string, "ubuntu@22.04")
     units       = optional(number, 1)
-    storage     = optional(string)
+    storage     = optional(map(string), {})
   })
 }
 
