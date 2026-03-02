@@ -6,7 +6,7 @@ terraform {
   required_providers {
     juju = {
       source                = "juju/juju"
-      version               = "~> 1.1.0"
+      version               = "~> 1.3.0"
       configuration_aliases = [juju.wazuh_indexer, juju.wazuh_dashboard]
     }
   }

@@ -1216,16 +1216,16 @@ wheels = [
 
 [[package]]
 name = "ops"
-version = "3.5.2"
+version = "3.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
     { name = "pyyaml" },
     { name = "websocket-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/05/72/50bdb29831b8ed92034e9657fec89301d8df3aa8da3da1d37ecbdf1baab6/ops-3.5.2.tar.gz", hash = "sha256:849c9ed85eadf265b8a927d5e857cd112221dd71b35e4b13329ccb938c3afd18", size = 578181, upload-time = "2026-02-11T01:49:48.345Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/bb/79b7efdb1243cbad11b6568c51ba4fb7358cd2c4d13bfd971a77c0aa7440/ops-3.6.0.tar.gz", hash = "sha256:a1c3361049c66759840a436143b07c74c2a46dcc44cbfd1177a9051f849c7971", size = 579236, upload-time = "2026-02-26T04:19:12.689Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3e/5c/84b41a67c2dc904f92f424e981eb65641ce095936fb9e6d7b4a315072d1a/ops-3.5.2-py3-none-any.whl", hash = "sha256:c715128a51ddcdf0fff463428b0f56a93e5963187e599b66594b4fc74458781b", size = 211688, upload-time = "2026-02-11T01:49:43.935Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/b6/d7daab4f841566d3cb0402d3463f7c1a00626724d6d7c02d7bf934ae6c86/ops-3.6.0-py3-none-any.whl", hash = "sha256:341c6688684446cc4b42860738898683feb271175bb9c4775ae68c81e4e0976a", size = 211856, upload-time = "2026-02-26T04:19:08.012Z" },
 ]
 
 [[package]]
@@ -1967,16 +1967,16 @@ wheels = [
 
 [[package]]
 name = "signxml"
-version = "4.3.1"
+version = "4.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "cryptography" },
     { name = "lxml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/f2/f75427bb083a7a1790fb715d5dc25e9b149ab62aac9699edbda7c5040806/signxml-4.3.1.tar.gz", hash = "sha256:01d4bf5d921056e4b0cfdc93f24aaf5dcd66f04c3d4cf1c63262c5c79c6ccff0", size = 1613457, upload-time = "2026-02-18T06:24:36.418Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/f8/6c5a48961d07ffb6e96233be11bf37ad38ecfd6a49a61036a4a98254cd71/signxml-4.4.0.tar.gz", hash = "sha256:038781783520e5d7bae4aa9c1e35f24fe9062730459da72009ce55126b56fa0f", size = 1615052, upload-time = "2026-03-01T18:21:56.26Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/15/d8ddf7819fa13b01373b141b6381a376baf70fdd35def01a3fcc44ce4a5f/signxml-4.3.1-py3-none-any.whl", hash = "sha256:75bfd9d52d014647b4e218a08cdc70efefbe75c4de5c0c780e67259313edfdeb", size = 60002, upload-time = "2026-02-18T06:24:35.056Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/2a/94c32b7c357c146e52c12b8d8b95aaa042566bf9b3ac3bdbf29741012e24/signxml-4.4.0-py3-none-any.whl", hash = "sha256:16a711773928027838e59b3de64d7a3149267a0c337b2ac5bca3315903ddcab4", size = 60069, upload-time = "2026-03-01T18:21:54.645Z" },
 ]
 
 [[package]]
@@ -2213,11 +2213,11 @@ requires-dist = [
     { name = "cryptography", specifier = "==46.0.5" },
     { name = "jsonschema", specifier = "==4.26.0" },
     { name = "lxml", specifier = "==6.0.2" },
-    { name = "ops", specifier = "==3.5.2" },
+    { name = "ops", specifier = "==3.6.0" },
     { name = "pydantic", specifier = "==2.12.5" },
     { name = "requests", specifier = "==2.32.5" },
     { name = "rpds-py", specifier = "==0.30.0" },
-    { name = "signxml", specifier = "==4.3.1" },
+    { name = "signxml", specifier = "==4.4.0" },
     { name = "wheel", specifier = "==0.46.3" },
 ]
 
