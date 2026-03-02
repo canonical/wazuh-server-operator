@@ -24,15 +24,15 @@ the bundle deployment onto any Kubernetes environment managed by [Juju][Juju].
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.7.2 |
-| <a name="requirement_juju"></a> [juju](#requirement\_juju) | ~> 1.2.0 |
+| <a name="requirement_juju"></a> [juju](#requirement\_juju) | ~> 1.1.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_juju"></a> [juju](#provider\_juju) | ~> 1.2.0 |
-| <a name="provider_juju.wazuh_dashboard"></a> [juju.wazuh\_dashboard](#provider\_juju.wazuh\_dashboard) | ~> 1.2.0 |
-| <a name="provider_juju.wazuh_indexer"></a> [juju.wazuh\_indexer](#provider\_juju.wazuh\_indexer) | ~> 1.2.0 |
+| <a name="provider_juju"></a> [juju](#provider\_juju) | ~> 1.1.0 |
+| <a name="provider_juju.wazuh_dashboard"></a> [juju.wazuh\_dashboard](#provider\_juju.wazuh\_dashboard) | ~> 1.1.0 |
+| <a name="provider_juju.wazuh_indexer"></a> [juju.wazuh\_indexer](#provider\_juju.wazuh\_indexer) | ~> 1.1.0 |
 
 ## Modules
 
@@ -87,7 +87,7 @@ the bundle deployment onto any Kubernetes environment managed by [Juju][Juju].
 | <a name="input_wazuh_indexer"></a> [wazuh\_indexer](#input\_wazuh\_indexer) | n/a | <pre>object({<br/>    app_name    = optional(string, "wazuh-indexer")<br/>    channel     = optional(string, "4.11/edge")<br/>    config      = optional(map(string), {})<br/>    constraints = optional(string, "arch=amd64")<br/>    revision    = optional(number)<br/>    base        = optional(string, "ubuntu@22.04")<br/>    units       = optional(number, 3)<br/>  })</pre> | n/a | yes |
 | <a name="input_wazuh_indexer_backup"></a> [wazuh\_indexer\_backup](#input\_wazuh\_indexer\_backup) | n/a | <pre>object({<br/>    app_name    = optional(string, "wazuh_indexer_backup")<br/>    channel     = optional(string, "latest/edge")<br/>    config      = optional(map(string), {})<br/>    constraints = optional(string, "arch=amd64")<br/>    revision    = optional(number)<br/>    base        = optional(string, "ubuntu@22.04")<br/>    units       = optional(number, 1)<br/>  })</pre> | n/a | yes |
 | <a name="input_wazuh_indexer_grafana_agent"></a> [wazuh\_indexer\_grafana\_agent](#input\_wazuh\_indexer\_grafana\_agent) | n/a | <pre>object({<br/>    app_name = optional(string, "grafana-agent")<br/>    channel  = optional(string, "latest/stable")<br/>    config   = optional(map(string), {})<br/>    revision = optional(number)<br/>  })</pre> | n/a | yes |
-| <a name="input_wazuh_server"></a> [wazuh\_server](#input\_wazuh\_server) | n/a | <pre>object({<br/>    app_name    = optional(string, "wazuh-server")<br/>    channel     = optional(string, "4.11/edge")<br/>    config      = optional(map(string), {})<br/>    constraints = optional(string, "arch=amd64")<br/>    revision    = optional(number)<br/>    base        = optional(string, "ubuntu@22.04")<br/>    units       = optional(number, 1)<br/>    storage     = optional(string)<br/>  })</pre> | n/a | yes |
+| <a name="input_wazuh_server"></a> [wazuh\_server](#input\_wazuh\_server) | n/a | <pre>object({<br/>    app_name    = optional(string, "wazuh-server")<br/>    channel     = optional(string, "4.11/edge")<br/>    config      = optional(map(string), {})<br/>    constraints = optional(string, "arch=amd64")<br/>    revision    = optional(number)<br/>    base        = optional(string, "ubuntu@22.04")<br/>    units       = optional(number, 1)<br/>    storage     = optional(map(string), {})<br/>  })</pre> | n/a | yes |
 
 ## Outputs
 
