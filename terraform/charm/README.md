@@ -62,13 +62,13 @@ The complete list of available integrations can be found [in the Integrations ta
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.6.6 |
-| <a name="requirement_juju"></a> [juju](#requirement\_juju) | ~> 1.2.0 |
+| <a name="requirement_juju"></a> [juju](#requirement\_juju) | ~> 1.1.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_juju"></a> [juju](#provider\_juju) | ~> 1.2.0 |
+| <a name="provider_juju"></a> [juju](#provider\_juju) | ~> 1.1.0 |
 
 ## Modules
 
@@ -91,7 +91,7 @@ No modules.
 | <a name="input_constraints"></a> [constraints](#input\_constraints) | Juju constraints to apply for this application. | `string` | `""` | no |
 | <a name="input_model_uuid"></a> [model\_uuid](#input\_model\_uuid) | Reference to a `juju_model`. | `string` | `""` | no |
 | <a name="input_revision"></a> [revision](#input\_revision) | Revision number of the charm | `number` | `null` | no |
-| <a name="input_storage"></a> [storage](#input\_storage) | Storage used by the application | `string` | n/a | yes |
+| <a name="input_storage"></a> [storage](#input\_storage) | Storage used by the application | `map(string)` | n/a | yes |
 | <a name="input_units"></a> [units](#input\_units) | Number of units to deploy | `number` | `1` | no |
 
 ## Outputs
