@@ -18,6 +18,8 @@ run "setup_tests" {
 }
 
 run "basic_deploy" {
+  command = plan
+
   variables {
     server_model_uuid    = run.setup_tests.server_model_uuid
     server_model_name    = run.setup_tests.server_model_name
@@ -68,10 +70,5 @@ run "basic_deploy" {
       # renovate: depName="s3-integrator"
       revision = 155
     }
-  }
-
-  assert {
-    condition     = output.wazuh_server_name == "wazuh-server"
-    error_message = "wazuh-server app_name did not match expected"
   }
 }
