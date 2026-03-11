@@ -15,5 +15,4 @@ jobs:
     secrets: inherit
     with:
       k8s-controller: true
-      lxd-controller: true
       terraform-directories: '["terraform/charm", "terraform/product"]'
