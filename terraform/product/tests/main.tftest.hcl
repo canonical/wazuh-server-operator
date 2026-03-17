@@ -18,7 +18,7 @@ run "setup_tests" {
 }
 
 run "basic_deploy" {
-  command = plan
+  command = apply 
 
   variables {
     server_model_uuid    = run.setup_tests.server_model_uuid
