@@ -1,0 +1,25 @@
+[32mINFO    [0m pytest_operator.plugin:plugin.py:951 Model status:
+
+Model    Controller           Cloud/Region  Version  SLA          Timestamp
+testing  github-pr-b9388-k8s  k8s           3.6.20   unsupported  15:34:06Z
+
+SAAS           Status  Store      URL
+wazuh-indexer  active  localhost  admin/testing-machine.wazuh-indexer
+
+App                       Version  Status  Scale  Charm                     Channel        Rev  Address         Exposed  Message
+any-opencti                        active      1  any-charm                 latest/beta    133  10.152.183.160  no       
+self-signed-certificates           active      1  self-signed-certificates  latest/stable  264  10.152.183.34   no       
+traefik-k8s               2.11.0   active      1  traefik-k8s               latest/edge    233  10.152.183.163  no       Serving at wazuh-server.local
+wazuh-server              v4.11.0  active      2  wazuh-server                               0  10.152.183.35   no       
+
+Unit                         Workload  Agent  Address     Ports  Message
+any-opencti/0*               active    idle   10.1.0.31          
+self-signed-certificates/0*  active    idle   10.1.0.217         
+traefik-k8s/0*               active    idle   10.1.0.131         Serving at wazuh-server.local
+wazuh-server/0*              active    idle   10.1.0.40          
+wazuh-server/1               active    idle   10.1.0.210         
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:957 Juju error logs:
+
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:1039 Forgetting model main...
