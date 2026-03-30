@@ -16,11 +16,11 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "cosl==1.7.0",
+  "cosl==1.8.0",
   "cryptography==46.0.6",
   "jsonschema==4.26.0",
   "lxml==6.0.2",
-  "ops==3.6.0",
+  "ops==3.7.0",
   "pydantic==2.12.5",
   "requests==2.33.0",
   "rpds-py==0.30.0",
