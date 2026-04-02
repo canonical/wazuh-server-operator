@@ -17,7 +17,7 @@ resource "juju_model" "wazuh_server" {
   name = "tf-wazuh-server-${formatdate("YYYYMMDDhhmmss", timestamp())}"
 
   cloud {
-    name = "microk8s"
+    name = "tfk8s"
   }
 }
 

@@ -17,7 +17,7 @@ resource "juju_model" "test_model" {
   name = "tf-testing-${formatdate("YYYYMMDDhhmmss", timestamp())}"
 
   cloud {
-    name = "microk8s"
+    name = "tfk8s"
   }
 }
 
