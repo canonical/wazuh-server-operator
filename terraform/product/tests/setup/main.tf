@@ -15,6 +15,10 @@ provider "juju" {}
 
 resource "juju_model" "wazuh_server" {
   name = "tf-wazuh-server-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+
+  cloud {
+    name = "microk8s"
+  }
 }
 
 resource "juju_model" "wazuh_indexer" {
