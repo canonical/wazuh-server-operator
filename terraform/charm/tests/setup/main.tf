@@ -15,6 +15,10 @@ provider "juju" {}
 
 resource "juju_model" "test_model" {
   name = "tf-testing-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+
+  cloud {
+    name = "tfk8s"
+  }
 }
 
 output "model_uuid" {
