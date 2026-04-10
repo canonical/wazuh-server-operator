@@ -11,7 +11,7 @@ on:
 
 jobs:
   terraform-tests:
-    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@fix/terraform-tests-with-lxd-and-k8s
     secrets: inherit
     with:
       k8s-controller: true
