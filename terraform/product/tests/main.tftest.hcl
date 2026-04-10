@@ -1,7 +1,8 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-provider "juju" {}
+provider "juju" {
+}
 
 provider "juju" {
   alias = "wazuh_indexer"
@@ -39,13 +40,16 @@ run "basic_deploy" {
       channel = "4.11/edge"
       # renovate: depName="wazuh-indexer"
       revision = 13
+      config = {
+        profile = "testing"
+      }
     }
 
     wazuh_indexer_grafana_agent = {}
 
     sysconfig = {
       # renovate: depName="sysconfig"
-      revision = 161
+      revision = 33
     }
 
     wazuh_dashboard = {
@@ -62,8 +66,10 @@ run "basic_deploy" {
     }
 
     self_signed_certificates = {
+      channel = "1/edge"
       # renovate: depName="self-signed-certificates"
-      revision = 621
+      revision = 518
+      base     = "ubuntu@22.04"
     }
 
     wazuh_indexer_backup = {
