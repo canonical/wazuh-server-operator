@@ -21,13 +21,25 @@ resource "juju_model" "wazuh_server" {
     name = "tfk8s"
   }
 }
+resource "juju_user" "wazuh_server" {
+  name     = "tf-wazuh-server"
+  password = "changeme"
+}
 
 resource "juju_model" "wazuh_indexer" {
   name = "tf-wazuh-indexer-${formatdate("YYYYMMDDhhmmss", timestamp())}"
 }
+resource "juju_user" "wazuh_indexer" {
+  name     = "tf-wazuh-indexer"
+  password = "changeme"
+}
 
 resource "juju_model" "wazuh_dashboard" {
   name = "tf-wazuh-dashboard-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+}
+resource "juju_user" "wazuh_dashboard" {
+  name     = "tf-wazuh-dashboard"
+  password = "changeme"
 }
 
 output "server_model_uuid" {
