@@ -10,10 +10,17 @@ on:
       - 'terraform/**'
 
 jobs:
-  terraform-tests:
+  terraform-charm-tests:
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@fix/terraform-tests-with-lxd-and-k8s
+    secrets: inherit
+    with:
+      k8s-controller: false
+      lxd-controller: true
+      terraform-directories: '["terraform/charm"]'
+  terraform-product-tests:
     uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@fix/terraform-tests-with-lxd-and-k8s
     secrets: inherit
     with:
       k8s-controller: true
       lxd-controller: true
-      terraform-directories: '["terraform/charm", "terraform/product"]'
+      terraform-directories: '["terraform/product"]'
