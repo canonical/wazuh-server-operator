@@ -14,8 +14,8 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@fix/terraform-tests-with-lxd-and-k8s
     secrets: inherit
     with:
-      k8s-controller: false
-      lxd-controller: true
+      k8s-controller: true
+      lxd-controller: false
       terraform-directories: '["terraform/charm"]'
   terraform-product-tests:
     uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@fix/terraform-tests-with-lxd-and-k8s
