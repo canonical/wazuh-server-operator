@@ -14,7 +14,8 @@ terraform {
 provider "juju" {}
 
 resource "juju_model" "wazuh_server" {
-  name = "tf-wazuh-server-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  name       = "tf-wazuh-server-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  credential = "tfk8s"
 
   cloud {
     name = "tfk8s"
