@@ -22,7 +22,7 @@ resource "juju_model" "wazuh_server" {
   }
 }
 resource "juju_user" "wazuh_server" {
-  name     = "tf-wazuh-server"
+  name     = "tf-wazuh-server-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   password = "changeme"
 }
 
@@ -30,7 +30,7 @@ resource "juju_model" "wazuh_indexer" {
   name = "tf-wazuh-indexer-${formatdate("YYYYMMDDhhmmss", timestamp())}"
 }
 resource "juju_user" "wazuh_indexer" {
-  name     = "tf-wazuh-indexer"
+  name     = "tf-wazuh-indexer-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   password = "changeme"
 }
 
@@ -38,7 +38,7 @@ resource "juju_model" "wazuh_dashboard" {
   name = "tf-wazuh-dashboard-${formatdate("YYYYMMDDhhmmss", timestamp())}"
 }
 resource "juju_user" "wazuh_dashboard" {
-  name     = "tf-wazuh-dashboard"
+  name     = "tf-wazuh-dashboard-${formatdate("YYYYMMDDhhmmss", timestamp())}"
   password = "changeme"
 }
 
