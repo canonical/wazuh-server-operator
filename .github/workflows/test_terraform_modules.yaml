@@ -23,4 +23,5 @@ jobs:
     with:
       k8s-controller: true
       lxd-controller: true
+      additional-setup-script: "./tests/setup/pre_run_script.sh"
       terraform-directories: '["terraform/product"]'
