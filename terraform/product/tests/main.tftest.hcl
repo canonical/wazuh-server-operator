@@ -34,6 +34,9 @@ run "basic_deploy" {
       # renovate: depName="wazuh-server"
       revision = 250
       storage  = {}
+      config = {
+        logs-ca-cert = file("tests/ca.pem")
+      }
     }
 
     wazuh_indexer = {
@@ -63,6 +66,9 @@ run "basic_deploy" {
     traefik_k8s = {
       # renovate: depName="traefik-k8s"
       revision = 285
+      config = {
+        external_hostname = "local.domain"
+      }
     }
 
     self_signed_certificates = {
