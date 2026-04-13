@@ -16,3 +16,7 @@ fs.file-max=1048576
 EOT
 
 sudo sysctl -p
+
+terraform init
+# Prevent destroy would block the teardown
+sed -i .terraform/modules/wazuh_indexer/terraform/charm/main.tf -e 's/prevent_destroy = true/prevent_destroy = false/'
