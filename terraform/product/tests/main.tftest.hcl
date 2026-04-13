@@ -103,3 +103,38 @@ run "basic_deploy" {
     error_message = "self-signed-certificates app_name did not match expected"
   }
 }
+
+run "wait_for_dashboard_active" {
+  variables {
+    model_uuid = run.setup_tests.dashboard_model_uuid
+    app_name   = "wazuh-dashboard"
+    timeout    = 180
+  }
+
+  module {
+    source = "./tests/wait_for_active"
+  }
+
+  assert {
+    condition     = data.external.app_status.result.status == "active"
+    error_message = "wazuh-dashboard did not reach active state"
+  }
+}
+
+run "wait_for_indexer_active" {
+  variables {
+    model_uuid = run.setup_tests.indexer_model_uuid
+    app_name   = "wazuh-indexer"
+    timeout    = 300
+  }
+
+  module {
+    source = "./tests/wait_for_active"
+  }
+
+  assert {
+    condition     = data.external.app_status.result.status == "active"
+    error_message = "wazuh-indexer did not reach active state"
+  }
+}
+
