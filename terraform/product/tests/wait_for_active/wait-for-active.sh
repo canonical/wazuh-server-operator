@@ -30,7 +30,7 @@ fi
 
 echo "[$(date)] waiting for $APP_NAME in $MODEL_UUID to be active" >> $LOG
 
-juju wait-for application "$APP_NAME" --timeout="$TIMEOUT" --model "$MODEL_UUID" &>> $LOG
+juju wait-for application "$APP_NAME" --timeout="${TIMEOUT}s" --model "$MODEL_UUID" &>> $LOG
 STATUS=$(juju status "$APP_NAME" --model "$MODEL_UUID" --format=json | jq -r '.applications[env.APP_NAME]["application-status"].current')
 
 echo '{"status": "'"$STATUS"'"}'

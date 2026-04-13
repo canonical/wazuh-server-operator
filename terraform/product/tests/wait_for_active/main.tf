@@ -26,7 +26,7 @@ variable "app_name" {
 }
 
 variable "timeout" {
-  type = integer
+  type = number
 }
 
 # tflint-ignore: terraform_unused_declarations
