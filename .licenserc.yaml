@@ -31,6 +31,7 @@ header:
     - 'src/prometheus_alert_rules/**'
     - 'tests/unit/resources/**'
     - 'tests/integration/certs/**'
+    - 'terraform/product/tests/ca.pem'
     - 'icon.svg'
     - 'rock/prometheus_exporter/LICENSE.ORIGINAL'
     - 'uv.lock'
