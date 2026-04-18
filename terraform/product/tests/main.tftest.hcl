@@ -52,7 +52,7 @@ run "basic_deploy" {
 
     sysconfig = {
       # renovate: depName="sysconfig"
-      revision = 33
+      revision = 158
     }
 
     wazuh_dashboard = {
