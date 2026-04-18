@@ -80,7 +80,7 @@ run "basic_deploy" {
 
     wazuh_indexer_backup = {
       # renovate: depName="s3-integrator"
-      revision = 155
+      revision = 188
     }
   }
 
