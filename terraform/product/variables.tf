@@ -52,7 +52,7 @@ variable "wazuh_indexer" {
 variable "wazuh_indexer_grafana_agent" {
   type = object({
     app_name = optional(string, "grafana-agent")
-    channel  = optional(string, "latest/stable")
+    channel  = optional(string, "1/stable")
     config   = optional(map(string), {})
     revision = optional(number)
   })
@@ -81,7 +81,7 @@ variable "wazuh_dashboard" {
 variable "wazuh_dashboard_grafana_agent" {
   type = object({
     app_name = optional(string, "grafana-agent")
-    channel  = optional(string, "latest/stable")
+    channel  = optional(string, "1/stable")
     config   = optional(map(string), {})
     revision = optional(number)
   })
@@ -116,11 +116,11 @@ variable "traefik_k8s" {
 variable "self_signed_certificates" {
   type = object({
     app_name    = optional(string, "self-signed-certificates")
-    channel     = optional(string, "latest/stable")
+    channel     = optional(string, "1/stable")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
-    base        = optional(string, "ubuntu@24.04")
+    base        = optional(string, "ubuntu@22.04")
     units       = optional(number, 1)
     storage     = optional(map(string), {})
   })
