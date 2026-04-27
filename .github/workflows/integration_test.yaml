@@ -18,11 +18,9 @@ jobs:
       extra-arguments: |
         --kube-config=~/.kube/config
       juju-channel: 3/stable
-      load-test-enabled: false
       pre-run-script: |
         -c "chmod +x tests/integration/pre_run_script.sh
         ./tests/integration/pre_run_script.sh"
-      zap-enabled: false
       trivy-fs-enabled: true
       trivy-image-config: "trivy.yaml"
       self-hosted-runner: true
