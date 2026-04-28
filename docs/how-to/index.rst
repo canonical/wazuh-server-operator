@@ -1,5 +1,5 @@
 .. meta::
-   :description: How-to guides for operating the wazuh server charm, including basic operations, upgrades, and development.
+   :description: How-to guides for operating the Wazuh Server charm, including basic operations, upgrades, and development. 
 
 .. _how_to_index:
 
@@ -7,7 +7,7 @@ How-to guides
 =============
 
 The following guides cover key processes and common tasks for managing and
-using the wazuh server charm.
+using the Wazuh Server charm.
 
 .. vale Canonical.013-Spell-out-numbers-below-10 = NO
 .. vale Canonical.500-Repeated-words = NO
@@ -28,9 +28,6 @@ basic operations you can complete with the charm.
     Deploy to production <deploy-to-production>
     Integrate with COS <integrate-with-cos>
     Integrate with OpenCTI <integrate-with-opencti>
-    Run integration tests <run-integration-tests>
-    Run manual tests <run-manual-tests>
-    Test your deployment <test-your-deployment>
 
 Update and refresh
 ------------------
@@ -56,3 +53,6 @@ These guides can help you with troubleshooting and contributing to the project.
     :maxdepth: 1
 
     Contribute <contribute>
+    Run integration tests <run-integration-tests>
+    Run manual tests <run-manual-tests>
+    Test your deployment <test-your-deployment>
