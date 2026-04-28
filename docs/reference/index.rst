@@ -18,7 +18,6 @@ including configurations, actions, and architecture details.
 .. vale Canonical.500-Repeated-words = NO
 
 .. toctree::
-    :hidden:
     :maxdepth: 1
 
     Configurations <configurations>
@@ -31,7 +30,6 @@ Connectivity
 The following pages provide information about external connectivity and integrations.
 
 .. toctree::
-    :hidden:
     :maxdepth: 1
 
     Integrations <integrations>

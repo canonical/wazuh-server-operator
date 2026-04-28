@@ -20,7 +20,6 @@ of actions with your deployment. These guides provide instructions on
 basic operations you can complete with the charm.
 
 .. toctree::
-    :hidden:
     :maxdepth: 1
 
     Collect remote logs <collect-logs>
@@ -36,7 +35,6 @@ The following guides provide instructions on upgrading your deployment,
 including backup and redeployment processes.
 
 .. toctree::
-    :hidden:
     :maxdepth: 1
 
     Back up and restore <backup-restore>
@@ -49,7 +47,6 @@ Development
 These guides can help you with troubleshooting and contributing to the project.
 
 .. toctree::
-    :hidden:
     :maxdepth: 1
 
     Contribute <contribute>
