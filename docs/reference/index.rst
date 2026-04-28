@@ -1,12 +1,12 @@
 .. meta::
-   :description: Technical reference documentation for the wazuh server charm, including actions, configurations, and architecture.
+   :description: Technical reference documentation for the Wazuh Server charm, including actions, configurations, and architecture.
 
 .. _reference_index:
 
 Reference
 =========
 
-This section contains technical details and information about the wazuh server charm.
+This section contains technical details and information about the Wazuh Server charm.
 
 Charm usage
 -----------

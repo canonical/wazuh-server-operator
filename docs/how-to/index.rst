@@ -1,5 +1,5 @@
 .. meta::
-   :description: How-to guides for operating the wazuh server charm, including basic operations, upgrades, and development. 
+   :description: How-to guides for operating the wazuh server charm, including basic operations, upgrades, and development.
 
 .. _how_to_index:
 
@@ -15,7 +15,7 @@ using the wazuh server charm.
 Basic operations
 ----------------
 
-Once you've finished setting up the charm, now you can perform a number
+Once you've finished setting up the charm, you can perform a number
 of actions with your deployment. These guides provide instructions on
 basic operations you can complete with the charm.
 

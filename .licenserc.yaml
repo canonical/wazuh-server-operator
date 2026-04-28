@@ -35,5 +35,5 @@ header:
     - 'icon.svg'
     - 'rock/prometheus_exporter/LICENSE.ORIGINAL'
     - 'uv.lock'
-    - 'docs/**'
+    - 'docs/**/*.rst'
   comment: on-failure
