@@ -3,9 +3,11 @@
 
 """Integration test helpers."""
 
+import asyncio
 import logging
 import socket
 import ssl
+import time
 from pathlib import Path
 
 import sh
@@ -113,28 +115,36 @@ async def get_wazuh_ip(model_url: str) -> str:
     return output["address"]
 
 
-async def found_in_logs(pattern: str, model_name: str, unit_name: str) -> bool:
+async def found_in_logs(
+    pattern: str, model_name: str, unit_name: str, timeout: float = 0.0
+) -> bool:
     """Grep logs on the server to see if a pattern is found.
 
     Args:
         pattern: the pattern to look for
         model_name: the name of the Juju model.
         unit_name: the name of the unit.
+        timeout: seconds to keep polling if not found immediately. Defaults to 0 (single check).
 
     Returns:
         bool: True if the pattern was found
     """
-    try:
-        sh.juju.ssh(  # pylint: disable=no-member
-            "-m",
-            model_name,
-            "--container=wazuh-server",
-            unit_name,
-            f"grep {pattern} /var/log/collectors/rsyslog/rsyslog.log",
-        )
-        return True
-    except sh.ErrorReturnCode_1:  # pylint: disable=no-member
-        return False
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            sh.juju.ssh(  # pylint: disable=no-member
+                "-m",
+                model_name,
+                "--container=wazuh-server",
+                unit_name,
+                f"grep -F -- {pattern} /var/log/collectors/rsyslog/rsyslog.log",
+            )
+            return True
+        except sh.ErrorReturnCode_1:  # pylint: disable=no-member
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            await asyncio.sleep(min(1.0, remaining))
 
 
 async def configure_single_node(machine_model_name: str) -> None:
