@@ -3,7 +3,7 @@ name: Integration tests
 on:
   pull_request:
   schedule:
-    - cron: "0 15 * * SAT"
+  - cron: "0 15 * * SAT"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -18,19 +18,21 @@ jobs:
       extra-arguments: |
         --kube-config=~/.kube/config
       juju-channel: 3/stable
+      load-test-enabled: false
       pre-run-script: |
         -c "chmod +x tests/integration/pre_run_script.sh
         ./tests/integration/pre_run_script.sh"
+      zap-enabled: false
       trivy-fs-enabled: true
       trivy-image-config: "trivy.yaml"
       self-hosted-runner: true
       self-hosted-runner-label: "xlarge"
       tmate-timeout: 20
       use-canonical-k8s: true
-      provider: "k8s"
+      provider: 'k8s'
       with-uv: true
   allure-report:
     if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:
-      - integration-tests
+    - integration-tests
     uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
