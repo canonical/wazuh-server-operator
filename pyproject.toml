@@ -66,6 +66,9 @@ integration = [
   "pytest-operator",
   "sh",
 ]
+benchmark = [
+  "juju",
+]
 
 [tool.uv]
 package = false
