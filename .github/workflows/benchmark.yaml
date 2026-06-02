@@ -34,7 +34,7 @@ jobs:
           cat << EOF | sudo k8s bootstrap --file -
           containerd-base-dir: /opt/containerd
           EOF
-          sudo k8s status --wait-ready --timeout 120
+          sudo k8s status --wait-ready --timeout 120s
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
 
