@@ -4,11 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+    - main
 
 jobs:
   publish-to-edge:
     uses: canonical/operator-workflows/.github/workflows/publish_charm.yaml@main
+    permissions:
+      actions: read
+      contents: write
     secrets: inherit
     with:
       channel: 4.11/edge
