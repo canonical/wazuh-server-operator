@@ -28,7 +28,9 @@ jobs:
       - name: Set up Canonical K8s
         run: |
           sudo snap install k8s --channel 1.33-classic/stable --classic
-          sudo k8s bootstrap
+          cat << EOF | sudo k8s bootstrap --file -
+          containerd-base-dir: /opt/containerd
+          EOF
           sudo k8s status --wait-ready --timeout 120
           mkdir -p ~/.kube
           sudo k8s config > ~/.kube/config
