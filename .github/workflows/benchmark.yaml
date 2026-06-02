@@ -23,35 +23,18 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Setup operator environment
+        uses: charmed-kubernetes/actions-operator@main
+        with:
+          provider: microk8s
+          microk8s-addons: "storage dns rbac registry"
+          juju-channel: 3/stable
+
       - name: Install build tools
-        run: |
-          sudo snap install charmcraft --classic
-          sudo snap install rockcraft --classic
+        run: sudo snap install rockcraft --classic
 
-      - name: Set up Canonical K8s
-        run: |
-          sudo snap install k8s --channel 1.33-classic/stable --classic
-          cat << EOF | sudo k8s bootstrap --file -
-          containerd-base-dir: /opt/containerd
-          EOF
-          sudo k8s status --wait-ready --timeout 120s
-          mkdir -p ~/.kube
-          sudo k8s config > ~/.kube/config
-
-      - name: Set up local image registry
-        run: |
-          docker run -d -p 32000:5000 --name registry registry:2
-          # Allow containerd to pull from the insecure local registry
-          sudo mkdir -p /var/snap/k8s/common/etc/containerd/hosts.d/localhost:32000
-          printf '[host."http://localhost:32000"]\n  capabilities = ["pull", "resolve"]\n' \
-            | sudo tee /var/snap/k8s/common/etc/containerd/hosts.d/localhost:32000/hosts.toml
-          sudo snap restart k8s
-
-      - name: Set up Juju
-        run: |
-          sudo snap install juju --channel 3/stable
-          juju bootstrap k8s k8s --config controller-service-type=loadbalancer
-          juju add-model default
+      - name: Add Juju model
+        run: juju add-model benchmark
 
       - name: Build charm
         run: charmcraft pack --verbose
