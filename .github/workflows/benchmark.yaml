@@ -32,7 +32,10 @@ jobs:
           juju-channel: 3/stable
 
       - name: Install build tools
-        run: sudo snap install rockcraft --classic
+        run: |
+          sudo snap install charmcraft --classic
+          sudo snap install rockcraft --classic
+          sudo apt-get install -y skopeo
 
       - name: Add Juju model
         run: juju add-model benchmark
