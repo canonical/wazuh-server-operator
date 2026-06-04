@@ -37,9 +37,6 @@ from juju.model import Model
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-K8S_CONTROLLER = "k8s"
-MACHINE_CONTROLLER = "localhost"
-
 SELF_SIGNED_CERTS_CHANNEL = "latest/stable"
 TRAEFIK_CHANNEL = "latest/edge"
 TRAEFIK_REVISION = 233
@@ -52,22 +49,35 @@ WAZUH_SERVER_APP = "wazuh-server"
 RECONCILE_LOG_PATTERN = re.compile(r"reconciled charm in (\S+) seconds")
 
 
+def get_current_controller() -> str:
+    """Return the name of the currently active Juju controller.
+
+    Returns:
+        The controller name reported by ``juju switch``.
+    """
+    result = subprocess.run(["juju", "switch"], capture_output=True, text=True, check=True)
+    # juju switch outputs "controller:user/model" or just "controller"
+    return result.stdout.strip().split(":")[0]
+
+
 async def deploy_machine_model(
     machine_controller: Controller,
     model_name: str,
+    machine_controller_name: str,
 ) -> tuple[Model, str, str]:
     """Deploy wazuh-indexer and wazuh-dashboard on the machine model.
 
     Args:
         machine_controller: Connected localhost controller.
         model_name: Name for the machine model.
+        machine_controller_name: Name of the machine Juju controller.
 
     Returns:
         Tuple of (model, opensearch_offer_url, opensearch_app_name).
     """
     logger.info("Creating machine model %s", model_name)
     model = await machine_controller.add_model(model_name)
-    await model.connect(f"{MACHINE_CONTROLLER}:admin/{model_name}")
+    await model.connect(f"{machine_controller_name}:admin/{model_name}")
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
     await model.set_constraints(
         {"virt-type": "virtual-machine", "mem": 4096, "root-disk": 15000, "cores": 4}
@@ -114,7 +124,7 @@ async def deploy_machine_model(
     logger.info("Creating opensearch-client offer")
     offer_name = "wazuh-indexer"
     await model.create_offer("wazuh-indexer:opensearch-client", offer_name)
-    offer_url = f"{MACHINE_CONTROLLER}:admin/{model_name}.{offer_name}"
+    offer_url = f"{machine_controller_name}:admin/{model_name}.{offer_name}"
 
     return model, offer_url, "wazuh-indexer"
 
@@ -178,6 +188,7 @@ async def wire_full_deploy(
     machine_model: Model,
     machine_model_name: str,
     opensearch_offer_url: str,
+    k8s_controller_name: str,
 ) -> None:
     """Wire cross-model relations and wait for all apps to become active.
 
@@ -187,6 +198,7 @@ async def wire_full_deploy(
         machine_model: Connected machine model.
         machine_model_name: Name of the machine model (unused, kept for logging).
         opensearch_offer_url: Cross-model offer URL for opensearch-client.
+        k8s_controller_name: Name of the k8s Juju controller.
     """
     logger.info("Consuming opensearch-client offer on k8s model")
     await k8s_model.consume(opensearch_offer_url)
@@ -194,7 +206,7 @@ async def wire_full_deploy(
 
     logger.info("Creating wazuh-api offer on k8s model for wazuh-dashboard")
     await k8s_model.create_offer(f"{WAZUH_SERVER_APP}:wazuh-api", "wazuh-server")
-    wazuh_api_offer_url = f"{K8S_CONTROLLER}:admin/{k8s_model_name}.wazuh-server"
+    wazuh_api_offer_url = f"{k8s_controller_name}:admin/{k8s_model_name}.wazuh-server"
     await machine_model.consume(wazuh_api_offer_url)
     await machine_model.integrate("wazuh-server", "wazuh-dashboard")
 
@@ -213,11 +225,12 @@ async def wire_full_deploy(
     )
 
 
-def collect_and_report_reconcile_times(model_name: str) -> None:
+def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str) -> None:
     """Read juju debug-log and print reconcile timing statistics.
 
     Args:
         model_name: Name of the k8s model to read logs from.
+        k8s_controller_name: Name of the k8s Juju controller.
 
     Raises:
         SystemExit: If no reconcile timing entries are found in the log.
@@ -228,7 +241,7 @@ def collect_and_report_reconcile_times(model_name: str) -> None:
             "juju",
             "debug-log",
             "-m",
-            f"{K8S_CONTROLLER}:admin/{model_name}",
+            f"{k8s_controller_name}:admin/{model_name}",
             "--include",
             f"unit-{WAZUH_SERVER_APP}-0",
             "--level",
@@ -311,6 +324,7 @@ async def run_benchmark(
     model_name: str | None,
     keep_models: bool,
     full_deploy: bool,
+    machine_controller_name: str,
 ) -> None:
     """Deploy wazuh-server and report reconcile times from the Juju debug log.
 
@@ -320,6 +334,7 @@ async def run_benchmark(
         model_name: Base name for Juju models. Auto-generated if None.
         keep_models: If True, do not destroy models after the benchmark.
         full_deploy: If True, also deploy wazuh-indexer and wazuh-dashboard.
+        machine_controller_name: Name of the machine Juju controller (used with --full-deploy).
     """
     base_name = model_name or f"benchmark-{secrets.token_hex(2)}"
     k8s_model_name = base_name
@@ -329,7 +344,8 @@ async def run_benchmark(
         charm_file = str(Path("..") / charm_file)
 
     k8s_controller = Controller()
-    await k8s_controller.connect_controller(K8S_CONTROLLER)
+    await k8s_controller.connect()
+    k8s_controller_name = get_current_controller()
 
     machine_controller: Controller | None = None
     machine_model: Model | None = None
@@ -340,9 +356,9 @@ async def run_benchmark(
 
         if full_deploy:
             machine_controller = Controller()
-            await machine_controller.connect_controller(MACHINE_CONTROLLER)
+            await machine_controller.connect_controller(machine_controller_name)
             machine_model, opensearch_offer_url, _ = await deploy_machine_model(
-                machine_controller, machine_model_name
+                machine_controller, machine_model_name, machine_controller_name
             )
             await wire_full_deploy(
                 k8s_model,
@@ -350,6 +366,7 @@ async def run_benchmark(
                 machine_model,
                 machine_model_name,
                 opensearch_offer_url,
+                k8s_controller_name,
             )
         else:
             # Without opensearch, wazuh-server will be Waiting — that's expected.
@@ -363,7 +380,7 @@ async def run_benchmark(
                 timeout=600,
             )
 
-        collect_and_report_reconcile_times(k8s_model_name)
+        collect_and_report_reconcile_times(k8s_model_name, k8s_controller_name)
 
     finally:
         await _cleanup(
@@ -393,6 +410,11 @@ def main() -> None:
         help="Do not destroy Juju models after the benchmark.",
     )
     parser.add_argument(
+        "--machine-controller",
+        default="localhost",
+        help="Name of the machine Juju controller used with --full-deploy (default: localhost).",
+    )
+    parser.add_argument(
         "--full-deploy",
         action="store_true",
         help=(
@@ -409,6 +431,7 @@ def main() -> None:
             model_name=args.model,
             keep_models=args.keep_models,
             full_deploy=args.full_deploy,
+            machine_controller_name=args.machine_controller,
         )
     )
 
