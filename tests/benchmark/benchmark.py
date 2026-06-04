@@ -134,6 +134,7 @@ async def deploy_k8s_model(
     model_name: str,
     charm_file: str,
     wazuh_image: str,
+    storage_pool: str | None = None,
 ) -> Model:
     """Create a k8s model and deploy self-signed-certs, traefik-k8s, and wazuh-server.
 
@@ -142,6 +143,8 @@ async def deploy_k8s_model(
         model_name: Name for the k8s model.
         charm_file: Path to the locally built .charm file.
         wazuh_image: OCI image reference for wazuh-server.
+        storage_pool: Juju storage pool name to use for wazuh-server and traefik-k8s.
+            If None, the controller default is used.
 
     Returns:
         Connected k8s Model with all charms deployed and integrated.
@@ -149,6 +152,14 @@ async def deploy_k8s_model(
     logger.info("Creating k8s model %s", model_name)
     model = await k8s_controller.add_model(model_name)
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
+
+    if storage_pool:
+        logger.info("Creating Juju storage pool %s in model %s", storage_pool, model_name)
+        await model.create_storage_pool(
+            name=storage_pool,
+            provider_type="kubernetes",
+            attributes=f"storage-class={storage_pool}",
+        )
 
     logger.info("Deploying self-signed-certificates on k8s")
     await model.deploy(
@@ -158,6 +169,9 @@ async def deploy_k8s_model(
         config={"ca-common-name": "benchmark k8s CA"},
     )
 
+    traefik_storage = (
+        {"configurations": {"pool": storage_pool, "size": 1024}} if storage_pool else None
+    )
     logger.info("Deploying traefik-k8s")
     await model.deploy(
         "traefik-k8s",
@@ -166,8 +180,17 @@ async def deploy_k8s_model(
         revision=TRAEFIK_REVISION,
         trust=True,
         config={"external_hostname": "wazuh-server.local"},
+        storage=traefik_storage,
     )
 
+    wazuh_storage = (
+        {
+            "data": {"pool": storage_pool, "size": 1024},
+            "logs": {"pool": storage_pool, "size": 1024},
+        }
+        if storage_pool
+        else None
+    )
     logger.info("Deploying wazuh-server from %s", charm_file)
     await model.deploy(
         f"./{charm_file}",
@@ -175,6 +198,7 @@ async def deploy_k8s_model(
         resources={"wazuh-server-image": wazuh_image},
         config={"enable-vulnerability-detection": False},
         trust=True,
+        storage=wazuh_storage,
     )
 
     await model.integrate("self-signed-certificates", WAZUH_SERVER_APP)
@@ -325,6 +349,7 @@ async def run_benchmark(
     keep_models: bool,
     full_deploy: bool,
     machine_controller_name: str,
+    storage_pool: str | None,
 ) -> None:
     """Deploy wazuh-server and report reconcile times from the Juju debug log.
 
@@ -335,6 +360,7 @@ async def run_benchmark(
         keep_models: If True, do not destroy models after the benchmark.
         full_deploy: If True, also deploy wazuh-indexer and wazuh-dashboard.
         machine_controller_name: Name of the machine Juju controller (used with --full-deploy).
+        storage_pool: Juju storage pool name to use for PVC provisioning. If None, uses default.
     """
     base_name = model_name or f"benchmark-{secrets.token_hex(2)}"
     k8s_model_name = base_name
@@ -352,7 +378,9 @@ async def run_benchmark(
     k8s_model: Model | None = None
 
     try:
-        k8s_model = await deploy_k8s_model(k8s_controller, k8s_model_name, charm_file, wazuh_image)
+        k8s_model = await deploy_k8s_model(
+            k8s_controller, k8s_model_name, charm_file, wazuh_image, storage_pool
+        )
 
         if full_deploy:
             machine_controller = Controller()
@@ -422,6 +450,14 @@ def main() -> None:
             "cross-model relations so wazuh-server reaches ActiveStatus."
         ),
     )
+    parser.add_argument(
+        "--storage-pool",
+        default=None,
+        help=(
+            "Juju storage pool name to use for PVC provisioning "
+            "(e.g. 'local-path'). If omitted, the controller default is used."
+        ),
+    )
     args = parser.parse_args()
 
     asyncio.run(
@@ -432,6 +468,7 @@ def main() -> None:
             keep_models=args.keep_models,
             full_deploy=args.full_deploy,
             machine_controller_name=args.machine_controller,
+            storage_pool=args.storage_pool,
         )
     )
 

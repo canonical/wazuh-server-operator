@@ -40,8 +40,26 @@ jobs:
           sudo snap install rockcraft --classic
           sudo apt-get install -y skopeo
 
-      - name: Add Juju model
-        run: juju add-model benchmark
+      - name: Configure system for wazuh-indexer
+        # wazuh-indexer is OpenSearch-based and requires these kernel parameters.
+        run: |
+          sudo tee -a /etc/sysctl.conf > /dev/null <<'EOT'
+          vm.max_map_count=262144
+          vm.swappiness=0
+          net.ipv4.tcp_retries2=5
+          fs.file-max=1048576
+          EOT
+          sudo sysctl -p
+
+      - name: Bootstrap LXD machine controller
+        # wazuh-indexer and wazuh-dashboard are deployed on an LXD machine controller.
+        # LXD is pre-installed on the self-hosted runner; we only need to initialise it
+        # and bootstrap a Juju controller named "localhost".
+        run: |
+          K8S_MODEL=$(juju switch)
+          sudo lxd init --auto
+          juju bootstrap localhost localhost
+          juju switch "${K8S_MODEL}"
 
       - name: Build charm
         run: charmcraft pack --verbose
@@ -60,4 +78,6 @@ jobs:
           CHARM=$(ls *.charm | head -1)
           tox -e benchmark -- \
             --charm-file "${CHARM}" \
-            --wazuh-server-image "localhost:32000/wazuh-server:benchmark"
+            --wazuh-server-image "localhost:32000/wazuh-server:benchmark" \
+            --full-deploy \
+            --machine-controller localhost
