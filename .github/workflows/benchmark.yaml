@@ -26,13 +26,14 @@ jobs:
       - name: Install tox
         run: uv tool install tox --with tox-uv
 
-      - name: Setup operator environment
-        uses: charmed-kubernetes/actions-operator@main
-        with:
-          provider: microk8s
-          channel: 1.34-strict/stable
-          microk8s-addons: "storage dns rbac registry"
-          juju-channel: 3/stable
+      - name: Install microk8s
+        run: |
+          sudo snap install microk8s --classic --channel 1.34-strict/stable
+          sudo microk8s enable storage dns rbac registry
+          sudo microk8s status --wait-ready --timeout 300
+
+      - name: Install Juju
+        run: sudo snap install juju --channel 3/stable
 
       - name: Install build tools
         run: |
@@ -51,15 +52,14 @@ jobs:
           EOT
           sudo sysctl -p
 
-      - name: Bootstrap LXD machine controller
-        # wazuh-indexer and wazuh-dashboard are deployed on an LXD machine controller.
-        # LXD is pre-installed on the self-hosted runner; we only need to initialise it
-        # and bootstrap a Juju controller named "localhost".
+      - name: Bootstrap Juju controller with LXD and microk8s clouds
+        # wazuh-indexer (machine model) and wazuh-server (k8s model) must share the same
+        # Juju controller so that cross-model secrets are accessible between them.
+        # We bootstrap a localhost (LXD) controller and add microk8s as a k8s cloud on it.
         run: |
-          K8S_MODEL=$(juju switch)
           sudo lxd init --auto
           juju bootstrap localhost localhost
-          juju switch "${K8S_MODEL}"
+          sg microk8s -c "microk8s config" | juju add-k8s microk8s --controller localhost --client
 
       - name: Build charm
         run: charmcraft pack --verbose
@@ -80,4 +80,5 @@ jobs:
             --charm-file "${CHARM}" \
             --wazuh-server-image "localhost:32000/wazuh-server:benchmark" \
             --full-deploy \
-            --machine-controller localhost
+            --machine-controller localhost \
+            --k8s-cloud microk8s

@@ -135,6 +135,7 @@ async def deploy_k8s_model(
     charm_file: str,
     wazuh_image: str,
     storage_pool: str | None = None,
+    k8s_cloud: str | None = None,
 ) -> Model:
     """Create a k8s model and deploy self-signed-certs, traefik-k8s, and wazuh-server.
 
@@ -145,12 +146,15 @@ async def deploy_k8s_model(
         wazuh_image: OCI image reference for wazuh-server.
         storage_pool: Juju storage pool name to use for wazuh-server and traefik-k8s.
             If None, the controller default is used.
+        k8s_cloud: Name of the k8s cloud registered on the controller. Required when
+            the controller hosts both machine and k8s clouds (e.g. ``microk8s``).
+            If None, the controller's default cloud is used.
 
     Returns:
         Connected k8s Model with all charms deployed and integrated.
     """
     logger.info("Creating k8s model %s", model_name)
-    model = await k8s_controller.add_model(model_name)
+    model = await k8s_controller.add_model(model_name, cloud_name=k8s_cloud)
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
 
     if storage_pool:
@@ -350,6 +354,7 @@ async def run_benchmark(
     full_deploy: bool,
     machine_controller_name: str,
     storage_pool: str | None,
+    k8s_cloud: str | None,
 ) -> None:
     """Deploy wazuh-server and report reconcile times from the Juju debug log.
 
@@ -361,6 +366,8 @@ async def run_benchmark(
         full_deploy: If True, also deploy wazuh-indexer and wazuh-dashboard.
         machine_controller_name: Name of the machine Juju controller (used with --full-deploy).
         storage_pool: Juju storage pool name to use for PVC provisioning. If None, uses default.
+        k8s_cloud: Name of the k8s cloud on the controller to deploy wazuh-server on.
+            Required when the controller hosts multiple clouds. If None, uses default.
     """
     base_name = model_name or f"benchmark-{secrets.token_hex(2)}"
     k8s_model_name = base_name
@@ -379,7 +386,7 @@ async def run_benchmark(
 
     try:
         k8s_model = await deploy_k8s_model(
-            k8s_controller, k8s_model_name, charm_file, wazuh_image, storage_pool
+            k8s_controller, k8s_model_name, charm_file, wazuh_image, storage_pool, k8s_cloud
         )
 
         if full_deploy:
@@ -458,6 +465,16 @@ def main() -> None:
             "(e.g. 'local-path'). If omitted, the controller default is used."
         ),
     )
+    parser.add_argument(
+        "--k8s-cloud",
+        default=None,
+        help=(
+            "Name of the k8s cloud registered on the Juju controller "
+            "(e.g. 'microk8s'). Required when the controller hosts both machine and k8s "
+            "clouds so that the k8s model is created on the correct cloud. "
+            "If omitted, the controller's default cloud is used."
+        ),
+    )
     args = parser.parse_args()
 
     asyncio.run(
@@ -469,6 +486,7 @@ def main() -> None:
             full_deploy=args.full_deploy,
             machine_controller_name=args.machine_controller,
             storage_pool=args.storage_pool,
+            k8s_cloud=args.k8s_cloud,
         )
     )
 
