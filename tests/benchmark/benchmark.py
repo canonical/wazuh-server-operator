@@ -79,7 +79,7 @@ async def deploy_machine_model(
     model = await machine_controller.add_model(model_name)
     await model.connect(f"{machine_controller_name}:admin/{model_name}")
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
-    await model.set_constraints({"mem": 4096, "root-disk": 15000, "cores": 4})
+    await model.set_constraints({"virt-type": "virtual-machine", "mem": 4096, "root-disk": 15000, "cores": 4})
 
     logger.info("Deploying self-signed-certificates on machine model")
     await model.deploy(
@@ -274,10 +274,23 @@ def collect_diagnostics(
             "debug-log",
             "-m",
             model_ref,
+            "--include",
+            "unit-wazuh-indexer-0",
             "--replay",
             "--no-tail",
             "--level",
-            "ERROR",
+            "DEBUG",
+        ],
+        [
+            "juju",
+            "ssh",
+            "-m",
+            model_ref,
+            "wazuh-indexer/0",
+            "--",
+            "sudo",
+            "cat",
+            "/var/log/juju/unit-wazuh-indexer-0.log",
         ],
     ]:
         try:

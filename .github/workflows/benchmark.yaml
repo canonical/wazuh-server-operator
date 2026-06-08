@@ -16,7 +16,7 @@ concurrency:
 jobs:
   benchmark:
     name: Reconcile benchmark
-    runs-on: ["self-hosted", "self-hosted-linux-amd64-noble-large"]
+    runs-on: ["self-hosted", "self-hosted-linux-amd64-noble-xlarge"]
     steps:
       - uses: actions/checkout@v4
 
