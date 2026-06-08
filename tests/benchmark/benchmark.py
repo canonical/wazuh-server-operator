@@ -29,6 +29,7 @@ import re
 import secrets
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from juju.controller import Controller
@@ -207,12 +208,17 @@ async def deploy_k8s_model(
         storage=wazuh_storage,
     )
 
-    await model.integrate("self-signed-certificates", WAZUH_SERVER_APP)
+    # Integrate traefik FIRST and wait for it to become active so that
+    # external_hostname is already populated in the traefik-route relation
+    # data before self-signed-certificates is integrated.  Without this
+    # ordering, certificates_relation_joined fires when external_hostname is
+    # still None, is deferred, and there is a race where the deferred retry
+    # occurs before self-signed-certs has issued the cert, causing wazuh-server
+    # to remain blocked after opensearch connects.
     await model.integrate("traefik-k8s", WAZUH_SERVER_APP)
-
     logger.info(
         "Waiting for traefik-k8s and self-signed-certificates to become active "
-        "so the TLS certificate cycle completes before opensearch is connected"
+        "before integrating self-signed-certificates so external_hostname is ready"
     )
     await model.wait_for_idle(
         apps=["traefik-k8s", "self-signed-certificates"],
@@ -220,14 +226,47 @@ async def deploy_k8s_model(
         raise_on_error=True,
         timeout=600,
     )
-    # wazuh-server will be Waiting (no opensearch yet) — just ensure it is idle
-    # so the deferred certificates_relation_joined retry has been processed.
-    await model.wait_for_idle(
-        apps=[WAZUH_SERVER_APP],
-        raise_on_blocked=False,
-        raise_on_error=False,
-        timeout=300,
-    )
+
+    # Now integrate self-signed-certs.  external_hostname is already available
+    # so certificates_relation_joined will send the CSR without deferral.
+    await model.integrate("self-signed-certificates", WAZUH_SERVER_APP)
+
+    # Poll until wazuh-server has transitioned away from the cert-pending
+    # status messages.  Once certificate_available fires and reconcile runs,
+    # the unit status becomes "Charm state is not yet ready" (IncompleteStateError
+    # for opensearch) rather than a cert-related message, which is our signal
+    # that the TLS certificate was actually issued and received.
+    cert_pending_messages = {
+        "Charm not ready to make a CSR.",
+        "Certificates do not exist. Waiting for new certificates to be issued.",
+    }
+    logger.info("Waiting for TLS certificate to be issued to wazuh-server")
+    deadline = time.monotonic() + 300
+    while time.monotonic() < deadline:
+        await asyncio.sleep(10)
+        unit = model.units.get(f"{WAZUH_SERVER_APP}/0")
+        if unit is None:
+            continue
+        workload_status = unit.workload_status or ""
+        status_message = unit.workload_status_message or ""
+        logger.info(
+            "wazuh-server/0 status: %s: %s", workload_status, status_message
+        )
+        if status_message not in cert_pending_messages and workload_status in (
+            "waiting",
+            "active",
+            "blocked",
+        ):
+            logger.info(
+                "TLS certificate received by wazuh-server (status: %s: %s)",
+                workload_status,
+                status_message,
+            )
+            break
+    else:
+        raise TimeoutError(
+            "Timed out waiting for TLS certificate to be issued to wazuh-server"
+        )
     return model
 
 
@@ -296,20 +335,26 @@ def collect_diagnostics(
 
     for model_ref in model_refs:
         logger.error("=== Diagnostic dump for %s ===", model_ref)
+        is_k8s_model = k8s_model_name and model_ref.endswith(k8s_model_name)
+        debug_log_cmd = [
+            "juju",
+            "debug-log",
+            "-m",
+            model_ref,
+            "--replay",
+            "--no-tail",
+            "--level",
+            "DEBUG",
+        ]
+        if is_k8s_model:
+            # Filter to wazuh-server unit logs only so we always capture the
+            # charm error message regardless of how many other log lines exist.
+            debug_log_cmd += ["--include", f"unit-{WAZUH_SERVER_APP}-0"]
+        else:
+            debug_log_cmd += ["--limit", "500"]
         for cmd in [
             ["juju", "status", "-m", model_ref, "--format", "yaml"],
-            [
-                "juju",
-                "debug-log",
-                "-m",
-                model_ref,
-                "--replay",
-                "--no-tail",
-                "--level",
-                "DEBUG",
-                "--limit",
-                "200",
-            ],
+            debug_log_cmd,
         ]:
             try:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
