@@ -64,6 +64,7 @@ async def deploy_machine_model(
     machine_controller: Controller,
     model_name: str,
     machine_controller_name: str,
+    lxd_cloud: str = "localhost",
 ) -> tuple[Model, str, str]:
     """Deploy wazuh-indexer and wazuh-dashboard on the machine model.
 
@@ -71,12 +72,15 @@ async def deploy_machine_model(
         machine_controller: Connected localhost controller.
         model_name: Name for the machine model.
         machine_controller_name: Name of the machine Juju controller.
+        lxd_cloud: Name of the LXD cloud on the controller (default: ``localhost``).
+            Must be specified explicitly when the controller also hosts a k8s cloud so
+            that Juju does not default to the k8s cloud for this model.
 
     Returns:
         Tuple of (model, opensearch_offer_url, opensearch_app_name).
     """
-    logger.info("Creating machine model %s", model_name)
-    model = await machine_controller.add_model(model_name)
+    logger.info("Creating machine model %s on LXD cloud %s", model_name, lxd_cloud)
+    model = await machine_controller.add_model(model_name, cloud_name=lxd_cloud)
     await model.connect(f"{machine_controller_name}:admin/{model_name}")
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
     await model.set_constraints({"virt-type": "virtual-machine", "mem": 4096, "root-disk": 15000, "cores": 4})
@@ -403,6 +407,7 @@ async def run_benchmark(
     machine_controller_name: str,
     storage_pool: str | None,
     k8s_cloud: str | None,
+    lxd_cloud: str,
 ) -> None:
     """Deploy wazuh-server and report reconcile times from the Juju debug log.
 
@@ -416,6 +421,8 @@ async def run_benchmark(
         storage_pool: Juju storage pool name to use for PVC provisioning. If None, uses default.
         k8s_cloud: Name of the k8s cloud on the controller to deploy wazuh-server on.
             Required when the controller hosts multiple clouds. If None, uses default.
+        lxd_cloud: Name of the LXD cloud on the controller for the machine model.
+            Explicitly passed to avoid Juju defaulting to the k8s cloud.
     """
     base_name = model_name or f"benchmark-{secrets.token_hex(2)}"
     k8s_model_name = base_name
@@ -441,7 +448,7 @@ async def run_benchmark(
             machine_controller = Controller()
             await machine_controller.connect_controller(machine_controller_name)
             machine_model, opensearch_offer_url, _ = await deploy_machine_model(
-                machine_controller, machine_model_name, machine_controller_name
+                machine_controller, machine_model_name, machine_controller_name, lxd_cloud
             )
             await wire_full_deploy(
                 k8s_model,
@@ -527,6 +534,15 @@ def main() -> None:
             "If omitted, the controller's default cloud is used."
         ),
     )
+    parser.add_argument(
+        "--lxd-cloud",
+        default="localhost",
+        help=(
+            "Name of the LXD cloud registered on the Juju controller "
+            "(default: 'localhost'). Used with --full-deploy to ensure the machine "
+            "model is created on LXD and not accidentally on a k8s cloud."
+        ),
+    )
     args = parser.parse_args()
 
     asyncio.run(
@@ -539,6 +555,7 @@ def main() -> None:
             machine_controller_name=args.machine_controller,
             storage_pool=args.storage_pool,
             k8s_cloud=args.k8s_cloud,
+            lxd_cloud=args.lxd_cloud,
         )
     )
 
