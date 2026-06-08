@@ -59,7 +59,7 @@ jobs:
         run: |
           sudo lxd init --auto
           juju bootstrap localhost localhost
-          sg microk8s -c "microk8s config" | juju add-k8s k8s --controller localhost --client
+          sudo microk8s config | juju add-k8s k8s --controller localhost --client
 
       - name: Build charm
         run: charmcraft pack --verbose
