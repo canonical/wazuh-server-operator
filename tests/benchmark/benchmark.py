@@ -209,6 +209,25 @@ async def deploy_k8s_model(
 
     await model.integrate("self-signed-certificates", WAZUH_SERVER_APP)
     await model.integrate("traefik-k8s", WAZUH_SERVER_APP)
+
+    logger.info(
+        "Waiting for traefik-k8s and self-signed-certificates to become active "
+        "so the TLS certificate cycle completes before opensearch is connected"
+    )
+    await model.wait_for_idle(
+        apps=["traefik-k8s", "self-signed-certificates"],
+        status="active",
+        raise_on_error=True,
+        timeout=600,
+    )
+    # wazuh-server will be Waiting (no opensearch yet) — just ensure it is idle
+    # so the deferred certificates_relation_joined retry has been processed.
+    await model.wait_for_idle(
+        apps=[WAZUH_SERVER_APP],
+        raise_on_blocked=False,
+        raise_on_error=False,
+        timeout=300,
+    )
     return model
 
 
@@ -258,8 +277,9 @@ async def wire_full_deploy(
 def collect_diagnostics(
     machine_model_name: str,
     machine_controller_name: str,
+    k8s_model_name: str | None = None,
 ) -> None:
-    """Collect and log unit status and debug-log for the machine model.
+    """Collect and log unit status and debug-log for the machine and k8s models.
 
     Called when an exception occurs so that hook error messages are captured
     before the models are destroyed in the finally block.
@@ -267,42 +287,36 @@ def collect_diagnostics(
     Args:
         machine_model_name: Name of the machine model.
         machine_controller_name: Name of the machine Juju controller.
+        k8s_model_name: Name of the k8s model (same controller). If provided,
+            the wazuh-server debug-log is also collected.
     """
-    model_ref = f"{machine_controller_name}:admin/{machine_model_name}"
-    logger.error("=== Diagnostic dump for %s ===", model_ref)
+    model_refs = [f"{machine_controller_name}:admin/{machine_model_name}"]
+    if k8s_model_name:
+        model_refs.append(f"{machine_controller_name}:admin/{k8s_model_name}")
 
-    for cmd in [
-        ["juju", "status", "-m", model_ref, "--format", "yaml"],
-        [
-            "juju",
-            "debug-log",
-            "-m",
-            model_ref,
-            "--include",
-            "unit-wazuh-indexer-0",
-            "--replay",
-            "--no-tail",
-            "--level",
-            "DEBUG",
-        ],
-        [
-            "juju",
-            "ssh",
-            "-m",
-            model_ref,
-            "wazuh-indexer/0",
-            "--",
-            "sudo",
-            "cat",
-            "/var/log/juju/unit-wazuh-indexer-0.log",
-        ],
-    ]:
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            output = (result.stdout or "") + (result.stderr or "")
-            logger.error("--- %s ---\n%s", " ".join(cmd[1:3]), output)
-        except Exception as exc:
-            logger.error("Failed to run %s: %s", cmd, exc)
+    for model_ref in model_refs:
+        logger.error("=== Diagnostic dump for %s ===", model_ref)
+        for cmd in [
+            ["juju", "status", "-m", model_ref, "--format", "yaml"],
+            [
+                "juju",
+                "debug-log",
+                "-m",
+                model_ref,
+                "--replay",
+                "--no-tail",
+                "--level",
+                "DEBUG",
+                "--limit",
+                "200",
+            ],
+        ]:
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                output = (result.stdout or "") + (result.stderr or "")
+                logger.error("--- %s ---\n%s", " ".join(cmd[1:3]), output)
+            except Exception as exc:
+                logger.error("Failed to run %s: %s", cmd, exc)
 
 
 def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str) -> None:
@@ -474,7 +488,7 @@ async def run_benchmark(
 
     except Exception:
         if full_deploy and machine_model_name:
-            collect_diagnostics(machine_model_name, machine_controller_name)
+            collect_diagnostics(machine_model_name, machine_controller_name, k8s_model_name)
         raise
     finally:
         await _cleanup(
