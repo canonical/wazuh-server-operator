@@ -251,6 +251,43 @@ async def wire_full_deploy(
     )
 
 
+def collect_diagnostics(
+    machine_model_name: str,
+    machine_controller_name: str,
+) -> None:
+    """Collect and log unit status and debug-log for the machine model.
+
+    Called when an exception occurs so that hook error messages are captured
+    before the models are destroyed in the finally block.
+
+    Args:
+        machine_model_name: Name of the machine model.
+        machine_controller_name: Name of the machine Juju controller.
+    """
+    model_ref = f"{machine_controller_name}:admin/{machine_model_name}"
+    logger.error("=== Diagnostic dump for %s ===", model_ref)
+
+    for cmd in [
+        ["juju", "status", "-m", model_ref, "--format", "yaml"],
+        [
+            "juju",
+            "debug-log",
+            "-m",
+            model_ref,
+            "--replay",
+            "--no-tail",
+            "--level",
+            "ERROR",
+        ],
+    ]:
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            output = (result.stdout or "") + (result.stderr or "")
+            logger.error("--- %s ---\n%s", " ".join(cmd[1:3]), output)
+        except Exception as exc:
+            logger.error("Failed to run %s: %s", cmd, exc)
+
+
 def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str) -> None:
     """Read juju debug-log and print reconcile timing statistics.
 
@@ -415,6 +452,10 @@ async def run_benchmark(
 
         collect_and_report_reconcile_times(k8s_model_name, k8s_controller_name)
 
+    except Exception:
+        if full_deploy and machine_model_name:
+            collect_diagnostics(machine_model_name, machine_controller_name)
+        raise
     finally:
         await _cleanup(
             keep_models,

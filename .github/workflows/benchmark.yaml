@@ -81,4 +81,5 @@ jobs:
             --wazuh-server-image "localhost:32000/wazuh-server:benchmark" \
             --full-deploy \
             --machine-controller localhost \
-            --k8s-cloud k8s
+            --k8s-cloud k8s \
+            --model benchmark
