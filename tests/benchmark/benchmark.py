@@ -338,24 +338,20 @@ async def wire_full_deploy(
     await machine_model.consume(wazuh_api_offer_url)
     await machine_model.integrate("wazuh-server", "wazuh-dashboard")
 
-    logger.info("Waiting for full deployment to become active")
+    logger.info("Waiting for wazuh-server to become active")
     await k8s_model.wait_for_idle(
         apps=[WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"],
         status="active",
         raise_on_error=True,
         timeout=1800,
     )
-    # wazuh-indexer must be active for cross-model secrets to be accessible.
-    # wazuh-dashboard is part of the full topology but its status does not
-    # affect the reconcile-time measurement: allow it to be blocked without
-    # failing the benchmark (known issue: "Opensearch service is down" on
-    # initial deploy until the wazuh-api credentials propagate fully).
-    await machine_model.wait_for_idle(
-        apps=["wazuh-indexer", "self-signed-certificates"],
-        status="active",
-        raise_on_error=True,
-        timeout=1800,
-    )
+    # Once wazuh-server is active, the cross-model opensearch relation is
+    # confirmed working — no need to re-check wazuh-indexer's status here.
+    # NOTE: wazuh-indexer's application-level status is "blocked" on single-node
+    # deployments (replica shards unassigned), even though the unit itself is
+    # active.  Waiting for it with status="active" would time out indefinitely.
+    # wazuh-dashboard may also be blocked ("Opensearch service is down") on
+    # initial deploy; that does not affect the reconcile-time measurement.
     await machine_model.wait_for_idle(
         apps=["wazuh-dashboard"],
         raise_on_blocked=False,
