@@ -59,7 +59,7 @@ jobs:
         run: |
           sudo lxd init --auto
           juju bootstrap localhost localhost
-          sg microk8s -c "microk8s config" | juju add-k8s microk8s --controller localhost --client
+          sg microk8s -c "microk8s config" | juju add-k8s k8s --controller localhost --client
 
       - name: Build charm
         run: charmcraft pack --verbose
@@ -81,4 +81,4 @@ jobs:
             --wazuh-server-image "localhost:32000/wazuh-server:benchmark" \
             --full-deploy \
             --machine-controller localhost \
-            --k8s-cloud microk8s
+            --k8s-cloud k8s
