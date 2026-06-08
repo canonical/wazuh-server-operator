@@ -24,6 +24,7 @@ Usage:
 
 import argparse
 import asyncio
+import datetime
 import logging
 import re
 import secrets
@@ -32,6 +33,10 @@ import sys
 import time
 from pathlib import Path
 
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 from juju.controller import Controller
 from juju.model import Model
 
@@ -48,6 +53,37 @@ WAZUH_DASHBOARD_REVISION = 17
 
 WAZUH_SERVER_APP = "wazuh-server"
 RECONCILE_LOG_PATTERN = re.compile(r"reconciled charm in (\S+) seconds")
+
+
+def generate_dummy_ca_cert() -> str:
+    """Generate a self-signed CA certificate for use as ``logs-ca-cert`` config.
+
+    The ``logs-ca-cert`` Juju config option has no default value in the charm,
+    so Juju returns ``None`` for it when unset.  Pydantic v2 rejects ``None``
+    for the required ``str`` field ``WazuhConfig.logs_ca_cert``, causing
+    ``RecoverableStateError`` and a permanent ``blocked`` status.  Passing any
+    valid PEM CA cert satisfies the pydantic constraint and lets reconcile reach
+    the opensearch/cert checks.
+
+    Returns:
+        PEM-encoded self-signed CA certificate as a string.
+    """
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "benchmark-ca")])
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+        .not_valid_after(
+            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=365)
+        )
+        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .sign(key, hashes.SHA256())
+    )
+    return cert.public_bytes(serialization.Encoding.PEM).decode()
 
 
 def get_current_controller() -> str:
@@ -199,11 +235,15 @@ async def deploy_k8s_model(
         else None
     )
     logger.info("Deploying wazuh-server from %s", charm_file)
+    dummy_ca_cert = generate_dummy_ca_cert()
     await model.deploy(
         f"./{charm_file}",
         application_name=WAZUH_SERVER_APP,
         resources={"wazuh-server-image": wazuh_image},
-        config={"enable-vulnerability-detection": False},
+        config={
+            "enable-vulnerability-detection": False,
+            "logs-ca-cert": dummy_ca_cert,
+        },
         trust=True,
         storage=wazuh_storage,
     )
