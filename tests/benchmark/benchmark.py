@@ -28,7 +28,7 @@ import datetime
 import logging
 import re
 import secrets
-import subprocess
+import subprocess  # nosec B404
 import sys
 import time
 from pathlib import Path
@@ -92,7 +92,9 @@ def get_current_controller() -> str:
     Returns:
         The controller name reported by ``juju switch``.
     """
-    result = subprocess.run(["juju", "switch"], capture_output=True, text=True, check=True)
+    result = subprocess.run(  # nosec B603 B607
+        ["juju", "switch"], capture_output=True, text=True, check=True
+    )
     # juju switch outputs "controller:user/model" or just "controller"
     return result.stdout.strip().split(":")[0]
 
@@ -403,7 +405,9 @@ def collect_diagnostics(
             debug_log_cmd,
         ]:
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                result = subprocess.run(  # nosec B603 B607
+                    cmd, capture_output=True, text=True, timeout=60
+                )
                 output = (result.stdout or "") + (result.stderr or "")
                 logger.error("--- %s ---\n%s", " ".join(cmd[1:3]), output)
             except Exception as exc:
@@ -421,7 +425,7 @@ def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str
         SystemExit: If no reconcile timing entries are found in the log.
     """
     logger.info("Reading Juju debug log for reconcile timings")
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 B607
         [
             "juju",
             "debug-log",
