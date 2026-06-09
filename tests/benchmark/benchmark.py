@@ -120,7 +120,9 @@ async def deploy_machine_model(
     model = await machine_controller.add_model(model_name, cloud_name=lxd_cloud)
     await model.connect(f"{machine_controller_name}:admin/{model_name}")
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
-    await model.set_constraints({"virt-type": "virtual-machine", "mem": 4096, "root-disk": 15000, "cores": 4})
+    await model.set_constraints(
+        {"virt-type": "virtual-machine", "mem": 4096, "root-disk": 15000, "cores": 4}
+    )
 
     logger.info("Deploying self-signed-certificates on machine model")
     await model.deploy(
@@ -289,9 +291,7 @@ async def deploy_k8s_model(
             continue
         workload_status = unit.workload_status or ""
         status_message = unit.workload_status_message or ""
-        logger.info(
-            "wazuh-server/0 status: %s: %s", workload_status, status_message
-        )
+        logger.info("wazuh-server/0 status: %s: %s", workload_status, status_message)
         if status_message not in cert_pending_messages and workload_status in (
             "waiting",
             "active",
@@ -304,9 +304,7 @@ async def deploy_k8s_model(
             )
             break
     else:
-        raise TimeoutError(
-            "Timed out waiting for TLS certificate to be issued to wazuh-server"
-        )
+        raise TimeoutError("Timed out waiting for TLS certificate to be issued to wazuh-server")
     return model
 
 
