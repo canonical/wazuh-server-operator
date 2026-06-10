@@ -1,0 +1,85 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: Benchmark
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Reconcile benchmark
+    runs-on: ["self-hosted", "self-hosted-linux-amd64-noble-xlarge"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install tox
+        run: uv tool install tox --with tox-uv
+
+      - name: Install microk8s
+        run: |
+          sudo snap install microk8s --classic --channel 1.34-strict/stable
+          sudo microk8s enable storage dns rbac registry
+          sudo microk8s status --wait-ready --timeout 300
+
+      - name: Install Juju
+        run: sudo snap install juju --channel 3/stable
+
+      - name: Install build tools
+        run: |
+          sudo snap install charmcraft --classic
+          sudo snap install rockcraft --classic
+          sudo apt-get install -y skopeo
+
+      - name: Configure system for wazuh-indexer
+        # wazuh-indexer is OpenSearch-based and requires these kernel parameters.
+        run: |
+          sudo tee -a /etc/sysctl.conf > /dev/null <<'EOT'
+          vm.max_map_count=262144
+          vm.swappiness=0
+          net.ipv4.tcp_retries2=5
+          fs.file-max=1048576
+          EOT
+          sudo sysctl -p
+
+      - name: Bootstrap Juju controller with LXD and microk8s clouds
+        # wazuh-indexer (machine model) and wazuh-server (k8s model) must share the same
+        # Juju controller so that cross-model secrets are accessible between them.
+        # We bootstrap a localhost (LXD) controller and add microk8s as a k8s cloud on it.
+        run: |
+          sudo lxd init --auto
+          juju bootstrap localhost localhost
+          sudo microk8s config | juju add-k8s k8s --controller localhost --client
+
+      - name: Build charm
+        run: charmcraft pack --verbose
+
+      - name: Build and push rock image
+        run: |
+          cd rock
+          rockcraft pack --verbose
+          ROCK=$(ls *.rock | head -1)
+          skopeo --insecure-policy copy --dest-tls-verify=false \
+            oci-archive:"${ROCK}" \
+            docker://localhost:32000/wazuh-server:benchmark
+
+      - name: Run benchmark
+        run: |
+          CHARM=$(ls *.charm | head -1)
+          tox -e benchmark -- \
+            --charm-file "${CHARM}" \
+            --wazuh-server-image "localhost:32000/wazuh-server:benchmark" \
+            --full-deploy \
+            --machine-controller localhost \
+            --k8s-cloud k8s \
+            --model benchmark
