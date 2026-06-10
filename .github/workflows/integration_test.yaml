@@ -5,6 +5,10 @@ on:
   schedule:
   - cron: "0 15 * * SAT"
 
+permissions:
+  contents: read
+  packages: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -13,6 +17,9 @@ jobs:
   integration-tests:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
+    permissions:
+      contents: read
+      packages: write
     with:
       channel: 1.33-classic/stable
       extra-arguments: |

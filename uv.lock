@@ -2161,6 +2161,9 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+benchmark = [
+    { name = "juju" },
+]
 coverage-report = [
     { name = "coverage", extra = ["toml"] },
     { name = "pytest" },
@@ -2214,6 +2217,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+benchmark = [{ name = "juju" }]
 coverage-report = [
     { name = "coverage", extras = ["toml"] },
     { name = "pytest" },

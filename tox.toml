@@ -127,6 +127,17 @@ commands = [
 ]
 dependency_groups = [ "integration" ]
 
+[env.benchmark]
+description = "Benchmark wazuh-server charm reconcile time"
+commands = [
+  [
+    "python",
+    "{toxinidir}/tests/benchmark/benchmark.py",
+    { replace = "posargs", extend = "true" },
+  ],
+]
+dependency_groups = [ "benchmark" ]
+
 [env.lint-fix]
 description = "Apply coding style standards to code"
 commands = [
