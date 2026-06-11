@@ -80,6 +80,7 @@ jobs:
             --charm-file "${CHARM}" \
             --wazuh-server-image "localhost:32000/wazuh-server:benchmark" \
             --full-deploy \
+            --with-tracing \
             --machine-controller localhost \
             --k8s-cloud k8s \
             --model benchmark

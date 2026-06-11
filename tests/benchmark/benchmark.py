@@ -10,16 +10,20 @@ Juju debug log to find and report the reconcile timing logged by the charm at DE
 With --full-deploy, also deploys wazuh-indexer and wazuh-dashboard on the machine
 model and wires up all cross-model relations so wazuh-server reaches ActiveStatus.
 
+With --with-tracing, also deploys tempo-k8s and relates it to wazuh-server via the
+charm-tracing relation so that reconcile spans are exported to Tempo.
+
 Usage:
     python tests/benchmark/benchmark.py \\
         --charm-file wazuh-server_ubuntu-22.04-amd64.charm \\
         --wazuh-server-image 10.x.x.x:32000/wazuh-server:1.0
 
-    # Full topology (also deploys wazuh-indexer + wazuh-dashboard):
+    # Full topology (also deploys wazuh-indexer + wazuh-dashboard) with tracing:
     python tests/benchmark/benchmark.py \\
         --charm-file wazuh-server_ubuntu-22.04-amd64.charm \\
         --wazuh-server-image 10.x.x.x:32000/wazuh-server:1.0 \\
-        --full-deploy
+        --full-deploy \\
+        --with-tracing
 """
 
 import argparse
@@ -50,6 +54,8 @@ WAZUH_INDEXER_CHANNEL = "4.11/edge"
 WAZUH_INDEXER_REVISION = 9
 WAZUH_DASHBOARD_CHANNEL = "4.11/edge"
 WAZUH_DASHBOARD_REVISION = 17
+TEMPO_CHANNEL = "latest/stable"
+TEMPO_APP = "tempo"
 
 WAZUH_SERVER_APP = "wazuh-server"
 RECONCILE_LOG_PATTERN = re.compile(r"reconciled charm in (\S+) seconds")
@@ -179,6 +185,7 @@ async def deploy_k8s_model(
     wazuh_image: str,
     storage_pool: str | None = None,
     k8s_cloud: str | None = None,
+    with_tracing: bool = False,
 ) -> Model:
     """Create a k8s model and deploy self-signed-certs, traefik-k8s, and wazuh-server.
 
@@ -192,6 +199,8 @@ async def deploy_k8s_model(
         k8s_cloud: Name of the k8s cloud registered on the controller. Required when
             the controller hosts both machine and k8s clouds (e.g. ``microk8s``).
             If None, the controller's default cloud is used.
+        with_tracing: If True, also deploy tempo-k8s and relate it to wazuh-server
+            via the charm-tracing relation.
 
     Returns:
         Connected k8s Model with all charms deployed and integrated.
@@ -260,6 +269,17 @@ async def deploy_k8s_model(
     # occurs before self-signed-certs has issued the cert, causing wazuh-server
     # to remain blocked after opensearch connects.
     await model.integrate("traefik-k8s", WAZUH_SERVER_APP)
+
+    if with_tracing:
+        logger.info("Deploying tempo-k8s for charm tracing")
+        await model.deploy(
+            "tempo-k8s",
+            application_name=TEMPO_APP,
+            channel=TEMPO_CHANNEL,
+            trust=True,
+        )
+        await model.integrate(f"{TEMPO_APP}:tracing", f"{WAZUH_SERVER_APP}:charm-tracing")
+
     logger.info(
         "Waiting for traefik-k8s and self-signed-certificates to become active "
         "before integrating self-signed-certificates so external_hostname is ready"
@@ -317,6 +337,7 @@ async def wire_full_deploy(
     machine_model_name: str,
     opensearch_offer_url: str,
     k8s_controller_name: str,
+    with_tracing: bool = False,
 ) -> None:
     """Wire cross-model relations and wait for all apps to become active.
 
@@ -327,6 +348,7 @@ async def wire_full_deploy(
         machine_model_name: Name of the machine model (unused, kept for logging).
         opensearch_offer_url: Cross-model offer URL for opensearch-client.
         k8s_controller_name: Name of the k8s Juju controller.
+        with_tracing: If True, include tempo-k8s in the idle wait.
     """
     logger.info("Consuming opensearch-client offer on k8s model")
     await k8s_model.consume(opensearch_offer_url)
@@ -339,8 +361,11 @@ async def wire_full_deploy(
     await machine_model.integrate("wazuh-server", "wazuh-dashboard")
 
     logger.info("Waiting for wazuh-server to become active")
+    k8s_idle_apps = [WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"]
+    if with_tracing:
+        k8s_idle_apps.append(TEMPO_APP)
     await k8s_model.wait_for_idle(
-        apps=[WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"],
+        apps=k8s_idle_apps,
         status="active",
         raise_on_error=True,
         timeout=1800,
@@ -517,6 +542,7 @@ async def run_benchmark(
     storage_pool: str | None,
     k8s_cloud: str | None,
     lxd_cloud: str,
+    with_tracing: bool = False,
 ) -> None:
     """Deploy wazuh-server and report reconcile times from the Juju debug log.
 
@@ -532,6 +558,7 @@ async def run_benchmark(
             Required when the controller hosts multiple clouds. If None, uses default.
         lxd_cloud: Name of the LXD cloud on the controller for the machine model.
             Explicitly passed to avoid Juju defaulting to the k8s cloud.
+        with_tracing: If True, deploy tempo-k8s and relate it to wazuh-server.
     """
     base_name = model_name or f"benchmark-{secrets.token_hex(2)}"
     k8s_model_name = base_name
@@ -550,7 +577,13 @@ async def run_benchmark(
 
     try:
         k8s_model = await deploy_k8s_model(
-            k8s_controller, k8s_model_name, charm_file, wazuh_image, storage_pool, k8s_cloud
+            k8s_controller,
+            k8s_model_name,
+            charm_file,
+            wazuh_image,
+            storage_pool,
+            k8s_cloud,
+            with_tracing=with_tracing,
         )
 
         if full_deploy:
@@ -566,14 +599,18 @@ async def run_benchmark(
                 machine_model_name,
                 opensearch_offer_url,
                 k8s_controller_name,
+                with_tracing=with_tracing,
             )
         else:
             # Without opensearch, wazuh-server will be Waiting — that's expected.
             # The reconcile timing is still logged because IncompleteStateError is caught
             # before the logger.debug call in charm.py.
             logger.info("Waiting for wazuh-server to become idle (Waiting status expected)")
+            idle_apps = [WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"]
+            if with_tracing:
+                idle_apps.append(TEMPO_APP)
             await k8s_model.wait_for_idle(
-                apps=[WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"],
+                apps=idle_apps,
                 raise_on_blocked=False,
                 raise_on_error=False,
                 timeout=600,
@@ -652,6 +689,14 @@ def main() -> None:
             "model is created on LXD and not accidentally on a k8s cloud."
         ),
     )
+    parser.add_argument(
+        "--with-tracing",
+        action="store_true",
+        help=(
+            "Deploy tempo-k8s and relate it to wazuh-server via the charm-tracing "
+            "relation so that reconcile spans are exported to Tempo during the benchmark."
+        ),
+    )
     args = parser.parse_args()
 
     asyncio.run(
@@ -665,6 +710,7 @@ def main() -> None:
             storage_pool=args.storage_pool,
             k8s_cloud=args.k8s_cloud,
             lxd_cloud=args.lxd_cloud,
+            with_tracing=args.with_tracing,
         )
     )
 
