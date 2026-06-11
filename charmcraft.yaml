@@ -90,6 +90,14 @@ requires:
   opensearch-client:
     interface: opensearch_client
     limit: 1
+  charm-tracing:
+    interface: tracing
+    limit: 1
+    optional: true
+  receive-ca-cert:
+    interface: certificate_transfer
+    limit: 1
+    optional: true
 config:
   options:
     agent-password:
