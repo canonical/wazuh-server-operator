@@ -293,7 +293,12 @@ async def deploy_k8s_model(
 
     # Now integrate self-signed-certs.  external_hostname is already available
     # so certificates_relation_joined will send the CSR without deferral.
-    await model.integrate("self-signed-certificates", WAZUH_SERVER_APP)
+    # Use explicit endpoint names to avoid ambiguity with the receive-ca-cert relation
+    # (both wazuh-server:certificates and wazuh-server:receive-ca-cert match
+    # self-signed-certificates when endpoint names are omitted).
+    await model.integrate(
+        "self-signed-certificates:certificates", f"{WAZUH_SERVER_APP}:certificates"
+    )
 
     # Poll until wazuh-server has transitioned away from the cert-pending
     # status messages.  Once certificate_available fires and reconcile runs,
