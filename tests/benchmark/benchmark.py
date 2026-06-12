@@ -493,16 +493,27 @@ def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str
 
 
 def export_traces(model_name: str, output_file: Path) -> None:
-    """Export all Tempo traces to an OTLP JSON file before model teardown.
+    r"""Export all Tempo traces to an OTLP JSON file before model teardown.
 
     Opens a ``kubectl port-forward`` to the Tempo service in the k8s model,
     queries the Tempo HTTP API to retrieve all trace IDs and their spans, then
-    writes a single OTLP JSON file containing every resource-span batch.
+    writes a single OTLP JSON file (``resourceSpans`` format) containing every
+    resource-span batch.
 
-    The resulting file can be viewed as a flame graph by loading it into Jaeger UI::
+    The resulting file can be viewed as a flame graph in Jaeger UI::
 
-        docker run -p 16686:16686 jaegertracing/jaeger:2
-        # Go to http://localhost:16686 → Upload Trace (JSON icon) → select the file
+        # 1. Start Jaeger (one-time)
+        docker run -d -p 16686:16686 -p 4318:4318 \
+            -e COLLECTOR_OTLP_ENABLED=true \
+            jaegertracing/all-in-one:latest
+
+        # 2. Push the traces
+        curl -X POST http://localhost:4318/v1/traces \
+            -H "Content-Type: application/json" \
+            -d @traces.json
+
+        # 3. Open http://localhost:16686, select service "wazuh-server",
+        #    click a trace → use the flame graph icon for flame graph view.
 
     Args:
         model_name: Name of the k8s model, which is also the k8s namespace.
@@ -532,7 +543,7 @@ def export_traces(model_name: str, output_file: Path) -> None:
         trace_ids = [t["traceID"] for t in search.json().get("traces", [])]
         logger.info("Found %d traces in Tempo", len(trace_ids))
 
-        all_batches: list[dict] = []
+        resource_spans: list[dict] = []
         for trace_id in trace_ids:
             resp = requests.get(
                 f"{tempo_url}/api/traces/{trace_id}",
@@ -540,18 +551,29 @@ def export_traces(model_name: str, output_file: Path) -> None:
                 timeout=10,
             )
             resp.raise_for_status()
-            all_batches.extend(resp.json().get("batches", []))
+            # Tempo returns {"batches": [...]} — rename to "resourceSpans" for OTLP HTTP.
+            resource_spans.extend(resp.json().get("batches", []))
 
-        output_file.write_text(json.dumps({"batches": all_batches}, indent=2))
+        # Write as OTLP ExportTraceServiceRequest JSON so the file can be POSTed
+        # directly to any OTLP HTTP collector (e.g. Jaeger all-in-one on port 4318).
+        output_file.write_text(json.dumps({"resourceSpans": resource_spans}, indent=2))
         logger.info(
             "Exported %d resource-span batches (%d traces) to %s",
-            len(all_batches),
+            len(resource_spans),
             len(trace_ids),
             output_file,
         )
         print(f"\nTraces exported to: {output_file.resolve()}")
-        print("View flame graph: docker run -p 16686:16686 jaegertracing/jaeger:2")
-        print("Then open http://localhost:16686 and upload the traces file.\n")
+        print("To view as flame graph:")
+        print(
+            "  docker run -d -p 16686:16686 -p 4318:4318 "
+            "-e COLLECTOR_OTLP_ENABLED=true jaegertracing/all-in-one:latest"
+        )
+        print(
+            f"  curl -X POST http://localhost:4318/v1/traces "
+            f'-H "Content-Type: application/json" -d @{output_file}'
+        )
+        print("  open http://localhost:16686\n")
     except Exception as exc:
         logger.warning("Failed to export traces from Tempo: %s", exc)
     finally:
