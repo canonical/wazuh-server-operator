@@ -8,7 +8,6 @@ import json
 import sys
 from collections import defaultdict
 
-
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
@@ -19,8 +18,12 @@ def load_spans(path: str) -> list[dict]:
     with open(path) as f:
         data = json.load(f)
     spans = []
-    for rs in data.get("resourceSpans", []):
-        for ss in rs.get("scopeSpans", []):
+    # Tempo exports use "batches"; standard OTLP JSON uses "resourceSpans".
+    top_level = data.get("batches", data.get("resourceSpans", []))
+    for rs in top_level:
+        # Older OTLP / Tempo uses "instrumentationLibrarySpans"; newer uses "scopeSpans".
+        scope_spans = rs.get("scopeSpans", rs.get("instrumentationLibrarySpans", []))
+        for ss in scope_spans:
             for sp in ss.get("spans", []):
                 spans.append(sp)
     return spans
