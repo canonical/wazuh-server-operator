@@ -1,7 +1,7 @@
 # Charm architecture
 
 The charm design leverages the [sidecar](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/#example-1-sidecar-containers) pattern to allow multiple containers in each pod
-with [Pebble](https://juju.is/docs/sdk/pebble) running as the workload
+with [Pebble](https://ubuntu.com/docs/pebble/) running as the workload
 container’s entrypoint.
 
 If you run `kubectl get pods` on a namespace named for the Juju
@@ -74,7 +74,7 @@ The Wazuh server charm mounts a [filesystem type storage](https://documentation.
 The `src/charm.py` is the default entry point for a charm and has the
 `WazuhOperatorCharm` Python class which inherits from the `CharmBase`.
 
-CharmBase is the base class from which all Charms are formed, defined by [Ops](https://juju.is/docs/sdk/ops)
+CharmBase is the base class from which all Charms are formed, defined by [Ops](https://canonical.com/juju/docs/ops/latest/)
 (Python framework for developing charms).
 
 See more information in [Charm](https://documentation.ubuntu.com/juju/3.6/reference/charm/).

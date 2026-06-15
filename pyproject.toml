@@ -17,9 +17,9 @@ classifiers = [
 ]
 dependencies = [
   "cosl==1.9.1",
-  "cryptography==48.0.0",
+  "cryptography==49.0.0",
   "jsonschema==4.26.0",
-  "lxml==6.1.0",
+  "lxml==6.1.1",
   "ops==3.7.1",
   "ops-tracing==3.7.1",
   "pydantic==2.13.4",
