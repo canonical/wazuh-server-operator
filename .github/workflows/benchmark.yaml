@@ -86,10 +86,19 @@ jobs:
             --k8s-cloud k8s \
             --model benchmark
 
+      - name: Generate flame graph
+        if: always()
+        run: |
+          if [ -f traces.json ]; then
+            python3 tests/benchmark/gen_flamegraph.py traces.json flamegraph.html
+          fi
+
       - name: Upload traces artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: wazuh-server-traces
-          path: traces.json
+          path: |
+            traces.json
+            flamegraph.html
           if-no-files-found: warn
