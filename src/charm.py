@@ -14,6 +14,8 @@ from socket import getfqdn
 import opentelemetry.trace
 import ops
 import pydantic
+import requests
+import requests.adapters
 from charms.wazuh_server.v0 import wazuh_api
 from ops import pebble
 
@@ -72,6 +74,7 @@ class WazuhServerCharm(CharmBaseWithState):
             ca_relation_name="receive-ca-cert",
         )
         self._cached_state = None
+        self._wazuh_version: str | None = None
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
@@ -285,16 +288,21 @@ class WazuhServerCharm(CharmBaseWithState):
 
         credentials = self.state.api_credentials
 
+        # Reuse a single session for all authentication calls to avoid redundant TLS handshakes.
+        session = requests.Session()
+        adapter = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
+        session.mount("https://", requests.adapters.HTTPAdapter(max_retries=adapter))
+
         for username, user_details in state.WAZUH_USERS.items():
             # Try to authenticate with the current credentials. If it fails, password is invalid.
-            retries = 5
+            retries_left = 5
             valid = False
-            while credentials[username] and not valid and retries > 0:
+            while credentials[username] and not valid and retries_left > 0:
                 try:
-                    wazuh.authenticate_user(username, credentials[username])
+                    wazuh.authenticate_user(username, credentials[username], session=session)
                     valid = True
                 except wazuh.WazuhAuthenticationError:
-                    retries -= 1
+                    retries_left -= 1
                     time.sleep(1)
 
             # Secret exists but users are the default. Force recreation.
@@ -304,28 +312,30 @@ class WazuhServerCharm(CharmBaseWithState):
             # create user if it doesn't exist yet
             current_password = credentials[username]
             password_to_save = None
-            retries = 5
-            while not current_password and retries > 0:
+            retries_left = 5
+            while not current_password and retries_left > 0:
                 try:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"], session=session)
                     new_password = wazuh.generate_api_password()
                     wazuh.create_api_user(username, new_password, token)
                     current_password = new_password
                     password_to_save = new_password
                 except wazuh.WazuhAuthenticationError as exc:
-                    retries -= 1
+                    retries_left -= 1
                     logger.error(
                         "Failed to create user %s: %s. %s retries remaining.",
                         username,
                         exc,
-                        retries,
+                        retries_left,
                     )
                     time.sleep(1)
 
             # change credentials if they've never been changed
             if current_password == user_details["default_password"]:
                 new_password = wazuh.generate_api_password()
-                token = wazuh.authenticate_user(username, user_details["default_password"])
+                token = wazuh.authenticate_user(
+                    username, user_details["default_password"], session=session
+                )
                 wazuh.change_api_password(username, new_password, token)
                 password_to_save = new_password
 
@@ -403,7 +413,9 @@ class WazuhServerCharm(CharmBaseWithState):
                 self._populate_wazuh_api_relation_data()
                 self._reconcile_prometheus(container)
 
-                self.unit.set_workload_version(wazuh.get_version(container))
+                if self._wazuh_version is None:
+                    self._wazuh_version = wazuh.get_version(container)
+                self.unit.set_workload_version(self._wazuh_version)
                 self.unit.status = ops.ActiveStatus()
             except wazuh.WazuhNotReadyError:
                 self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh to be ready")

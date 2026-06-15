@@ -12,6 +12,13 @@ Each revision is versioned by the date of the revision.
   tracing backend through the new `charm-tracing` (interface: `tracing`) and `receive-ca-cert`
   (interface: `certificate_transfer`) optional relations. The `reconcile` function is
   instrumented with a dedicated OpenTelemetry span.
+- Reduce pebble round-trips in `reconcile` for faster event handling: merge three separate
+  `stat` exec calls in `sync_permissions` into one; skip redundant `exists()` checks before
+  `pull()` in `sync_certificates` and `sync_filebeat_config`; replace six sequential `isdir()`
+  calls in `ensure_ossec_logs_dir` with a single `list_files()` call; reuse a shared
+  `requests.Session` across all Wazuh API authentication calls in `_reconcile_users`; cache
+  the Wazuh version string after the first `get_version()` exec so subsequent reconcile
+  invocations skip the extra pebble round-trip.
 
 ## 2026-04-28
 

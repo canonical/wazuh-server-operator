@@ -10,6 +10,7 @@ import re
 import secrets
 import string
 import typing
+from contextlib import suppress
 from enum import Enum
 from pathlib import Path
 
@@ -193,10 +194,10 @@ def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str])
     Returns:
         bool: True if updates were made, False if config was already up to date.
     """
-    starting_point = FILEBEAT_CONFIG_FILE
-    if container.exists(REPO_FILEBEAT_CONFIG_FILE):
-        starting_point = REPO_FILEBEAT_CONFIG_FILE
-    source_contents = container.pull(starting_point, encoding="utf-8").read()
+    try:
+        source_contents = container.pull(REPO_FILEBEAT_CONFIG_FILE, encoding="utf-8").read()
+    except ops.pebble.PathError:
+        source_contents = container.pull(FILEBEAT_CONFIG_FILE, encoding="utf-8").read()
     source_data = yaml.safe_load(source_contents)
     source_data["output.elasticsearch"]["hosts"] = indexer_endpoints
     new_config_str = yaml.safe_dump(source_data, sort_keys=False).strip()
@@ -327,19 +328,17 @@ def sync_permissions(
         return made_changes
 
     try:
-        stdout: str = container.exec(["stat", "-c", "%a", path]).wait_output()[0].strip()
-        current_permissions = int(stdout, 8)
+        # Fetch mode, owner and group in a single exec call instead of three separate ones.
+        stdout: str = container.exec(["stat", "-c", "%a %U %G", path]).wait_output()[0].strip()
+        mode_str, current_user, current_group = stdout.split()
+        current_permissions = int(mode_str, 8)
         if current_permissions != permissions:
             made_changes = True
             container.exec(["chmod", f"{permissions:o}", path]).wait_output()
         needs_chown: bool = False
         if user is not None:
-            current_user: str = container.exec(["stat", "-c", "%U", path]).wait_output()[0].strip()
             needs_chown = needs_chown or (current_user != user)
         if group is not None:
-            current_group: str = (
-                container.exec(["stat", "-c", "%G", path]).wait_output()[0].strip()
-            )
             needs_chown = needs_chown or (current_group != group)
         if needs_chown:
             user_string = user if user is not None else ""
@@ -387,7 +386,7 @@ def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional
 
         filepath = path / filename
         current_content = ""
-        if container.exists(filepath):
+        with suppress(ops.pebble.PathError):
             current_content = container.pull(filepath, encoding="utf-8").read()
         if current_content != source:
             made_change = True
@@ -763,8 +762,15 @@ def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     user = "wazuh"
     group = "wazuh"
     made_changes = False
-    for subdir in ["alerts", "api", "archives", "cluster", "firewall", "wazuh"]:
-        if not container.isdir(WAZUH_SERVICE_LOG_DIR / subdir):
+    subdirs = ["alerts", "api", "archives", "cluster", "firewall", "wazuh"]
+    # Fetch the parent directory listing in one call to avoid one isdir() round-trip per subdir.
+    # In real pebble a missing path raises PathError; the testing harness raises APIError.
+    try:
+        existing = {fi.name for fi in container.list_files(WAZUH_SERVICE_LOG_DIR)}
+    except (ops.pebble.PathError, ops.pebble.APIError):
+        existing = set()
+    for subdir in subdirs:
+        if subdir not in existing:
             made_changes = True
             container.make_dir(
                 path=WAZUH_SERVICE_LOG_DIR / subdir,
@@ -847,12 +853,16 @@ def _generate_cluster_snippet(
     """
 
 
-def authenticate_user(username: str, password: str) -> str:
+def authenticate_user(
+    username: str, password: str, session: requests.Session | None = None
+) -> str:
     """Authenticate an API user.
 
     Args:
         username: the username.
         password: the password for the user.
+        session: (optional) an existing requests.Session to reuse. A new session with a
+            retry adapter is created when not provided.
 
     Returns: the JWT token
 
@@ -865,9 +875,12 @@ def authenticate_user(username: str, password: str) -> str:
     # certificates may be self-signed and there's no value in verifying them
     # as a compromised localhost service would indicate we're already compromised
     try:
-        session = requests.Session()
-        retries = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
-        session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+        if session is None:
+            session = requests.Session()
+            retries = requests.adapters.Retry(
+                connect=10, backoff_factor=0.2, status_forcelist=[500]
+            )
+            session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
         response = session.get(  # nosec
             AUTH_ENDPOINT,
             auth=(username, password),
