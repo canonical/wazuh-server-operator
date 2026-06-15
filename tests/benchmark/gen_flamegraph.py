@@ -314,7 +314,7 @@ body {
 <body>
 <div id="header">
   <h1>Wazuh Server Charm — <span>Distributed Traces</span>
-    &nbsp;|  <span id="summary-stats"></span>
+    &nbsp;|  <span id="summary-stats"></span>
   </h1>
 </div>
 <div id="layout">
@@ -503,7 +503,7 @@ function updateBreadcrumb() {
   root.addEventListener('click', () => zoomToLevel(-1));
   bc.appendChild(root);
   zoomStack.forEach((entry, i) => {
-    const sep = document.createElement('span'); sep.className = 'bc-sep'; sep.textContent = ' › ';
+    const sep = document.createElement('span'); sep.className = 'bc-sep'; sep.textContent = ' > ';
     bc.appendChild(sep);
     const item = document.createElement('span'); item.className = 'bc-item';
     item.textContent = entry.name.length > 40 ? entry.name.slice(0, 39) + '…' : entry.name;
