@@ -192,6 +192,7 @@ class WazuhServerCharm(CharmBaseWithState):
         else:
             logger.info('not restarting service "%s" (it is not running)', service_name)
 
+    @tracer.start_as_current_span("_reconcile_filebeat")
     def _reconcile_filebeat(self, container: ops.Container) -> None:
         """Reconcile the filebeat configuration.
 
@@ -217,6 +218,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((changed_certs, changed_user, changed_config_files, changed_config)):
             self._restart_service(container, FILEBEAT_SERVICE_NAME)
 
+    @tracer.start_as_current_span("_reconcile_rsyslog")
     def _reconcile_rsyslog(self, container: ops.Container) -> None:
         """Reconcile the rsyslog configuration.
 
@@ -247,6 +249,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((updated_config, changed_certs, changed_filesystem)):
             self._restart_service(container, RSYSLOG_SERVICE_NAME)
 
+    @tracer.start_as_current_span("_reconcile_wazuh")
     def _reconcile_wazuh(self, container: ops.Container) -> None:
         """Reconcile the Wazuh installation.
 
@@ -277,6 +280,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # Excluding function too complex check from pflake8
+    @tracer.start_as_current_span("_reconcile_users")
     def _reconcile_users(self) -> None:  # noqa: C901
         """Configure Wazuh users."""
         if not self.unit.is_leader():
@@ -342,6 +346,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     )
                     logger.debug("Added secret %s with credentials", secret.id)
 
+    @tracer.start_as_current_span("_reconcile_prometheus")
     def _reconcile_prometheus(self, container: ops.Container) -> None:
         """Reconcile the Wazuh installation.
 
@@ -366,6 +371,7 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         self._restart_service(container, PROMETHEUS_SERVICE_NAME, force=True)
 
+    @tracer.start_as_current_span("reconcile")
     def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
 
@@ -374,54 +380,51 @@ class WazuhServerCharm(CharmBaseWithState):
         Raises:
             InvalidStateError: if the charm configuration is invalid.
         """
-        with tracer.start_as_current_span("reconcile"):
-            reconcile_start_time = time.perf_counter()
-            container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
-            if not container.can_connect():
-                logger.warning(
-                    "Cannot connect to container during reconcile. Waiting for new events."
-                )
-                self.unit.status = ops.WaitingStatus("Waiting for pebble.")
-                return
-            try:
-                _ = self.state  # Ensure the state is valid
+        reconcile_start_time = time.perf_counter()
+        container: ops.Container = self.unit.get_container(wazuh.CONTAINER_NAME)
+        if not container.can_connect():
+            logger.warning("Cannot connect to container during reconcile. Waiting for new events.")
+            self.unit.status = ops.WaitingStatus("Waiting for pebble.")
+            return
+        try:
+            _ = self.state  # Ensure the state is valid
 
-                wazuh.sync_config_repo(
-                    container,
-                    repository=self.state.custom_config_repository,
-                    repo_ssh_key=self.state.custom_config_ssh_key,
-                )
+            wazuh.sync_config_repo(
+                container,
+                repository=self.state.custom_config_repository,
+                repo_ssh_key=self.state.custom_config_ssh_key,
+            )
 
-                self._reconcile_filebeat(container)
-                self._reconcile_rsyslog(container)
-                self._reconcile_wazuh(container)
-                container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
-                container.replan()
+            self._reconcile_filebeat(container)
+            self._reconcile_rsyslog(container)
+            self._reconcile_wazuh(container)
+            container.add_layer("wazuh", self._wazuh_pebble_layer, combine=True)
+            container.replan()
 
-                self._reconcile_users()
-                self._populate_wazuh_api_relation_data()
-                self._reconcile_prometheus(container)
+            self._reconcile_users()
+            self._populate_wazuh_api_relation_data()
+            self._reconcile_prometheus(container)
 
-                self.unit.set_workload_version(wazuh.get_version(container))
-                self.unit.status = ops.ActiveStatus()
-            except wazuh.WazuhNotReadyError:
-                self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh to be ready")
-            except wazuh.WazuhConfigurationError as exc:
-                self.unit.status = ops.BlockedStatus(str(exc))
-            except RecoverableStateError as exc:
-                logger.error("Invalid charm configuration, %s", exc)
-                self.unit.status = ops.BlockedStatus("Charm state is invalid")
-            except IncompleteStateError as exc:
-                logger.error("Charm configuration not ready, %s", exc)
-                self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
-            except InvalidStateError as exc:
-                logger.error("Invalid charm configuration, %s", exc)
-                raise InvalidStateError from exc
-            except ops.pebble.APIError as exc:
-                logger.warning("Pebble/API not available during reconcile: %s", exc)
-                self.unit.status = ops.WaitingStatus("Waiting for pebble.")
-            elapsed = time.perf_counter() - reconcile_start_time
-            logger.debug("reconciled charm in %s seconds", elapsed)
+            self.unit.set_workload_version(wazuh.get_version(container))
+            self.unit.status = ops.ActiveStatus()
+        except wazuh.WazuhNotReadyError:
+            self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh to be ready")
+        except wazuh.WazuhConfigurationError as exc:
+            self.unit.status = ops.BlockedStatus(str(exc))
+        except RecoverableStateError as exc:
+            logger.error("Invalid charm configuration, %s", exc)
+            self.unit.status = ops.BlockedStatus("Charm state is invalid")
+        except IncompleteStateError as exc:
+            logger.error("Charm configuration not ready, %s", exc)
+            self.unit.status = ops.WaitingStatus("Charm state is not yet ready")
+        except InvalidStateError as exc:
+            logger.error("Invalid charm configuration, %s", exc)
+            raise InvalidStateError from exc
+        except ops.pebble.APIError as exc:
+            logger.warning("Pebble/API not available during reconcile: %s", exc)
+            self.unit.status = ops.WaitingStatus("Waiting for pebble.")
+        elapsed = time.perf_counter() - reconcile_start_time
+        logger.debug("reconciled charm in %s seconds", elapsed)
 
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:
