@@ -69,7 +69,6 @@ class WazuhServerCharm(CharmBaseWithState):
         self._tracing = ops.tracing.Tracing(
             self,
             tracing_relation_name="charm-tracing",
-            ca_relation_name="receive-ca-cert",
         )
         self._cached_state = None
 
