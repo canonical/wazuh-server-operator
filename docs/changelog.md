@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
-## Unreleased
+## 2026-06-18
 
 - Add distributed tracing support via `ops[tracing]`. Relates the charm to a Tempo-compatible
   tracing backend through the new `charm-tracing` (interface: `tracing`) and `receive-ca-cert`

@@ -423,6 +423,7 @@ class WazuhServerCharm(CharmBaseWithState):
         except ops.pebble.APIError as exc:
             logger.warning("Pebble/API not available during reconcile: %s", exc)
             self.unit.status = ops.WaitingStatus("Waiting for pebble.")
+            return
         elapsed = time.perf_counter() - reconcile_start_time
         logger.debug("reconciled charm in %s seconds", elapsed)
 
