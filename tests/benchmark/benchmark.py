@@ -33,6 +33,7 @@ import json
 import logging
 import re
 import secrets
+import socket
 import subprocess  # nosec B404
 import sys
 import time
@@ -489,6 +490,28 @@ def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str
     logger.info("=========================================")
 
 
+def _wait_for_port(host: str, port: int, timeout: float = 30.0) -> None:
+    """Block until a TCP connection to host:port succeeds or timeout is reached.
+
+    Args:
+        host: Hostname or IP address to connect to.
+        port: TCP port number.
+        timeout: Maximum seconds to wait before raising TimeoutError.
+
+    Raises:
+        TimeoutError: If the port is not reachable within the timeout.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return
+        except OSError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"Port {host}:{port} not reachable after {timeout}s")
+            time.sleep(0.2)
+
+
 def export_traces(model_name: str, output_file: Path) -> None:
     r"""Export all Tempo traces to an OTLP JSON file before model teardown.
 
@@ -532,7 +555,7 @@ def export_traces(model_name: str, output_file: Path) -> None:
         stderr=subprocess.DEVNULL,
     )
     try:
-        time.sleep(3)  # Allow port-forward to establish
+        _wait_for_port("localhost", 3200, timeout=30)
         tempo_url = "http://localhost:3200"
 
         search = requests.get(f"{tempo_url}/api/search", params={"limit": 100}, timeout=10)
