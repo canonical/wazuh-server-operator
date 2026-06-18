@@ -479,14 +479,14 @@ def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str
         logger.debug("debug-log stdout: %s", result.stdout[-2000:])
         sys.exit(1)
 
-    print("\n=== Wazuh Server Reconcile Benchmark ===")
+    logger.info("\n=== Wazuh Server Reconcile Benchmark ===")
     for i, t in enumerate(times, 1):
-        print(f"  Run {i}: {t:.3f}s")
-    print(f"  Count : {len(times)}")
-    print(f"  Min   : {min(times):.3f}s")
-    print(f"  Max   : {max(times):.3f}s")
-    print(f"  Avg   : {sum(times) / len(times):.3f}s")
-    print("=========================================\n")
+        logger.info("  Run %d: %.3fs", i, t)
+    logger.info("  Count : %d", len(times))
+    logger.info("  Min   : %.3fs", min(times))
+    logger.info("  Max   : %.3fs", max(times))
+    logger.info("  Avg   : %.3fs", sum(times) / len(times))
+    logger.info("=========================================")
 
 
 def export_traces(model_name: str, output_file: Path) -> None:
@@ -560,17 +560,18 @@ def export_traces(model_name: str, output_file: Path) -> None:
             len(trace_ids),
             output_file,
         )
-        print(f"\nTraces exported to: {output_file.resolve()}")
-        print("To view as flame graph:")
-        print(
+        logger.info("Traces exported to: %s", output_file.resolve())
+        logger.info("To view as flame graph:")
+        logger.info(
             "  docker run -d -p 16686:16686 -p 4318:4318 "
             "-e COLLECTOR_OTLP_ENABLED=true jaegertracing/all-in-one:latest"
         )
-        print(
-            f"  curl -X POST http://localhost:4318/v1/traces "
-            f'-H "Content-Type: application/json" -d @{output_file}'
+        logger.info(
+            "  curl -X POST http://localhost:4318/v1/traces "
+            '-H "Content-Type: application/json" -d @%s',
+            output_file,
         )
-        print("  open http://localhost:16686\n")
+        logger.info("  open http://localhost:16686")
     except Exception as exc:
         logger.warning("Failed to export traces from Tempo: %s", exc)
     finally:
