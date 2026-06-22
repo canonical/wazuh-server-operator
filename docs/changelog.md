@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-06-18
+
+- Add distributed tracing support via `ops[tracing]`. Relates the charm to a Tempo-compatible
+  tracing backend through the new `charm-tracing` (interface: `tracing`) and `receive-ca-cert`
+  (interface: `certificate_transfer`) optional relations. The `reconcile` function is
+  instrumented with a dedicated OpenTelemetry span.
+
 ## 2026-04-28
 
 - Add landing pages for how-to and reference section.

@@ -11,6 +11,7 @@ import time
 import typing
 from socket import getfqdn
 
+import opentelemetry.trace
 import ops
 import pydantic
 from charms.wazuh_server.v0 import wazuh_api
@@ -33,6 +34,7 @@ from state import (
 )
 
 logger = logging.getLogger(__name__)
+tracer = opentelemetry.trace.get_tracer(__name__)
 
 WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 WAZUH_SERVICE_NAME = "wazuh"
@@ -64,6 +66,10 @@ class WazuhServerCharm(CharmBaseWithState):
         self._observability = observability.Observability(self)
         self._wazuh_api = wazuh_api.WazuhApiProvides(self)
         self._opencti_observer = opencti_connector_observer.OpenCTIObserver(self)
+        self._tracing = ops.tracing.Tracing(
+            self,
+            tracing_relation_name="charm-tracing",
+        )
         self._cached_state = None
 
         self.framework.observe(self.on.install, self._on_install)
@@ -186,6 +192,7 @@ class WazuhServerCharm(CharmBaseWithState):
         else:
             logger.info('not restarting service "%s" (it is not running)', service_name)
 
+    @tracer.start_as_current_span("_reconcile_filebeat")
     def _reconcile_filebeat(self, container: ops.Container) -> None:
         """Reconcile the filebeat configuration.
 
@@ -211,6 +218,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((changed_certs, changed_user, changed_config_files, changed_config)):
             self._restart_service(container, FILEBEAT_SERVICE_NAME)
 
+    @tracer.start_as_current_span("_reconcile_rsyslog")
     def _reconcile_rsyslog(self, container: ops.Container) -> None:
         """Reconcile the rsyslog configuration.
 
@@ -241,6 +249,7 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((updated_config, changed_certs, changed_filesystem)):
             self._restart_service(container, RSYSLOG_SERVICE_NAME)
 
+    @tracer.start_as_current_span("_reconcile_wazuh")
     def _reconcile_wazuh(self, container: ops.Container) -> None:
         """Reconcile the Wazuh installation.
 
@@ -271,6 +280,7 @@ class WazuhServerCharm(CharmBaseWithState):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # Excluding function too complex check from pflake8
+    @tracer.start_as_current_span("_reconcile_users")
     def _reconcile_users(self) -> None:  # noqa: C901
         """Configure Wazuh users."""
         if not self.unit.is_leader():
@@ -336,6 +346,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     )
                     logger.debug("Added secret %s with credentials", secret.id)
 
+    @tracer.start_as_current_span("_reconcile_prometheus")
     def _reconcile_prometheus(self, container: ops.Container) -> None:
         """Reconcile the Wazuh installation.
 
@@ -360,6 +371,7 @@ class WazuhServerCharm(CharmBaseWithState):
         container.add_layer("prometheus", self._prometheus_pebble_layer, combine=True)
         self._restart_service(container, PROMETHEUS_SERVICE_NAME, force=True)
 
+    @tracer.start_as_current_span("reconcile")
     def reconcile(self, _: ops.HookEvent) -> None:
         """Reconcile Wazuh configuration with charm state.
 

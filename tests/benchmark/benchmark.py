@@ -10,29 +10,36 @@ Juju debug log to find and report the reconcile timing logged by the charm at DE
 With --full-deploy, also deploys wazuh-indexer and wazuh-dashboard on the machine
 model and wires up all cross-model relations so wazuh-server reaches ActiveStatus.
 
+With --with-tracing, also deploys tempo-k8s and relates it to wazuh-server via the
+charm-tracing relation so that reconcile spans are exported to Tempo.
+
 Usage:
     python tests/benchmark/benchmark.py \\
         --charm-file wazuh-server_ubuntu-22.04-amd64.charm \\
         --wazuh-server-image 10.x.x.x:32000/wazuh-server:1.0
 
-    # Full topology (also deploys wazuh-indexer + wazuh-dashboard):
+    # Full topology (also deploys wazuh-indexer + wazuh-dashboard) with tracing:
     python tests/benchmark/benchmark.py \\
         --charm-file wazuh-server_ubuntu-22.04-amd64.charm \\
         --wazuh-server-image 10.x.x.x:32000/wazuh-server:1.0 \\
-        --full-deploy
+        --full-deploy \\
+        --with-tracing
 """
 
 import argparse
 import asyncio
 import datetime
+import json
 import logging
 import re
 import secrets
+import socket
 import subprocess  # nosec B404
 import sys
 import time
 from pathlib import Path
 
+import requests
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -50,6 +57,8 @@ WAZUH_INDEXER_CHANNEL = "4.11/edge"
 WAZUH_INDEXER_REVISION = 9
 WAZUH_DASHBOARD_CHANNEL = "4.11/edge"
 WAZUH_DASHBOARD_REVISION = 17
+TEMPO_CHANNEL = "latest/stable"
+TEMPO_APP = "tempo"
 
 WAZUH_SERVER_APP = "wazuh-server"
 RECONCILE_LOG_PATTERN = re.compile(r"reconciled charm in (\S+) seconds")
@@ -179,6 +188,7 @@ async def deploy_k8s_model(
     wazuh_image: str,
     storage_pool: str | None = None,
     k8s_cloud: str | None = None,
+    with_tracing: bool = False,
 ) -> Model:
     """Create a k8s model and deploy self-signed-certs, traefik-k8s, and wazuh-server.
 
@@ -192,6 +202,8 @@ async def deploy_k8s_model(
         k8s_cloud: Name of the k8s cloud registered on the controller. Required when
             the controller hosts both machine and k8s clouds (e.g. ``microk8s``).
             If None, the controller's default cloud is used.
+        with_tracing: If True, also deploy tempo-k8s and relate it to wazuh-server
+            via the charm-tracing relation.
 
     Returns:
         Connected k8s Model with all charms deployed and integrated.
@@ -260,6 +272,17 @@ async def deploy_k8s_model(
     # occurs before self-signed-certs has issued the cert, causing wazuh-server
     # to remain blocked after opensearch connects.
     await model.integrate("traefik-k8s", WAZUH_SERVER_APP)
+
+    if with_tracing:
+        logger.info("Deploying tempo-k8s for charm tracing")
+        await model.deploy(
+            "tempo-k8s",
+            application_name=TEMPO_APP,
+            channel=TEMPO_CHANNEL,
+            trust=True,
+        )
+        await model.integrate(f"{TEMPO_APP}:tracing", f"{WAZUH_SERVER_APP}:charm-tracing")
+
     logger.info(
         "Waiting for traefik-k8s and self-signed-certificates to become active "
         "before integrating self-signed-certificates so external_hostname is ready"
@@ -273,7 +296,9 @@ async def deploy_k8s_model(
 
     # Now integrate self-signed-certs.  external_hostname is already available
     # so certificates_relation_joined will send the CSR without deferral.
-    await model.integrate("self-signed-certificates", WAZUH_SERVER_APP)
+    await model.integrate(
+        "self-signed-certificates:certificates", f"{WAZUH_SERVER_APP}:certificates"
+    )
 
     # Poll until wazuh-server has transitioned away from the cert-pending
     # status messages.  Once certificate_available fires and reconcile runs,
@@ -317,6 +342,7 @@ async def wire_full_deploy(
     machine_model_name: str,
     opensearch_offer_url: str,
     k8s_controller_name: str,
+    with_tracing: bool = False,
 ) -> None:
     """Wire cross-model relations and wait for all apps to become active.
 
@@ -327,6 +353,7 @@ async def wire_full_deploy(
         machine_model_name: Name of the machine model (unused, kept for logging).
         opensearch_offer_url: Cross-model offer URL for opensearch-client.
         k8s_controller_name: Name of the k8s Juju controller.
+        with_tracing: If True, include tempo-k8s in the idle wait.
     """
     logger.info("Consuming opensearch-client offer on k8s model")
     await k8s_model.consume(opensearch_offer_url)
@@ -339,8 +366,11 @@ async def wire_full_deploy(
     await machine_model.integrate("wazuh-server", "wazuh-dashboard")
 
     logger.info("Waiting for wazuh-server to become active")
+    k8s_idle_apps = [WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"]
+    if with_tracing:
+        k8s_idle_apps.append(TEMPO_APP)
     await k8s_model.wait_for_idle(
-        apps=[WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"],
+        apps=k8s_idle_apps,
         status="active",
         raise_on_error=True,
         timeout=1800,
@@ -450,14 +480,126 @@ def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str
         logger.debug("debug-log stdout: %s", result.stdout[-2000:])
         sys.exit(1)
 
-    print("\n=== Wazuh Server Reconcile Benchmark ===")
+    logger.info("\n=== Wazuh Server Reconcile Benchmark ===")
     for i, t in enumerate(times, 1):
-        print(f"  Run {i}: {t:.3f}s")
-    print(f"  Count : {len(times)}")
-    print(f"  Min   : {min(times):.3f}s")
-    print(f"  Max   : {max(times):.3f}s")
-    print(f"  Avg   : {sum(times) / len(times):.3f}s")
-    print("=========================================\n")
+        logger.info("  Run %d: %.3fs", i, t)
+    logger.info("  Count : %d", len(times))
+    logger.info("  Min   : %.3fs", min(times))
+    logger.info("  Max   : %.3fs", max(times))
+    logger.info("  Avg   : %.3fs", sum(times) / len(times))
+    logger.info("=========================================")
+
+
+def _wait_for_port(host: str, port: int, timeout: float = 30.0) -> None:
+    """Block until a TCP connection to host:port succeeds or timeout is reached.
+
+    Args:
+        host: Hostname or IP address to connect to.
+        port: TCP port number.
+        timeout: Maximum seconds to wait before raising TimeoutError.
+
+    Raises:
+        TimeoutError: If the port is not reachable within the timeout.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return
+        except OSError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"Port {host}:{port} not reachable after {timeout}s")
+            time.sleep(0.2)
+
+
+def export_traces(model_name: str, output_file: Path) -> None:
+    r"""Export all Tempo traces to an OTLP JSON file before model teardown.
+
+    Opens a ``kubectl port-forward`` to the Tempo service in the k8s model,
+    queries the Tempo HTTP API to retrieve all trace IDs and their spans, then
+    writes a single OTLP JSON file (``resourceSpans`` format) containing every
+    resource-span batch.
+
+    The resulting file can be viewed as a flame graph in Jaeger UI::
+
+        # 1. Start Jaeger (one-time)
+        docker run -d -p 16686:16686 -p 4318:4318 \
+            -e COLLECTOR_OTLP_ENABLED=true \
+            jaegertracing/all-in-one:latest
+
+        # 2. Push the traces
+        curl -X POST http://localhost:4318/v1/traces \
+            -H "Content-Type: application/json" \
+            -d @traces.json
+
+        # 3. Open http://localhost:16686, select service "wazuh-server",
+        #    click a trace → use the flame graph icon for flame graph view.
+
+    Args:
+        model_name: Name of the k8s model, which is also the k8s namespace.
+        output_file: Destination path for the OTLP JSON trace export.
+    """
+    logger.info("Exporting traces from Tempo to %s", output_file)
+    port_forward = subprocess.Popen(  # nosec B603 B607
+        [
+            "sudo",
+            "microk8s",
+            "kubectl",
+            "port-forward",
+            "-n",
+            model_name,
+            "svc/tempo",
+            "3200:3200",
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        _wait_for_port("localhost", 3200, timeout=30)
+        tempo_url = "http://localhost:3200"
+
+        search = requests.get(f"{tempo_url}/api/search", params={"limit": 100}, timeout=10)
+        search.raise_for_status()
+        trace_ids = [t["traceID"] for t in search.json().get("traces", [])]
+        logger.info("Found %d traces in Tempo", len(trace_ids))
+
+        resource_spans: list[dict] = []
+        for trace_id in trace_ids:
+            resp = requests.get(
+                f"{tempo_url}/api/traces/{trace_id}",
+                headers={"Accept": "application/json"},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            # Tempo returns {"batches": [...]} — rename to "resourceSpans" for OTLP HTTP.
+            resource_spans.extend(resp.json().get("batches", []))
+
+        # Write as OTLP ExportTraceServiceRequest JSON so the file can be POSTed
+        # directly to any OTLP HTTP collector (e.g. Jaeger all-in-one on port 4318).
+        output_file.write_text(json.dumps({"resourceSpans": resource_spans}, indent=2))
+        logger.info(
+            "Exported %d resource-span batches (%d traces) to %s",
+            len(resource_spans),
+            len(trace_ids),
+            output_file,
+        )
+        logger.info("Traces exported to: %s", output_file.resolve())
+        logger.info("To view as flame graph:")
+        logger.info(
+            "  docker run -d -p 16686:16686 -p 4318:4318 "
+            "-e COLLECTOR_OTLP_ENABLED=true jaegertracing/all-in-one:latest"
+        )
+        logger.info(
+            "  curl -X POST http://localhost:4318/v1/traces "
+            '-H "Content-Type: application/json" -d @%s',
+            output_file,
+        )
+        logger.info("  open http://localhost:16686")
+    except Exception as exc:
+        logger.warning("Failed to export traces from Tempo: %s", exc)
+    finally:
+        port_forward.terminate()
+        port_forward.wait()
 
 
 async def _cleanup(
@@ -517,6 +659,8 @@ async def run_benchmark(
     storage_pool: str | None,
     k8s_cloud: str | None,
     lxd_cloud: str,
+    with_tracing: bool = False,
+    traces_output: str = "traces.json",
 ) -> None:
     """Deploy wazuh-server and report reconcile times from the Juju debug log.
 
@@ -532,6 +676,8 @@ async def run_benchmark(
             Required when the controller hosts multiple clouds. If None, uses default.
         lxd_cloud: Name of the LXD cloud on the controller for the machine model.
             Explicitly passed to avoid Juju defaulting to the k8s cloud.
+        with_tracing: If True, deploy tempo-k8s and relate it to wazuh-server.
+        traces_output: Path to write exported OTLP JSON traces when with_tracing is True.
     """
     base_name = model_name or f"benchmark-{secrets.token_hex(2)}"
     k8s_model_name = base_name
@@ -550,7 +696,13 @@ async def run_benchmark(
 
     try:
         k8s_model = await deploy_k8s_model(
-            k8s_controller, k8s_model_name, charm_file, wazuh_image, storage_pool, k8s_cloud
+            k8s_controller,
+            k8s_model_name,
+            charm_file,
+            wazuh_image,
+            storage_pool,
+            k8s_cloud,
+            with_tracing=with_tracing,
         )
 
         if full_deploy:
@@ -566,20 +718,26 @@ async def run_benchmark(
                 machine_model_name,
                 opensearch_offer_url,
                 k8s_controller_name,
+                with_tracing=with_tracing,
             )
         else:
             # Without opensearch, wazuh-server will be Waiting — that's expected.
             # The reconcile timing is still logged because IncompleteStateError is caught
             # before the logger.debug call in charm.py.
             logger.info("Waiting for wazuh-server to become idle (Waiting status expected)")
+            idle_apps = [WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"]
+            if with_tracing:
+                idle_apps.append(TEMPO_APP)
             await k8s_model.wait_for_idle(
-                apps=[WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"],
+                apps=idle_apps,
                 raise_on_blocked=False,
                 raise_on_error=False,
                 timeout=600,
             )
 
         collect_and_report_reconcile_times(k8s_model_name, k8s_controller_name)
+        if with_tracing:
+            export_traces(k8s_model_name, Path(traces_output))
 
     except Exception:
         if full_deploy and machine_model_name:
@@ -652,6 +810,23 @@ def main() -> None:
             "model is created on LXD and not accidentally on a k8s cloud."
         ),
     )
+    parser.add_argument(
+        "--with-tracing",
+        action="store_true",
+        help=(
+            "Deploy tempo-k8s and relate it to wazuh-server via the charm-tracing "
+            "relation so that reconcile spans are exported to Tempo during the benchmark."
+        ),
+    )
+    parser.add_argument(
+        "--traces-output",
+        default="traces.json",
+        help=(
+            "Path to write the exported OTLP JSON traces file when --with-tracing is set "
+            "(default: traces.json). Load into Jaeger UI for flame graph visualization: "
+            "docker run -p 16686:16686 jaegertracing/jaeger:2"
+        ),
+    )
     args = parser.parse_args()
 
     asyncio.run(
@@ -665,6 +840,8 @@ def main() -> None:
             storage_pool=args.storage_pool,
             k8s_cloud=args.k8s_cloud,
             lxd_cloud=args.lxd_cloud,
+            with_tracing=args.with_tracing,
+            traces_output=args.traces_output,
         )
     )
 
