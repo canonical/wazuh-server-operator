@@ -336,6 +336,51 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(wazuh, "generate_api_password")
+@patch.object(wazuh, "authenticate_user")
+def test_reconcile_users_does_not_retry_on_invalid_credentials(
+    authenticate_user_mock,
+    generate_api_password_mock,
+    *_,
+):
+    """
+    arrange: mock a leader charm whose stored API credentials are all invalid (HTTP 401).
+    act: run _reconcile_users.
+    assert: each stored credential is validated exactly once, with no retry/backoff loop,
+        since a 401 is deterministic for a given password.
+    """
+    generate_api_password_mock.return_value = "newpass"
+
+    def auth_side_effect(_username, password):
+        if password == "invalid":
+            raise wazuh.WazuhAuthenticationError("invalid password")
+        return "token"
+
+    authenticate_user_mock.side_effect = auth_side_effect
+
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+    mock_state = MagicMock()
+    mock_state.api_credentials = {
+        "wazuh": "invalid",
+        "wazuh-wui": "invalid",
+        "prometheus": "invalid",
+    }
+    harness.charm._cached_state = mock_state
+
+    harness.charm._reconcile_users()
+
+    invalid_attempts = [
+        call_args
+        for call_args in authenticate_user_mock.call_args_list
+        if call_args.args[1] == "invalid"
+    ]
+    assert len(invalid_attempts) == 3
+
+
 def test_reconcile_reaches_waiting_status_when_cant_connect():
     """
     arrange: do nothing.
