@@ -21,6 +21,7 @@ dependencies = [
   "jsonschema==4.26.0",
   "lxml==6.1.1",
   "ops==3.7.1",
+  "ops-tracing==3.7.1",
   "pydantic==2.13.4",
   "requests==2.34.2",
   "rpds-py==0.30.0",
@@ -126,6 +127,7 @@ lint.pydocstyle.convention = "google"
 
 [tool.codespell]
 skip = "build,lib,venv,icon.svg,.tox,.git,.mypy_cache,.ruff_cache,.coverage,htmlcov,uv.lock,grafana_dashboards"
+ignore-words-list = "flamegraph"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

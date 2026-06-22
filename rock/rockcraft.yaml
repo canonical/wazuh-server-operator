@@ -95,6 +95,7 @@ parts:
       - python3-venv
     stage:
       - -usr/lib/ssl/*
+      - -etc/ssl/certs/ca-certificates.crt
       - -requirements.txt
   rsyslog:
     plugin: nil
