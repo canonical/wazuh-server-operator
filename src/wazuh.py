@@ -13,6 +13,7 @@ import typing
 from enum import Enum
 from pathlib import Path
 
+import opentelemetry.trace
 import ops
 import requests
 import requests.adapters
@@ -27,6 +28,14 @@ from pydantic import AnyUrl
 # reduce unhelpful log volume
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+tracer = opentelemetry.trace.get_tracer(__name__)
+
+# Wazuh API request tuning. Keep retries tight and timeouts short so that, while the
+# Wazuh API is still starting up, calls fail fast (and surface as WazuhNotReadyError)
+# instead of blocking the reconcile hook for tens of seconds with exponential backoff.
+API_REQUEST_TIMEOUT = 5
+API_NOT_READY_STATUSES = frozenset({500, 502, 503, 504})
 
 CONTAINER_NAME = "wazuh-server"
 INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
@@ -847,6 +856,28 @@ def _generate_cluster_snippet(
     """
 
 
+def _api_session() -> requests.Session:
+    """Build a requests session with a tight retry policy for the Wazuh API.
+
+    The retries are intentionally minimal so that calls against a Wazuh API that is
+    still starting up fail fast instead of blocking the reconcile hook for tens of
+    seconds. Transient connection issues are surfaced by the callers as
+    WazuhNotReadyError so the charm waits for a later event rather than erroring.
+
+    Returns: a configured requests Session.
+    """
+    session = requests.Session()
+    retries = requests.adapters.Retry(
+        total=2,
+        connect=2,
+        read=2,
+        backoff_factor=0.1,
+    )
+    session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+    return session
+
+
+@tracer.start_as_current_span("authenticate_user")
 def authenticate_user(username: str, password: str) -> str:
     """Authenticate an API user.
 
@@ -865,30 +896,36 @@ def authenticate_user(username: str, password: str) -> str:
     # certificates may be self-signed and there's no value in verifying them
     # as a compromised localhost service would indicate we're already compromised
     try:
-        session = requests.Session()
-        retries = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
-        session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
-        response = session.get(  # nosec
+        response = _api_session().get(  # nosec
             AUTH_ENDPOINT,
             auth=(username, password),
-            timeout=10,
+            timeout=API_REQUEST_TIMEOUT,
             verify=False,
         )
         if response.status_code == 401:
             raise WazuhAuthenticationError(f"The provided password for {username} is not valid.")
+        if response.status_code in API_NOT_READY_STATUSES:
+            raise WazuhNotReadyError(
+                f"Wazuh API not ready (status {response.status_code}) authenticating {username}."
+            )
         response.raise_for_status()
         token = response.json()["data"]["token"] if response.json()["data"] else None
         if token is None:
             raise WazuhInstallationError(f"Response for {username} does not contain token.")
         logger.debug("Got Wazuh API auth token for username %s", username)
         return token
-    except requests.exceptions.ConnectionError as exc:
-        logger.warning("Wazuh API authentication failed: %s", exc)
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.RetryError,
+    ) as exc:
+        logger.warning("Wazuh API not ready while authenticating: %s", exc)
         raise WazuhNotReadyError from exc
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError from exc
 
 
+@tracer.start_as_current_span("change_api_password")
 def change_api_password(username: str, password: str, token: str) -> None:
     """Change Wazuh's API password for a given user.
 
@@ -899,31 +936,40 @@ def change_api_password(username: str, password: str, token: str) -> None:
 
     Raises:
         WazuhInstallationError: if an error occurs while processing the requests.
+        WazuhNotReadyError: if wazuh is not yet ready to accept requests.
     """
     # certificates may be self-signed and there's no value in verifying them
     # as a compromised localhost service would indicate we're already compromised
+    session = _api_session()
     try:
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.get(  # nosec
+        response = session.get(  # nosec
             f"https://localhost:{API_PORT}/security/users",
             headers=headers,
-            timeout=10,
-            verify=False,  # nosec  # noqa: S501
+            timeout=API_REQUEST_TIMEOUT,
+            verify=False,  # nosec
         )
         response.raise_for_status()
         data = response.json()["data"]
         user_id = next(
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         )
-        response = requests.put(  # nosec
+        response = session.put(  # nosec
             f"https://localhost:{API_PORT}/security/users/{user_id}",
             headers=headers,
             json={"password": password},
-            timeout=10,
-            verify=False,  # nosec  # noqa: S501
+            timeout=API_REQUEST_TIMEOUT,
+            verify=False,  # nosec
         )
         response.raise_for_status()
         logger.info("Changed API password for user %s", username)
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.RetryError,
+    ) as exc:
+        logger.warning("Wazuh API not ready while changing password: %s", exc)
+        raise WazuhNotReadyError from exc
     except requests.exceptions.RequestException as exc:
         raise WazuhInstallationError("Error modifying the default password.") from exc
 
@@ -946,6 +992,7 @@ def generate_api_password() -> str:
     return "".join(password)
 
 
+@tracer.start_as_current_span("create_api_user")
 def create_api_user(username: str, password: str, token: str, rolename: str = "readonly") -> None:
     """Create a new readonly user for Wazuh's API.
 
@@ -958,17 +1005,19 @@ def create_api_user(username: str, password: str, token: str, rolename: str = "r
     Raises:
         WazuhAuthenticationError: if a 401 error occurs while processing the requests.
         WazuhInstallationError: if any non-401 error occurs while processing the requests.
+        WazuhNotReadyError: if wazuh is not yet ready to accept requests.
     """
     # certificates may be self-signed and there's no value in verifying them
     # as a compromised localhost service would indicate we're already compromised
     response = None
+    session = _api_session()
     try:
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.get(  # nosec
+        response = session.get(  # nosec
             f"https://localhost:{API_PORT}/security/users",
             headers=headers,
-            timeout=10,
-            verify=False,  # nosec  # noqa: S501
+            timeout=API_REQUEST_TIMEOUT,
+            verify=False,  # nosec
         )
         response.raise_for_status()
         data = response.json()["data"]
@@ -976,37 +1025,44 @@ def create_api_user(username: str, password: str, token: str, rolename: str = "r
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         ]
         if not user_id:  # user has not been created yet
-            response = requests.post(  # nosec
+            response = session.post(  # nosec
                 f"https://localhost:{API_PORT}/security/users",
                 headers=headers,
                 json={"username": username, "password": password},
-                timeout=10,
-                verify=False,  # nosec  # noqa: S501
+                timeout=API_REQUEST_TIMEOUT,
+                verify=False,  # nosec
             )
             response.raise_for_status()
             data = response.json()["data"]
         user_id = next(
             user["id"] for user in data["affected_items"] if data and user["username"] == username
         )
-        response = requests.get(  # nosec
+        response = session.get(  # nosec
             f"https://localhost:{API_PORT}/security/roles",
             headers=headers,
-            timeout=10,
-            verify=False,  # nosec  # noqa: S501
+            timeout=API_REQUEST_TIMEOUT,
+            verify=False,  # nosec
         )
         response.raise_for_status()
         data = response.json()["data"]
         role_id = next(
             role["id"] for role in data["affected_items"] if data and role["name"] == rolename
         )
-        response = requests.post(  # nosec
+        response = session.post(  # nosec
             f"https://localhost:{API_PORT}/security/users/{user_id}/roles?role_ids={role_id}",
             headers=headers,
-            timeout=10,
-            verify=False,  # nosec  # noqa: S501
+            timeout=API_REQUEST_TIMEOUT,
+            verify=False,  # nosec
         )
         response.raise_for_status()
         logger.info("Created user %s", username)
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.RetryError,
+    ) as exc:
+        logger.warning("Wazuh API not ready while creating user: %s", exc)
+        raise WazuhNotReadyError from exc
     except requests.exceptions.RequestException as exc:
         if isinstance(response, requests.Response) and response.status_code == 401:
             raise WazuhAuthenticationError("401 error creating an API user") from exc

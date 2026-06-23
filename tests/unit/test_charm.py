@@ -336,6 +336,147 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     assert harness.model.unit.status.name == ops.ActiveStatus().name
 
 
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(wazuh, "generate_api_password")
+@patch.object(wazuh, "authenticate_user")
+def test_reconcile_users_does_not_retry_on_invalid_credentials(
+    authenticate_user_mock,
+    generate_api_password_mock,
+    *_,
+):
+    """
+    arrange: mock a leader charm whose stored API credentials are all invalid (HTTP 401).
+    act: run _reconcile_users.
+    assert: each stored credential is validated exactly once, with no retry/backoff loop,
+        since a 401 is deterministic for a given password.
+    """
+    generate_api_password_mock.return_value = "newpass"
+
+    def auth_side_effect(_username, password):
+        if password == "invalid":  # nosec  # sentinel value, not a real credential
+            raise wazuh.WazuhAuthenticationError("invalid password")
+        return "token"
+
+    authenticate_user_mock.side_effect = auth_side_effect
+
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+    mock_state = MagicMock()
+    mock_state.api_credentials = {
+        "wazuh": "invalid",
+        "wazuh-wui": "invalid",
+        "prometheus": "invalid",
+    }
+    harness.charm._cached_state = mock_state
+
+    harness.charm._reconcile_users()
+
+    invalid_attempts = [
+        call_args
+        for call_args in authenticate_user_mock.call_args_list
+        if call_args.args[1] == "invalid"
+    ]
+    assert len(invalid_attempts) == 3
+
+
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+@patch.object(wazuh, "sync_filebeat_config")
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(State, "from_charm")
+@patch.object(wazuh, "pull_config_repo")
+@patch.object(wazuh, "sync_wazuh_config_files")
+@patch.object(wazuh, "sync_ossec_conf")
+@patch.object(wazuh, "sync_agent_password")
+@patch.object(wazuh, "sync_certificates")
+@patch.object(wazuh, "sync_filebeat_user")
+@patch.object(wazuh, "ensure_log_ingestion_dir")
+@patch.object(wazuh, "get_version")
+@patch.object(CertificatesObserver, "get_csr")
+def test_reconcile_reaches_maintenance_when_api_not_ready(
+    filebeat_csr_mock,
+    get_version_mock,
+    ensure_log_ingestion_dir_mock,
+    sync_filebeat_user_mock,
+    wazuh_sync_certificates_mock,
+    wazuh_sync_agent_password_mock,
+    wazuh_sync_ossec_conf_mock,
+    sync_wazuh_config_files_mock,
+    pull_config_repo_mock,
+    state_from_charm_mock,
+    change_api_password_mock,
+    authenticate_user_mock,
+    *_,
+):
+    """
+    arrange: mock charm state and make the Wazuh API report it is not ready.
+    act: call reconcile as the leader.
+    assert: the charm reaches maintenance status instead of blocking or erroring.
+    """
+    authenticate_user_mock.side_effect = wazuh.WazuhNotReadyError()
+    api_credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
+    }
+    state_from_charm_mock.return_value = State(
+        agent_password=None,
+        api_credentials=api_credentials,
+        rsyslog_public_cert="certificate",
+        cluster_key=secrets.token_hex(16),
+        indexer_endpoints=["10.0.0.1"],
+        filebeat_username="user1",
+        filebeat_password=secrets.token_hex(),
+        filebeat_ca="filebeat_ca",
+        wazuh_config=WazuhConfig(
+            custom_config_repository=None,
+            custom_config_ssh_key=None,
+            logs_ca_cert="logs_ca",
+        ),
+        custom_config_ssh_key=None,
+    )
+    get_version_mock.return_value = "v4.11.0"
+    filebeat_csr_mock.return_value = b""
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+    harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    harness.charm.reconcile(None)
+
+    authenticate_user_mock.assert_called()
+    assert harness.model.unit.status.name == ops.MaintenanceStatus().name
+
+
+@pytest.mark.parametrize(
+    "event_name",
+    ["update_status", "wazuh_server_pebble_check_recovered"],
+)
+def test_retrigger_events_invoke_reconcile(event_name):
+    """
+    arrange: instantiate the charm.
+    act: emit the re-trigger event.
+    assert: reconcile is invoked so deferred API work can complete on a later event.
+    """
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    with patch.object(harness.charm, "reconcile") as reconcile_mock:
+        event = getattr(harness.charm.on, event_name)
+        if event_name == "wazuh_server_pebble_check_recovered":
+            container = harness.model.unit.containers.get("wazuh-server")
+            event.emit(container, "wazuh-alive")
+        else:
+            event.emit()
+
+    assert reconcile_mock.called
+
+
 def test_reconcile_reaches_waiting_status_when_cant_connect():
     """
     arrange: do nothing.

@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-06-22
+
+- Fix a performance issue in `reconcile` where the hook blocked for ~30 seconds while the
+  Wazuh API was still starting up. The Wazuh API client now uses a tight retry/backoff and
+  short timeouts, and treats "API not ready" responses (connection errors and transient
+  5xx) as `WazuhNotReadyError` so `reconcile` fails fast to maintenance status instead of
+  blocking. The charm now also re-runs `reconcile` on `update-status` and on the
+  `wazuh-server` pebble check recovering, so deferred API configuration completes on a
+  later event. The Wazuh API calls are now wrapped in OpenTelemetry spans for visibility.
+- Fix a performance issue in `reconcile`: `_reconcile_users` no longer retries API
+  authentication with a one-second backoff on `WazuhAuthenticationError` (HTTP 401).
+  A 401 is deterministic for a given password, so the retries could not succeed and
+  only stalled reconcile by up to 5 seconds per user.
+
 ## 2026-06-18
 
 - Add distributed tracing support via `ops[tracing]`. Relates the charm to a Tempo-compatible

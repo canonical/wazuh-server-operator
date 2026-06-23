@@ -605,3 +605,59 @@ def test_get_version() -> None:
     container = harness.charm.unit.get_container("wazuh-server")
     version = wazuh.get_version(container)
     assert version == "v4.11.0"
+
+
+def test_api_session_uses_tight_retry() -> None:
+    """
+    arrange: none.
+    act: build an API session.
+    assert: the mounted https adapter uses a tight retry policy so calls fail fast.
+    """
+    session = wazuh._api_session()
+    adapter = session.get_adapter("https://localhost")
+    retries = adapter.max_retries
+    assert retries.connect is not None and retries.connect <= 3
+    assert retries.total is not None and retries.total <= 3
+    assert retries.backoff_factor <= 0.2
+
+
+@patch.object(wazuh, "_api_session")
+def test_authenticate_user_raises_not_ready_on_connection_error(session_mock: MagicMock) -> None:
+    """
+    arrange: mock the API session to raise a ConnectionError (API still starting).
+    act: authenticate a user.
+    assert: WazuhNotReadyError is raised so reconcile can defer to a later event.
+    """
+    import requests
+
+    session_mock.return_value.get.side_effect = requests.exceptions.ConnectionError("refused")
+    with pytest.raises(wazuh.WazuhNotReadyError):
+        wazuh.authenticate_user("wazuh", "password")  # nosec
+
+
+@patch.object(wazuh, "_api_session")
+def test_authenticate_user_raises_not_ready_on_5xx(session_mock: MagicMock) -> None:
+    """
+    arrange: mock the API session to return a 503 (API still starting).
+    act: authenticate a user.
+    assert: WazuhNotReadyError is raised instead of erroring the unit.
+    """
+    response = MagicMock()
+    response.status_code = 503
+    session_mock.return_value.get.return_value = response
+    with pytest.raises(wazuh.WazuhNotReadyError):
+        wazuh.authenticate_user("wazuh", "password")  # nosec
+
+
+@patch.object(wazuh, "_api_session")
+def test_authenticate_user_raises_auth_error_on_401(session_mock: MagicMock) -> None:
+    """
+    arrange: mock the API session to return a 401.
+    act: authenticate a user with invalid credentials.
+    assert: WazuhAuthenticationError is raised (not retried, not not-ready).
+    """
+    response = MagicMock()
+    response.status_code = 401
+    session_mock.return_value.get.return_value = response
+    with pytest.raises(wazuh.WazuhAuthenticationError):
+        wazuh.authenticate_user("wazuh", "wrong")  # nosec

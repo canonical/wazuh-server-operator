@@ -74,7 +74,9 @@ class WazuhServerCharm(CharmBaseWithState):
 
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.wazuh_server_pebble_ready, self.reconcile)
+        self.framework.observe(self.on.wazuh_server_pebble_check_recovered, self.reconcile)
         self.framework.observe(self.on.config_changed, self.reconcile)
+        self.framework.observe(self.on.update_status, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_joined, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_changed, self.reconcile)
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_departed, self.reconcile)
@@ -289,16 +291,17 @@ class WazuhServerCharm(CharmBaseWithState):
         credentials = self.state.api_credentials
 
         for username, user_details in state.WAZUH_USERS.items():
-            # Try to authenticate with the current credentials. If it fails, password is invalid.
-            retries = 5
+            # Try to authenticate with the current credentials. A 401 (WazuhAuthenticationError)
+            # is deterministic for a given password, so a single attempt is enough; retrying the
+            # same credentials can never succeed and only stalls reconcile. Transient failures
+            # (Wazuh not ready) surface as WazuhNotReadyError and propagate to the caller.
             valid = False
-            while credentials[username] and not valid and retries > 0:
+            if credentials[username]:
                 try:
                     wazuh.authenticate_user(username, credentials[username])
                     valid = True
                 except wazuh.WazuhAuthenticationError:
-                    retries -= 1
-                    time.sleep(1)
+                    valid = False
 
             # Secret exists but users are the default. Force recreation.
             if not valid:
@@ -307,8 +310,7 @@ class WazuhServerCharm(CharmBaseWithState):
             # create user if it doesn't exist yet
             current_password = credentials[username]
             password_to_save = None
-            retries = 5
-            while not current_password and retries > 0:
+            if not current_password:
                 try:
                     token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
                     new_password = wazuh.generate_api_password()
@@ -316,14 +318,7 @@ class WazuhServerCharm(CharmBaseWithState):
                     current_password = new_password
                     password_to_save = new_password
                 except wazuh.WazuhAuthenticationError as exc:
-                    retries -= 1
-                    logger.error(
-                        "Failed to create user %s: %s. %s retries remaining.",
-                        username,
-                        exc,
-                        retries,
-                    )
-                    time.sleep(1)
+                    logger.error("Failed to create user %s: %s.", username, exc)
 
             # change credentials if they've never been changed
             if current_password == user_details["default_password"]:
