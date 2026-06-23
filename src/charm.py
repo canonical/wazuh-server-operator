@@ -289,17 +289,16 @@ class WazuhServerCharm(CharmBaseWithState):
         credentials = self.state.api_credentials
 
         for username, user_details in state.WAZUH_USERS.items():
-            # Try to authenticate with the current credentials. A 401 (WazuhAuthenticationError)
-            # is deterministic for a given password, so a single attempt is enough; retrying the
-            # same credentials can never succeed and only stalls reconcile. Transient failures
-            # (Wazuh not ready) surface as WazuhNotReadyError and propagate to the caller.
+            # Try to authenticate with the current credentials. If it fails, password is invalid.
+            retries = 5
             valid = False
-            if credentials[username]:
+            while credentials[username] and not valid and retries > 0:
                 try:
                     wazuh.authenticate_user(username, credentials[username])
                     valid = True
                 except wazuh.WazuhAuthenticationError:
-                    valid = False
+                    retries -= 1
+                    time.sleep(1)
 
             # Secret exists but users are the default. Force recreation.
             if not valid:
@@ -308,7 +307,8 @@ class WazuhServerCharm(CharmBaseWithState):
             # create user if it doesn't exist yet
             current_password = credentials[username]
             password_to_save = None
-            if not current_password:
+            retries = 5
+            while not current_password and retries > 0:
                 try:
                     token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
                     new_password = wazuh.generate_api_password()
@@ -316,7 +316,14 @@ class WazuhServerCharm(CharmBaseWithState):
                     current_password = new_password
                     password_to_save = new_password
                 except wazuh.WazuhAuthenticationError as exc:
-                    logger.error("Failed to create user %s: %s.", username, exc)
+                    retries -= 1
+                    logger.error(
+                        "Failed to create user %s: %s. %s retries remaining.",
+                        username,
+                        exc,
+                        retries,
+                    )
+                    time.sleep(1)
 
             # change credentials if they've never been changed
             if current_password == user_details["default_password"]:

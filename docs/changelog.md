@@ -6,13 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
-## 2026-06-22
-
-- Fix a performance issue in `reconcile`: `_reconcile_users` no longer retries API
-  authentication with a one-second backoff on `WazuhAuthenticationError` (HTTP 401).
-  A 401 is deterministic for a given password, so the retries could not succeed and
-  only stalled reconcile by up to 5 seconds per user.
-
 ## 2026-06-18
 
 - Add distributed tracing support via `ops[tracing]`. Relates the charm to a Tempo-compatible
