@@ -82,6 +82,8 @@ jobs:
             --full-deploy \
             --with-tracing \
             --traces-output traces.json \
+            --runs-output benchmark_runs.csv \
+            --summary-output benchmark_summary.csv \
             --machine-controller localhost \
             --k8s-cloud k8s \
             --model benchmark
@@ -93,12 +95,14 @@ jobs:
             python3 tests/benchmark/gen_flamegraph.py traces.json flamegraph.html
           fi
 
-      - name: Upload traces artifact
+      - name: Upload benchmark results artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: wazuh-server-traces
+          name: wazuh-server-benchmark-results
           path: |
             traces.json
             flamegraph.html
+            benchmark_runs.csv
+            benchmark_summary.csv
           if-no-files-found: warn

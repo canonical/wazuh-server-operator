@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-06-24
+
+- Benchmark script now writes the reconcile results to two CSV files: one with a row per run
+  (`benchmark_runs.csv`) and one with summary statistics such as mean, median, min, max and
+  stdev (`benchmark_summary.csv`). The benchmark workflow uploads these CSV files in its
+  artifact, now named `wazuh-server-benchmark-results`.
+
 ## 2026-06-18
 
 - Add distributed tracing support via `ops[tracing]`. Relates the charm to a Tempo-compatible
