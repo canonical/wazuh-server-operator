@@ -132,7 +132,7 @@ async def deploy_machine_model(
     await model.connect(f"{machine_controller_name}:admin/{model_name}")
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
     await model.set_constraints(
-        {"virt-type": "virtual-machine", "mem": 4096, "root-disk": 15000, "cores": 4}
+        {"virt-type": "virtual-machine", "mem": 3072, "root-disk": 10000, "cores": 2}
     )
 
     logger.info("Deploying self-signed-certificates on machine model")
