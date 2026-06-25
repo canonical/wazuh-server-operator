@@ -289,62 +289,89 @@ class WazuhServerCharm(CharmBaseWithState):
         credentials = self.state.api_credentials
 
         for username, user_details in state.WAZUH_USERS.items():
-            # Try to authenticate with the current credentials. If it fails, password is invalid.
-            retries = 5
-            valid = False
-            while credentials[username] and not valid and retries > 0:
-                try:
-                    wazuh.authenticate_user(username, credentials[username])
-                    valid = True
-                except wazuh.WazuhAuthenticationError:
-                    retries -= 1
-                    time.sleep(1)
+            with tracer.start_as_current_span(f"reconcile_user.{username}") as user_span:
+                # Try to authenticate with the current credentials. If it fails, password is
+                # invalid.
+                retries = 5
+                valid = False
+                attempt = 0
+                while credentials[username] and not valid and retries > 0:
+                    attempt += 1
+                    with tracer.start_as_current_span("authenticate_existing") as auth_span:
+                        auth_span.set_attribute("username", username)
+                        auth_span.set_attribute("attempt", attempt)
+                        try:
+                            wazuh.authenticate_user(username, credentials[username])
+                            valid = True
+                            auth_span.set_attribute("result", "success")
+                        except wazuh.WazuhAuthenticationError:
+                            retries -= 1
+                            auth_span.set_attribute("result", "auth_error")
+                            auth_span.set_attribute("retries_remaining", retries)
+                            time.sleep(1)
 
-            # Secret exists but users are the default. Force recreation.
-            if not valid:
-                credentials[username] = state.WAZUH_USERS[username]["default_password"]
+                user_span.set_attribute("auth_valid", valid)
 
-            # create user if it doesn't exist yet
-            current_password = credentials[username]
-            password_to_save = None
-            retries = 5
-            while not current_password and retries > 0:
-                try:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
-                    new_password = wazuh.generate_api_password()
-                    wazuh.create_api_user(username, new_password, token)
-                    current_password = new_password
-                    password_to_save = new_password
-                except wazuh.WazuhAuthenticationError as exc:
-                    retries -= 1
-                    logger.error(
-                        "Failed to create user %s: %s. %s retries remaining.",
-                        username,
-                        exc,
-                        retries,
-                    )
-                    time.sleep(1)
+                # Secret exists but users are the default. Force recreation.
+                if not valid:
+                    credentials[username] = state.WAZUH_USERS[username]["default_password"]
 
-            # change credentials if they've never been changed
-            if current_password == user_details["default_password"]:
-                new_password = wazuh.generate_api_password()
-                token = wazuh.authenticate_user(username, user_details["default_password"])
-                wazuh.change_api_password(username, new_password, token)
-                password_to_save = new_password
+                # create user if it doesn't exist yet
+                current_password = credentials[username]
+                password_to_save = None
+                retries = 5
+                create_attempt = 0
+                while not current_password and retries > 0:
+                    create_attempt += 1
+                    with tracer.start_as_current_span("create_user") as create_span:
+                        create_span.set_attribute("username", username)
+                        create_span.set_attribute("attempt", create_attempt)
+                        try:
+                            token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                            new_password = wazuh.generate_api_password()
+                            wazuh.create_api_user(username, new_password, token)
+                            current_password = new_password
+                            password_to_save = new_password
+                            create_span.set_attribute("result", "success")
+                        except wazuh.WazuhAuthenticationError as exc:
+                            retries -= 1
+                            create_span.set_attribute("result", "auth_error")
+                            create_span.set_attribute("retries_remaining", retries)
+                            logger.error(
+                                "Failed to create user %s: %s. %s retries remaining.",
+                                username,
+                                exc,
+                                retries,
+                            )
+                            time.sleep(1)
 
-            # if there's been a password change, store new password in state and secret
-            if password_to_save:
-                credentials[username] = password_to_save
-                try:
-                    secret = self.model.get_secret(label=state.WAZUH_API_CREDENTIAL_SECRET_LABEL)
-                    if dict(secret.get_content(refresh=True)) != credentials:
-                        secret.set_content(credentials)
-                    logger.debug("Updated secret %s with credentials", secret.id or secret.label)
-                except ops.SecretNotFoundError:
-                    secret = self.app.add_secret(
-                        credentials, label=state.WAZUH_API_CREDENTIAL_SECRET_LABEL
-                    )
-                    logger.debug("Added secret %s with credentials", secret.id)
+                # change credentials if they've never been changed
+                if current_password == user_details["default_password"]:
+                    with tracer.start_as_current_span("change_default_password") as pw_span:
+                        pw_span.set_attribute("username", username)
+                        new_password = wazuh.generate_api_password()
+                        token = wazuh.authenticate_user(username, user_details["default_password"])
+                        wazuh.change_api_password(username, new_password, token)
+                        password_to_save = new_password
+
+                # if there's been a password change, store new password in state and secret
+                if password_to_save:
+                    with tracer.start_as_current_span("persist_credentials"):
+                        credentials[username] = password_to_save
+                        try:
+                            secret = self.model.get_secret(
+                                label=state.WAZUH_API_CREDENTIAL_SECRET_LABEL
+                            )
+                            if dict(secret.get_content(refresh=True)) != credentials:
+                                secret.set_content(credentials)
+                            logger.debug(
+                                "Updated secret %s with credentials", secret.id or secret.label
+                            )
+                        except ops.SecretNotFoundError:
+                            secret = self.app.add_secret(
+                                credentials, label=state.WAZUH_API_CREDENTIAL_SECRET_LABEL
+                            )
+                            logger.debug("Added secret %s with credentials", secret.id)
 
     @tracer.start_as_current_span("_reconcile_prometheus")
     def _reconcile_prometheus(self, container: ops.Container) -> None:

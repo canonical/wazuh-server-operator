@@ -594,8 +594,6 @@ def export_traces(model_name: str, output_file: Path) -> None:
     logger.info("Exporting traces from Tempo to %s", output_file)
     port_forward = subprocess.Popen(  # nosec B603 B607
         [
-            "sudo",
-            "microk8s",
             "kubectl",
             "port-forward",
             "-n",
