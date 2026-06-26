@@ -2,9 +2,6 @@
 # See LICENSE file for licensing details.
 juju:
   channel: 3/stable
-  model-defaults:
-    test-mode: "true"
-    automatically-retry-hooks: "false"
 
 providers:
   microk8s:
@@ -15,6 +12,9 @@ providers:
       - dns
       - rbac
       - registry
+    model-defaults:
+      test-mode: "true"
+      automatically-retry-hooks: "false"
   lxd:
     enable: true
     bootstrap: true
@@ -26,4 +26,3 @@ host:
   snaps:
     rockcraft:
     charmcraft:
-
