@@ -43,7 +43,7 @@ async def model_fixture(ops_test: OpsTest) -> Model:
 async def machine_controller_fixture() -> typing.AsyncGenerator[Controller, None]:
     """The lxd controller."""
     controller = Controller()
-    await controller.connect_controller("localhost")
+    await controller.connect_controller("concierge-lxd")
     yield controller
     await controller.disconnect()
     await asyncio.sleep(1)
@@ -71,7 +71,7 @@ async def machine_model_fixture(
         model = await machine_controller.get_model(machine_model_name)
     else:
         model = await machine_controller.add_model(machine_model_name)
-    await model.connect(f"localhost:admin/{model.name}")
+    await model.connect(f"concierge-lxd:admin/{model.name}")
     await model.set_config(MACHINE_MODEL_CONFIG)
     yield model
     await model.disconnect()
@@ -249,7 +249,7 @@ async def application_fixture(
     )
     application = model.applications[wazuh_server_app]
     await model.integrate(
-        f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
+        f"concierge-lxd:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
     )
     await model.integrate(k8s_self_signed_certificates.name, application.name)

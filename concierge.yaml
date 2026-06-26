@@ -15,6 +15,12 @@ providers:
       - dns
       - rbac
       - registry
+  lxd:
+    enable: true
+    bootstrap: true
+    model-defaults:
+      test-mode: "true"
+      automatically-retry-hooks: "false"
 
 host:
   snaps:
