@@ -12,7 +12,7 @@ providers:
       - dns
       - rbac
       - registry
-      - metallb:10.64.140.43-10.64.140.49
+      - metallb:10.43.45.1-10.43.45.14
     model-defaults:
       test-mode: "true"
       automatically-retry-hooks: "false"
