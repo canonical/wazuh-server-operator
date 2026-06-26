@@ -1,0 +1,17 @@
+version: 1
+rocks:
+- name: wazuh-server
+  rockcraft-yaml: rock/rockcraft.yaml
+  platforms:
+  - arch: amd64
+charms:
+- name: wazuh-server
+  charmcraft-yaml: charmcraft.yaml
+  channel: 4.11/edge
+  resources:
+    wazuh-server-image:
+      type: oci-image
+      rock: wazuh-server
+  platforms:
+  - arch: amd64
+snaps: []

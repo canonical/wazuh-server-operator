@@ -1,3 +1,6 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 name: Publish to edge
 
 on:
@@ -8,10 +11,10 @@ on:
 
 jobs:
   publish-to-edge:
-    uses: canonical/operator-workflows/.github/workflows/publish_charm.yaml@main
+    uses: canonical/charm-ci/.github/workflows/publish-artifacts.yml@main
     permissions:
-      actions: read
       contents: write
+      actions: read
     secrets: inherit
     with:
       channel: 4.11/edge

@@ -1,3 +1,6 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 name: Integration tests
 
 on:
@@ -8,36 +11,22 @@ on:
 permissions:
   contents: read
   packages: write
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+  integration-test:
+    uses: canonical/charm-ci/.github/workflows/integration-test.yml@main
     secrets: inherit
     permissions:
       contents: read
       packages: write
-    with:
-      channel: 1.33-classic/stable
-      extra-arguments: |
-        --kube-config=~/.kube/config
-      juju-channel: 3/stable
-      pre-run-script: |
-        -c "chmod +x tests/integration/pre_run_script.sh
-        ./tests/integration/pre_run_script.sh"
-      trivy-fs-enabled: true
-      trivy-image-config: "trivy.yaml"
-      self-hosted-runner: true
-      self-hosted-runner-label: "xlarge"
-      tmate-timeout: 20
-      use-canonical-k8s: true
-      provider: 'k8s'
-      with-uv: true
+      actions: read
   allure-report:
     if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:
-    - integration-tests
+    - integration-test
     uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main

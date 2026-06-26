@@ -1,0 +1,21 @@
+juju:
+  channel: 3/stable
+  model-defaults:
+    test-mode: "true"
+    automatically-retry-hooks: "false"
+
+providers:
+  microk8s:
+    enable: true
+    bootstrap: true
+    addons:
+      - hostpath-storage
+      - dns
+      - rbac
+      - registry
+
+host:
+  snaps:
+    rockcraft:
+    charmcraft:
+

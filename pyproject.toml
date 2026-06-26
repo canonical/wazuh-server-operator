@@ -61,6 +61,7 @@ integration = [
   "allure-pytest>=2.8.18",
   "allure-pytest-collection-report @ git+https://github.com/canonical/data-platform-workflows@v24.0.0#subdirectory=python/pytest_plugins/allure_pytest_collection_report",
   "juju",
+  "opcli @ git+https://github.com/canonical/charm-ci.git ; python_version >= '3.12'",
   "pyjwt",
   "pytest",
   "pytest-asyncio",

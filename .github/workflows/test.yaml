@@ -1,15 +1,33 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 name: Tests
 
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit-tests:
-    uses: canonical/operator-workflows/.github/workflows/test.yaml@main
+    name: Unit tests
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
-    secrets: inherit
-    with:
-      vale-style-check: false
-      with-uv: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Run lint
+        run: uv run --group lint tox -e lint
+
+      - name: Run static analysis
+        run: uv run --group static tox -e static
+
+      - name: Run unit tests
+        run: uv run --group unit tox -e unit
