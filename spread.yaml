@@ -31,5 +31,6 @@ integration-suites:
       sudo -iu ubuntu bash "$SPREAD_PATH/tests/integration/pre_run_script.sh"
     pytest-arguments-template: |
       --controller=concierge-microk8s
+      --model=testing
       --kube-config=~/.kube/config
       --keep-models
