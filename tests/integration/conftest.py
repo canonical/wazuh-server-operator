@@ -239,7 +239,7 @@ async def application_fixture(
         return
 
     await model.deploy(
-        f"./{charm_path}",
+        charm_path,
         config={
             "logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text(),
             "enable-vulnerability-detection": False,
