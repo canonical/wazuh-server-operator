@@ -607,6 +607,11 @@ def export_traces(model_name: str, output_file: Path) -> None:
     Args:
         model_name: Name of the k8s model, which is also the k8s namespace.
         output_file: Destination path for the OTLP JSON trace export.
+
+    Raises:
+        Exception: If the traces cannot be exported (e.g. port-forward fails or
+            the Tempo API is unreachable). This is fatal so the benchmark fails
+            loudly instead of silently producing no trace artifacts.
     """
     logger.info("Exporting traces from Tempo to %s", output_file)
     port_forward = None
@@ -675,8 +680,6 @@ def export_traces(model_name: str, output_file: Path) -> None:
             output_file,
         )
         logger.info("  open http://localhost:16686")
-    except Exception as exc:
-        logger.warning("Failed to export traces from Tempo: %s", exc)
     finally:
         if port_forward is not None:
             port_forward.terminate()

@@ -13,6 +13,9 @@ Each revision is versioned by the date of the revision.
   longer aborts the whole benchmark if the port-forward command cannot be launched. The
   trace export now logs the kubectl port-forward command and surfaces its output on failure,
   and waits up to 60s for the forwarded port so traces.json and the flamegraph are produced.
+  Trace export failures are now fatal so the benchmark workflow fails instead of silently
+  producing no trace artifacts. The workflow installs a standalone `kubectl` with a
+  kubeconfig so the non-root benchmark can port-forward to Tempo.
 
 ## 2026-06-24
 

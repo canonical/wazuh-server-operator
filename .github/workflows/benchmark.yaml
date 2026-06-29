@@ -32,6 +32,17 @@ jobs:
           sudo microk8s enable storage dns rbac registry
           sudo microk8s status --wait-ready --timeout 300
 
+      - name: Install kubectl with kubeconfig
+        # The benchmark runs as a non-root user via tox, so it cannot use
+        # `microk8s kubectl` (group-gated). Install a standalone kubectl and
+        # export a kubeconfig so trace export can port-forward to Tempo.
+        run: |
+          sudo snap install kubectl --classic
+          mkdir -p ~/.kube
+          sudo microk8s config | tee ~/.kube/config > /dev/null
+          chmod 600 ~/.kube/config
+          kubectl version --client
+
       - name: Install Juju
         run: sudo snap install juju --channel 3/stable
 
