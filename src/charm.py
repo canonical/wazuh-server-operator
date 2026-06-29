@@ -287,21 +287,25 @@ class WazuhServerCharm(CharmBaseWithState):
             return  # Wazuh handles cluster syncing, only the leader should make changes
 
         credentials = self.state.api_credentials
+        admin_token: str | None = None  # cached "wazuh" admin token, fetched at most once
 
         for username, user_details in state.WAZUH_USERS.items():
             with tracer.start_as_current_span(f"reconcile_user.{username}") as user_span:
                 # Try to authenticate with the current credentials. If it fails, password is
-                # invalid.
+                # invalid. Keep the token so later steps don't re-authenticate the same user.
                 retries = 5
                 valid = False
                 attempt = 0
+                user_token: str | None = None
                 while credentials[username] and not valid and retries > 0:
                     attempt += 1
                     with tracer.start_as_current_span("authenticate_existing") as auth_span:
                         auth_span.set_attribute("username", username)
                         auth_span.set_attribute("attempt", attempt)
                         try:
-                            wazuh.authenticate_user(username, credentials[username])
+                            user_token = wazuh.authenticate_user(username, credentials[username])
+                            if username == "wazuh":
+                                admin_token = user_token
                             valid = True
                             auth_span.set_attribute("result", "success")
                         except wazuh.WazuhAuthenticationError:
@@ -327,14 +331,18 @@ class WazuhServerCharm(CharmBaseWithState):
                         create_span.set_attribute("username", username)
                         create_span.set_attribute("attempt", create_attempt)
                         try:
-                            token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                            if admin_token is None:
+                                admin_token = wazuh.authenticate_user(
+                                    "wazuh", credentials["wazuh"]
+                                )
                             new_password = wazuh.generate_api_password()
-                            wazuh.create_api_user(username, new_password, token)
+                            wazuh.create_api_user(username, new_password, admin_token)
                             current_password = new_password
                             password_to_save = new_password
                             create_span.set_attribute("result", "success")
                         except wazuh.WazuhAuthenticationError as exc:
                             retries -= 1
+                            admin_token = None
                             create_span.set_attribute("result", "auth_error")
                             create_span.set_attribute("retries_remaining", retries)
                             logger.error(
@@ -350,7 +358,11 @@ class WazuhServerCharm(CharmBaseWithState):
                     with tracer.start_as_current_span("change_default_password") as pw_span:
                         pw_span.set_attribute("username", username)
                         new_password = wazuh.generate_api_password()
-                        token = wazuh.authenticate_user(username, user_details["default_password"])
+                        # The default-password login above already yielded a token; reuse it
+                        # instead of authenticating again with the same credentials.
+                        token = user_token or wazuh.authenticate_user(
+                            username, user_details["default_password"]
+                        )
                         wazuh.change_api_password(username, new_password, token)
                         password_to_save = new_password
 

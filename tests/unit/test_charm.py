@@ -370,3 +370,74 @@ def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock, *_)
 
     with pytest.raises(InvalidStateError):
         harness.charm.reconcile(None)
+
+
+@patch.object(wazuh, "sync_filebeat_config")
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(wazuh, "generate_api_password")
+@patch.object(State, "from_charm")
+@patch.object(wazuh, "sync_config_repo", spec=wazuh.sync_config_repo)
+@patch.object(wazuh, "sync_ossec_conf")
+@patch.object(wazuh, "sync_agent_password")
+@patch.object(wazuh, "sync_certificates")
+@patch.object(wazuh, "sync_filebeat_user")
+@patch.object(wazuh, "ensure_log_ingestion_dir")
+@patch.object(wazuh, "get_version")
+@patch.object(CertificatesObserver, "get_csr")
+def test_reconcile_users_reuses_token_when_changing_default_password(
+    filebeat_csr_mock,
+    get_version_mock,
+    _ensure_log_ingestion_dir_mock,
+    _sync_filebeat_user_mock,
+    _wazuh_sync_certificates_mock,
+    _wazuh_sync_agent_password_mock,
+    _wazuh_sync_ossec_conf_mock,
+    _sync_config_repo_mock,
+    state_from_charm_mock,
+    generate_api_password_mock,
+    change_api_password_mock,
+    authenticate_user_mock,
+    _create_api_user_mock,
+    _sync_filebeat_config_mock,
+):
+    """
+    arrange: set api credentials to the default passwords so they must be changed.
+    act: call reconcile.
+    assert: authenticate_user is called once per user (token reused for the password change),
+        and change_api_password uses that token.
+    """
+    cluster_key = secrets.token_hex(16)
+    state_from_charm_mock.return_value = State(
+        agent_password=None,
+        api_credentials={"wazuh": "wazuh", "wazuh-wui": "wazuh-wui", "prometheus": ""},
+        rsyslog_public_cert="certificate",
+        cluster_key=cluster_key,
+        indexer_endpoints=["10.0.0.1"],
+        filebeat_username="user1",
+        filebeat_password=secrets.token_hex(),
+        filebeat_ca="filebeat_ca",
+        wazuh_config=WazuhConfig(
+            custom_config_repository=None, custom_config_ssh_key=None, logs_ca_cert="logs_ca"
+        ),
+        custom_config_ssh_key=None,
+    )
+    get_version_mock.return_value = "v4.11.0"
+    filebeat_csr_mock.return_value = b""
+    authenticate_user_mock.return_value = "reused-token"
+    generate_api_password_mock.return_value = "new-pass"  # nosec
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+    harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    harness.charm.reconcile(None)
+
+    # wazuh and wazuh-wui authenticate once each; prometheus has no default password to validate.
+    assert authenticate_user_mock.call_count == 2
+    change_api_password_mock.assert_any_call("wazuh", "new-pass", "reused-token")
+    change_api_password_mock.assert_any_call("wazuh-wui", "new-pass", "reused-token")

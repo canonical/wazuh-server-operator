@@ -8,6 +8,11 @@ Each revision is versioned by the date of the revision.
 
 ## 2026-06-29
 
+- Speed up `_reconcile_users` by reusing the Wazuh API auth token within a user's reconcile:
+  the token obtained validating the current password is reused to change the default password,
+  and the `wazuh` admin token is fetched at most once for user creation. This removes redundant
+  authentication round-trips and gets the server available sooner.
+
 - Fix the benchmark trace export crashing with `FileNotFoundError: 'kubectl'` on runners
   where only microk8s is installed. The export now falls back to `microk8s kubectl` and no
   longer aborts the whole benchmark if the port-forward command cannot be launched. The
