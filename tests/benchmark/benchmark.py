@@ -611,19 +611,31 @@ def export_traces(model_name: str, output_file: Path) -> None:
     logger.info("Exporting traces from Tempo to %s", output_file)
     port_forward = None
     try:
+        cmd = [
+            *_kubectl_command(),
+            "port-forward",
+            "-n",
+            model_name,
+            "svc/tempo",
+            "3200:3200",
+        ]
+        logger.info("Starting port-forward: %s", " ".join(cmd))
         port_forward = subprocess.Popen(  # nosec B603 B607
-            [
-                *_kubectl_command(),
-                "port-forward",
-                "-n",
-                model_name,
-                "svc/tempo",
-                "3200:3200",
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
         )
-        _wait_for_port("localhost", 3200, timeout=30)
+        try:
+            _wait_for_port("localhost", 3200, timeout=60)
+        except TimeoutError:
+            # Surface the kubectl output so port-forward failures are diagnosable.
+            if port_forward.poll() is not None:
+                output = port_forward.stdout.read() if port_forward.stdout else ""
+                raise TimeoutError(
+                    f"port-forward exited (code {port_forward.returncode}): {output.strip()}"
+                )
+            raise
         tempo_url = "http://localhost:3200"
 
         search = requests.get(f"{tempo_url}/api/search", params={"limit": 100}, timeout=10)

@@ -10,7 +10,9 @@ Each revision is versioned by the date of the revision.
 
 - Fix the benchmark trace export crashing with `FileNotFoundError: 'kubectl'` on runners
   where only microk8s is installed. The export now falls back to `microk8s kubectl` and no
-  longer aborts the whole benchmark if the port-forward command cannot be launched.
+  longer aborts the whole benchmark if the port-forward command cannot be launched. The
+  trace export now logs the kubectl port-forward command and surfaces its output on failure,
+  and waits up to 60s for the forwarded port so traces.json and the flamegraph are produced.
 
 ## 2026-06-24
 
