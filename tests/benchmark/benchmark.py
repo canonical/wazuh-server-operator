@@ -34,6 +34,7 @@ import json
 import logging
 import re
 import secrets
+import shutil
 import socket
 import statistics
 import subprocess  # nosec B404
@@ -564,6 +565,22 @@ def _wait_for_port(host: str, port: int, timeout: float = 30.0) -> None:
             time.sleep(0.2)
 
 
+def _kubectl_command() -> list[str]:
+    """Resolve the kubectl command to use for port-forwarding.
+
+    Prefers a standalone ``kubectl`` on PATH; falls back to ``microk8s kubectl``
+    when only microk8s is installed (as on the benchmark runners).
+
+    Returns:
+        The command prefix as a list of arguments.
+    """
+    if shutil.which("kubectl"):
+        return ["kubectl"]
+    if shutil.which("microk8s"):
+        return ["microk8s", "kubectl"]
+    return ["kubectl"]
+
+
 def export_traces(model_name: str, output_file: Path) -> None:
     r"""Export all Tempo traces to an OTLP JSON file before model teardown.
 
@@ -592,19 +609,20 @@ def export_traces(model_name: str, output_file: Path) -> None:
         output_file: Destination path for the OTLP JSON trace export.
     """
     logger.info("Exporting traces from Tempo to %s", output_file)
-    port_forward = subprocess.Popen(  # nosec B603 B607
-        [
-            "kubectl",
-            "port-forward",
-            "-n",
-            model_name,
-            "svc/tempo",
-            "3200:3200",
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    port_forward = None
     try:
+        port_forward = subprocess.Popen(  # nosec B603 B607
+            [
+                *_kubectl_command(),
+                "port-forward",
+                "-n",
+                model_name,
+                "svc/tempo",
+                "3200:3200",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         _wait_for_port("localhost", 3200, timeout=30)
         tempo_url = "http://localhost:3200"
 
@@ -648,8 +666,9 @@ def export_traces(model_name: str, output_file: Path) -> None:
     except Exception as exc:
         logger.warning("Failed to export traces from Tempo: %s", exc)
     finally:
-        port_forward.terminate()
-        port_forward.wait()
+        if port_forward is not None:
+            port_forward.terminate()
+            port_forward.wait()
 
 
 async def _cleanup(

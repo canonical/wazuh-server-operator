@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-06-29
+
+- Fix the benchmark trace export crashing with `FileNotFoundError: 'kubectl'` on runners
+  where only microk8s is installed. The export now falls back to `microk8s kubectl` and no
+  longer aborts the whole benchmark if the port-forward command cannot be launched.
+
 ## 2026-06-24
 
 - Benchmark script now writes the reconcile results to two CSV files: one with a row per run
