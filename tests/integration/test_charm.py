@@ -145,7 +145,7 @@ async def test_cluster_api_credentials(
         )
         retries = 5
         while retries:
-            url = (f"https://{ip}:55000/security/user/authenticate",)
+            url = f"https://{ip}:55000/security/user/authenticate"
             response = requests.get(  # nosec
                 url,
                 auth=("wazuh", password),
