@@ -1,0 +1,37 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+project: wazuh-server-operator
+path: /home/ubuntu/proj
+kill-timeout: 120m
+warn-timeout: 1m
+backends:
+  integration-test:
+    type: integration-test
+    systems:
+    - ubuntu-24.04:
+        runner: [ubuntu-24.04]
+        cpu: 4
+        memory: 16
+        disk: 50
+environment:
+  CONCIERGE: '$(HOST: echo "${CONCIERGE:-concierge.yaml}")'
+  OPCLI_GIT_REF: '$(HOST: echo "${OPCLI_GIT_REF:-main}")'
+exclude:
+- .git
+- .tox
+- .venv
+- .*_cache
+integration-suites:
+  tests/integration/:
+    summary: integration tests
+    working-dir: ./
+    backends:
+    - integration-test
+    prepare: |
+      sudo -iu ubuntu bash "$SPREAD_PATH/tests/integration/pre_run_script.sh"
+    pytest-arguments-template: |
+      --controller=concierge-microk8s
+      --model=testing
+      --kube-config=~/.kube/config
+      --keep-models
+      --single-node-indexer
