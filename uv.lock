@@ -600,7 +600,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -706,17 +706,17 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "colorama", marker = "python_full_version < '3.11' and sys_platform == 'win32'" },
-    { name = "decorator", marker = "python_full_version < '3.11'" },
-    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
-    { name = "jedi", marker = "python_full_version < '3.11'" },
-    { name = "matplotlib-inline", marker = "python_full_version < '3.11'" },
-    { name = "pexpect", marker = "python_full_version < '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "prompt-toolkit", marker = "python_full_version < '3.11'" },
-    { name = "pygments", marker = "python_full_version < '3.11'" },
-    { name = "stack-data", marker = "python_full_version < '3.11'" },
-    { name = "traitlets", marker = "python_full_version < '3.11'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "decorator" },
+    { name = "exceptiongroup" },
+    { name = "jedi" },
+    { name = "matplotlib-inline" },
+    { name = "pexpect", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "prompt-toolkit" },
+    { name = "pygments" },
+    { name = "stack-data" },
+    { name = "traitlets" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/85/31/10ac88f3357fc276dc8a64e8880c82e80e7459326ae1d0a211b40abf6665/ipython-8.37.0.tar.gz", hash = "sha256:ca815841e1a41a1e6b73a0b08f3038af9b2252564d01fc405356d34033012216", size = 5606088, upload-time = "2025-05-31T16:39:09.613Z" }
 wheels = [
@@ -732,17 +732,17 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "colorama", marker = "python_full_version >= '3.11' and sys_platform == 'win32'" },
-    { name = "decorator", marker = "python_full_version >= '3.11'" },
-    { name = "ipython-pygments-lexers", marker = "python_full_version >= '3.11'" },
-    { name = "jedi", marker = "python_full_version >= '3.11'" },
-    { name = "matplotlib-inline", marker = "python_full_version >= '3.11'" },
-    { name = "pexpect", marker = "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "prompt-toolkit", marker = "python_full_version >= '3.11'" },
-    { name = "pygments", marker = "python_full_version >= '3.11'" },
-    { name = "stack-data", marker = "python_full_version >= '3.11'" },
-    { name = "traitlets", marker = "python_full_version >= '3.11'" },
-    { name = "typing-extensions", marker = "python_full_version == '3.11.*'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "decorator" },
+    { name = "ipython-pygments-lexers" },
+    { name = "jedi" },
+    { name = "matplotlib-inline" },
+    { name = "pexpect", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "prompt-toolkit" },
+    { name = "pygments" },
+    { name = "stack-data" },
+    { name = "traitlets" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/e6/48c74d54039241a456add616464ea28c6ebf782e4110d419411b83dae06f/ipython-9.7.0.tar.gz", hash = "sha256:5f6de88c905a566c6a9d6c400a8fed54a638e1f7543d17aae2551133216b1e4e", size = 4422115, upload-time = "2025-11-05T12:18:54.646Z" }
 wheels = [
@@ -754,7 +754,7 @@ name = "ipython-pygments-lexers"
 version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pygments", marker = "python_full_version >= '3.11'" },
+    { name = "pygments" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/4c/5dd1d8af08107f88c7f741ead7a40854b8ac24ddf9ae850afbcf698aa552/ipython_pygments_lexers-1.1.1.tar.gz", hash = "sha256:09c0138009e56b6854f9535736f4171d855c8c08a563a0dcd8022f78355c7e81", size = 8393, upload-time = "2025-01-17T11:24:34.505Z" }
 wheels = [
@@ -1187,8 +1187,8 @@ name = "opcli"
 version = "0.0.1a2"
 source = { git = "https://github.com/canonical/charm-ci.git#c68e9ac407694597deb27b23db91582c5d1908fa" }
 dependencies = [
-    { name = "pydantic", marker = "python_full_version >= '3.12'" },
-    { name = "ruamel-yaml", marker = "python_full_version >= '3.12'" },
+    { name = "pydantic" },
+    { name = "ruamel-yaml" },
 ]
 
 [[package]]
@@ -2005,16 +2005,16 @@ wheels = [
 
 [[package]]
 name = "signxml"
-version = "4.5.1"
+version = "5.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "cryptography" },
     { name = "lxml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/55/2e/63f3a26be2a5aba9000bda998197b7e6be700b04a7488ec90d52a5a25423/signxml-4.5.1.tar.gz", hash = "sha256:6378d16cfd79cffc1761b75532e3ce3465ecd0c3a81890398813913d75a0b88a", size = 1615677, upload-time = "2026-06-13T23:51:48.822Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/71/7cefb840c9270bf1753f236fdfbb367932552a647e8bedf83075e3be732b/signxml-5.0.1.tar.gz", hash = "sha256:996d1740358d9fffc4429dc99284b4ff522bc38dde57e41f1d5c8c365d56c107", size = 1617378, upload-time = "2026-06-23T14:39:51.06Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/53/a9047a471b2497b0dcbbb68d32cf99ad15e4a28f5d06a03ab5ff5489731d/signxml-4.5.1-py3-none-any.whl", hash = "sha256:20212c609d84596ec87d66df71af69cc6728c94bdbcd9d67fefefcc5d22b8a2d", size = 60549, upload-time = "2026-06-13T23:51:47.462Z" },
+    { url = "https://files.pythonhosted.org/packages/27/68/39c51ce56b0c82eb95e1be063a553ad80d47e474d922ead869543a2fdb0c/signxml-5.0.1-py3-none-any.whl", hash = "sha256:1e4b5de5295f5207c4153824e8f1c4fc880c13f4850e3e98ecf8941a6de23cd8", size = 60932, upload-time = "2026-06-23T14:39:49.516Z" },
 ]
 
 [[package]]
@@ -2261,7 +2261,7 @@ requires-dist = [
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "requests", specifier = "==2.34.2" },
     { name = "rpds-py", specifier = "==0.30.0" },
-    { name = "signxml", specifier = "==4.5.1" },
+    { name = "signxml", specifier = "==5.0.1" },
     { name = "wheel", specifier = "==0.47.0" },
 ]
 
