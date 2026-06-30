@@ -6,24 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
-## 2026-06-29
-
-- Fix the benchmark trace export crashing with `FileNotFoundError: 'kubectl'` on runners
-  where only microk8s is installed. The export now falls back to `microk8s kubectl` and no
-  longer aborts the whole benchmark if the port-forward command cannot be launched. The
-  trace export now logs the kubectl port-forward command and surfaces its output on failure,
-  and waits up to 60s for the forwarded port so traces.json and the flamegraph are produced.
-  Trace export failures are now fatal so the benchmark workflow fails instead of silently
-  producing no trace artifacts. The workflow installs a standalone `kubectl` with a
-  kubeconfig so the non-root benchmark can port-forward to Tempo.
-
-## 2026-06-24
-
-- Benchmark script now writes the reconcile results to two CSV files: one with a row per run
-  (`benchmark_runs.csv`) and one with summary statistics such as mean, median, min, max and
-  stdev (`benchmark_summary.csv`). The benchmark workflow uploads these CSV files in its
-  artifact, now named `wazuh-server-benchmark-results`.
-
 ## 2026-06-18
 
 - Add distributed tracing support via `ops[tracing]`. Relates the charm to a Tempo-compatible
