@@ -126,6 +126,14 @@ commands = [
   ],
 ]
 dependency_groups = [ "integration" ]
+passenv = [
+  "HOME",
+  "JUJU_*",
+  "KUBECONFIG",
+  "OPCLI_ARTIFACTS_BUILD_YAML",
+  "OPCLI_PACKAGE",
+  "SPREAD_JOB",
+]
 
 [env.benchmark]
 description = "Benchmark wazuh-server charm reconcile time"

@@ -1,3 +1,6 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 name: Integration tests
 
 on:
@@ -8,36 +11,34 @@ on:
 permissions:
   contents: read
   packages: write
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+  integration-test:
+    uses: canonical/charm-ci/.github/workflows/integration-test.yml@main
     secrets: inherit
     permissions:
       contents: read
       packages: write
-    with:
-      channel: 1.33-classic/stable
-      extra-arguments: |
-        --kube-config=~/.kube/config
-      juju-channel: 3/stable
-      pre-run-script: |
-        -c "chmod +x tests/integration/pre_run_script.sh
-        ./tests/integration/pre_run_script.sh"
-      trivy-fs-enabled: true
-      trivy-image-config: "trivy.yaml"
-      self-hosted-runner: true
-      self-hosted-runner-label: "xlarge"
-      tmate-timeout: 20
-      use-canonical-k8s: true
-      provider: 'k8s'
-      with-uv: true
-  allure-report:
-    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+      actions: read
+  required_status_checks:
+    name: Required Integration Test Status Checks
+    runs-on: ubuntu-latest
     needs:
-    - integration-tests
-    uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
+      - integration-test
+    if: always() && !cancelled()
+    timeout-minutes: 5
+    steps:
+      - name: Check integration-test status
+        run: |
+          RESULT="${{ needs.integration-test.result }}"
+          if [ "$RESULT" = "success" ] || [ "$RESULT" = "skipped" ]; then
+            exit 0
+          else
+            echo "integration-test failed with status: $RESULT"
+            exit 1
+          fi
