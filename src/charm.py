@@ -41,6 +41,7 @@ WAZUH_SERVICE_NAME = "wazuh"
 FILEBEAT_SERVICE_NAME = "filebeat"
 RSYSLOG_SERVICE_NAME = "rsyslog"
 PROMETHEUS_SERVICE_NAME = "prometheus_exporter"
+CHARM_CALLBACK_SERVICE_NAME = "charm-callback"
 
 
 class WazuhServerCharm(CharmBaseWithState):
@@ -80,6 +81,19 @@ class WazuhServerCharm(CharmBaseWithState):
         self.framework.observe(self.on[WAZUH_PEER_RELATION_NAME].relation_departed, self.reconcile)
         self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_changed, self.reconcile)
         self.framework.observe(self.on[wazuh_api.RELATION_NAME].relation_broken, self.reconcile)
+        self.framework.observe(
+            self.on[wazuh.CONTAINER_NAME].pebble_custom_notice, self._on_pebble_custom_notice
+        )
+        self.framework.observe(self.on.update_status, self.reconcile)
+
+    def _on_pebble_custom_notice(self, event: ops.PebbleCustomNoticeEvent) -> None:
+        """Pebble custom notice event handler.
+
+        Args:
+            event: the pebble custom notice event.
+        """
+        if event.notice.key == wazuh.WAZUH_API_READY_NOTICE:
+            self.reconcile(event)
 
     @property
     def units_fqdns(self) -> list[str]:
@@ -216,6 +230,13 @@ class WazuhServerCharm(CharmBaseWithState):
 
         changed_config = wazuh.sync_filebeat_config(container, self.state.indexer_endpoints)
         if any((changed_certs, changed_user, changed_config_files, changed_config)):
+            logger.info(
+                "restarting filebeat: certs=%s user=%s config_files=%s config=%s",
+                changed_certs,
+                changed_user,
+                changed_config_files,
+                changed_config,
+            )
             self._restart_service(container, FILEBEAT_SERVICE_NAME)
 
     @tracer.start_as_current_span("_reconcile_rsyslog")
@@ -245,8 +266,13 @@ class WazuhServerCharm(CharmBaseWithState):
             user=wazuh.RSYSLOG_USER,
             group=wazuh.RSYSLOG_USER,
         )
-        changed_filesystem = wazuh.ensure_log_ingestion_dir(container)
-        if any((updated_config, changed_certs, changed_filesystem)):
+        # Directory/permission fixes don't require a restart: a running service picks
+        # them up immediately, so the ensure_log_ingestion_dir result is ignored here.
+        wazuh.ensure_log_ingestion_dir(container)
+        if any((updated_config, changed_certs)):
+            logger.info(
+                "restarting rsyslog: config_files=%s certs=%s", updated_config, changed_certs
+            )
             self._restart_service(container, RSYSLOG_SERVICE_NAME)
 
     @tracer.start_as_current_span("_reconcile_wazuh")
@@ -257,7 +283,9 @@ class WazuhServerCharm(CharmBaseWithState):
             container: the container to configure Wazuh for.
         """
         updated_config: bool = False
-        changed_filesystem = wazuh.ensure_ossec_logs_dir(container)
+        # Directory/permission fixes don't require a restart: a running service picks
+        # them up immediately, so the ensure_ossec_logs_dir result is ignored here.
+        wazuh.ensure_ossec_logs_dir(container)
         if self.state.custom_config_repository is not None:
             updated_config = wazuh.sync_wazuh_config_files(container)
         changed_password = False
@@ -276,7 +304,13 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_url=self.state.opencti_url,
             enable_vulnerability_detection=self.state.enable_vulnerability_detection,
         )
-        if any((updated_config, changed_password, changed_ossec_conf, changed_filesystem)):
+        if any((updated_config, changed_password, changed_ossec_conf)):
+            logger.info(
+                "restarting wazuh: config_files=%s password=%s ossec_conf=%s",
+                updated_config,
+                changed_password,
+                changed_ossec_conf,
+            )
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # Excluding function too complex check from pflake8
@@ -402,12 +436,16 @@ class WazuhServerCharm(CharmBaseWithState):
             container.replan()
 
             self._reconcile_users()
+            self._stop_charm_callback(container)
             self._populate_wazuh_api_relation_data()
             self._reconcile_prometheus(container)
 
             self.unit.set_workload_version(wazuh.get_version(container))
             self.unit.status = ops.ActiveStatus()
         except wazuh.WazuhNotReadyError:
+            # Arm the callback service: it polls the Wazuh API and fires a pebble
+            # custom notice once the API is reachable, re-triggering reconcile.
+            self._restart_service(container, CHARM_CALLBACK_SERVICE_NAME, force=True)
             self.unit.status = ops.MaintenanceStatus("Waiting for Wazuh to be ready")
         except wazuh.WazuhConfigurationError as exc:
             self.unit.status = ops.BlockedStatus(str(exc))
@@ -427,6 +465,16 @@ class WazuhServerCharm(CharmBaseWithState):
         elapsed = time.perf_counter() - reconcile_start_time
         logger.debug("reconciled charm in %s seconds", elapsed)
 
+    def _stop_charm_callback(self, container: ops.Container) -> None:
+        """Stop the charm-callback service if it is still running.
+
+        Args:
+            container: the container running the charm-callback service.
+        """
+        service = container.get_services().get(CHARM_CALLBACK_SERVICE_NAME)
+        if service and service.is_running():
+            container.stop(CHARM_CALLBACK_SERVICE_NAME)
+
     @property
     def _wazuh_pebble_layer(self) -> pebble.LayerDict:
         """Return a dictionary representing a Pebble layer for Wazuh."""
@@ -444,6 +492,14 @@ class WazuhServerCharm(CharmBaseWithState):
 
         rsyslog_log_path = str(wazuh.RSYSLOG_SERVICE_LOG_PATH)
         rsyslog_cmd = f"rsyslogd -n -f /etc/rsyslog.conf &>> {rsyslog_log_path}"
+        # Poll the Wazuh API port and fire a pebble custom notice once it is reachable,
+        # re-triggering reconcile without blocking a hook on the service restart.
+        callback_cmd = (
+            "while :; do "
+            f'if timeout 2 bash -c "</dev/tcp/localhost/{wazuh.API_PORT}"; '
+            f"then pebble notify {wazuh.WAZUH_API_READY_NOTICE}; break; fi; "
+            "sleep 2; done"
+        )
 
         return {
             "summary": "wazuh manager layer",
@@ -469,6 +525,13 @@ class WazuhServerCharm(CharmBaseWithState):
                     "command": f"/bin/bash -c '{rsyslog_cmd}'",
                     "startup": "enabled",
                     "environment": environment,
+                },
+                CHARM_CALLBACK_SERVICE_NAME: {
+                    "override": "replace",
+                    "summary": "notify the charm once the Wazuh API is reachable",
+                    "command": f"/bin/bash -c '{callback_cmd}'",
+                    "startup": "disabled",
+                    "on-success": "ignore",
                 },
             },
             "checks": {

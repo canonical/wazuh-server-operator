@@ -13,6 +13,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import ops
 import pytest
+import requests
 import yaml
 from lxml import etree  # nosec
 from ops.testing import Harness
@@ -605,3 +606,37 @@ def test_get_version() -> None:
     container = harness.charm.unit.get_container("wazuh-server")
     version = wazuh.get_version(container)
     assert version == "v4.11.0"
+
+
+def test_sync_ossec_conf_is_idempotent() -> None:
+    """
+    arrange: copy the Wazuh configuration file into a container.
+    act: call sync_ossec_conf twice with identical arguments.
+    assert: the first call reports a change and the second one does not.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
+    container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
+    key = secrets.token_hex(16)
+    args = (["10.0.0.2:9200", "10.0.0.3:9200"], "10.1.0.2", "wazuh-server/0", key)
+
+    first_changed = wazuh.sync_ossec_conf(container, *args, enable_vulnerability_detection=False)
+    second_changed = wazuh.sync_ossec_conf(container, *args, enable_vulnerability_detection=False)
+
+    assert first_changed
+    assert not second_changed
+
+
+def test_authenticate_user_raises_not_ready_when_api_unreachable() -> None:
+    """
+    arrange: mock the API request to raise a connection error.
+    act: authenticate a user.
+    assert: a WazuhNotReadyError is raised.
+    """
+    with patch("requests.Session.get") as get_mock:
+        get_mock.side_effect = requests.exceptions.ConnectionError()
+
+        with pytest.raises(wazuh.WazuhNotReadyError):
+            wazuh.authenticate_user("wazuh", "password")

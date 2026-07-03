@@ -16,7 +16,12 @@ from pydantic import AnyUrl
 
 import wazuh
 from certificates_observer import CertificatesObserver
-from charm import WAZUH_PEER_RELATION_NAME, WazuhServerCharm
+from charm import (
+    CHARM_CALLBACK_SERVICE_NAME,
+    PROMETHEUS_SERVICE_NAME,
+    WAZUH_PEER_RELATION_NAME,
+    WazuhServerCharm,
+)
 from state import (
     IncompleteStateError,
     InvalidStateError,
@@ -370,3 +375,172 @@ def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock, *_)
 
     with pytest.raises(InvalidStateError):
         harness.charm.reconcile(None)
+
+
+def _minimal_valid_state() -> State:
+    """Build a valid State for reconcile tests without repository or agent password.
+
+    Returns: a valid State instance.
+    """
+    return State(
+        agent_password=None,
+        api_credentials={
+            "wazuh": secrets.token_hex(),
+            "wazuh-wui": secrets.token_hex(),
+            "prometheus": secrets.token_hex(),
+        },
+        rsyslog_public_cert="certificate",
+        cluster_key=secrets.token_hex(16),
+        indexer_endpoints=["10.0.0.1"],
+        filebeat_username="user1",
+        filebeat_password=secrets.token_hex(),
+        filebeat_ca="filebeat_ca",
+        wazuh_config=WazuhConfig(
+            custom_config_repository=None,
+            custom_config_ssh_key=None,
+            logs_ca_cert="logs_ca",
+        ),
+        custom_config_ssh_key=None,
+    )
+
+
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+@patch.object(wazuh, "sync_filebeat_config")
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(State, "from_charm")
+@patch.object(wazuh, "sync_ossec_conf")
+@patch.object(wazuh, "sync_certificates")
+@patch.object(wazuh, "sync_filebeat_user")
+@patch.object(wazuh, "ensure_log_ingestion_dir")
+@patch.object(wazuh, "ensure_ossec_logs_dir")
+@patch.object(wazuh, "get_version")
+@patch.object(CertificatesObserver, "get_csr")
+def test_reconcile_arms_charm_callback_when_wazuh_not_ready(
+    filebeat_csr_mock,
+    get_version_mock,
+    _ensure_ossec_logs_dir_mock,
+    _ensure_log_ingestion_dir_mock,
+    _sync_filebeat_user_mock,
+    _wazuh_sync_certificates_mock,
+    _wazuh_sync_ossec_conf_mock,
+    state_from_charm_mock,
+    _change_api_password_mock,
+    authenticate_user_mock,
+    *_,
+):
+    """
+    arrange: mock a valid state on the leader with the Wazuh API unreachable.
+    act: call reconcile, then call it again with the API reachable.
+    assert: the first reconcile arms the charm-callback service and sets maintenance
+        status; the second one stops the service and reaches active status.
+    """
+    state_from_charm_mock.return_value = _minimal_valid_state()
+    authenticate_user_mock.side_effect = wazuh.WazuhNotReadyError()
+    get_version_mock.return_value = "v4.11.0"
+    filebeat_csr_mock.return_value = b""
+    harness = Harness(WazuhServerCharm)
+    harness.set_leader(True)
+    harness.begin()
+    harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    harness.charm.reconcile(None)
+
+    assert harness.model.unit.status.name == ops.MaintenanceStatus().name
+    assert container.get_service(CHARM_CALLBACK_SERVICE_NAME).is_running()
+
+    authenticate_user_mock.side_effect = None
+    authenticate_user_mock.return_value = secrets.token_hex()
+
+    harness.charm.reconcile(None)
+
+    assert harness.model.unit.status.name == ops.ActiveStatus().name
+    assert not container.get_service(CHARM_CALLBACK_SERVICE_NAME).is_running()
+
+
+@patch.object(State, "from_charm")
+@patch.object(CertificatesObserver, "get_csr")
+def test_pebble_custom_notice_triggers_reconcile_only_for_api_ready_key(state_from_charm_mock, *_):
+    """
+    arrange: instantiate a charm with a sentinel status and pebble unreachable.
+    act: emit pebble custom notices with an unrelated key and with the API-ready key.
+    assert: only the API-ready key triggers reconcile (which sets waiting status).
+    """
+    state_from_charm_mock.return_value = MagicMock()
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, False)
+    harness.charm.unit.status = ops.ActiveStatus()
+
+    harness.pebble_notify("wazuh-server", "example.com/unrelated")
+
+    assert harness.model.unit.status.name == ops.ActiveStatus().name
+
+    harness.pebble_notify("wazuh-server", wazuh.WAZUH_API_READY_NOTICE)
+
+    assert harness.model.unit.status.name == ops.WaitingStatus().name
+
+
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+@patch.object(WazuhServerCharm, "_restart_service")
+@patch.object(wazuh, "sync_filebeat_config")
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(State, "from_charm")
+@patch.object(wazuh, "sync_ossec_conf")
+@patch.object(wazuh, "sync_certificates")
+@patch.object(wazuh, "sync_filebeat_user")
+@patch.object(wazuh, "ensure_log_ingestion_dir")
+@patch.object(wazuh, "ensure_ossec_logs_dir")
+@patch.object(wazuh, "get_version")
+@patch.object(CertificatesObserver, "get_csr")
+def test_reconcile_does_not_restart_services_on_filesystem_only_changes(
+    filebeat_csr_mock,
+    get_version_mock,
+    ensure_ossec_logs_dir_mock,
+    ensure_log_ingestion_dir_mock,
+    sync_filebeat_user_mock,
+    wazuh_sync_certificates_mock,
+    wazuh_sync_ossec_conf_mock,
+    state_from_charm_mock,
+    _change_api_password_mock,
+    authenticate_user_mock,
+    _create_api_user_mock,
+    sync_filebeat_config_mock,
+    restart_service_mock,
+    *_,
+):
+    """
+    arrange: mock a valid state where only directory/permission fixes report changes.
+    act: call reconcile.
+    assert: neither the wazuh nor the rsyslog service is restarted.
+    """
+    state_from_charm_mock.return_value = _minimal_valid_state()
+    ensure_ossec_logs_dir_mock.return_value = True
+    ensure_log_ingestion_dir_mock.return_value = True
+    wazuh_sync_ossec_conf_mock.return_value = False
+    wazuh_sync_certificates_mock.return_value = False
+    sync_filebeat_user_mock.return_value = False
+    sync_filebeat_config_mock.return_value = False
+    authenticate_user_mock.return_value = secrets.token_hex()
+    get_version_mock.return_value = "v4.11.0"
+    filebeat_csr_mock.return_value = b""
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
+    container = harness.model.unit.containers.get("wazuh-server")
+    assert container
+    harness.set_can_connect(container, True)
+
+    harness.charm.reconcile(None)
+
+    assert harness.model.unit.status.name == ops.ActiveStatus().name
+    restarted_services = {service_call.args[1] for service_call in restart_service_mock.mock_calls}
+    assert restarted_services <= {PROMETHEUS_SERVICE_NAME}

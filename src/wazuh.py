@@ -32,6 +32,8 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 tracer = opentelemetry.trace.get_tracer(__name__)
 
 CONTAINER_NAME = "wazuh-server"
+# Pebble notice key fired by the charm-callback service once the Wazuh API is reachable
+WAZUH_API_READY_NOTICE = "canonical.com/wazuh-server/api-ready"
 INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
 REPOSITORY_PATH = "/root/repository"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
@@ -881,7 +883,9 @@ def authenticate_user(username: str, password: str) -> str:
     # as a compromised localhost service would indicate we're already compromised
     try:
         session = requests.Session()
-        retries = requests.adapters.Retry(connect=10, backoff_factor=0.2, status_forcelist=[500])
+        # Fail fast when the API is down: the charm arms the charm-callback pebble
+        # service which re-triggers reconcile once the API is reachable again.
+        retries = requests.adapters.Retry(connect=2, backoff_factor=0.2, status_forcelist=[500])
         session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
         response = session.get(  # nosec
             AUTH_ENDPOINT,

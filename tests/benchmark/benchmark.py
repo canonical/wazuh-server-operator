@@ -213,7 +213,14 @@ async def deploy_k8s_model(
     """
     logger.info("Creating k8s model %s", model_name)
     model = await k8s_controller.add_model(model_name, cloud_name=k8s_cloud)
-    await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
+    # Short update-status interval so a missed pebble notice cannot stall the
+    # charm's reconcile re-trigger for the default 5 minutes.
+    await model.set_config(
+        {
+            "logging-config": "<root>=INFO;unit=DEBUG",
+            "update-status-hook-interval": "30s",
+        }
+    )
 
     if storage_pool:
         logger.info("Creating Juju storage pool %s in model %s", storage_pool, model_name)
@@ -346,7 +353,7 @@ async def wire_full_deploy(
     opensearch_offer_url: str,
     k8s_controller_name: str,
     with_tracing: bool = False,
-) -> None:
+) -> float:
     """Wire cross-model relations and wait for all apps to become active.
 
     Args:
@@ -357,6 +364,9 @@ async def wire_full_deploy(
         opensearch_offer_url: Cross-model offer URL for opensearch-client.
         k8s_controller_name: Name of the k8s Juju controller.
         with_tracing: If True, include tempo-k8s in the idle wait.
+
+    Returns:
+        Wall-clock seconds from the last integration until wazuh-server/0 is active.
     """
     logger.info("Consuming opensearch-client offer on k8s model")
     await k8s_model.consume(opensearch_offer_url)
@@ -367,6 +377,11 @@ async def wire_full_deploy(
     wazuh_api_offer_url = f"{k8s_controller_name}:admin/{k8s_model_name}.wazuh-server"
     await machine_model.consume(wazuh_api_offer_url)
     await machine_model.integrate("wazuh-server", "wazuh-dashboard")
+
+    time_to_active = await _wait_for_unit_active(k8s_model, f"{WAZUH_SERVER_APP}/0", timeout=1800)
+    logger.info(
+        "wazuh-server/0 reached active status %.3fs after the last integration", time_to_active
+    )
 
     logger.info("Waiting for wazuh-server to become active")
     k8s_idle_apps = [WAZUH_SERVER_APP, "traefik-k8s", "self-signed-certificates"]
@@ -392,6 +407,34 @@ async def wire_full_deploy(
         timeout=600,
     )
     logger.info("Full deployment ready — wazuh-server is active")
+    return time_to_active
+
+
+async def _wait_for_unit_active(model: Model, unit_name: str, timeout: float) -> float:
+    """Poll a unit's workload status until it is active and measure the elapsed time.
+
+    Unlike ``wait_for_idle``, this returns as soon as the unit reports active,
+    without waiting for an idle period, so it is suitable as a timing metric.
+
+    Args:
+        model: Connected model containing the unit.
+        unit_name: Name of the unit to poll (e.g. ``wazuh-server/0``).
+        timeout: Maximum seconds to wait before raising TimeoutError.
+
+    Returns:
+        Wall-clock seconds until the unit reported active status.
+
+    Raises:
+        TimeoutError: If the unit does not become active within the timeout.
+    """
+    start = time.monotonic()
+    deadline = start + timeout
+    while time.monotonic() < deadline:
+        unit = model.units.get(unit_name)
+        if unit is not None and unit.workload_status == "active":
+            return time.monotonic() - start
+        await asyncio.sleep(2)
+    raise TimeoutError(f"Timed out waiting for {unit_name} to become active")
 
 
 def collect_diagnostics(
@@ -452,6 +495,7 @@ def collect_and_report_reconcile_times(
     k8s_controller_name: str,
     runs_output: Path = Path("benchmark_runs.csv"),
     summary_output: Path = Path("benchmark_summary.csv"),
+    time_to_active: float | None = None,
 ) -> None:
     """Read juju debug-log, print reconcile timing statistics and write CSV reports.
 
@@ -460,6 +504,8 @@ def collect_and_report_reconcile_times(
         k8s_controller_name: Name of the k8s Juju controller.
         runs_output: Path to write the per-run reconcile times CSV file.
         summary_output: Path to write the summary statistics CSV file.
+        time_to_active: Wall-clock seconds from the last integration until
+            wazuh-server reached active status, if measured.
 
     Raises:
         SystemExit: If no reconcile timing entries are found in the log.
@@ -497,13 +543,18 @@ def collect_and_report_reconcile_times(
     logger.info("  Min   : %.3fs", min(times))
     logger.info("  Max   : %.3fs", max(times))
     logger.info("  Avg   : %.3fs", sum(times) / len(times))
+    if time_to_active is not None:
+        logger.info("  Time to active: %.3fs", time_to_active)
     logger.info("=========================================")
 
-    write_reconcile_csv_reports(times, runs_output, summary_output)
+    write_reconcile_csv_reports(times, runs_output, summary_output, time_to_active)
 
 
 def write_reconcile_csv_reports(
-    times: list[float], runs_output: Path, summary_output: Path
+    times: list[float],
+    runs_output: Path,
+    summary_output: Path,
+    time_to_active: float | None = None,
 ) -> None:
     """Write per-run and summary CSV reports for the collected reconcile times.
 
@@ -512,12 +563,15 @@ def write_reconcile_csv_reports(
     * ``runs_output`` contains one row per reconcile run with columns
       ``run`` (1-based index) and ``reconcile_seconds``.
     * ``summary_output`` contains aggregate statistics in a ``metric,value``
-      layout (count, min, max, mean, median and stdev).
+      layout (count, min, max, mean, median and stdev), plus a
+      ``time_to_active`` row when the measurement is available.
 
     Args:
         times: Reconcile durations in seconds, ordered by run.
         runs_output: Path to write the per-run reconcile times CSV file.
         summary_output: Path to write the summary statistics CSV file.
+        time_to_active: Wall-clock seconds until wazuh-server reached active
+            status, if measured.
     """
     with runs_output.open("w", newline="", encoding="utf-8") as runs_file:
         writer = csv.writer(runs_file)
@@ -540,6 +594,8 @@ def write_reconcile_csv_reports(
         writer.writerow(["count", summary["count"]])
         for metric in ("min", "max", "mean", "median", "stdev"):
             writer.writerow([metric, f"{summary[metric]:.3f}"])
+        if time_to_active is not None:
+            writer.writerow(["time_to_active", f"{time_to_active:.3f}"])
     logger.info("Wrote summary statistics to %s", summary_output)
 
 
@@ -793,13 +849,14 @@ async def run_benchmark(
             with_tracing=with_tracing,
         )
 
+        time_to_active: float | None = None
         if full_deploy:
             machine_controller = Controller()
             await machine_controller.connect_controller(machine_controller_name)
             machine_model, opensearch_offer_url, _ = await deploy_machine_model(
                 machine_controller, machine_model_name, machine_controller_name, lxd_cloud
             )
-            await wire_full_deploy(
+            time_to_active = await wire_full_deploy(
                 k8s_model,
                 k8s_model_name,
                 machine_model,
@@ -828,6 +885,7 @@ async def run_benchmark(
             k8s_controller_name,
             Path(runs_output),
             Path(summary_output),
+            time_to_active,
         )
         if with_tracing:
             export_traces(k8s_model_name, Path(traces_output))
