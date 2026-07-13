@@ -6,6 +6,7 @@ juju:
 providers:
   microk8s:
     enable: true
+    channel: 1.35-strict/stable
     bootstrap: true
     addons:
       - hostpath-storage

@@ -46,7 +46,9 @@ async def test_api(model: Model, application: Application, traefik: Application)
     Act: do nothing.
     Assert: the default credentials are no longer valid for the API.
     """
-    await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
+    await model.wait_for_idle(
+        apps=[application.name, traefik.name], status="active", timeout=1200, idle_period=20
+    )
 
     traefik_ip = await get_k8s_service_address(model, "traefik-k8s-lb")
     response = requests.get(  # nosec
