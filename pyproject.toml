@@ -20,12 +20,12 @@ dependencies = [
   "cryptography==49.0.0",
   "jsonschema==4.26.0",
   "lxml==6.1.1",
-  "ops==3.7.1",
-  "ops-tracing==3.7.1",
+  "ops==3.8.0",
+  "ops-tracing==3.8.0",
   "pydantic==2.13.4",
   "requests==2.34.2",
   "rpds-py==0.30.0",
-  "signxml==5.0.1",
+  "signxml==5.1.0",
   "wheel==0.47.0",
 ]
 

@@ -1232,21 +1232,21 @@ wheels = [
 
 [[package]]
 name = "ops"
-version = "3.7.1"
+version = "3.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
     { name = "pyyaml" },
     { name = "websocket-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/60/ad398d889fd03b1b4f950fad54ad4d0cf7a81fde21f9866a8139c8f03684/ops-3.7.1.tar.gz", hash = "sha256:1765bf6d1cff376ea27608542e183b055c89f2c5f54bca602072bcc817195abc", size = 582424, upload-time = "2026-05-28T04:13:43.906Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/e4/70ed4f3dc41b2d626ef38ffc7c2418b680f0c7f0ddf0a4410572903734df/ops-3.8.0.tar.gz", hash = "sha256:bdbf4bbcd0622acade9ef0b156ddefc31be59f0ef55d563081a094cf7dd6665c", size = 606170, upload-time = "2026-06-30T03:24:48.612Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/20/742e720af65f9ad23ae0cfe140502a10b2e74da6c63773f3999dad793661/ops-3.7.1-py3-none-any.whl", hash = "sha256:559dc6770e551da5f4b9686a5605ed927c140182eb38bcc31c1c531c2f98923a", size = 212723, upload-time = "2026-05-28T04:13:39.845Z" },
+    { url = "https://files.pythonhosted.org/packages/46/70/234d31bdee92d89fd7a4e0944283469a88fad5ea23e2ad449d6ce1256b53/ops-3.8.0-py3-none-any.whl", hash = "sha256:03f788091b10c5ed37a0a290e814b1a90aa0dcec6006a87875a085072df2261d", size = 215545, upload-time = "2026-06-30T03:24:43.916Z" },
 ]
 
 [[package]]
 name = "ops-tracing"
-version = "3.7.1"
+version = "3.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
@@ -1254,9 +1254,9 @@ dependencies = [
     { name = "ops" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b3/a4/f56c5f146cb38a1092b68fe8f29b945b982c3daebfee6854785b60641437/ops_tracing-3.7.1.tar.gz", hash = "sha256:fc433a58c868d36a64fe708ef8c9318ec925af7908490057ce6274c116f49af8", size = 28599, upload-time = "2026-05-28T04:13:46.306Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/60/44/d8c1dffecc4a945875a8506dc4863bd9a17e867f880b266e2f0477f890ef/ops_tracing-3.8.0.tar.gz", hash = "sha256:eafc70935e5303d72466cb331bc2d3807fa34e4ddb25a71cc6c1095e6d42d205", size = 28701, upload-time = "2026-06-30T03:24:50.69Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/3c/eed4b9c677050b211c60d64128226ba8e5f48a767f86eaf46486f883e727/ops_tracing-3.7.1-py3-none-any.whl", hash = "sha256:6b7a74e61477e0e47b42460aafc1669dfee98ec2e4a2f0360f0b86e8e6c49c3f", size = 31444, upload-time = "2026-05-28T04:13:42.546Z" },
+    { url = "https://files.pythonhosted.org/packages/73/73/a4a0178c2938cce01b48856d8d5bbc3823fcdec6b3e271226a8f35ce21f5/ops_tracing-3.8.0-py3-none-any.whl", hash = "sha256:e0129caad0d361b52d956194efbfce18d2dfd6ac3cea7836b654a12ca78c3141", size = 31545, upload-time = "2026-06-30T03:24:47.005Z" },
 ]
 
 [[package]]
@@ -2005,16 +2005,16 @@ wheels = [
 
 [[package]]
 name = "signxml"
-version = "5.0.1"
+version = "5.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "cryptography" },
     { name = "lxml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/71/7cefb840c9270bf1753f236fdfbb367932552a647e8bedf83075e3be732b/signxml-5.0.1.tar.gz", hash = "sha256:996d1740358d9fffc4429dc99284b4ff522bc38dde57e41f1d5c8c365d56c107", size = 1617378, upload-time = "2026-06-23T14:39:51.06Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/41/48/82fb75feed6fd29af5cc26ff6b8d05845c7e4620a13c18e4c9c0f7940d09/signxml-5.1.0.tar.gz", hash = "sha256:9b5fb208b59e843a87f36fd9fc3c8ccbb46e11b1ffab037d4b177ece33b5fd18", size = 1623299, upload-time = "2026-07-05T02:03:03.41Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/27/68/39c51ce56b0c82eb95e1be063a553ad80d47e474d922ead869543a2fdb0c/signxml-5.0.1-py3-none-any.whl", hash = "sha256:1e4b5de5295f5207c4153824e8f1c4fc880c13f4850e3e98ecf8941a6de23cd8", size = 60932, upload-time = "2026-06-23T14:39:49.516Z" },
+    { url = "https://files.pythonhosted.org/packages/50/20/16b2e170786aa6140344d3aac887fbd266717421ab4a79c0020df0e19726/signxml-5.1.0-py3-none-any.whl", hash = "sha256:f9d815164e35c8451295fc532d5292d2b10202a85a845c17c802fb15da8783c6", size = 62628, upload-time = "2026-07-05T02:03:01.556Z" },
 ]
 
 [[package]]
@@ -2256,12 +2256,12 @@ requires-dist = [
     { name = "cryptography", specifier = "==49.0.0" },
     { name = "jsonschema", specifier = "==4.26.0" },
     { name = "lxml", specifier = "==6.1.1" },
-    { name = "ops", specifier = "==3.7.1" },
-    { name = "ops-tracing", specifier = "==3.7.1" },
+    { name = "ops", specifier = "==3.8.0" },
+    { name = "ops-tracing", specifier = "==3.8.0" },
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "requests", specifier = "==2.34.2" },
     { name = "rpds-py", specifier = "==0.30.0" },
-    { name = "signxml", specifier = "==5.0.1" },
+    { name = "signxml", specifier = "==5.1.0" },
     { name = "wheel", specifier = "==0.47.0" },
 ]
 
