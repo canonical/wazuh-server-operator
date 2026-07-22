@@ -239,7 +239,7 @@ class WazuhServerCharm(CharmBaseWithState):
         changed_certs: bool = wazuh.sync_certificates(
             container=container,
             path=wazuh.RSYSLOG_CERTIFICATES_PATH,
-            public_key=self.state.rsyslog_public_cert,
+            public_key=self.state.rsyslog_full_chain,
             private_key=self.rsyslog_certificates.get_private_key(),
             root_ca=self.state.logs_ca_cert,
             user=wazuh.RSYSLOG_USER,

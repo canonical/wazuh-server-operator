@@ -274,6 +274,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         agent_password: the agent password.
         api_credentials: a map containing the API credentials.
         rsyslog_public_cert: the public TLS certificate for rsyslog.
+        rsyslog_full_chain: the full public TLS certificate chain for rsyslog.
         cluster_key: the Wazuh key for the cluster nodes.
         indexer_endpoints: list of Wazuh indexer endpoints.
         filebeat_username: the filebeat username.
@@ -291,6 +292,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     agent_password: str | None = None
     api_credentials: dict[str, str]
     rsyslog_public_cert: str = Field(..., min_length=1)
+    rsyslog_full_chain: str = Field(..., min_length=1)
     cluster_key: str = Field(min_length=32, max_length=32)
     indexer_endpoints: typing.Annotated[list[str], Field(min_length=1)]
     filebeat_username: str = Field(..., min_length=1)
@@ -317,13 +319,19 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         custom_config_ssh_key: str | None,
         opencti_token: str | None = None,
         opencti_url: str | None = None,
+        rsyslog_full_chain: str | None = None,
     ):
+
+        if rsyslog_full_chain is None:
+            rsyslog_full_chain = rsyslog_public_cert
+            
         """Initialize a new instance of the CharmState class.
 
         Args:
             agent_password: the agent password.
             api_credentials: a map ccontaining the API credentials.
             rsyslog_public_cert: the public TLS certificate for rsyslog.
+            rsyslog_full_chain: the full public TLS certificate chain for rsyslog.
             cluster_key: the Wazuh key for the cluster nodes.
             indexer_endpoints: list of Wazuh indexer endpoints.
             filebeat_username: the filebeat username.
@@ -338,6 +346,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             agent_password=agent_password,
             api_credentials=api_credentials,
             rsyslog_public_cert=rsyslog_public_cert,
+            rsyslog_full_chain=rsyslog_full_chain,
             cluster_key=cluster_key,
             indexer_endpoints=indexer_endpoints,
             filebeat_username=filebeat_username,
@@ -421,10 +430,18 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         opencti_url, opencti_token = _fetch_opencti_details(charm.model, opencti_relation_data)
         try:
             if matching_certificates:
+                leaf_cert = matching_certificates[0].certificate
+
+                # Assemble full chain by concatenating any available intermediate/root chain items
+                full_chain = leaf_cert
+                if matching_certificates[0].chain:
+                    full_chain += "\n" + "\n".join(matching_certificates[0].chain)
+                
                 return cls(
                     agent_password=agent_password,
                     api_credentials=api_credentials,
                     rsyslog_public_cert=matching_certificates[0].certificate,
+                    rsyslog_full_chain=full_chain,
                     cluster_key=cluster_key,
                     indexer_endpoints=endpoints,
                     filebeat_username=filebeat_user,
