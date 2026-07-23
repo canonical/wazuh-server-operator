@@ -11,9 +11,5 @@ jobs:
       pull-requests: write
     secrets: inherit
     with:
-      self-hosted-runner: true
-      self-hosted-runner-label: self-hosted-linux-amd64-noble-medium
-      self-hosted-runner-arch: amd64
-      self-hosted-runner-image: noble
       vale-style-check: false
       with-uv: true

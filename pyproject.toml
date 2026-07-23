@@ -16,16 +16,16 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "cosl==1.9.2",
+  "cosl==1.10.2",
   "cryptography==49.0.0",
   "jsonschema==4.26.0",
   "lxml==6.1.1",
-  "ops==3.7.1",
-  "ops-tracing==3.7.1",
+  "ops==3.8.0",
+  "ops-tracing==3.8.0",
   "pydantic==2.13.4",
   "requests==2.34.2",
   "rpds-py==0.30.0",
-  "signxml==4.5.1",
+  "signxml==5.1.0",
   "wheel==0.47.0",
 ]
 
@@ -61,6 +61,7 @@ integration = [
   "allure-pytest>=2.8.18",
   "allure-pytest-collection-report @ git+https://github.com/canonical/data-platform-workflows@v24.0.0#subdirectory=python/pytest_plugins/allure_pytest_collection_report",
   "juju",
+  "opcli @ git+https://github.com/canonical/charm-ci.git ; python_version >= '3.12'",
   "pyjwt",
   "pytest",
   "pytest-asyncio",

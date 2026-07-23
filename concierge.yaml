@@ -1,0 +1,30 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+juju:
+  channel: 3/stable
+
+providers:
+  microk8s:
+    enable: true
+    channel: 1.35-strict/stable
+    bootstrap: true
+    addons:
+      - hostpath-storage
+      - dns
+      - rbac
+      - registry
+      - metallb:10.43.45.1-10.43.45.14
+    model-defaults:
+      test-mode: "true"
+      automatically-retry-hooks: "false"
+  lxd:
+    enable: true
+    bootstrap: true
+    model-defaults:
+      test-mode: "true"
+      automatically-retry-hooks: "false"
+
+host:
+  snaps:
+    rockcraft:
+    charmcraft:

@@ -7,7 +7,6 @@ import asyncio
 import itertools
 import json
 import logging
-import os.path
 import secrets
 import typing
 from pathlib import Path
@@ -44,7 +43,7 @@ async def model_fixture(ops_test: OpsTest) -> Model:
 async def machine_controller_fixture() -> typing.AsyncGenerator[Controller, None]:
     """The lxd controller."""
     controller = Controller()
-    await controller.connect_controller("localhost")
+    await controller.connect_controller("concierge-lxd")
     yield controller
     await controller.disconnect()
     await asyncio.sleep(1)
@@ -72,17 +71,8 @@ async def machine_model_fixture(
         model = await machine_controller.get_model(machine_model_name)
     else:
         model = await machine_controller.add_model(machine_model_name)
-    await model.connect(f"localhost:admin/{model.name}")
+    await model.connect(f"concierge-lxd:admin/{model.name}")
     await model.set_config(MACHINE_MODEL_CONFIG)
-    logger.info("Using VM for deployment until LXD+SNAP+Kernel 6.14 bug is fixed")
-    await model.set_constraints(
-        {
-            "virt-type": "virtual-machine",
-            "mem": 4096,
-            "root-disk": 15000,
-            "cores": 4,
-        }
-    )
     yield model
     await model.disconnect()
 
@@ -228,21 +218,11 @@ async def wazuh_dashboard_fixture(
         )
 
 
-@pytest_asyncio.fixture(scope="module", name="charm")
-async def charm_fixture(pytestconfig: pytest.Config) -> str:
-    """Get value from parameter charm-file."""
-    charm = pytestconfig.getoption("--charm-file")
-    assert charm, "--charm-file must be set"
-    if not os.path.exists(charm):
-        logger.info("Using parent directory for charm file")
-        charm = os.path.join("..", charm)
-    return charm
-
-
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 @pytest_asyncio.fixture(scope="module", name="application")
 async def application_fixture(
-    charm: str,
+    charm_path: str,
+    resource_images: dict[str, str],
     machine_model: Model,
     model: Model,
     k8s_self_signed_certificates: Application,
@@ -252,9 +232,6 @@ async def application_fixture(
 ) -> typing.AsyncGenerator[Application, None]:
     """Deploy the charm."""
     # Deploy the charm and wait for active/idle status
-    resources = {
-        "wazuh-server-image": pytestconfig.getoption("--wazuh-server-image"),
-    }
     wazuh_server_app = "wazuh-server"
     if pytestconfig.getoption("--no-deploy") and wazuh_server_app in model.applications:
         logger.warning("Using existing application: %s", wazuh_server_app)
@@ -262,17 +239,17 @@ async def application_fixture(
         return
 
     await model.deploy(
-        f"./{charm}",
+        charm_path,
         config={
             "logs-ca-cert": (Path(__file__).parent / "certs/ca.crt").read_text(),
             "enable-vulnerability-detection": False,
         },
-        resources=resources,
+        resources=resource_images,
         trust=True,
     )
     application = model.applications[wazuh_server_app]
     await model.integrate(
-        f"localhost:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
+        f"concierge-lxd:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
     )
     await model.integrate(k8s_self_signed_certificates.name, application.name)

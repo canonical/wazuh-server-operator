@@ -5,6 +5,7 @@
 
 """Integration tests."""
 
+import asyncio
 import logging
 import secrets
 import ssl
@@ -39,13 +40,15 @@ PEBBLE_EXEC = f"PEBBLE_SOCKET={PEBBLE_SOCKET} /charm/bin/pebble exec"
 
 
 @pytest.mark.abort_on_fail
-async def test_api(model: Model, application: Application):
+async def test_api(model: Model, application: Application, traefik: Application):
     """
     Arrange: deploy the charm together with related charms.
     Act: do nothing.
     Assert: the default credentials are no longer valid for the API.
     """
-    await model.wait_for_idle(apps=[application.name], status="active", timeout=1400)
+    await model.wait_for_idle(
+        apps=[application.name, traefik.name], status="active", timeout=1200, idle_period=20
+    )
 
     traefik_ip = await get_k8s_service_address(model, "traefik-k8s-lb")
     response = requests.get(  # nosec
@@ -144,8 +147,9 @@ async def test_cluster_api_credentials(
         )
         retries = 5
         while retries:
+            url = f"https://{ip}:55000/security/user/authenticate"
             response = requests.get(  # nosec
-                f"https://{ip}:55000/security/user/authenticate",
+                url,
                 auth=("wazuh", password),
                 timeout=10,
                 verify=False,
@@ -155,11 +159,13 @@ async def test_cluster_api_credentials(
                 break
 
             logger.warning(
-                "Wazuh API authentication failed with status %s. %s retries remaining.",
+                "Wazuh API authentication failed with status %s. %s retries remaining. %s.",
                 response.status_code,
                 retries,
+                url,
             )
             retries -= 1
+            await asyncio.sleep(1)
         assert response.status_code == 200, f"Wazuh API authentication failed for {unit.name}."
         logger.info("Successfully authenticated to API on unit %s", unit.name)
 
