@@ -321,7 +321,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         opencti_url: str | None = None,
         rsyslog_full_chain: str | None = None,
     ):
-
         if rsyslog_full_chain is None:
             rsyslog_full_chain = rsyslog_public_cert
             

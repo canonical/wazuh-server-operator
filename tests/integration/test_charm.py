@@ -298,10 +298,12 @@ async def test_rsyslog_certificate_bundle_sync(application: Application):
     Assert: The file exists and is cleanly populated with valid PEM formatting.
     """
     wazuh_unit = application.units[0]
-    
+
     action = await wazuh_unit.run(f"{PEBBLE_EXEC} -- cat /etc/rsyslog.d/certs/certificate.pem")
     await action.wait()
-    
-    assert action.results.get("return-code") == 0, "Rsyslog certificate file is missing or unreadable"
+
+    assert action.results.get("return-code") == 0, (
+        "Rsyslog certificate file is missing or unreadable"
+    )
     stdout = action.results.get("stdout")
     assert "-----BEGIN CERTIFICATE-----" in stdout, "Certificate file is missing valid PEM headers"
