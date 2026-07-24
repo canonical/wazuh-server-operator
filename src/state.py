@@ -323,7 +323,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
     ):
         if rsyslog_full_chain is None:
             rsyslog_full_chain = rsyslog_public_cert
-            
+
         """Initialize a new instance of the CharmState class.
 
         Args:
@@ -435,7 +435,7 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
                 full_chain = leaf_cert
                 if matching_certificates[0].chain:
                     full_chain += "\n" + "\n".join(matching_certificates[0].chain)
-                
+
                 return cls(
                     agent_password=agent_password,
                     api_credentials=api_credentials,
