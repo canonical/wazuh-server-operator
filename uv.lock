@@ -1242,21 +1242,21 @@ wheels = [
 
 [[package]]
 name = "ops"
-version = "3.8.0"
+version = "3.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
     { name = "pyyaml" },
     { name = "websocket-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/e4/70ed4f3dc41b2d626ef38ffc7c2418b680f0c7f0ddf0a4410572903734df/ops-3.8.0.tar.gz", hash = "sha256:bdbf4bbcd0622acade9ef0b156ddefc31be59f0ef55d563081a094cf7dd6665c", size = 606170, upload-time = "2026-06-30T03:24:48.612Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ff/65/a5263057209f94836ae27949dd9905a24a258fd6835e3fc359ecd7a3a05d/ops-3.8.1.tar.gz", hash = "sha256:fc420a77dea9bc36093ce1ae9f1f98825c3945bc027b4a859c67faa96798fca3", size = 609576, upload-time = "2026-07-30T02:58:53.313Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/70/234d31bdee92d89fd7a4e0944283469a88fad5ea23e2ad449d6ce1256b53/ops-3.8.0-py3-none-any.whl", hash = "sha256:03f788091b10c5ed37a0a290e814b1a90aa0dcec6006a87875a085072df2261d", size = 215545, upload-time = "2026-06-30T03:24:43.916Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/f2/051eb0c0e394fd3ceb57b39b016a816429040d27c569aa84078960c53a1a/ops-3.8.1-py3-none-any.whl", hash = "sha256:6da38925e40ee4d72f9c5a9bf3e3228d18f0d25fa7ae9894b9c2f34b43771159", size = 215655, upload-time = "2026-07-30T02:58:48.713Z" },
 ]
 
 [[package]]
 name = "ops-tracing"
-version = "3.8.0"
+version = "3.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
@@ -1264,9 +1264,9 @@ dependencies = [
     { name = "ops" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/60/44/d8c1dffecc4a945875a8506dc4863bd9a17e867f880b266e2f0477f890ef/ops_tracing-3.8.0.tar.gz", hash = "sha256:eafc70935e5303d72466cb331bc2d3807fa34e4ddb25a71cc6c1095e6d42d205", size = 28701, upload-time = "2026-06-30T03:24:50.69Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/97/84/50a68b7837fd6e954bc786cd9cbcd5c50c8aef02869ac9d53c23bfbc0b27/ops_tracing-3.8.1.tar.gz", hash = "sha256:04f32240bc93e32269ae64b3c9a4b00fcd6831088bdf02bf01b3278e3d52b73f", size = 29957, upload-time = "2026-07-30T02:58:55.553Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/73/73/a4a0178c2938cce01b48856d8d5bbc3823fcdec6b3e271226a8f35ce21f5/ops_tracing-3.8.0-py3-none-any.whl", hash = "sha256:e0129caad0d361b52d956194efbfce18d2dfd6ac3cea7836b654a12ca78c3141", size = 31545, upload-time = "2026-06-30T03:24:47.005Z" },
+    { url = "https://files.pythonhosted.org/packages/da/65/6139a0ce98ad8e98f58cbea5a970c21553a9e78e03114dd983cd99a1b290/ops_tracing-3.8.1-py3-none-any.whl", hash = "sha256:b43b108cf1997c12cf5b0526b8ae0bfbba11c704b4017d6be71dcf5335c883eb", size = 32935, upload-time = "2026-07-30T02:58:51.788Z" },
 ]
 
 [[package]]
@@ -2266,8 +2266,8 @@ requires-dist = [
     { name = "cryptography", specifier = "==50.0.0" },
     { name = "jsonschema", specifier = "==4.26.0" },
     { name = "lxml", specifier = "==6.1.1" },
-    { name = "ops", specifier = "==3.8.0" },
-    { name = "ops-tracing", specifier = "==3.8.0" },
+    { name = "ops", specifier = "==3.8.1" },
+    { name = "ops-tracing", specifier = "==3.8.1" },
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "requests", specifier = "==2.34.2" },
     { name = "rpds-py", specifier = "==0.30.0" },
