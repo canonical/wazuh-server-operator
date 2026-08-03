@@ -294,3 +294,22 @@ async def test_filebeat_credentials(
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"filebeat output test failed with code {code}: {stderr or stdout}"
+
+
+@pytest.mark.abort_on_fail
+async def test_rsyslog_certificate_bundle_sync(application: Application):
+    """
+    Arrange: A working Wazuh deployment.
+    Act: Read the active certificate file managed by the rsyslog provider.
+    Assert: The file exists and is cleanly populated with valid PEM formatting.
+    """
+    wazuh_unit = application.units[0]
+
+    action = await wazuh_unit.run(f"{PEBBLE_EXEC} -- cat /etc/rsyslog.d/certs/certificate.pem")
+    await action.wait()
+
+    assert action.results.get("return-code") == 0, (
+        "Rsyslog certificate file is missing or unreadable"
+    )
+    stdout = action.results.get("stdout")
+    assert "-----BEGIN CERTIFICATE-----" in stdout, "Certificate file is missing valid PEM headers"
