@@ -183,13 +183,19 @@ class RsyslogCertificateAuthority:
     def __init__(self) -> None:
         root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         root = _certificate(
-            _common_name("wazuh-it-root"), root_key.public_key(), _common_name("wazuh-it-root"),
-            root_key, True,
+            _common_name("wazuh-it-root"),
+            root_key.public_key(),
+            _common_name("wazuh-it-root"),
+            root_key,
+            True,
         )
         self._intermediate_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         self._intermediate = _certificate(
-            _common_name("wazuh-it-intermediate"), self._intermediate_key.public_key(),
-            root.subject, root_key, True,
+            _common_name("wazuh-it-intermediate"),
+            self._intermediate_key.public_key(),
+            root.subject,
+            root_key,
+            True,
         )
         self.root_certificate = _pem(root)
         # Issuer-first (root then intermediate): the order manual-tls-certificates validates.
@@ -240,5 +246,7 @@ async def provision_rsyslog_certificates(
         if num_provided and not requests:
             return num_provided
         if time.monotonic() >= deadline:
-            raise TimeoutError(f"Provided only {num_provided} rsyslog certificate(s) before timeout")
+            raise TimeoutError(
+                f"Provided only {num_provided} rsyslog certificate(s) before timeout"
+            )
         await asyncio.sleep(5)
