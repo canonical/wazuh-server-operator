@@ -18,7 +18,11 @@ from juju.model import Controller, Model
 from juju.relation import Endpoint
 from pytest_operator.plugin import OpsTest
 
-from tests.integration.helpers import configure_single_node
+from tests.integration.helpers import (
+    RsyslogCertificateAuthority,
+    configure_single_node,
+    provision_rsyslog_certificates,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -124,13 +128,19 @@ async def machine_self_signed_certificates_fixture(
         await machine_model.applications[app_name].destroy(force=True, no_wait=True)
 
 
-@pytest_asyncio.fixture(scope="module", name="k8s_self_signed_certificates")
-async def k8s_self_signed_certificates_fixture(
+@pytest.fixture(scope="module", name="rsyslog_ca")
+def rsyslog_ca_fixture() -> RsyslogCertificateAuthority:
+    """A runtime root+intermediate CA; its signed leaf forms a 3-element chain."""
+    return RsyslogCertificateAuthority()
+
+
+@pytest_asyncio.fixture(scope="module", name="manual_tls_certificates")
+async def manual_tls_certificates_fixture(
     model: Model,
     pytestconfig: pytest.Config,
 ) -> typing.AsyncGenerator[Application, None]:
-    """Deploy the self-signed certificates charm."""
-    app_name = "self-signed-certificates"
+    """Deploy manual-tls-certificates: the test supplies the cert chain via juju actions."""
+    app_name = "manual-tls-certificates"
     application: Application
     if pytestconfig.getoption("--no-deploy") and app_name in model.applications:
         logger.warning("Using existing application: %s", app_name)
@@ -140,8 +150,8 @@ async def k8s_self_signed_certificates_fixture(
             app_name,
             application_name=app_name,
             channel="latest/stable",
-            config={"ca-common-name": "k8s test CA"},
         )
+        await model.wait_for_idle(apps=[app_name], status="active", timeout=600)
     yield application
     if not pytestconfig.getoption("--keep-models") and app_name in model.applications:
         await model.applications[app_name].destroy(force=True, no_wait=True)
@@ -225,7 +235,8 @@ async def application_fixture(
     resource_images: dict[str, str],
     machine_model: Model,
     model: Model,
-    k8s_self_signed_certificates: Application,
+    manual_tls_certificates: Application,
+    rsyslog_ca: RsyslogCertificateAuthority,
     opensearch_provider: Application,
     pytestconfig: pytest.Config,
     traefik: Application,
@@ -252,8 +263,12 @@ async def application_fixture(
         f"concierge-lxd:admin/{opensearch_provider.model.name}.{opensearch_provider.name}",
         application.name,
     )
-    await model.integrate(k8s_self_signed_certificates.name, application.name)
+    await model.integrate(manual_tls_certificates.name, application.name)
     await model.integrate(traefik.name, application.name)
+    # manual-tls-certificates does not auto-issue: sign the rsyslog CSR and provide a 3-element
+    # chain before waiting for active, otherwise the charm blocks waiting for its certificate.
+    controller_name = (await model.get_controller()).controller_name
+    await provision_rsyslog_certificates(f"{controller_name}:{model.name}", rsyslog_ca)
     await model.wait_for_idle(
         apps=[traefik.name, application.name],
         status="active",
