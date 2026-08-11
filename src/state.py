@@ -321,9 +321,6 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         opencti_url: str | None = None,
         rsyslog_full_chain: str | None = None,
     ):
-        if rsyslog_full_chain is None:
-            rsyslog_full_chain = rsyslog_public_cert
-
         """Initialize a new instance of the CharmState class.
 
         Args:
@@ -341,6 +338,8 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
             opencti_token: the OpenCTI token.
             opencti_url: the OpenCTI URL.
         """
+        if rsyslog_full_chain is None:
+            rsyslog_full_chain = rsyslog_public_cert
         super().__init__(
             agent_password=agent_password,
             api_credentials=api_credentials,
@@ -429,12 +428,12 @@ class State(BaseModel):  # pylint: disable=too-few-public-methods
         opencti_url, opencti_token = _fetch_opencti_details(charm.model, opencti_relation_data)
         try:
             if matching_certificates:
-                leaf_cert = matching_certificates[0].certificate
-
-                # Assemble full chain by concatenating any available intermediate/root chain items
-                full_chain = leaf_cert
-                if matching_certificates[0].chain:
-                    full_chain += "\n" + "\n".join(matching_certificates[0].chain)
+                # explicitly form the chain with the leaf first,
+                # followed by the de-duplicated chain
+                leaf = matching_certificates[0].certificate
+                chain = matching_certificates[0].chain or []
+                extra = [cert for cert in chain if cert.strip() != leaf.strip()]
+                full_chain = "\n\n".join([leaf, *extra])
 
                 return cls(
                     agent_password=agent_password,
