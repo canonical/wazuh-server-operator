@@ -38,6 +38,7 @@ if ! (which pipx &> /dev/null); then
     export PATH="${PATH}:${HOME}/.local/bin"
 fi
 pipx install tox
+pipx inject tox tox-uv
 ```
 
 ### Install LXD

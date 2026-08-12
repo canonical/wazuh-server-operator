@@ -23,10 +23,11 @@ from pytest_operator.plugin import OpsTest
 import state
 import wazuh
 from tests.integration.helpers import (
+    RsyslogCertificateAuthority,
     found_in_logs,
-    get_ca_certificate,
     get_k8s_service_address,
     get_wazuh_ip,
+    provision_rsyslog_certificates,
     send_syslog_over_tls,
 )
 
@@ -195,6 +196,7 @@ async def test_rsyslog_invalid_server_ca(application: Application):
 async def test_rsyslog_client_cn(
     application: Application,
     traefik: Application,
+    rsyslog_ca: RsyslogCertificateAuthority,
     valid_cn: bool,
     expect_logs: bool,
 ):
@@ -203,15 +205,17 @@ async def test_rsyslog_client_cn(
     Act: send a syslog message over tls (with or without a valid CN)
     Assert: the message appears in the log only if the CN is valid
     """
-    await application.scale(2)
-    await application.model.wait_for_idle(
-        apps=[application.name, traefik.name], status="active", timeout=1400
-    )
     controller = await application.model.get_controller()
-    server_ca_cert = await get_ca_certificate(
-        f"{controller.controller_name}:{application.model.name}"
-    )
-    wazuh_ip = await get_wazuh_ip(f"{controller.controller_name}:{application.model.name}")
+    model_url = f"{controller.controller_name}:{application.model.name}"
+    if len(application.units) < 2:
+        await application.scale(2)
+        # The new unit requests its own rsyslog certificate; provide it before waiting active.
+        await provision_rsyslog_certificates(model_url, rsyslog_ca)
+        await application.model.wait_for_idle(
+            apps=[application.name, traefik.name], status="active", timeout=1400
+        )
+    server_ca_cert = rsyslog_ca.root_certificate
+    wazuh_ip = await get_wazuh_ip(model_url)
 
     needle = secrets.token_hex()
     sent = await send_syslog_over_tls(
@@ -294,3 +298,21 @@ async def test_filebeat_credentials(
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"filebeat output test failed with code {code}: {stderr or stdout}"
+
+
+@pytest.mark.abort_on_fail
+async def test_rsyslog_full_chain_written(application: Application):
+    """
+    Arrange: a Wazuh deployment whose rsyslog certificate is issued from a 3-tier chain
+        (leaf -> intermediate -> root).
+    Act: read the certificate file the charm wrote for rsyslog.
+    Assert: it holds the full chain (>= 3 certificates), not just the leaf.
+
+    That the served chain actually validates against the root (i.e. the intermediate is
+    presented) is covered by test_rsyslog_client_cn, which trusts only the root CA.
+    """
+    wazuh_unit = application.units[0]
+    action = await wazuh_unit.run(f"{PEBBLE_EXEC} -- cat /etc/rsyslog.d/certs/certificate.pem")
+    await action.wait()
+    certificate_count = (action.results.get("stdout") or "").count("-----BEGIN CERTIFICATE-----")
+    assert certificate_count >= 3, f"Expected the full chain, found {certificate_count}"

@@ -330,6 +330,8 @@ def test_state_with_basic_config():
     assert charm_state.filebeat_password == helper.password
     assert charm_state.rsyslog_public_cert is not None
     assert charm_state.rsyslog_public_cert == helper.rsyslog_public_cert
+    # With no chain from the provider, the full chain falls back to the leaf certificate.
+    assert charm_state.rsyslog_full_chain == helper.rsyslog_public_cert
     assert charm_state.filebeat_ca is not None
     assert charm_state.filebeat_ca == helper.indexer_ca
 
@@ -342,6 +344,38 @@ def test_state_with_basic_config():
     assert charm_state.proxy.http_proxy is None
     assert charm_state.proxy.https_proxy is None
     assert charm_state.proxy.no_proxy is None
+
+
+def test_state_rsyslog_full_chain_is_leaf_first():
+    """
+    arrange: a provider certificate whose chain lists the root, an intermediate and the leaf in
+        issuer-first order (as some providers emit), with the leaf duplicated in the chain.
+    act: initialize charm state.
+    assert: rsyslog_full_chain starts with the leaf, includes it exactly once, and contains the
+        intermediate and root, so it forms a valid leaf-first server certificate file.
+    """
+    helper = UnitTestHelper()
+    leaf = "-----BEGIN CERTIFICATE-----\nleaf\n-----END CERTIFICATE-----"
+    intermediate = "-----BEGIN CERTIFICATE-----\nintermediate\n-----END CERTIFICATE-----"
+    root = "-----BEGIN CERTIFICATE-----\nroot\n-----END CERTIFICATE-----"
+    provider_certificate = certificates.ProviderCertificate(
+        relation_id=1,
+        application_name="application",
+        csr="1",
+        certificate=leaf,
+        ca=root,
+        chain=[root, intermediate, leaf],
+        revoked=False,
+        expiry_time=datetime.datetime(day=1, month=1, year=datetime.MAXYEAR),
+    )
+
+    charm_state = helper.get_state(provider_certificates=[provider_certificate])
+
+    assert charm_state.rsyslog_public_cert == leaf
+    assert charm_state.rsyslog_full_chain.startswith(leaf)
+    assert charm_state.rsyslog_full_chain.count(leaf) == 1
+    assert intermediate in charm_state.rsyslog_full_chain
+    assert root in charm_state.rsyslog_full_chain
 
 
 def test_state_with_proxy(monkeypatch: pytest.MonkeyPatch):
