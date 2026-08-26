@@ -11,7 +11,7 @@ on:
 
 jobs:
   publish-to-edge:
-    uses: canonical/charm-ci/.github/workflows/publish-artifacts.yml@main
+    uses: canonical/charm-ci/.github/workflows/publish-artifacts.yml@0eef5b8cbef3ee74907850f790cab64bcf0499e5 # v1.0.0
     permissions:
       contents: write
       actions: read

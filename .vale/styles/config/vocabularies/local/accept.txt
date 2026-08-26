@@ -1,5 +1,6 @@
 agentless
 Filebeat
 prepended
+Rockcraft
 rsyslog
 URIs

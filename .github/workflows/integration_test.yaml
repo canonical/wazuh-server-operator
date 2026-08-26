@@ -19,8 +19,7 @@ concurrency:
 
 jobs:
   integration-test:
-    # The opcli version used by the pinned workflow must match the opcli version pinned in uv.lock (c68e9ac).
-    uses: canonical/charm-ci/.github/workflows/integration-test.yml@c68e9ac407694597deb27b23db91582c5d1908fa
+    uses: canonical/charm-ci/.github/workflows/integration-test.yml@0eef5b8cbef3ee74907850f790cab64bcf0499e5 # v1.0.0
     secrets: inherit
     permissions:
       contents: read
