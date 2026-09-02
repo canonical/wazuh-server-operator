@@ -103,6 +103,12 @@ class CertificatesObserver(Object):
     def _get_certificate_signing_request(self, subject: str, label: str, renew: bool) -> bytes:
         """Fetch a certificate signing request.
 
+        Note that requesting a new CSR (renew=True) never rotates the private key: the
+        generated CSR already contains a unique random identifier in its subject, so
+        re-signing it with the existing key is sufficient to produce a distinct CSR.
+        Rotating the key here would desynchronize it from the certificate currently
+        deployed and still valid, before its replacement has been issued.
+
         Args:
             subject: the subject for the certificate signing request.
             label: the label identifying the certificate signing request.
@@ -116,7 +122,7 @@ class CertificatesObserver(Object):
             content = secret.get_content()
             if "csr" not in content or renew:
                 csr = certificates.generate_csr(
-                    private_key=self._get_private_key(label=label, renew=renew).encode(),
+                    private_key=self._get_private_key(label=label, renew=False).encode(),
                     subject=subject,
                 )
             else:
@@ -124,7 +130,7 @@ class CertificatesObserver(Object):
         except ops.SecretNotFoundError:
             logger.debug("Secret for private key not found. One will be generated.")
             csr = certificates.generate_csr(
-                private_key=self._get_private_key(label=label, renew=renew).encode(),
+                private_key=self._get_private_key(label=label, renew=False).encode(),
                 subject=subject,
             )
         # Private key generation will add the secret when called by the first time
@@ -164,13 +170,17 @@ class CertificatesObserver(Object):
         """
         if event.certificate == self._charm.state.rsyslog_public_cert:
             try:
-                self.certificates.request_certificate_creation(
-                    certificate_signing_request=self.get_csr()
+                self.certificates.request_certificate_renewal(
+                    old_certificate_signing_request=self.get_csr(),
+                    new_certificate_signing_request=self.get_csr(renew=True),
                 )
-                logger.debug("TLS certificate expiring. Requested new certificate.")
+                logger.debug("TLS certificate expiring. Requested renewed certificate.")
+                self._charm.unit.status = ops.WaitingStatus(
+                    "Certificate expiring. Waiting for new certificate to be issued."
+                )
             except IncompleteStateError:
                 self._charm.unit.status = ops.WaitingStatus(
-                    "Charm not ready to renew expired certificate."
+                    "Charm not ready to renew expiring certificate."
                 )
                 event.defer()
 
