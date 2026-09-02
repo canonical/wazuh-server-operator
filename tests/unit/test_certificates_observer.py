@@ -139,24 +139,35 @@ def test_on_certificate_available() -> None:
 def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
-    act: integrate the charm leveraging the certicicates integration and trigger an expired
+    act: integrate the charm leveraging the certicicates integration and trigger an expiring
         certificate event.
-    assert: a new certificate unit is requested and the charms reaches waiting status
+    assert: a certificate renewal is requested with a freshly generated CSR (not the stale one
+        that produced the soon-to-expire certificate) and the charm reaches waiting status.
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.add_relation(RELATION_NAME, "certificates-provider")
     mock = Mock()
     monkeypatch.setattr(
-        harness.charm.certificates.certificates, "request_certificate_creation", mock
+        harness.charm.certificates.certificates, "request_certificate_renewal", mock
     )
-    monkeypatch.setattr(harness.charm.certificates, "get_csr", lambda: "csr")
+    secret_mock = MagicMock()
+    monkeypatch.setattr(harness.charm.model, "get_secret", secret_mock)
+    monkeypatch.setattr(
+        harness.charm.certificates,
+        "get_csr",
+        lambda renew=False: "csr" if renew else "old_csr",
+    )
 
     harness.charm.certificates.certificates.on.certificate_expiring.emit(
         certificate="certificate", expiry="2024-04-04"
     )
 
-    mock.assert_called_once_with(certificate_signing_request="csr")
+    mock.assert_called_once_with(
+        old_certificate_signing_request="old_csr",
+        new_certificate_signing_request="csr",
+    )
+    assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
 def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:

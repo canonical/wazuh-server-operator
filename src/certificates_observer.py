@@ -164,13 +164,17 @@ class CertificatesObserver(Object):
         """
         if event.certificate == self._charm.state.rsyslog_public_cert:
             try:
-                self.certificates.request_certificate_creation(
-                    certificate_signing_request=self.get_csr()
+                self.certificates.request_certificate_renewal(
+                    old_certificate_signing_request=self.get_csr(),
+                    new_certificate_signing_request=self.get_csr(renew=True),
                 )
-                logger.debug("TLS certificate expiring. Requested new certificate.")
+                logger.debug("TLS certificate expiring. Requested renewed certificate.")
+                self._charm.unit.status = ops.WaitingStatus(
+                    "Certificate expiring. Waiting for new certificate to be issued."
+                )
             except IncompleteStateError:
                 self._charm.unit.status = ops.WaitingStatus(
-                    "Charm not ready to renew expired certificate."
+                    "Charm not ready to renew expiring certificate."
                 )
                 event.defer()
 
