@@ -139,24 +139,33 @@ def test_on_certificate_available() -> None:
 def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
-    act: integrate the charm leveraging the certicicates integration and trigger an expired
+    act: integrate the charm leveraging the certificates integration and trigger an expiring
         certificate event.
-    assert: a new certificate unit is requested and the charms reaches waiting status
+    assert: a certificate renewal is requested with a freshly generated CSR (not the stale one
+        that produced the soon-to-expire certificate) and the charm reaches waiting status.
     """
     harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
     harness.begin_with_initial_hooks()
     harness.add_relation(RELATION_NAME, "certificates-provider")
     mock = Mock()
     monkeypatch.setattr(
-        harness.charm.certificates.certificates, "request_certificate_creation", mock
+        harness.charm.certificates.certificates, "request_certificate_renewal", mock
     )
-    monkeypatch.setattr(harness.charm.certificates, "get_csr", lambda: "csr")
+    monkeypatch.setattr(
+        harness.charm.certificates,
+        "get_csr",
+        lambda renew=False: "csr" if renew else "old_csr",
+    )
 
     harness.charm.certificates.certificates.on.certificate_expiring.emit(
         certificate="certificate", expiry="2024-04-04"
     )
 
-    mock.assert_called_once_with(certificate_signing_request="csr")
+    mock.assert_called_once_with(
+        old_certificate_signing_request="old_csr",
+        new_certificate_signing_request="csr",
+    )
+    assert ops.WaitingStatus.name == harness.charm.unit.status.name
 
 
 def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -195,3 +204,32 @@ def test_on_certificate_invalidated(monkeypatch: pytest.MonkeyPatch) -> None:
         new_certificate_signing_request="csr",
     )
     assert ops.WaitingStatus.name == harness.charm.unit.status.name
+
+
+def test_get_csr_renewal_does_not_rotate_private_key() -> None:
+    """
+    arrange: instantiate a charm implementing the certificates relation as leader, generating
+        an initial private key and CSR.
+    act: request a renewed CSR (renew=True).
+    assert: the CSR content changes but the private key backing it is left untouched, so the
+        certificate currently deployed (signed with the original key) is not invalidated while
+        the renewed certificate is still being issued.
+    """
+    harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
+    harness.set_leader(True)
+    harness.begin_with_initial_hooks()
+    harness.add_relation(RELATION_NAME, "certificates-provider")
+
+    observer = harness.charm.certificates
+    original_csr = observer._get_certificate_signing_request(
+        subject="host1.example", label="certificates-secret", renew=False
+    )
+    original_key = observer.get_private_key()
+
+    renewed_csr = observer._get_certificate_signing_request(
+        subject="host1.example", label="certificates-secret", renew=True
+    )
+    renewed_key = observer.get_private_key()
+
+    assert renewed_csr != original_csr
+    assert renewed_key == original_key
