@@ -28,12 +28,15 @@ Usage:
 
 import argparse
 import asyncio
+import csv
 import datetime
 import json
 import logging
 import re
 import secrets
+import shutil
 import socket
+import statistics
 import subprocess  # nosec B404
 import sys
 import time
@@ -132,7 +135,7 @@ async def deploy_machine_model(
     await model.connect(f"{machine_controller_name}:admin/{model_name}")
     await model.set_config({"logging-config": "<root>=INFO;unit=DEBUG"})
     await model.set_constraints(
-        {"virt-type": "virtual-machine", "mem": 4096, "root-disk": 15000, "cores": 4}
+        {"virt-type": "virtual-machine", "mem": 3072, "root-disk": 10000, "cores": 2}
     )
 
     logger.info("Deploying self-signed-certificates on machine model")
@@ -444,12 +447,19 @@ def collect_diagnostics(
                 logger.error("Failed to run %s: %s", cmd, exc)
 
 
-def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str) -> None:
-    """Read juju debug-log and print reconcile timing statistics.
+def collect_and_report_reconcile_times(
+    model_name: str,
+    k8s_controller_name: str,
+    runs_output: Path = Path("benchmark_runs.csv"),
+    summary_output: Path = Path("benchmark_summary.csv"),
+) -> None:
+    """Read juju debug-log, print reconcile timing statistics and write CSV reports.
 
     Args:
         model_name: Name of the k8s model to read logs from.
         k8s_controller_name: Name of the k8s Juju controller.
+        runs_output: Path to write the per-run reconcile times CSV file.
+        summary_output: Path to write the summary statistics CSV file.
 
     Raises:
         SystemExit: If no reconcile timing entries are found in the log.
@@ -489,6 +499,49 @@ def collect_and_report_reconcile_times(model_name: str, k8s_controller_name: str
     logger.info("  Avg   : %.3fs", sum(times) / len(times))
     logger.info("=========================================")
 
+    write_reconcile_csv_reports(times, runs_output, summary_output)
+
+
+def write_reconcile_csv_reports(
+    times: list[float], runs_output: Path, summary_output: Path
+) -> None:
+    """Write per-run and summary CSV reports for the collected reconcile times.
+
+    Two CSV files are produced:
+
+    * ``runs_output`` contains one row per reconcile run with columns
+      ``run`` (1-based index) and ``reconcile_seconds``.
+    * ``summary_output`` contains aggregate statistics in a ``metric,value``
+      layout (count, min, max, mean, median and stdev).
+
+    Args:
+        times: Reconcile durations in seconds, ordered by run.
+        runs_output: Path to write the per-run reconcile times CSV file.
+        summary_output: Path to write the summary statistics CSV file.
+    """
+    with runs_output.open("w", newline="", encoding="utf-8") as runs_file:
+        writer = csv.writer(runs_file)
+        writer.writerow(["run", "reconcile_seconds"])
+        for i, t in enumerate(times, 1):
+            writer.writerow([i, f"{t:.3f}"])
+    logger.info("Wrote per-run reconcile times to %s", runs_output)
+
+    summary = {
+        "count": len(times),
+        "min": min(times),
+        "max": max(times),
+        "mean": statistics.mean(times),
+        "median": statistics.median(times),
+        "stdev": statistics.stdev(times) if len(times) > 1 else 0.0,
+    }
+    with summary_output.open("w", newline="", encoding="utf-8") as summary_file:
+        writer = csv.writer(summary_file)
+        writer.writerow(["metric", "value"])
+        writer.writerow(["count", summary["count"]])
+        for metric in ("min", "max", "mean", "median", "stdev"):
+            writer.writerow([metric, f"{summary[metric]:.3f}"])
+    logger.info("Wrote summary statistics to %s", summary_output)
+
 
 def _wait_for_port(host: str, port: int, timeout: float = 30.0) -> None:
     """Block until a TCP connection to host:port succeeds or timeout is reached.
@@ -510,6 +563,22 @@ def _wait_for_port(host: str, port: int, timeout: float = 30.0) -> None:
             if time.monotonic() >= deadline:
                 raise TimeoutError(f"Port {host}:{port} not reachable after {timeout}s")
             time.sleep(0.2)
+
+
+def _kubectl_command() -> list[str]:
+    """Resolve the kubectl command to use for port-forwarding.
+
+    Prefers a standalone ``kubectl`` on PATH; falls back to ``microk8s kubectl``
+    when only microk8s is installed (as on the benchmark runners).
+
+    Returns:
+        The command prefix as a list of arguments.
+    """
+    if shutil.which("kubectl"):
+        return ["kubectl"]
+    if shutil.which("microk8s"):
+        return ["microk8s", "kubectl"]
+    return ["kubectl"]
 
 
 def export_traces(model_name: str, output_file: Path) -> None:
@@ -538,24 +607,40 @@ def export_traces(model_name: str, output_file: Path) -> None:
     Args:
         model_name: Name of the k8s model, which is also the k8s namespace.
         output_file: Destination path for the OTLP JSON trace export.
+
+    Raises:
+        Exception: If the traces cannot be exported (e.g. port-forward fails or
+            the Tempo API is unreachable). This is fatal so the benchmark fails
+            loudly instead of silently producing no trace artifacts.
     """
     logger.info("Exporting traces from Tempo to %s", output_file)
-    port_forward = subprocess.Popen(  # nosec B603 B607
-        [
-            "sudo",
-            "microk8s",
-            "kubectl",
+    port_forward = None
+    try:
+        cmd = [
+            *_kubectl_command(),
             "port-forward",
             "-n",
             model_name,
             "svc/tempo",
             "3200:3200",
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    try:
-        _wait_for_port("localhost", 3200, timeout=30)
+        ]
+        logger.info("Starting port-forward: %s", " ".join(cmd))
+        port_forward = subprocess.Popen(  # nosec B603 B607
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        try:
+            _wait_for_port("localhost", 3200, timeout=60)
+        except TimeoutError:
+            # Surface the kubectl output so port-forward failures are diagnosable.
+            if port_forward.poll() is not None:
+                output = port_forward.stdout.read() if port_forward.stdout else ""
+                raise TimeoutError(
+                    f"port-forward exited (code {port_forward.returncode}): {output.strip()}"
+                )
+            raise
         tempo_url = "http://localhost:3200"
 
         search = requests.get(f"{tempo_url}/api/search", params={"limit": 100}, timeout=10)
@@ -595,11 +680,10 @@ def export_traces(model_name: str, output_file: Path) -> None:
             output_file,
         )
         logger.info("  open http://localhost:16686")
-    except Exception as exc:
-        logger.warning("Failed to export traces from Tempo: %s", exc)
     finally:
-        port_forward.terminate()
-        port_forward.wait()
+        if port_forward is not None:
+            port_forward.terminate()
+            port_forward.wait()
 
 
 async def _cleanup(
@@ -661,6 +745,8 @@ async def run_benchmark(
     lxd_cloud: str,
     with_tracing: bool = False,
     traces_output: str = "traces.json",
+    runs_output: str = "benchmark_runs.csv",
+    summary_output: str = "benchmark_summary.csv",
 ) -> None:
     """Deploy wazuh-server and report reconcile times from the Juju debug log.
 
@@ -678,6 +764,8 @@ async def run_benchmark(
             Explicitly passed to avoid Juju defaulting to the k8s cloud.
         with_tracing: If True, deploy tempo-k8s and relate it to wazuh-server.
         traces_output: Path to write exported OTLP JSON traces when with_tracing is True.
+        runs_output: Path to write the per-run reconcile times CSV file.
+        summary_output: Path to write the summary statistics CSV file.
     """
     base_name = model_name or f"benchmark-{secrets.token_hex(2)}"
     k8s_model_name = base_name
@@ -735,7 +823,12 @@ async def run_benchmark(
                 timeout=600,
             )
 
-        collect_and_report_reconcile_times(k8s_model_name, k8s_controller_name)
+        collect_and_report_reconcile_times(
+            k8s_model_name,
+            k8s_controller_name,
+            Path(runs_output),
+            Path(summary_output),
+        )
         if with_tracing:
             export_traces(k8s_model_name, Path(traces_output))
 
@@ -827,6 +920,22 @@ def main() -> None:
             "docker run -p 16686:16686 jaegertracing/jaeger:2"
         ),
     )
+    parser.add_argument(
+        "--runs-output",
+        default="benchmark_runs.csv",
+        help=(
+            "Path to write the per-run reconcile times CSV file, with one row per run "
+            "(default: benchmark_runs.csv)."
+        ),
+    )
+    parser.add_argument(
+        "--summary-output",
+        default="benchmark_summary.csv",
+        help=(
+            "Path to write the summary statistics CSV file (count, min, max, mean, "
+            "median, stdev) (default: benchmark_summary.csv)."
+        ),
+    )
     args = parser.parse_args()
 
     asyncio.run(
@@ -842,6 +951,8 @@ def main() -> None:
             lxd_cloud=args.lxd_cloud,
             with_tracing=args.with_tracing,
             traces_output=args.traces_output,
+            runs_output=args.runs_output,
+            summary_output=args.summary_output,
         )
     )
 
