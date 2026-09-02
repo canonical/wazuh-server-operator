@@ -139,7 +139,7 @@ def test_on_certificate_available() -> None:
 def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     arrange: instantiate a charm implementing the certificates relation.
-    act: integrate the charm leveraging the certicicates integration and trigger an expiring
+    act: integrate the charm leveraging the certificates integration and trigger an expiring
         certificate event.
     assert: a certificate renewal is requested with a freshly generated CSR (not the stale one
         that produced the soon-to-expire certificate) and the charm reaches waiting status.
@@ -151,8 +151,6 @@ def test_on_certificate_expired(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         harness.charm.certificates.certificates, "request_certificate_renewal", mock
     )
-    secret_mock = MagicMock()
-    monkeypatch.setattr(harness.charm.model, "get_secret", secret_mock)
     monkeypatch.setattr(
         harness.charm.certificates,
         "get_csr",
