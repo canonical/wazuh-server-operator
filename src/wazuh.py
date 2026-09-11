@@ -13,6 +13,7 @@ import typing
 from enum import Enum
 from pathlib import Path
 
+import opentelemetry.trace
 import ops
 import requests
 import requests.adapters
@@ -27,6 +28,8 @@ from pydantic import AnyUrl
 # reduce unhelpful log volume
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+tracer = opentelemetry.trace.get_tracer(__name__)
 
 CONTAINER_NAME = "wazuh-server"
 INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
@@ -183,6 +186,7 @@ def save_applied_commit_marker(container: ops.Container, path: str) -> None:
         )
 
 
+@tracer.start_as_current_span("sync_filebeat_config")
 def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str]) -> bool:
     """Update the core Filebeat configuration.
 
@@ -212,6 +216,7 @@ def sync_filebeat_config(container: ops.Container, indexer_endpoints: list[str])
 
 # Won't sacrify cohesion and readability to make pylint happier
 # Excluding function too complex check from pflake8
+@tracer.start_as_current_span("sync_ossec_conf")
 def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # noqa: C901
     container: ops.Container,
     ip_ports: list[str],
@@ -352,6 +357,7 @@ def sync_permissions(
         return False
 
 
+@tracer.start_as_current_span("sync_certificates")
 def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     container: ops.Container,
     path: Path,
@@ -401,6 +407,7 @@ def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional
     return made_change
 
 
+@tracer.start_as_current_span("sync_agent_password")
 def sync_agent_password(container: ops.Container, password: str) -> bool:
     """Configure the agent password.
 
@@ -507,6 +514,7 @@ def pull_config_repo(
         raise WazuhInstallationError from ex
 
 
+@tracer.start_as_current_span("sync_config_repo")
 def sync_config_repo(
     container: ops.Container,
     repository: typing.Optional[AnyUrl],
@@ -560,6 +568,7 @@ def sync_config_repo(
     return True
 
 
+@tracer.start_as_current_span("sync_wazuh_config_files")
 def sync_wazuh_config_files(container: ops.Container) -> bool:
     """Sync Wazuh configuration files from the local config repository.
 
@@ -682,6 +691,7 @@ def _needs_sync(container: ops.Container, applied_commit_path: str) -> bool:
     return current_head is not None and current_head != applied_head
 
 
+@tracer.start_as_current_span("sync_rsyslog_config_files")
 def sync_rsyslog_config_files(container: ops.Container) -> bool:
     """Sync rsyslog configuration files from the local config repository.
 
@@ -702,6 +712,7 @@ def sync_rsyslog_config_files(container: ops.Container) -> bool:
     return True
 
 
+@tracer.start_as_current_span("sync_filebeat_config_files")
 def sync_filebeat_config_files(container: ops.Container) -> bool:
     """Sync filebeat configuration files from the local config repository.
 
@@ -722,6 +733,7 @@ def sync_filebeat_config_files(container: ops.Container) -> bool:
     return True
 
 
+@tracer.start_as_current_span("ensure_log_ingestion_dir")
 def ensure_log_ingestion_dir(container: ops.Container) -> bool:
     """Configure the filesystem to enable writing received logs to disk.
 
@@ -750,6 +762,7 @@ def ensure_log_ingestion_dir(container: ops.Container) -> bool:
     return made_changes
 
 
+@tracer.start_as_current_span("ensure_ossec_logs_dir")
 def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     """Configure the filesystem to enable writing ossec logs to disk.
 
@@ -780,6 +793,7 @@ def ensure_ossec_logs_dir(container: ops.Container) -> bool:
     return made_changes
 
 
+@tracer.start_as_current_span("sync_filebeat_user")
 def sync_filebeat_user(container: ops.Container, username: str, password: str) -> bool:
     """Configure the filebeat user.
 
@@ -847,6 +861,7 @@ def _generate_cluster_snippet(
     """
 
 
+@tracer.start_as_current_span("authenticate_user")
 def authenticate_user(username: str, password: str) -> str:
     """Authenticate an API user.
 
@@ -889,6 +904,7 @@ def authenticate_user(username: str, password: str) -> str:
         raise WazuhInstallationError from exc
 
 
+@tracer.start_as_current_span("change_api_password")
 def change_api_password(username: str, password: str, token: str) -> None:
     """Change Wazuh's API password for a given user.
 
@@ -946,6 +962,7 @@ def generate_api_password() -> str:
     return "".join(password)
 
 
+@tracer.start_as_current_span("create_api_user")
 def create_api_user(username: str, password: str, token: str, rolename: str = "readonly") -> None:
     """Create a new readonly user for Wazuh's API.
 
@@ -1013,6 +1030,7 @@ def create_api_user(username: str, password: str, token: str, rolename: str = "r
         raise WazuhInstallationError("Error creating a readonly user.") from exc
 
 
+@tracer.start_as_current_span("get_version")
 def get_version(container: ops.Container) -> str:
     """Get the Wazuh version.
 
