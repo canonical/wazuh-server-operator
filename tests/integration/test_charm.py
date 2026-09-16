@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 import requests
 import requests.adapters
+import sh
 import yaml
 from juju.application import Application
 from juju.model import Model
@@ -37,6 +38,7 @@ CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"
 APP_NAME = CHARMCRAFT["name"]
 
 PEBBLE_SOCKET = "/charm/containers/wazuh-server/pebble.socket"
+PEBBLE = f"PEBBLE_SOCKET={PEBBLE_SOCKET} /charm/bin/pebble"
 PEBBLE_EXEC = f"PEBBLE_SOCKET={PEBBLE_SOCKET} /charm/bin/pebble exec"
 
 
@@ -298,6 +300,54 @@ async def test_filebeat_credentials(
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"filebeat output test failed with code {code}: {stderr or stdout}"
+
+
+@pytest.mark.abort_on_fail
+async def test_filebeat_data_persists_across_pod_restart(
+    model: Model,
+    application: Application,
+):
+    """
+    Arrange: write a marker to Filebeat's data directory on a healthy Wazuh unit.
+    Act: delete the Kubernetes pod and wait for the replacement to become ready.
+    Assert: Filebeat is active and the marker remains unchanged.
+    """
+    unit = application.units[0]
+    marker = secrets.token_hex()
+    marker_path = f"/var/lib/filebeat/{marker}"
+
+    action = await unit.run(
+        f"{PEBBLE_EXEC} -- sh -c 'printf %s {marker} > {marker_path}'",
+        timeout=10,
+    )
+    await action.wait()
+    assert action.results.get("return-code") == 0, action.results.get("stderr")
+
+    pod_name = unit.name.replace("/", "-")
+    sh.kubectl.delete.pod(pod_name, namespace=model.name)
+    sh.kubectl.wait(
+        f"pod/{pod_name}",
+        namespace=model.name,
+        for_="condition=Ready",
+        timeout="10m",
+    )
+    await model.wait_for_idle(
+        apps=[application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1400,
+    )
+
+    action = await unit.run(f"{PEBBLE} services filebeat", timeout=10)
+    await action.wait()
+    assert action.results.get("return-code") == 0, action.results.get("stderr")
+    assert "filebeat" in (action.results.get("stdout") or "")
+    assert "active" in (action.results.get("stdout") or "")
+
+    action = await unit.run(f"{PEBBLE_EXEC} -- cat {marker_path}", timeout=10)
+    await action.wait()
+    assert action.results.get("return-code") == 0, action.results.get("stderr")
+    assert (action.results.get("stdout") or "").strip() == marker
 
 
 @pytest.mark.abort_on_fail
