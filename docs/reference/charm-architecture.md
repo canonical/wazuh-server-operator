@@ -53,21 +53,29 @@ Container_Boundary(wazuh-server-container, "Wazuh container") {
   Component(wazuh-rsyslog, "Wazuh rsyslog server", "", "Collects logs")
 }
 
-Boundary(storage, "Storage") {
-  ComponentDb(filesystem, "Ephemeral storage", "", "Logs files on filesystem")
+Boundary(storage, "Persistent storage") {
+  ComponentDb(collector-data, "Collector data", "", "/var/log/collectors")
+  ComponentDb(wazuh-logs, "Wazuh logs", "", "/var/ossec/logs")
+  ComponentDb(filebeat-data, "Filebeat data", "", "/var/lib/filebeat")
 }
 
-Rel(wazuh-rsyslog, filesystem,"")
-Rel(filesystem, wazuh-server,"")
+Rel(wazuh-rsyslog, collector-data, "Writes collected logs")
+Rel(collector-data, wazuh-server, "Provides collected logs")
+Rel(wazuh-server, wazuh-logs, "Writes analyzed logs")
+Rel(wazuh-logs, wazuh-filebeat, "Provides alerts")
+Rel(wazuh-filebeat, filebeat-data, "Stores checkpoints")
 
 ```
 
 The workload that this container is running is defined in the [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/blob/main/rock/rockcraft.yaml).
 
-
 ## Storage
 
-The Wazuh server charm mounts a [filesystem type storage](https://documentation.ubuntu.com/juju/3.6/reference/storage/#defining-storage) to store the incoming rsyslog logs and any other data that requires persistence across container restarts.
+The Wazuh server charm mounts [filesystem type storage](https://documentation.ubuntu.com/juju/3.6/reference/storage/#defining-storage) at the following paths:
+
+- `/var/log/collectors` stores incoming rsyslog logs.
+- `/var/ossec/logs` stores logs produced by Wazuh.
+- `/var/lib/filebeat` stores Filebeat checkpoints and other runtime state so log processing can resume after a pod replacement.
 
 ## Charm code overview
 
