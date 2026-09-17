@@ -21,3 +21,10 @@ def test_benchmark_waits_for_traefik_before_integrating_wazuh() -> None:
     assert deployment.index("await model.wait_for_idle(") < deployment.index(
         'await model.integrate("traefik-k8s", WAZUH_SERVER_APP)'
     )
+
+
+def test_filebeat_restart_uses_literal_kubectl_for_flag() -> None:
+    source = Path("tests/integration/test_charm.py").read_text()
+    test = source[source.index("async def test_filebeat_data_persists_across_pod_restart(") :]
+
+    assert '"--for=condition=Ready"' in test

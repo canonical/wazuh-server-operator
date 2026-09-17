@@ -327,8 +327,8 @@ async def test_filebeat_data_persists_across_pod_restart(
     sh.kubectl.delete.pod(pod_name, namespace=model.name)
     sh.kubectl.wait(
         f"pod/{pod_name}",
+        "--for=condition=Ready",
         namespace=model.name,
-        for_="condition=Ready",
         timeout="10m",
     )
     await model.wait_for_idle(
