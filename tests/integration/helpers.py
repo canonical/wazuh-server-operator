@@ -21,6 +21,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from juju.model import Model
+from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -49,22 +50,14 @@ def refresh_wazuh_indices(endpoint: str, password: str) -> None:
     response.raise_for_status()
 
 
-async def wait_for_indexed_event(
-    endpoint: str,
-    password: str,
-    event_token: str,
-    *,
-    timeout: float = 120,
-    poll_interval: float = 5,
-) -> int:
+@retry(
+    retry=retry_if_result(lambda count: count == 0),
+    stop=stop_after_delay(120),
+    wait=wait_fixed(5),
+)
+async def wait_for_indexed_event(endpoint: str, password: str, event_token: str) -> int:
     """Wait until at least one document containing an event token is indexed."""
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        count = count_indexed_events(endpoint, password, event_token)
-        if count:
-            return count
-        await asyncio.sleep(poll_interval)
-    raise TimeoutError(f"Event {event_token!r} was not indexed within {timeout} seconds")
+    return await asyncio.to_thread(count_indexed_events, endpoint, password, event_token)
 
 
 async def get_k8s_service_address(model: Model, service_name: str) -> str:
