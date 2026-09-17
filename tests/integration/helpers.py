@@ -13,6 +13,7 @@ import ssl
 import time
 from pathlib import Path
 
+import requests
 import sh
 import yaml
 from cryptography import x509
@@ -22,6 +23,48 @@ from cryptography.x509.oid import NameOID
 from juju.model import Model
 
 logger = logging.getLogger(__name__)
+
+
+def count_indexed_events(endpoint: str, password: str, event_token: str) -> int:
+    """Return the number of Wazuh documents containing an event token."""
+    response = requests.post(  # nosec: integration endpoint uses a generated CA
+        f"{endpoint}/wazuh-*/_count",
+        auth=("admin", password),
+        json={"query": {"simple_query_string": {"query": f'"{event_token}"'}}},
+        timeout=10,
+        verify=False,
+    )
+    response.raise_for_status()
+    return int(response.json()["count"])
+
+
+def refresh_wazuh_indices(endpoint: str, password: str) -> None:
+    """Make recently indexed Wazuh documents visible to subsequent searches."""
+    response = requests.post(  # nosec: integration endpoint uses a generated CA
+        f"{endpoint}/wazuh-*/_refresh",
+        auth=("admin", password),
+        timeout=10,
+        verify=False,
+    )
+    response.raise_for_status()
+
+
+async def wait_for_indexed_event(
+    endpoint: str,
+    password: str,
+    event_token: str,
+    *,
+    timeout: float = 120,
+    poll_interval: float = 5,
+) -> int:
+    """Wait until at least one document containing an event token is indexed."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        count = count_indexed_events(endpoint, password, event_token)
+        if count:
+            return count
+        await asyncio.sleep(poll_interval)
+    raise TimeoutError(f"Event {event_token!r} was not indexed within {timeout} seconds")
 
 
 async def get_k8s_service_address(model: Model, service_name: str) -> str:

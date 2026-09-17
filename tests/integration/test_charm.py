@@ -25,11 +25,14 @@ import state
 import wazuh
 from tests.integration.helpers import (
     RsyslogCertificateAuthority,
+    count_indexed_events,
     found_in_logs,
     get_k8s_service_address,
     get_wazuh_ip,
     provision_rsyslog_certificates,
+    refresh_wazuh_indices,
     send_syslog_over_tls,
+    wait_for_indexed_event,
 )
 
 logger = logging.getLogger(__name__)
@@ -303,25 +306,41 @@ async def test_filebeat_credentials(
 
 
 @pytest.mark.abort_on_fail
-async def test_filebeat_data_persists_across_pod_restart(
+async def test_filebeat_does_not_replay_events_across_pod_restart(
     model: Model,
     application: Application,
+    opensearch_provider: Application,
+    rsyslog_ca: RsyslogCertificateAuthority,
 ):
     """
-    Arrange: write a marker to Filebeat's data directory on a healthy Wazuh unit.
+    Arrange: send a unique event and wait for Indexer to contain one document.
     Act: delete the Kubernetes pod and wait for the replacement to become ready.
-    Assert: Filebeat is active and the marker remains unchanged.
+    Assert: new events are ingested and the original event is not indexed again.
     """
     unit = application.units[0]
-    marker = secrets.token_hex()
-    marker_path = f"/var/lib/filebeat/{marker}"
+    indexer_unit = opensearch_provider.units[0]
+    password_action = await indexer_unit.run_action("get-password", username="admin")
+    await password_action.wait()
+    indexer_password = password_action.results.get("password")
+    assert indexer_password, password_action.results
 
-    action = await unit.run(
-        f"{PEBBLE_EXEC} -- sh -c 'printf %s {marker} > {marker_path}'",
-        timeout=10,
+    indexer_address = await indexer_unit.get_public_address()
+    assert indexer_address
+    indexer_host = f"[{indexer_address}]" if ":" in indexer_address else indexer_address
+    indexer_endpoint = f"https://{indexer_host}:9200"
+
+    controller = await model.get_controller()
+    model_url = f"{controller.controller_name}:{model.name}"
+    wazuh_ip = await get_wazuh_ip(model_url)
+    original_event = secrets.token_hex()
+    assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 0
+    assert await send_syslog_over_tls(
+        original_event,
+        host=wazuh_ip,
+        server_ca=rsyslog_ca.root_certificate,
+        valid_cn=True,
     )
-    await action.wait()
-    assert action.results.get("return-code") == 0, action.results.get("stderr")
+    assert await wait_for_indexed_event(indexer_endpoint, indexer_password, original_event) == 1
 
     pod_name = unit.name.replace("/", "-")
     sh.kubectl.delete.pod(pod_name, namespace=model.name)
@@ -338,16 +357,24 @@ async def test_filebeat_data_persists_across_pod_restart(
         timeout=1400,
     )
 
+    unit = application.units[0]
     action = await unit.run(f"{PEBBLE} services filebeat", timeout=10)
     await action.wait()
     assert action.results.get("return-code") == 0, action.results.get("stderr")
     assert "filebeat" in (action.results.get("stdout") or "")
     assert "active" in (action.results.get("stdout") or "")
 
-    action = await unit.run(f"{PEBBLE_EXEC} -- cat {marker_path}", timeout=10)
-    await action.wait()
-    assert action.results.get("return-code") == 0, action.results.get("stderr")
-    assert (action.results.get("stdout") or "").strip() == marker
+    resumed_event = secrets.token_hex()
+    wazuh_ip = await get_wazuh_ip(model_url)
+    assert await send_syslog_over_tls(
+        resumed_event,
+        host=wazuh_ip,
+        server_ca=rsyslog_ca.root_certificate,
+        valid_cn=True,
+    )
+    assert await wait_for_indexed_event(indexer_endpoint, indexer_password, resumed_event) == 1
+    refresh_wazuh_indices(indexer_endpoint, indexer_password)
+    assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 1
 
 
 @pytest.mark.abort_on_fail
