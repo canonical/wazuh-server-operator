@@ -100,6 +100,12 @@ async def traefik_fixture(
             trust=True,
             config={"external_hostname": "wazuh-server.local"},
         )
+    await model.wait_for_idle(
+        apps=[app_name],
+        status="active",
+        raise_on_error=True,
+        timeout=600,
+    )
     yield application
     if not pytestconfig.getoption("--keep-models") and app_name in model.applications:
         await model.applications[app_name].destroy(force=True, no_wait=True)

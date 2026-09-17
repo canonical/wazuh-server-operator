@@ -241,6 +241,12 @@ async def deploy_k8s_model(
         config={"external_hostname": "wazuh-server.local"},
         storage=traefik_storage,
     )
+    await model.wait_for_idle(
+        apps=["traefik-k8s"],
+        status="active",
+        raise_on_error=True,
+        timeout=600,
+    )
 
     wazuh_storage = (
         {
@@ -264,13 +270,8 @@ async def deploy_k8s_model(
         storage=wazuh_storage,
     )
 
-    # Integrate traefik FIRST and wait for it to become active so that
-    # external_hostname is already populated in the traefik-route relation
-    # data before self-signed-certificates is integrated.  Without this
-    # ordering, certificates_relation_joined fires when external_hostname is
-    # still None, is deferred, and there is a race where the deferred retry
-    # occurs before self-signed-certs has issued the cert, causing wazuh-server
-    # to remain blocked after opensearch connects.
+    # Integrate traefik before self-signed-certificates so external_hostname is
+    # populated before certificates_relation_joined fires.
     await model.integrate("traefik-k8s", WAZUH_SERVER_APP)
 
     if with_tracing:
