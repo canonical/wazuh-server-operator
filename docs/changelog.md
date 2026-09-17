@@ -8,7 +8,7 @@ Each revision is versioned by the date of the revision.
 
 ## 2026-09-16
 
-- Persist Filebeat progress across Wazuh Server pod replacements.
+- Persist Filebeat progress across server pod replacements.
 
 ## 2026-06-18
 
