@@ -21,9 +21,30 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from juju.model import Model
+from juju.unit import Unit
 from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 
 logger = logging.getLogger(__name__)
+
+
+async def append_wazuh_alert(unit: Unit, event_token: str) -> None:
+    """Append an indexable event to the alerts file watched by Filebeat."""
+    event = json.dumps(
+        {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "full_log": event_token,
+        }
+    )
+    encoded_event = base64.b64encode(f"{event}\n".encode()).decode()
+    command = (
+        "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket "
+        "/charm/bin/pebble exec -- sh -c "
+        f"'printf %s {encoded_event} | base64 -d >> /var/ossec/logs/alerts/alerts.json'"
+    )
+    action = await unit.run(command, timeout=10)
+    await action.wait()
+    if action.results.get("return-code") != 0:
+        raise RuntimeError(action.results.get("stderr") or action.results)
 
 
 def count_indexed_events(endpoint: str, password: str, event_token: str) -> int:
@@ -81,7 +102,6 @@ async def send_syslog_over_tls(
     host: str,
     server_ca: str,
     valid_cn: bool,
-    program: str = "testlogger",
 ) -> bool:
     """Send a syslog message over TLS.
 
@@ -90,7 +110,6 @@ async def send_syslog_over_tls(
         host: the rsyslog server to connect to.
         server_ca: the CA to authenticate the server.
         valid_cn: should the syslog client have a valid CN.
-        program: the syslog program name.
 
     Returns:
         bool: True if no error occurred from the client perspective.
@@ -113,7 +132,7 @@ async def send_syslog_over_tls(
         socket.create_connection((host, 6514)) as sock,
         context.wrap_socket(sock, server_hostname=host) as tls_sock,
     ):
-        syslog_message = f"test-client {program}: {message}\n"
+        syslog_message = f"test-client testlogger: {message}\n"
         tls_sock.sendall(syslog_message.encode("utf-8"))
         return True
 

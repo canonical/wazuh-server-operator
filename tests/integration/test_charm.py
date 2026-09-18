@@ -25,6 +25,7 @@ import state
 import wazuh
 from tests.integration.helpers import (
     RsyslogCertificateAuthority,
+    append_wazuh_alert,
     count_indexed_events,
     found_in_logs,
     get_k8s_service_address,
@@ -310,10 +311,9 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
     model: Model,
     application: Application,
     opensearch_provider: Application,
-    rsyslog_ca: RsyslogCertificateAuthority,
 ):
     """
-    Arrange: send a unique event and wait for Indexer to contain one document.
+    Arrange: append a unique alert and wait for Indexer to contain one document.
     Act: delete the Kubernetes pod and wait for the replacement to become ready.
     Assert: new events are ingested and the original event is not indexed again.
     """
@@ -329,18 +329,9 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
     indexer_host = f"[{indexer_address}]" if ":" in indexer_address else indexer_address
     indexer_endpoint = f"https://{indexer_host}:9200"
 
-    controller = await model.get_controller()
-    model_url = f"{controller.controller_name}:{model.name}"
-    wazuh_ip = await get_wazuh_ip(model_url)
     original_event = secrets.token_hex()
     assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 0
-    assert await send_syslog_over_tls(
-        f"Invalid user {original_event} from 18.18.18.18 port 48928",
-        host=wazuh_ip,
-        server_ca=rsyslog_ca.root_certificate,
-        valid_cn=True,
-        program="sshd[29205]",
-    )
+    await append_wazuh_alert(unit, original_event)
     assert await wait_for_indexed_event(indexer_endpoint, indexer_password, original_event) == 1
 
     pod_name = unit.name.replace("/", "-")
@@ -366,14 +357,7 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
     assert "active" in (action.results.get("stdout") or "")
 
     resumed_event = secrets.token_hex()
-    wazuh_ip = await get_wazuh_ip(model_url)
-    assert await send_syslog_over_tls(
-        f"Invalid user {resumed_event} from 18.18.18.18 port 48928",
-        host=wazuh_ip,
-        server_ca=rsyslog_ca.root_certificate,
-        valid_cn=True,
-        program="sshd[29205]",
-    )
+    await append_wazuh_alert(unit, resumed_event)
     assert await wait_for_indexed_event(indexer_endpoint, indexer_password, resumed_event) == 1
     refresh_wazuh_indices(indexer_endpoint, indexer_password)
     assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 1
