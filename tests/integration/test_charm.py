@@ -335,10 +335,11 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
     original_event = secrets.token_hex()
     assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 0
     assert await send_syslog_over_tls(
-        original_event,
+        f"Invalid user {original_event} from 18.18.18.18 port 48928",
         host=wazuh_ip,
         server_ca=rsyslog_ca.root_certificate,
         valid_cn=True,
+        program="sshd[29205]",
     )
     assert await wait_for_indexed_event(indexer_endpoint, indexer_password, original_event) == 1
 
@@ -367,10 +368,11 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
     resumed_event = secrets.token_hex()
     wazuh_ip = await get_wazuh_ip(model_url)
     assert await send_syslog_over_tls(
-        resumed_event,
+        f"Invalid user {resumed_event} from 18.18.18.18 port 48928",
         host=wazuh_ip,
         server_ca=rsyslog_ca.root_certificate,
         valid_cn=True,
+        program="sshd[29205]",
     )
     assert await wait_for_indexed_event(indexer_endpoint, indexer_password, resumed_event) == 1
     refresh_wazuh_indices(indexer_endpoint, indexer_password)

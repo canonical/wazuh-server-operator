@@ -76,7 +76,13 @@ async def get_k8s_service_address(model: Model, service_name: str) -> str:
     )
 
 
-async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn: bool) -> bool:
+async def send_syslog_over_tls(
+    message: str,
+    host: str,
+    server_ca: str,
+    valid_cn: bool,
+    program: str = "testlogger",
+) -> bool:
     """Send a syslog message over TLS.
 
     Args:
@@ -84,6 +90,7 @@ async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn
         host: the rsyslog server to connect to.
         server_ca: the CA to authenticate the server.
         valid_cn: should the syslog client have a valid CN.
+        program: the syslog program name.
 
     Returns:
         bool: True if no error occurred from the client perspective.
@@ -106,7 +113,7 @@ async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn
         socket.create_connection((host, 6514)) as sock,
         context.wrap_socket(sock, server_hostname=host) as tls_sock,
     ):
-        syslog_message = f"test-client testlogger: {message}\n"
+        syslog_message = f"test-client {program}: {message}\n"
         tls_sock.sendall(syslog_message.encode("utf-8"))
         return True
 
