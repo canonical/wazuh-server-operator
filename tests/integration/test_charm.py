@@ -14,21 +14,28 @@ from pathlib import Path
 import pytest
 import requests
 import requests.adapters
+import sh
 import yaml
 from juju.application import Application
 from juju.model import Model
 from juju.unit import Unit
 from pytest_operator.plugin import OpsTest
+from tenacity import RetryError
 
 import state
 import wazuh
 from tests.integration.helpers import (
     RsyslogCertificateAuthority,
+    append_wazuh_alert,
+    count_indexed_events,
+    filebeat_diagnostics,
     found_in_logs,
     get_k8s_service_address,
     get_wazuh_ip,
     provision_rsyslog_certificates,
+    refresh_wazuh_indices,
     send_syslog_over_tls,
+    wait_for_indexed_event,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,6 +44,7 @@ CHARMCRAFT = yaml.safe_load(Path("./charmcraft.yaml").read_text(encoding="utf-8"
 APP_NAME = CHARMCRAFT["name"]
 
 PEBBLE_SOCKET = "/charm/containers/wazuh-server/pebble.socket"
+PEBBLE = f"PEBBLE_SOCKET={PEBBLE_SOCKET} /charm/bin/pebble"
 PEBBLE_EXEC = f"PEBBLE_SOCKET={PEBBLE_SOCKET} /charm/bin/pebble exec"
 
 
@@ -298,6 +306,95 @@ async def test_filebeat_credentials(
     stdout = action.results.get("stdout")
     stderr = action.results.get("stderr")
     assert code == 0, f"filebeat output test failed with code {code}: {stderr or stdout}"
+
+
+@pytest.mark.abort_on_fail
+async def test_filebeat_does_not_replay_events_across_pod_restart(
+    model: Model,
+    application: Application,
+    opensearch_provider: Application,
+):
+    """
+    Arrange: append a unique alert and wait for Indexer to contain one document.
+    Act: delete the Kubernetes pod and wait for the replacement to become ready.
+    Assert: new events are ingested and the original event is not indexed again.
+    """
+    unit = application.units[0]
+    indexer_unit = opensearch_provider.units[0]
+    password_action = await indexer_unit.run_action("get-password", username="admin")
+    await password_action.wait()
+    indexer_password = password_action.results.get("password")
+    assert indexer_password, password_action.results
+
+    indexer_address = await indexer_unit.get_public_address()
+    assert indexer_address
+    indexer_host = f"[{indexer_address}]" if ":" in indexer_address else indexer_address
+    indexer_endpoint = f"https://{indexer_host}:9200"
+
+    logger.info("Filebeat checkpoint 1: output and service are ready before ingestion")
+    action = await unit.run(f"{PEBBLE} services filebeat", timeout=10)
+    await action.wait()
+    assert action.results.get("return-code") == 0, action.results
+    assert "active" in (action.results.get("stdout") or ""), action.results
+
+    original_event = secrets.token_hex()
+    assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 0
+    await append_wazuh_alert(unit, original_event)
+    logger.info("Filebeat checkpoint 2: original event is present in alerts.json")
+    try:
+        original_count = await wait_for_indexed_event(
+            indexer_endpoint, indexer_password, original_event
+        )
+    except RetryError:
+        diagnostics = await filebeat_diagnostics(unit, original_event)
+        pytest.fail(
+            f"Filebeat checkpoint 3 failed: original event was not indexed\n{diagnostics}",
+            pytrace=False,
+        )
+    assert original_count == 1
+    logger.info("Filebeat checkpoint 3: original event is indexed exactly once")
+
+    pod_name = unit.name.replace("/", "-")
+    sh.kubectl.delete.pod(pod_name, namespace=model.name)
+    sh.kubectl.wait(
+        f"pod/{pod_name}",
+        "--for=condition=Ready",
+        namespace=model.name,
+        timeout="10m",
+    )
+    await model.wait_for_idle(
+        apps=[application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1400,
+    )
+    logger.info("Filebeat checkpoint 4: replacement pod is ready and workload is active")
+
+    unit = application.units[0]
+    action = await unit.run(f"{PEBBLE} services filebeat", timeout=10)
+    await action.wait()
+    assert action.results.get("return-code") == 0, action.results.get("stderr")
+    assert "filebeat" in (action.results.get("stdout") or "")
+    assert "active" in (action.results.get("stdout") or "")
+
+    resumed_event = secrets.token_hex()
+    await append_wazuh_alert(unit, resumed_event)
+    logger.info("Filebeat checkpoint 5: resumed event is present in alerts.json")
+    try:
+        resumed_count = await wait_for_indexed_event(
+            indexer_endpoint, indexer_password, resumed_event
+        )
+    except RetryError:
+        diagnostics = await filebeat_diagnostics(unit, resumed_event)
+        pytest.fail(
+            f"Filebeat checkpoint 6 failed: resumed event was not indexed\n{diagnostics}",
+            pytrace=False,
+        )
+    assert resumed_count == 1
+    logger.info("Filebeat checkpoint 6: resumed event is indexed exactly once")
+    refresh_wazuh_indices(indexer_endpoint, indexer_password)
+    assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 1
+    logger.info("Filebeat checkpoint 7: original event was not replayed")
 
 
 @pytest.mark.abort_on_fail
