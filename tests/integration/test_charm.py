@@ -20,6 +20,7 @@ from juju.application import Application
 from juju.model import Model
 from juju.unit import Unit
 from pytest_operator.plugin import OpsTest
+from tenacity import RetryError
 
 import state
 import wazuh
@@ -27,6 +28,7 @@ from tests.integration.helpers import (
     RsyslogCertificateAuthority,
     append_wazuh_alert,
     count_indexed_events,
+    filebeat_diagnostics,
     found_in_logs,
     get_k8s_service_address,
     get_wazuh_ip,
@@ -329,10 +331,28 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
     indexer_host = f"[{indexer_address}]" if ":" in indexer_address else indexer_address
     indexer_endpoint = f"https://{indexer_host}:9200"
 
+    logger.info("Filebeat checkpoint 1: output and service are ready before ingestion")
+    action = await unit.run(f"{PEBBLE} services filebeat", timeout=10)
+    await action.wait()
+    assert action.results.get("return-code") == 0, action.results
+    assert "active" in (action.results.get("stdout") or ""), action.results
+
     original_event = secrets.token_hex()
     assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 0
     await append_wazuh_alert(unit, original_event)
-    assert await wait_for_indexed_event(indexer_endpoint, indexer_password, original_event) == 1
+    logger.info("Filebeat checkpoint 2: original event is present in alerts.json")
+    try:
+        original_count = await wait_for_indexed_event(
+            indexer_endpoint, indexer_password, original_event
+        )
+    except RetryError:
+        diagnostics = await filebeat_diagnostics(unit, original_event)
+        pytest.fail(
+            f"Filebeat checkpoint 3 failed: original event was not indexed\n{diagnostics}",
+            pytrace=False,
+        )
+    assert original_count == 1
+    logger.info("Filebeat checkpoint 3: original event is indexed exactly once")
 
     pod_name = unit.name.replace("/", "-")
     sh.kubectl.delete.pod(pod_name, namespace=model.name)
@@ -348,6 +368,7 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
         raise_on_error=True,
         timeout=1400,
     )
+    logger.info("Filebeat checkpoint 4: replacement pod is ready and workload is active")
 
     unit = application.units[0]
     action = await unit.run(f"{PEBBLE} services filebeat", timeout=10)
@@ -358,9 +379,22 @@ async def test_filebeat_does_not_replay_events_across_pod_restart(
 
     resumed_event = secrets.token_hex()
     await append_wazuh_alert(unit, resumed_event)
-    assert await wait_for_indexed_event(indexer_endpoint, indexer_password, resumed_event) == 1
+    logger.info("Filebeat checkpoint 5: resumed event is present in alerts.json")
+    try:
+        resumed_count = await wait_for_indexed_event(
+            indexer_endpoint, indexer_password, resumed_event
+        )
+    except RetryError:
+        diagnostics = await filebeat_diagnostics(unit, resumed_event)
+        pytest.fail(
+            f"Filebeat checkpoint 6 failed: resumed event was not indexed\n{diagnostics}",
+            pytrace=False,
+        )
+    assert resumed_count == 1
+    logger.info("Filebeat checkpoint 6: resumed event is indexed exactly once")
     refresh_wazuh_indices(indexer_endpoint, indexer_password)
     assert count_indexed_events(indexer_endpoint, indexer_password, original_event) == 1
+    logger.info("Filebeat checkpoint 7: original event was not replayed")
 
 
 @pytest.mark.abort_on_fail

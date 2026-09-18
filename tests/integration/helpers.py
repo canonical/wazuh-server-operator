@@ -46,6 +46,47 @@ async def append_wazuh_alert(unit: Unit, event_token: str) -> None:
     if action.results.get("return-code") != 0:
         raise RuntimeError(action.results.get("stderr") or action.results)
 
+    action = await unit.run(
+        f"{command.rsplit(' sh -c ', 1)[0]} grep -F -- {event_token} "
+        "/var/ossec/logs/alerts/alerts.json",
+        timeout=10,
+    )
+    await action.wait()
+    if action.results.get("return-code") != 0:
+        raise RuntimeError(
+            "Filebeat checkpoint failed: appended event is absent from alerts.json: "
+            f"{action.results.get('stderr') or action.results}"
+        )
+
+
+async def filebeat_diagnostics(unit: Unit, event_token: str) -> str:
+    """Collect Filebeat state when an event does not reach the Indexer."""
+    command = (
+        "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket "
+        "/charm/bin/pebble services filebeat; "
+        "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket "
+        "/charm/bin/pebble exec -- sh -c '"
+        'echo "=== effective input config ==="; '
+        '/usr/bin/filebeat export config 2>&1 | grep -A8 -B2 -E "module: wazuh|alerts:|paths:"; '
+        'echo "=== alerts file ==="; '
+        "stat /var/ossec/logs/alerts/alerts.json 2>&1; "
+        f"grep -F -- {event_token} /var/ossec/logs/alerts/alerts.json 2>&1; "
+        'echo "=== registry references ==="; '
+        "grep -R -a -F alerts.json /var/lib/filebeat/registry 2>&1 || true; "
+        'echo "=== recent Filebeat logs ==="; '
+        "tail -n 100 /var/log/filebeat/filebeat* 2>&1 || true'"
+    )
+    action = await unit.run(command, timeout=30)
+    await action.wait()
+    return "\n".join(
+        part
+        for part in (
+            action.results.get("stdout"),
+            action.results.get("stderr"),
+        )
+        if part
+    )
+
 
 def count_indexed_events(endpoint: str, password: str, event_token: str) -> int:
     """Return the number of Wazuh documents containing an event token."""
