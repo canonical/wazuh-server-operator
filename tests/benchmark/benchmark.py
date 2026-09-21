@@ -241,6 +241,12 @@ async def deploy_k8s_model(
         config={"external_hostname": "wazuh-server.local"},
         storage=traefik_storage,
     )
+    await model.wait_for_idle(
+        apps=["traefik-k8s"],
+        status="active",
+        raise_on_error=True,
+        timeout=600,
+    )
 
     wazuh_storage = (
         {

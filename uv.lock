@@ -2274,6 +2274,7 @@ integration = [
     { name = "pytest-asyncio" },
     { name = "pytest-operator" },
     { name = "sh" },
+    { name = "tenacity" },
 ]
 lint = [
     { name = "codespell" },
@@ -2328,6 +2329,7 @@ integration = [
     { name = "pytest-asyncio" },
     { name = "pytest-operator" },
     { name = "sh" },
+    { name = "tenacity" },
 ]
 lint = [
     { name = "codespell" },

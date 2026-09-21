@@ -55,6 +55,8 @@ containers:
         location: /var/log/collectors
       - storage: logs
         location: /var/ossec/logs
+      - storage: filebeat-data
+        location: /var/lib/filebeat
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"
@@ -137,6 +139,8 @@ peers:
     interface: wazuh-instance
 storage:
   data:
+    type: filesystem
+  filebeat-data:
     type: filesystem
   logs:
     type: filesystem

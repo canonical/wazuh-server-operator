@@ -67,6 +67,7 @@ integration = [
   "pytest-asyncio",
   "pytest-operator",
   "sh",
+  "tenacity",
 ]
 benchmark = [
   "juju",

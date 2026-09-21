@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-09-16
+
+- Persist Filebeat progress across server pod replacements.
+
 ## 2026-06-18
 
 - Add distributed tracing support via `ops[tracing]`. Relates the charm to a Tempo-compatible

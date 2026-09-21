@@ -13,6 +13,7 @@ import ssl
 import time
 from pathlib import Path
 
+import requests
 import sh
 import yaml
 from cryptography import x509
@@ -20,8 +21,118 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from juju.model import Model
+from juju.unit import Unit
+from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 
 logger = logging.getLogger(__name__)
+
+
+async def append_wazuh_alert(unit: Unit, event_token: str) -> None:
+    """Append an indexable event to the alerts file watched by Filebeat."""
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")
+    event = json.dumps(
+        {
+            "timestamp": f"{timestamp[:-3]}+0000",
+            "rule": {
+                "level": 3,
+                "description": "Filebeat persistence integration test",
+                "id": "100001",
+                "firedtimes": 1,
+                "groups": ["integration_test"],
+            },
+            "agent": {"id": "000", "name": "wazuh-server"},
+            "manager": {"name": "wazuh-server"},
+            "id": str(int(datetime.datetime.now().timestamp() * 1000)),
+            "full_log": event_token,
+            "decoder": {"name": "integration-test"},
+            "location": "integration-test",
+        }
+    )
+    encoded_event = base64.b64encode(f"{event}\n".encode()).decode()
+    command = (
+        "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket "
+        "/charm/bin/pebble exec -- sh -c "
+        f"'printf %s {encoded_event} | base64 -d >> /var/ossec/logs/alerts/alerts.json'"
+    )
+    action = await unit.run(command, timeout=10)
+    await action.wait()
+    if action.results.get("return-code") != 0:
+        raise RuntimeError(action.results.get("stderr") or action.results)
+
+    action = await unit.run(
+        f"{command.rsplit(' sh -c ', 1)[0]} grep -F -- {event_token} "
+        "/var/ossec/logs/alerts/alerts.json",
+        timeout=10,
+    )
+    await action.wait()
+    if action.results.get("return-code") != 0:
+        raise RuntimeError(
+            "Filebeat checkpoint failed: appended event is absent from alerts.json: "
+            f"{action.results.get('stderr') or action.results}"
+        )
+
+
+async def filebeat_diagnostics(unit: Unit, event_token: str) -> str:
+    """Collect Filebeat state when an event does not reach the Indexer."""
+    command = (
+        "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket "
+        "/charm/bin/pebble services filebeat; "
+        "PEBBLE_SOCKET=/charm/containers/wazuh-server/pebble.socket "
+        "/charm/bin/pebble exec -- sh -c '"
+        'echo "=== effective input config ==="; '
+        '/usr/bin/filebeat export config 2>&1 | grep -A8 -B2 -E "module: wazuh|alerts:|paths:"; '
+        'echo "=== alerts file ==="; '
+        "stat /var/ossec/logs/alerts/alerts.json 2>&1; "
+        f"grep -F -- {event_token} /var/ossec/logs/alerts/alerts.json 2>&1; "
+        'echo "=== registry references ==="; '
+        "grep -R -a -F alerts.json /var/lib/filebeat/registry 2>&1 || true; "
+        'echo "=== recent Filebeat logs ==="; '
+        "tail -n 100 /var/log/filebeat/filebeat* 2>&1 || true'"
+    )
+    action = await unit.run(command, timeout=30)
+    await action.wait()
+    return "\n".join(
+        part
+        for part in (
+            action.results.get("stdout"),
+            action.results.get("stderr"),
+        )
+        if part
+    )
+
+
+def count_indexed_events(endpoint: str, password: str, event_token: str) -> int:
+    """Return the number of Wazuh documents containing an event token."""
+    response = requests.post(  # nosec: integration endpoint uses a generated CA
+        f"{endpoint}/wazuh-*/_count",
+        auth=("admin", password),
+        json={"query": {"simple_query_string": {"query": f'"{event_token}"'}}},
+        timeout=10,
+        verify=False,
+    )
+    response.raise_for_status()
+    return int(response.json()["count"])
+
+
+def refresh_wazuh_indices(endpoint: str, password: str) -> None:
+    """Make recently indexed Wazuh documents visible to subsequent searches."""
+    response = requests.post(  # nosec: integration endpoint uses a generated CA
+        f"{endpoint}/wazuh-*/_refresh",
+        auth=("admin", password),
+        timeout=10,
+        verify=False,
+    )
+    response.raise_for_status()
+
+
+@retry(
+    retry=retry_if_result(lambda count: count == 0),
+    stop=stop_after_delay(120),
+    wait=wait_fixed(5),
+)
+async def wait_for_indexed_event(endpoint: str, password: str, event_token: str) -> int:
+    """Wait until at least one document containing an event token is indexed."""
+    return await asyncio.to_thread(count_indexed_events, endpoint, password, event_token)
 
 
 async def get_k8s_service_address(model: Model, service_name: str) -> str:
@@ -40,7 +151,12 @@ async def get_k8s_service_address(model: Model, service_name: str) -> str:
     )
 
 
-async def send_syslog_over_tls(message: str, host: str, server_ca: str, valid_cn: bool) -> bool:
+async def send_syslog_over_tls(
+    message: str,
+    host: str,
+    server_ca: str,
+    valid_cn: bool,
+) -> bool:
     """Send a syslog message over TLS.
 
     Args:

@@ -4,3 +4,4 @@ prepended
 Rockcraft
 rsyslog
 URIs
+Wazuh
