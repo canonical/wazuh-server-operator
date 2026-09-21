@@ -32,6 +32,17 @@ jobs:
           sudo microk8s enable storage dns rbac registry
           sudo microk8s status --wait-ready --timeout 300
 
+      - name: Install kubectl with kubeconfig
+        # The benchmark runs as a non-root user via tox, so it cannot use
+        # `microk8s kubectl` (group-gated). Install a standalone kubectl and
+        # export a kubeconfig so trace export can port-forward to Tempo.
+        run: |
+          sudo snap install kubectl --classic
+          mkdir -p ~/.kube
+          sudo microk8s config | tee ~/.kube/config > /dev/null
+          chmod 600 ~/.kube/config
+          kubectl version --client
+
       - name: Install Juju
         run: sudo snap install juju --channel 3/stable
 
@@ -82,6 +93,8 @@ jobs:
             --full-deploy \
             --with-tracing \
             --traces-output traces.json \
+            --runs-output benchmark_runs.csv \
+            --summary-output benchmark_summary.csv \
             --machine-controller localhost \
             --k8s-cloud k8s \
             --model benchmark
@@ -93,12 +106,14 @@ jobs:
             python3 tests/benchmark/gen_flamegraph.py traces.json flamegraph.html
           fi
 
-      - name: Upload traces artifact
+      - name: Upload benchmark results artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: wazuh-server-traces
+          name: wazuh-server-benchmark-results
           path: |
             traces.json
             flamegraph.html
+            benchmark_runs.csv
+            benchmark_summary.csv
           if-no-files-found: warn
