@@ -251,6 +251,7 @@ async def deploy_k8s_model(
     wazuh_storage = (
         {
             "data": {"pool": storage_pool, "size": 1024},
+            "filebeat-data": {"pool": storage_pool, "size": 1024},
             "logs": {"pool": storage_pool, "size": 1024},
         }
         if storage_pool
