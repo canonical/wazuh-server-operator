@@ -29,10 +29,23 @@ logger = logging.getLogger(__name__)
 
 async def append_wazuh_alert(unit: Unit, event_token: str) -> None:
     """Append an indexable event to the alerts file watched by Filebeat."""
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")
     event = json.dumps(
         {
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": f"{timestamp[:-3]}+0000",
+            "rule": {
+                "level": 3,
+                "description": "Filebeat persistence integration test",
+                "id": "100001",
+                "firedtimes": 1,
+                "groups": ["integration_test"],
+            },
+            "agent": {"id": "000", "name": "wazuh-server"},
+            "manager": {"name": "wazuh-server"},
+            "id": str(int(datetime.datetime.now().timestamp() * 1000)),
             "full_log": event_token,
+            "decoder": {"name": "integration-test"},
+            "location": "integration-test",
         }
     )
     encoded_event = base64.b64encode(f"{event}\n".encode()).decode()
