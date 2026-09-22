@@ -9,7 +9,7 @@ rocks:
 charms:
 - name: wazuh-server
   charmcraft-yaml: charmcraft.yaml
-  channel: 4.11/edge
+  channel: 4.14/edge
   resources:
     wazuh-server-image:
       type: oci-image

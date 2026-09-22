@@ -7,12 +7,12 @@ on:
         type: choice
         description: 'Origin Channel'
         options:
-        - 4.11/edge
+        - 4.14/edge
       destination-channel:
         type: choice
         description: 'Destination Channel'
         options:
-        - 4.11/stable
+        - 4.14/stable
     secrets:
       CHARMHUB_TOKEN:
         required: true
