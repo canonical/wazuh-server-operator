@@ -17,5 +17,5 @@ jobs:
       actions: read
     secrets: inherit
     with:
-      channel: 4.11/edge
+      channel: 4.14/edge
       integration-workflow-name: integration_test.yaml
