@@ -114,7 +114,7 @@ juju offer wazuh-server:wazuh-api
 
 juju switch localhost:admin/test-wazuh-machine
 
-juju deploy wazuh-dashboard --channel 4.11/edge
+juju deploy wazuh-dashboard --channel 4.14/edge
 juju integrate wazuh-dashboard wazuh-indexer
 juju integrate wazuh-dashboard self-signed-certificates
 juju integrate wazuh-dashboard k8s:admin/test-wazuh.wazuh-server
