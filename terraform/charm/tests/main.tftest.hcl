@@ -10,7 +10,7 @@ run "setup_tests" {
 run "basic_deploy" {
   variables {
     model_uuid = run.setup_tests.model_uuid
-    channel    = "4.14/edge"
+    channel    = "4.11/edge"
     # renovate: depName="wazuh-server"
     revision = 250
     storage  = {}
