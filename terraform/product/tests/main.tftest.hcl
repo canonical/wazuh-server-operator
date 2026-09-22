@@ -30,7 +30,7 @@ run "basic_deploy" {
     dashboard_model_name = run.setup_tests.dashboard_model_name
 
     wazuh_server = {
-      channel = "4.11/edge"
+      channel = "4.14/edge"
       # renovate: depName="wazuh-server"
       revision = 250
       storage  = {}
@@ -40,7 +40,7 @@ run "basic_deploy" {
     }
 
     wazuh_indexer = {
-      channel = "4.11/edge"
+      channel = "4.14/edge"
       # renovate: depName="wazuh-indexer"
       revision = 13
       config = {
@@ -56,7 +56,7 @@ run "basic_deploy" {
     }
 
     wazuh_dashboard = {
-      channel = "4.11/edge"
+      channel = "4.14/edge"
       # renovate: depName="wazuh-dashboard"
       revision = 21
     }

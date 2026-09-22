@@ -40,7 +40,7 @@ variable "indexer_consumers" {
 variable "wazuh_indexer" {
   type = object({
     app_name    = optional(string, "wazuh-indexer")
-    channel     = optional(string, "4.11/edge")
+    channel     = optional(string, "4.14/edge")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
@@ -69,7 +69,7 @@ variable "sysconfig" {
 variable "wazuh_dashboard" {
   type = object({
     app_name    = optional(string, "wazuh-dashboard")
-    channel     = optional(string, "4.11/edge")
+    channel     = optional(string, "4.14/edge")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
@@ -90,7 +90,7 @@ variable "wazuh_dashboard_grafana_agent" {
 variable "wazuh_server" {
   type = object({
     app_name    = optional(string, "wazuh-server")
-    channel     = optional(string, "4.11/edge")
+    channel     = optional(string, "4.14/edge")
     config      = optional(map(string), {})
     constraints = optional(string, "arch=amd64")
     revision    = optional(number)
