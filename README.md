@@ -7,6 +7,9 @@
 # Wazuh Server operator
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
+> [!IMPORTANT]
+> Wazuh 4.11 is no longer supported; Wazuh 4.14 is the supported version.
+
 A Juju charm deploying and managing Wazuh Server on Kubernetes. Wazuh is an
 open-source XDR and SIEM tool to protect endpoints and cloud workloads. It allows for deployment 
 on various [Kubernetes platforms](https://ubuntu.com/kubernetes) offered by Canonical.
