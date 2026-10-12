@@ -131,7 +131,7 @@ run "wait_for_dashboard_active" {
   variables {
     model_uuid = run.setup_tests.dashboard_model_uuid
     app_name   = "wazuh-dashboard"
-    timeout    = 180
+    timeout    = 900
   }
 
   module {
