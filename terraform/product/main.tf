@@ -43,7 +43,7 @@ resource "juju_offer" "wazuh_server_api" {
   model_uuid = data.juju_model.wazuh_server.uuid
 
   name             = "wazuh-server-api"
-  application_name = var.wazuh_server.app_name
+  application_name = module.wazuh_server.app_name
   endpoints        = [module.wazuh_server.provides.wazuh_api]
 }
 
