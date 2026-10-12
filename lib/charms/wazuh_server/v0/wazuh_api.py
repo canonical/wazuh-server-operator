@@ -238,7 +238,7 @@ class WazuhApiRequires(ops.Object):
             password = typing.cast(str, credentials.get_content().get("password"))
             url = typing.cast(str, relation_data.get("endpoint"))
             try:
-                endpoint = TypeAdapter(AnyHttpUrl).validate_python(url)
+                endpoint: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(url)
             except NameError:
                 endpoint = parse_obj_as(AnyHttpUrl, url)
             return WazuhApiRelationData(
