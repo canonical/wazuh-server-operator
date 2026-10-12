@@ -30,9 +30,9 @@ MACHINE_MODEL_CONFIG = {
     "logging-config": "<root>=INFO;unit=DEBUG",
     "update-status-hook-interval": "5m",
 }
-WAZUH_DASHBOARD_CHANNEL = "4.11/edge"
+WAZUH_DASHBOARD_CHANNEL = "4.14/edge"
 WAZUH_DASHBOARD_REVISION = 17
-WAZUH_INDEXER_CHANNEL = "4.11/edge"
+WAZUH_INDEXER_CHANNEL = "4.14/edge"
 WAZUH_INDEXER_REVISION = 9
 
 
