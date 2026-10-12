@@ -32,7 +32,7 @@ run "basic_deploy" {
     wazuh_server = {
       channel = "4.14/edge"
       # renovate: depName="wazuh-server"
-      revision = 250
+      revision = 288
       storage  = {}
       config = {
         logs-ca-cert = file("tests/ca.pem")
@@ -42,7 +42,7 @@ run "basic_deploy" {
     wazuh_indexer = {
       channel = "4.14/edge"
       # renovate: depName="wazuh-indexer"
-      revision = 13
+      revision = 16
       config = {
         profile = "testing"
       }
@@ -58,7 +58,7 @@ run "basic_deploy" {
     wazuh_dashboard = {
       channel = "4.14/edge"
       # renovate: depName="wazuh-dashboard"
-      revision = 21
+      revision = 24
     }
 
     wazuh_dashboard_grafana_agent = {}
