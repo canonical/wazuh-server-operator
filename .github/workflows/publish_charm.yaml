@@ -11,11 +11,11 @@ on:
 
 jobs:
   publish-to-edge:
-    uses: canonical/charm-ci/.github/workflows/publish-artifacts.yml@58ae6614a3b143d4e57eff0fd1770e97d8c30fab # v1.0.1
+    uses: canonical/charm-ci/.github/workflows/publish-artifacts.yml@14b1cf49d48b9d5b96192d9bca2890c98b7295cf # v1.0.2
     permissions:
       contents: write
       actions: read
     secrets: inherit
     with:
-      channel: 4.11/edge
+      channel: 4.14/edge
       integration-workflow-name: integration_test.yaml
