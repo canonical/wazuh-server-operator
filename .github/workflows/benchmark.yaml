@@ -39,7 +39,6 @@ jobs:
         run: |
           sudo snap install charmcraft --classic
           sudo snap install rockcraft --classic
-          sudo apt-get install -y skopeo
 
       - name: Configure system for wazuh-indexer
         # wazuh-indexer is OpenSearch-based and requires these kernel parameters.
@@ -69,7 +68,7 @@ jobs:
           cd rock
           rockcraft pack --verbose
           ROCK=$(ls *.rock | head -1)
-          skopeo --insecure-policy copy --dest-tls-verify=false \
+          rockcraft.skopeo --insecure-policy copy --dest-tls-verify=false \
             oci-archive:"${ROCK}" \
             docker://localhost:32000/wazuh-server:benchmark
 
