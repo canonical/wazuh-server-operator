@@ -30,9 +30,9 @@ run "basic_deploy" {
     dashboard_model_name = run.setup_tests.dashboard_model_name
 
     wazuh_server = {
-      channel = "4.11/edge"
+      channel = "4.14/edge"
       # renovate: depName="wazuh-server"
-      revision = 250
+      revision = 288
       storage  = {}
       config = {
         logs-ca-cert = file("tests/ca.pem")
@@ -40,9 +40,9 @@ run "basic_deploy" {
     }
 
     wazuh_indexer = {
-      channel = "4.11/edge"
+      channel = "4.14/edge"
       # renovate: depName="wazuh-indexer"
-      revision = 13
+      revision = 16
       config = {
         profile = "testing"
       }
@@ -56,9 +56,9 @@ run "basic_deploy" {
     }
 
     wazuh_dashboard = {
-      channel = "4.11/edge"
+      channel = "4.14/edge"
       # renovate: depName="wazuh-dashboard"
-      revision = 21
+      revision = 24
     }
 
     wazuh_dashboard_grafana_agent = {}
@@ -131,7 +131,7 @@ run "wait_for_dashboard_active" {
   variables {
     model_uuid = run.setup_tests.dashboard_model_uuid
     app_name   = "wazuh-dashboard"
-    timeout    = 180
+    timeout    = 900
   }
 
   module {
