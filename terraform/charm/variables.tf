@@ -5,13 +5,20 @@ variable "app_name" {
   description = "Name of the application in the Juju model."
   type        = string
   default     = "wazuh-server"
+  nullable    = false
 }
 
+variable "base" {
+  description = "The operating system on which to deploy"
+  type        = string
+  default     = null
+}
 
 variable "channel" {
   description = "The channel to use when deploying a charm."
   type        = string
   default     = "4.11/edge"
+  nullable    = false
 }
 
 variable "config" {
@@ -23,13 +30,13 @@ variable "config" {
 variable "constraints" {
   description = "Juju constraints to apply for this application."
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "model_uuid" {
   description = "Reference to a `juju_model`."
   type        = string
-  default     = ""
+  nullable    = false
 }
 
 variable "revision" {
@@ -38,10 +45,9 @@ variable "revision" {
   default     = null
 }
 
-variable "base" {
-  description = "The operating system on which to deploy"
-  type        = string
-  default     = "ubuntu@22.04"
+variable "storage" {
+  description = "Storage used by the application"
+  type        = map(string)
 }
 
 variable "units" {
@@ -49,9 +55,3 @@ variable "units" {
   type        = number
   default     = 1
 }
-
-variable "storage" {
-  description = "Storage used by the application"
-  type        = map(string)
-}
-

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-10-14
+
+- Migrate the Terraform modules (`terraform/charm`, `terraform/product` and
+  `terraform/product/modules/s3-integrator`) to the CC008 Charm Terraform
+  Standard: renamed `versions.tf` to `terraform.tf`, added `MAJOR_VERSION`
+  files, split `provides`/`requires` outputs into `kind`/`name`/`endpoint`
+  objects, added the mandatory `application` output, and added the product
+  module's mandatory `risk`, `models` and `metadata` interface. The charm and
+  s3-integrator modules' optional `base` and `constraints` variables now
+  default to `null` instead of a fixed value, and the product module's `risk`
+  variable (default `stable`) now drives the `data-integrator` channel.
+  Added `.github/workflows/terraform_modules_compliance.yaml` and
+  `.github/workflows/terraform_modules_release.yaml`, and renamed/updated the
+  Terraform docs and test workflows to pin `operator-workflows` to a commit
+  SHA.
+
 ## 2026-09-16
 
 - Persist Filebeat progress across server pod replacements.
