@@ -1,0 +1,23 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+repos:
+  - repo: local
+    hooks:
+      - id: lint
+        name: Lint
+        entry: just lint
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: static
+        name: Static analysis
+        entry: just static
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: unit
+        name: Unit tests
+        entry: just test
+        language: system
+        pass_filenames: false
+        always_run: true

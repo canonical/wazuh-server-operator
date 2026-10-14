@@ -29,6 +29,15 @@ class WazuhApiRequirerCharm(ops.CharmBase):
 As shown above, the library provides a custom event to handle the scenario in
 which new Wazuh API data has been added or updated.
 
+Credential reads refresh the consumer's tracked secret revision and read both
+fields from one content snapshot. Requirers should also observe `secret-changed`
+and call `get_relation_data()` when their credentials secret changes: rotating a
+secret does not necessarily change the relation databag.
+
+`get_relation_data()` returns `None` with a diagnostic when published data is
+incomplete, invalid, or its secret is unavailable. Credential access through the
+custom event raises `SecretError` when the secret cannot be used.
+
 ### Provider Charm
 
 Following the previous example, this is an example of the provider charm.
@@ -66,12 +75,11 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 4
+LIBPATCH = 5
 
 PYDEPS = ["pydantic>=2"]
 
 # pylint: disable=wrong-import-position
-import itertools  # noqa: E402
 import logging  # noqa: E402
 import typing  # noqa: E402
 from typing import Dict, Optional  # noqa: E402
@@ -97,13 +105,31 @@ class SecretError(Exception):
     """Common ancestor for Secrets related exceptions."""
 
 
+def _get_credentials(model: ops.Model, secret_id: str | None) -> tuple[str, str]:
+    """Read and validate a single snapshot of the latest credentials."""
+    if not secret_id:
+        raise SecretError("Missing Wazuh API credentials secret ID")
+    try:
+        content = model.get_secret(id=secret_id).get_content(refresh=True)
+    except ops.ModelError as exc:
+        raise SecretError("Could not access Wazuh API credentials secret") from exc
+
+    user = content.get("user")
+    password = content.get("password")
+    if not isinstance(user, str) or not user:
+        raise SecretError("Missing or invalid Wazuh API credentials field: user")
+    if not isinstance(password, str) or not password:
+        raise SecretError("Missing or invalid Wazuh API credentials field: password")
+    return user, password
+
+
 class WazuhApiRelationData(BaseModel):
     """Represent the relation data.
 
     Attributes:
         endpoint: The API endpoint.
         user: The user to authenticate against the API.
-        password: TThe password to authenticate against the API.
+        password: The password to authenticate against the API.
         user_credentials_secret: The secret ID containing the API credentials.
     """
 
@@ -130,7 +156,7 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     Attributes:
         endpoint: The API endpoint.
         user: The user to authenticate against the API.
-        password: TThe password to authenticate against the API.
+        password: The password to authenticate against the API.
     """
 
     @property
@@ -148,17 +174,7 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
         """Fetch the API credentials from the relation."""
         assert self.relation.app  # noqa: S101
         relation_data = self.relation.data[self.relation.app]
-        try:
-            credentials = self.framework.model.get_secret(
-                id=relation_data.get("user_credentials_secret")
-            )
-            user = typing.cast(str, credentials.get_content().get("user"))
-            password = typing.cast(str, credentials.get_content().get("password"))
-            return (user, password)
-        except ops.SecretNotFoundError as exc:
-            raise SecretError(
-                f"Could not consume secret {relation_data.get('user_credentials_secret')}"
-            ) from exc
+        return _get_credentials(self.framework.model, relation_data.get("user_credentials_secret"))
 
     @property
     def user(self) -> str:
@@ -210,10 +226,13 @@ class WazuhApiRequires(ops.Object):
         """Retrieve the relation data.
 
         Returns:
-            WazuhApiRelationData: the relation data.
+            WazuhApiRelationData: validated data, or None if not ready or unusable.
         """
         relation = self.model.get_relation(self.relation_name)
-        return self._get_relation_data_from_relation(relation) if relation else None
+        if relation is None:
+            logger.debug("No Wazuh API relation available")
+            return None
+        return self._get_relation_data_from_relation(relation)
 
     def _get_relation_data_from_relation(
         self, relation: ops.Relation
@@ -226,30 +245,33 @@ class WazuhApiRequires(ops.Object):
         Returns:
             WazuhApiRelationData: the relation data if found.
         """
-        assert relation.app  # noqa: S101
+        if relation.app is None:
+            logger.debug("Wazuh API relation %s has no remote application", relation.id)
+            return None
         relation_data = relation.data[relation.app]
-        if not relation_data:
+        secret_id = relation_data.get("user_credentials_secret")
+        url = relation_data.get("endpoint")
+        if not secret_id or not url:
+            logger.debug("Wazuh API relation %s is awaiting endpoint and credentials", relation.id)
             return None
 
-        secret_id = typing.cast(str, relation_data.get("user_credentials_secret"))
         try:
-            credentials = self.model.get_secret(id=secret_id)
-            user = typing.cast(str, credentials.get_content().get("user"))
-            password = typing.cast(str, credentials.get_content().get("password"))
-            url = typing.cast(str, relation_data.get("endpoint"))
             try:
                 endpoint: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(url)
             except NameError:
                 endpoint = parse_obj_as(AnyHttpUrl, url)
+            user, password = _get_credentials(self.model, secret_id)
             return WazuhApiRelationData(
                 endpoint=endpoint,
                 user_credentials_secret=secret_id,
                 user=user,
                 password=password,
             )
-        except ops.model.ModelError:
-            logger.debug("Could not fetch secret %s", relation_data.get("user_credentials_secret"))
-            return None
+        except SecretError as exc:
+            logger.warning("Wazuh API relation %s: %s", relation.id, exc)
+        except ValidationError:
+            logger.warning("Wazuh API relation %s has an invalid endpoint", relation.id)
+        return None
 
     def _is_relation_data_valid(self, relation: ops.Relation) -> bool:
         """Validate the relation data.
@@ -260,16 +282,7 @@ class WazuhApiRequires(ops.Object):
         Returns:
             true: if the relation data is valid.
         """
-        try:
-            _ = self._get_relation_data_from_relation(relation)
-            return True
-        except ValidationError as ex:
-            error_fields = set(
-                itertools.chain.from_iterable(error["loc"] for error in ex.errors())
-            )
-            error_field_str = " ".join(f"{f}" for f in error_fields)
-            logger.warning("Error validation the relation data %s", error_field_str)
-            return False
+        return self._get_relation_data_from_relation(relation) is not None
 
     def _on_relation_changed(self, event: ops.RelationChangedEvent) -> None:
         """Event emitted when the relation has changed.
@@ -277,9 +290,7 @@ class WazuhApiRequires(ops.Object):
         Args:
             event: event triggering this handler.
         """
-        assert event.relation.app  # noqa: S101
-        relation_data = event.relation.data[event.relation.app]
-        if relation_data and self._is_relation_data_valid(event.relation):
+        if self._is_relation_data_valid(event.relation):
             self.on.wazuh_api_data_available.emit(event.relation, app=event.app, unit=event.unit)
 
 
