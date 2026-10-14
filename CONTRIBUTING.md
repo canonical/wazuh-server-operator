@@ -103,16 +103,6 @@ To add signatures on your commits, follow the
 
 ## Develop
 
-Use `just` to list lifecycle tasks. With `uv` and `just` installed,
-`just install-requirements` installs tox with its uv extension and enables prek
-commit checks for linting, static analysis, and unit tests. These tasks reuse the
-existing tox environments.
-
-Run `just test tests/unit/test_library_wazuh_api.py` for the Wazuh API library
-regressions, or `just test` for the full unit suite. To check library compatibility
-with another existing Python environment, run `just test-library /path/to/python`;
-that environment must provide Ops, Pydantic, and pytest.
-
 To make contributions to this charm, you'll need a working
 [development setup](https://documentation.ubuntu.com/juju/latest/user/howto/manage-your-deployment/manage-your-deployment-environment/).
 
