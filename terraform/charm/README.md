@@ -13,7 +13,7 @@ deployment onto any Kubernetes environment managed by [Juju][Juju].
 - **output.tf** - Integrates the module with other Terraform modules, primarily
   by defining potential integration endpoints (charm integrations), but also by exposing
   the Juju application name.
-- **versions.tf** - Defines the Terraform provider version.
+- **terraform.tf** - Defines the Terraform provider version.
 
 ## Using `wazuh-server` base module in higher level modules
 
@@ -26,9 +26,9 @@ data "juju_model" "my_model" {
 }
 
 module "wazuh_server" {
-  source = "git::https://github.com/canonical/wazuh-server-operator//terraform"
-  
-  model = juju_model.my_model.name
+  source = "git::https://github.com/canonical/wazuh-server-operator//terraform/charm?ref=tf-1.0.0"
+
+  model_uuid = data.juju_model.my_model.uuid
   # (Customize configuration variables here if needed)
 }
 ```
@@ -37,10 +37,10 @@ Create integrations, for instance:
 
 ```text
 resource "juju_integration" "wazuh-server-traefik" {
-  model = juju_model.my_model.name
+  model_uuid = data.juju_model.my_model.uuid
   application {
     name     = module.wazuh_server.app_name
-    endpoint = module.wazuh_server.requires.ingress
+    endpoint = module.wazuh_server.requires.ingress.endpoint
   }
   application {
     name     = "traefik-k8s"

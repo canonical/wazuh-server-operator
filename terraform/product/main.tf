@@ -17,6 +17,16 @@ data "juju_model" "wazuh_dashboard" {
   provider = juju.wazuh_dashboard
 }
 
+# Tracks the first successful apply timestamp for the "metadata" output,
+# while "updated_at" is recomputed on every apply.
+resource "terraform_data" "deployed_at" {
+  input = timestamp()
+
+  lifecycle {
+    ignore_changes = [input]
+  }
+}
+
 # resource "juju_secret" "agent_password" {
 #   model_uuid = data.juju_model.wazuh_server.uuid
 #   name  = "agent_password"
@@ -44,7 +54,7 @@ resource "juju_offer" "wazuh_server_api" {
 
   name             = "wazuh-server-api"
   application_name = module.wazuh_server.app_name
-  endpoints        = [module.wazuh_server.provides.wazuh_api]
+  endpoints        = [module.wazuh_server.provides.wazuh_api.endpoint]
 }
 
 resource "juju_access_offer" "wazuh_server_api" {
@@ -89,7 +99,7 @@ resource "juju_integration" "wazuh_server_traefik_ingress" {
 
   application {
     name     = module.wazuh_server.app_name
-    endpoint = module.wazuh_server.requires.ingress
+    endpoint = module.wazuh_server.requires.ingress.endpoint
   }
 
   application {
@@ -211,7 +221,7 @@ resource "juju_application" "data_integrator" {
   charm {
     name     = "data-integrator"
     revision = 41
-    channel  = "latest/stable"
+    channel  = "latest/${var.risk}"
     base     = "ubuntu@22.04"
   }
 
@@ -269,7 +279,7 @@ resource "juju_integration" "wazuh_indexer_backup" {
 
   application {
     name     = module.wazuh_indexer_backup.app_name
-    endpoint = module.wazuh_indexer_backup.provides.s3_credentials
+    endpoint = module.wazuh_indexer_backup.provides.s3_credentials.endpoint
   }
 
   provider = juju.wazuh_indexer
@@ -335,7 +345,7 @@ resource "juju_integration" "wazuh_server_indexer" {
 
   application {
     name     = module.wazuh_server.app_name
-    endpoint = module.wazuh_server.requires.opensearch-client
+    endpoint = module.wazuh_server.requires.opensearch-client.endpoint
   }
 
   application {
