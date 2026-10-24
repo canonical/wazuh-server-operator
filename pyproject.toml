@@ -25,7 +25,7 @@ dependencies = [
   "pydantic==2.14.1",
   "requests==2.34.2",
   "rpds-py==0.30.0",
-  "signxml==5.1.0",
+  "signxml==5.2.0",
   "wheel==0.48.0",
 ]
 
