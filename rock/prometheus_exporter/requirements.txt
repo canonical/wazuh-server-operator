@@ -1,5 +1,5 @@
 urllib3==2.8.0
 prometheus_client==0.26.0
 requests==2.34.2
-json-logging==1.5.1
+json-logging==1.6.0
 packaging==26.3
