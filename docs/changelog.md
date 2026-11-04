@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-10-14
+
+- Refresh Wazuh API credentials from a single secret-content snapshot on consumer
+  reads, and emit data-available events only for usable relation data.
+- Preserve recoverable credential-read failures with safe diagnostics.
+
 ## 2026-09-16
 
 - Persist Filebeat progress across server pod replacements.
