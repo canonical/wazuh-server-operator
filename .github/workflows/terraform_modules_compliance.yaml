@@ -1,0 +1,17 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: Terraform modules compliance
+
+on:
+  pull_request:
+    paths:
+      - '**/terraform/**'
+      - '.github/workflows/terraform_modules_compliance.yaml'
+
+jobs:
+  terraform-compliance:
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_compliance.yaml@030c5b20a0bb880dcf1ed326bff0fc16b6eb6ac1 # main
+    secrets: inherit
+    with:
+      terraform-directories: '["terraform/charm", "terraform/product", "terraform/product/modules/s3-integrator"]'

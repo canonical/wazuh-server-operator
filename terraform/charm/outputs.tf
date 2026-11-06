@@ -6,20 +6,61 @@ output "app_name" {
   value       = juju_application.wazuh_server.name
 }
 
-output "requires" {
-  value = {
-    certificates      = "certificates"
-    ingress           = "ingress"
-    logging           = "logging"
-    opensearch-client = "opensearch-client"
-  }
+output "application" {
+  description = "Object representing the deployed application."
+  value       = juju_application.wazuh_server
 }
 
 output "provides" {
+  description = "Provides endpoints."
   value = {
-    grafana_dashboard = "grafana-dashboard"
-    metrics_endpoint  = "metrics-endpoint"
-    wazuh_api         = "wazuh-api"
-    opencti_connector = "opencti-connector"
+    grafana_dashboard = {
+      kind     = "endpoint"
+      name     = juju_application.wazuh_server.name
+      endpoint = "grafana-dashboard"
+    }
+    metrics_endpoint = {
+      kind     = "endpoint"
+      name     = juju_application.wazuh_server.name
+      endpoint = "metrics-endpoint"
+    }
+    wazuh_api = {
+      kind     = "endpoint"
+      name     = juju_application.wazuh_server.name
+      endpoint = "wazuh-api"
+    }
+    opencti_connector = {
+      kind     = "endpoint"
+      name     = juju_application.wazuh_server.name
+      endpoint = "opencti-connector"
+    }
+  }
+}
+
+output "requires" {
+  description = "Requires endpoints."
+  value = {
+    certificates = {
+      kind       = "endpoint"
+      name       = juju_application.wazuh_server.name
+      endpoint   = "certificates"
+      controller = null
+    }
+    ingress = {
+      kind     = "endpoint"
+      name     = juju_application.wazuh_server.name
+      endpoint = "ingress"
+    }
+    logging = {
+      kind     = "endpoint"
+      name     = juju_application.wazuh_server.name
+      endpoint = "logging"
+    }
+    opensearch-client = {
+      kind       = "endpoint"
+      name       = juju_application.wazuh_server.name
+      endpoint   = "opensearch-client"
+      controller = null
+    }
   }
 }
