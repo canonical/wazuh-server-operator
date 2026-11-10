@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-11-10
+
+- Include the subject (ingress hostname or IP) as a subjectAltName in the
+  rsyslog server certificate's CSR, so TLS clients that require SANs (such as
+  Go's crypto/tls) can validate the certificate.
+
 ## 2026-09-16
 
 - Persist Filebeat progress across server pod replacements.
