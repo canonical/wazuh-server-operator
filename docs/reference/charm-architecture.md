@@ -24,7 +24,7 @@ throughout the workload lifecycle.
 
 ## OCI images
 
-We use [Rockcraft](https://ubuntu.com/containers/rockcraft/docs/)
+We use [Rockcraft](https://ubuntu.com/containers/rockcraft/docs/1/)
 to build the OCI image for Wazuh server.
 The image is defined in [Wazuh server rock](https://github.com/canonical/wazuh-server-operator/blob/main/rock/rockcraft.yaml) and is published to [Charmhub](https://charmhub.io/), the official repository
 of charms.
@@ -71,7 +71,7 @@ The workload that this container is running is defined in the [Wazuh server rock
 
 ## Storage
 
-The Wazuh server charm mounts [filesystem type storage](https://documentation.ubuntu.com/juju/3.6/reference/storage/#defining-storage) at the following paths:
+The Wazuh server charm mounts [filesystem type storage](https://canonical.com/juju/docs/juju-cli/3.6/reference/storage/#defining-storage) at the following paths:
 
 - `/var/log/collectors` stores incoming rsyslog logs.
 - `/var/ossec/logs` stores logs produced by Wazuh.
@@ -85,7 +85,7 @@ The `src/charm.py` is the default entry point for a charm and has the
 CharmBase is the base class from which all Charms are formed, defined by [Ops](https://canonical.com/juju/docs/ops/latest/)
 (Python framework for developing charms).
 
-See more information in [Charm](https://documentation.ubuntu.com/juju/3.6/reference/charm/).
+See more information in [Charm](https://canonical.com/juju/docs/juju-cli/3.6/reference/charm/).
 
 The `__init__` method guarantees that the charm observes all events relevant to
 its operation and handles them.

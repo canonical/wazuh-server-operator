@@ -16,7 +16,7 @@ on various [Kubernetes platforms](https://ubuntu.com/kubernetes) offered by Cano
 
 Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
 
-For information about how to deploy, integrate, and manage this charm, see the Official [Wazuh Server Operator Documentation](https://charmhub.io/wazuh-server/docs).
+For information about how to deploy, integrate, and manage this charm, see the Official [Wazuh Server Operator Documentation](https://charmhub.io/wazuh-server).
 
 
 ## Get started
@@ -34,7 +34,7 @@ You can find the full list of integrations [here](https://charmhub.io/wazuh-serv
 
 ## Learn more
 * [Read more](https://charmhub.io/wazuh-server) <!--Link to the charm's official documentation-->
-* [Developer documentation](https://documentation.wazuh.com/) <!--Link to any developer documentation-->
+* [Developer documentation](https://documentation.wazuh.com/current/index.html) <!--Link to any developer documentation-->
 * [Official webpage](https://wazuh.com/) <!--(Optional) Link to official webpage/blog/marketing content-->
 * [Troubleshooting](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--(Optional) Link to a page or section about troubleshooting/FAQ-->
 ## Project and community

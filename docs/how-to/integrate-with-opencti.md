@@ -12,7 +12,7 @@ Wazuh allows integration with [OpenCTI](https://charmhub.io/opencti) through the
 ## What you'll need
 
 - An existing `wazuh-server` deployment. Refer to the [Wazuh tutorial](https://charmhub.io/wazuh-server/docs/tutorial-getting-started) on how to deploy Wazuh.
-- An existing `opencti` deployment. Refer to the [OpenCTI tutorial](https://charmhub.io/opencti/docs/tutorial-getting-started) on the deployment steps.
+- An existing `opencti` deployment. Refer to the [OpenCTI tutorial](https://charmhub.io/opencti) on the deployment steps.
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 ## Integrate OpenCTI with Wazuh
