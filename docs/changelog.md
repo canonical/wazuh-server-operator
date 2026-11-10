@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-11-10
+
+- Avoid rotating the Wazuh API user credentials on every reconcile or restart.
+  When the container's API user database is reset, reapply the passwords stored
+  in the secret instead of generating new ones.
+
 ## 2026-09-16
 
 - Persist Filebeat progress across server pod replacements.
