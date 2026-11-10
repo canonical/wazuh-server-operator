@@ -95,7 +95,7 @@ mandatory. Configuration items may be specified one-by-one on the command-line
 or using a YAML file.
 
 Refer to `juju config`
-[documentation](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/config/).
+[documentation](https://canonical.com/juju/docs/juju-cli/3.6/reference/juju-cli/list-of-juju-cli-commands/config/).
 
 ```bash
 juju config wazuh-server --file=~/wazuh-conf.yml

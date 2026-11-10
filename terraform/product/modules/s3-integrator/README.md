@@ -29,7 +29,7 @@ No modules.
 | <a name="input_app_name"></a> [app\_name](#input\_app\_name) | Name of the application in the Juju model. | `string` | `"s3-integrator"` | no |
 | <a name="input_base"></a> [base](#input\_base) | The operating system on which to deploy | `string` | `"ubuntu@22.04"` | no |
 | <a name="input_channel"></a> [channel](#input\_channel) | The channel to use when deploying a charm. | `string` | `"latest/stable"` | no |
-| <a name="input_config"></a> [config](#input\_config) | Application config. Details about available options can be found at https://charmhub.io/s3-integrator/configure. | `map(string)` | `{}` | no |
+| <a name="input_config"></a> [config](#input\_config) | Application config. Details about available options can be found at https://charmhub.io/s3-integrator/configurations. | `map(string)` | `{}` | no |
 | <a name="input_constraints"></a> [constraints](#input\_constraints) | Juju constraints to apply for this application. | `string` | `"arch=amd64"` | no |
 | <a name="input_model_uuid"></a> [model\_uuid](#input\_model\_uuid) | Reference to a `juju_model`. | `string` | `""` | no |
 | <a name="input_revision"></a> [revision](#input\_revision) | Revision number of the charm | `number` | `null` | no |

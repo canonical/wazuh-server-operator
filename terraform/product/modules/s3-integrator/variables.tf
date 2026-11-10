@@ -14,7 +14,7 @@ variable "channel" {
 }
 
 variable "config" {
-  description = "Application config. Details about available options can be found at https://charmhub.io/s3-integrator/configure."
+  description = "Application config. Details about available options can be found at https://charmhub.io/s3-integrator/configurations."
   type        = map(string)
   default     = {}
 }
