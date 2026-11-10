@@ -33,7 +33,7 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-02-27
 
-- Remove logrotate.
+- Remove `logrotate`.
 
 ## 2025-02-18
 

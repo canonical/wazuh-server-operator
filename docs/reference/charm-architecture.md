@@ -33,7 +33,7 @@ This is done by publishing a resource to Charmhub as described in the
 
 ## Wazuh server
 
-Wazuh server is an application controlled by the `/var/ossec/bin/wazuh-control` script. Alongside it, several collectors and a filebeat instance is deployed to ingest and export the logs.
+Wazuh server is an application controlled by the `/var/ossec/bin/wazuh-control` script. Alongside it, several collectors and a Filebeat instance is deployed to ingest and export the logs.
 
 The Wazuh server listens on ports:
 

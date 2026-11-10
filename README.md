@@ -1,4 +1,4 @@
-[![CharmHub Badge](https://charmhub.io/indico/badge.svg)](https://charmhub.io/wazuh-server)
+[![Charmhub Badge](https://charmhub.io/indico/badge.svg)](https://charmhub.io/wazuh-server)
 [![Publish to edge](https://github.com/canonical/wazuh-server-operator/actions/workflows/publish_charm.yaml/badge.svg)](https://github.com/canonical/wazuh-server-operator/actions/workflows/publish_charm.yaml)
 [![Promote charm](https://github.com/canonical/wazuh-server-operator/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/wazuh-server-operator/actions/workflows/promote_charm.yaml)
 [![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)

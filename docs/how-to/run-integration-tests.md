@@ -94,7 +94,7 @@ k8s set \
   load-balancer.l2-mode=true
 ```
 
-#### Install kubectl
+#### Install `kubectl`
 
 ```bash
 snap install kubectl --classic
@@ -139,7 +139,7 @@ echo '{ "insecure-registries": ["localhost:5000"] }' > /etc/docker/daemon.json
 systemctl restart docker
 ```
 
-#### Install skopeo
+#### Install `skopeo`
 
 ```bash
 apt install -y skopeo

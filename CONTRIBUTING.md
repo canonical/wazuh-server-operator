@@ -1,6 +1,6 @@
 # Contributing
 
-This document explains the processes and practices recommended for contributing enhancements to the wazuh server charm.
+This document explains the processes and practices recommended for contributing enhancements to the Wazuh server charm.
 
 ## Overview
 
@@ -88,7 +88,7 @@ we use the [Canonical contributor license agreement](https://assets.ubuntu.com/v
 
 #### Canonical contributor agreement
 
-Canonical welcomes contributions to the wazuh server charm. Please check out our
+Canonical welcomes contributions to the Wazuh server charm. Please check out our
 [contributor agreement](https://canonical.com/legal/contributors) if you're interested in contributing to the solution.
 
 The CLA sign-off is simple line at the
@@ -150,7 +150,7 @@ that can be used for linting and formatting code when you're preparing contribut
 ### Build the rock and charm
 
 Use [Rockcraft](https://ubuntu.com/containers/rockcraft/docs/1/) to create an
-OCI image for the wazuh server app, and then upload the image to a MicroK8s registry,
+OCI image for the Wazuh server app, and then upload the image to a MicroK8s registry,
 which stores OCI archives so they can be downloaded and deployed.
 
 Enable the MicroK8s registry:
