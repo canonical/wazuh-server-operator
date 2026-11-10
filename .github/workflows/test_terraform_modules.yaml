@@ -8,18 +8,24 @@ on:
   pull_request:
     paths:
       - 'terraform/**'
+      - '.github/workflows/test_terraform_modules.yaml'
 
 jobs:
   terraform-charm-tests:
-    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@030c5b20a0bb880dcf1ed326bff0fc16b6eb6ac1 # main
     secrets: inherit
     with:
       k8s-controller: true
       terraform-directories: '["terraform/charm"]'
   terraform-product-tests:
-    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@030c5b20a0bb880dcf1ed326bff0fc16b6eb6ac1 # main
     secrets: inherit
     with:
       lxd-controller-with-k8s-cloud: true
       additional-setup-script: "./tests/setup/pre_run_script.sh"
       terraform-directories: '["terraform/product"]'
+  terraform-s3-integrator-tests:
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_test.yaml@030c5b20a0bb880dcf1ed326bff0fc16b6eb6ac1 # main
+    secrets: inherit
+    with:
+      terraform-directories: '["terraform/product/modules/s3-integrator"]'

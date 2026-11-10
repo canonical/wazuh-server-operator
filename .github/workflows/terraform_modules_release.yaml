@@ -1,0 +1,33 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: Terraform modules release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform_modules_release.yaml'
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform_modules_release.yaml'
+
+permissions:
+  contents: write
+
+jobs:
+  release-charm:
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_release.yaml@030c5b20a0bb880dcf1ed326bff0fc16b6eb6ac1 # main
+    secrets: inherit
+    with:
+      tag-prefix: tf-charm-
+      major-version-file: terraform/charm/MAJOR_VERSION
+  release-product:
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_release.yaml@030c5b20a0bb880dcf1ed326bff0fc16b6eb6ac1 # main
+    secrets: inherit
+    with:
+      tag-prefix: tf-product-
+      major-version-file: terraform/product/MAJOR_VERSION

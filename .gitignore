@@ -19,6 +19,10 @@ rock/bundles
 traces.json
 flamegraph.html
 
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+
 # BEGIN VALE WORKFLOW IGNORE
 .vale/styles/*
 !.vale/styles/local

@@ -36,4 +36,5 @@ header:
     - 'rock/prometheus_exporter/LICENSE.ORIGINAL'
     - 'uv.lock'
     - 'docs/**/*.rst'
+    - '**/MAJOR_VERSION'
   comment: on-failure
