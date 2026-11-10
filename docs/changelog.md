@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
-## 2026-10-14
+## 2026-11-10
 
 - Refresh Wazuh API credentials from a single secret-content snapshot on consumer
   reads, and emit data-available events only for usable relation data.
