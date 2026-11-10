@@ -583,6 +583,9 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
     try:
         logger.info("patching files from %s to %s", source, dest)
         # destructive copy
+        # Exclude the stock internal_options.conf from the sync scope: it must
+        # always match the Wazuh version installed in the container. Users can
+        # override settings through local_internal_options.conf instead.
         container.exec(
             [
                 "rsync",
@@ -591,6 +594,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
                 "root:wazuh",
                 "--delete",
                 "--include=etc/",
+                "--exclude=etc/internal_options.conf",
                 "--include=etc/*.conf",
                 "--include=etc/decoders/***",
                 "--include=etc/rules/***",
@@ -614,6 +618,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
                 "--chown",
                 "root:wazuh",
                 "--include=ruleset/***",
+                "--exclude=etc/internal_options.conf",
                 "--include=etc/***",
                 "--exclude=*",
                 source,

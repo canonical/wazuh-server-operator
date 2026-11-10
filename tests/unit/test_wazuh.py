@@ -407,6 +407,72 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
 
 
 @unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
+def test_sync_wazuh_config_files_excludes_internal_options_conf(
+    wazuh_save_applied_commit_marker: unittest.mock.Mock,
+) -> None:
+    """
+    arrange: when wazuh tries to sync config files.
+    act: wazuh config files resync.
+    assert: internal_options.conf is excluded before the include patterns that would match it.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git+ssh://git@github.com/fake_repo/url.git",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="v5",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
+        result="abc123",
+    )
+
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+
+    # stored head differs
+    container.push(
+        wazuh.WAZUH_APPLIED_COMMIT_PATH,
+        "deadbeef\n",
+        encoding="utf-8",
+        make_dirs=True,
+    )
+
+    rsync_commands: list[list[str]] = []
+    mocked_proc = MagicMock()
+    mocked_proc.wait_output.return_value = ("", "")
+    real_exec = container.exec
+
+    def exec_side_effect(cmd, *args, **kwargs):
+        if cmd[0] == "rsync":
+            rsync_commands.append(cmd)
+            return mocked_proc
+        if cmd[0] in ["chmod", "chown", "find"]:
+            return mocked_proc
+        return real_exec(cmd, *args, **kwargs)
+
+    with (
+        patch.object(container, "exists", return_value=True),
+        patch.object(container, "exec", side_effect=exec_side_effect),
+    ):
+        changed = wazuh.sync_wazuh_config_files(container)
+
+    assert changed is True
+    wazuh_save_applied_commit_marker.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
+    assert rsync_commands
+    for command in rsync_commands:
+        exclude_index = command.index("--exclude=etc/internal_options.conf")
+        for include in ("--include=etc/*.conf", "--include=etc/***"):
+            if include in command:
+                assert exclude_index < command.index(include)
+
+
+@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
 def test_sync_rsyslog_config_files_when_head_mismatch_triggers_save_applied_commit_marker(
     wazuh_save_applied_commit_marker: unittest.mock.Mock,
 ) -> None:

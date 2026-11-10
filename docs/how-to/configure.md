@@ -38,7 +38,7 @@ Your repository should contain configuration files under the same paths you
 would expect them to appear on a live server. The following paths are checked:
 
 - `var/ossec`
-  - `etc/*.conf` (will delete)
+  - `etc/*.conf` (will delete, except `etc/internal_options.conf`)
   - `etc/decoders/` (recursively, will delete)
   - `etc/rules/` (recursively, will delete)
   - `etc/shared/*.conf` (will delete)
@@ -57,6 +57,10 @@ For paths marked "will delete" in the list above, pre-existing files on the
 container filesystem will be deleted if they are not in the repository. For all
 other paths, pre-existing files will not be deleted - though they may be
 overwritten.
+
+`etc/internal_options.conf` is never synced from the custom repository, so the
+container always keeps the stock file that matches its Wazuh version. To
+override internal options, use `etc/local_internal_options.conf` instead.
 
 ## Deploy a new configuration
 
