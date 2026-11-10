@@ -279,6 +279,28 @@ class WazuhServerCharm(CharmBaseWithState):
         if any((updated_config, changed_password, changed_ossec_conf, changed_filesystem)):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
+    @staticmethod
+    def _is_api_password_valid(username: str, password: str) -> bool:
+        """Check whether the Wazuh API accepts a password for a user.
+
+        Args:
+            username: the API user.
+            password: the password to check.
+
+        Returns:
+            True if authentication succeeds, False if the API rejects the password.
+        """
+        retries = 5
+        while retries > 0:
+            try:
+                wazuh.authenticate_user(username, password)
+                return True
+            except wazuh.WazuhAuthenticationError:
+                retries -= 1
+                if retries:
+                    time.sleep(1)
+        return False
+
     # Excluding function too complex check from pflake8
     @tracer.start_as_current_span("_reconcile_users")
     def _reconcile_users(self) -> None:  # noqa: C901
@@ -289,48 +311,66 @@ class WazuhServerCharm(CharmBaseWithState):
         credentials = self.state.api_credentials
 
         for username, user_details in state.WAZUH_USERS.items():
-            # Try to authenticate with the current credentials. If it fails, password is invalid.
-            retries = 5
-            valid = False
-            while credentials[username] and not valid and retries > 0:
-                try:
-                    wazuh.authenticate_user(username, credentials[username])
-                    valid = True
-                except wazuh.WazuhAuthenticationError:
-                    retries -= 1
-                    time.sleep(1)
-
-            # Secret exists but users are the default. Force recreation.
-            if not valid:
-                credentials[username] = state.WAZUH_USERS[username]["default_password"]
-
-            # create user if it doesn't exist yet
+            default_password = user_details["default_password"]
             current_password = credentials[username]
             password_to_save = None
-            retries = 5
-            while not current_password and retries > 0:
-                try:
-                    token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
-                    new_password = wazuh.generate_api_password()
-                    wazuh.create_api_user(username, new_password, token)
-                    current_password = new_password
-                    password_to_save = new_password
-                except wazuh.WazuhAuthenticationError as exc:
-                    retries -= 1
-                    logger.error(
-                        "Failed to create user %s: %s. %s retries remaining.",
-                        username,
-                        exc,
-                        retries,
-                    )
-                    time.sleep(1)
 
-            # change credentials if they've never been changed
-            if current_password == user_details["default_password"]:
+            if not current_password:
+                # create user if it doesn't exist yet
+                retries = 5
+                while not current_password and retries > 0:
+                    try:
+                        token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                        new_password = wazuh.generate_api_password()
+                        wazuh.create_api_user(username, new_password, token)
+                        current_password = new_password
+                        password_to_save = new_password
+                    except wazuh.WazuhAuthenticationError as exc:
+                        retries -= 1
+                        logger.error(
+                            "Failed to create user %s: %s. %s retries remaining.",
+                            username,
+                            exc,
+                            retries,
+                        )
+                        time.sleep(1)
+            elif current_password == default_password:
+                # change credentials if they've never been changed
                 new_password = wazuh.generate_api_password()
-                token = wazuh.authenticate_user(username, user_details["default_password"])
+                token = wazuh.authenticate_user(username, default_password)
                 wazuh.change_api_password(username, new_password, token)
                 password_to_save = new_password
+            elif not self._is_api_password_valid(username, current_password):
+                # The API rejected the password stored in the secret. This
+                # happens when the container's user database is reset to its
+                # defaults, for example after a pod restart. Reapply the stored
+                # password instead of rotating it: clients may still be using
+                # the current secret revision.
+                if default_password and self._is_api_password_valid(username, default_password):
+                    token = wazuh.authenticate_user(username, default_password)
+                    wazuh.change_api_password(username, current_password, token)
+                elif not default_password:
+                    # Users created by the charm may be missing after a restart.
+                    # Recreate them with the password from the secret.
+                    try:
+                        token = wazuh.authenticate_user("wazuh", credentials["wazuh"])
+                    except wazuh.WazuhAuthenticationError as exc:
+                        logger.warning(
+                            "Could not authenticate API user %s; retrying on the next "
+                            "reconcile without rotating credentials.",
+                            username,
+                        )
+                        raise wazuh.WazuhNotReadyError from exc
+                    wazuh.create_api_user(username, current_password, token)
+                    wazuh.change_api_password(username, current_password, token)
+                else:
+                    logger.warning(
+                        "Could not authenticate API user %s with the stored or default "
+                        "password; retrying on the next reconcile without rotating "
+                        "credentials.",
+                        username,
+                    )
+                    raise wazuh.WazuhNotReadyError
 
             # if there's been a password change, store new password in state and secret
             if password_to_save:

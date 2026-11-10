@@ -18,6 +18,8 @@ import wazuh
 from certificates_observer import CertificatesObserver
 from charm import WAZUH_PEER_RELATION_NAME, WazuhServerCharm
 from state import (
+    WAZUH_API_CREDENTIAL_SECRET_LABEL,
+    WAZUH_USERS,
     IncompleteStateError,
     InvalidStateError,
     RecoverableStateError,
@@ -334,6 +336,202 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     )
     get_version_mock.assert_called_with(container)
     assert harness.model.unit.status.name == ops.ActiveStatus().name
+
+
+@patch.object(CertificatesObserver, "get_csr")
+@patch.object(wazuh, "generate_api_password")
+@patch.object(wazuh, "change_api_password")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(State, "from_charm")
+def test_reconcile_users_does_not_rotate_valid_credentials(
+    state_from_charm_mock,
+    authenticate_user_mock,
+    change_api_password_mock,
+    generate_api_password_mock,
+    _get_csr_mock,
+):
+    """
+    arrange: API credentials from the secret are valid.
+    act: reconcile the API users.
+    assert: credentials are not rotated and the secret is not updated.
+    """
+    credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
+    }
+    state_from_charm_mock.return_value = MagicMock(api_credentials=credentials)
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+    secret = harness.charm.app.add_secret(credentials, label=WAZUH_API_CREDENTIAL_SECRET_LABEL)
+    revision = secret.get_info().revision
+    authenticate_user_mock.return_value = "token"
+
+    harness.charm._reconcile_users()
+
+    assert authenticate_user_mock.call_count == len(credentials)
+    change_api_password_mock.assert_not_called()
+    generate_api_password_mock.assert_not_called()
+    secret = harness.charm.model.get_secret(label=WAZUH_API_CREDENTIAL_SECRET_LABEL)
+    assert dict(secret.get_content(refresh=True)) == credentials
+    assert secret.get_info().revision == revision
+
+
+@patch.object(CertificatesObserver, "get_csr")
+@patch("charm.time.sleep")
+@patch.object(wazuh, "generate_api_password")
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(State, "from_charm")
+def test_reconcile_users_reapplies_stored_credentials_after_restart(
+    state_from_charm_mock,
+    authenticate_user_mock,
+    change_api_password_mock,
+    create_api_user_mock,
+    generate_api_password_mock,
+    _sleep_mock,
+    _get_csr_mock,
+):
+    """
+    arrange: the API user database has been reset to its defaults after a restart.
+    act: reconcile the API users.
+    assert: the passwords stored in the secret are reapplied without rotation.
+    """
+    credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
+    }
+    valid_passwords = {
+        username: details["default_password"] for username, details in WAZUH_USERS.items()
+    }
+
+    def authenticate(username, password):
+        if password and valid_passwords[username] == password:
+            return f"token-{username}"
+        raise wazuh.WazuhAuthenticationError
+
+    def set_password(username, password, _token):
+        valid_passwords[username] = password
+
+    authenticate_user_mock.side_effect = authenticate
+    change_api_password_mock.side_effect = set_password
+    create_api_user_mock.side_effect = set_password
+
+    state_from_charm_mock.return_value = MagicMock(api_credentials=credentials)
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+    secret = harness.charm.app.add_secret(credentials, label=WAZUH_API_CREDENTIAL_SECRET_LABEL)
+    revision = secret.get_info().revision
+
+    harness.charm._reconcile_users()
+
+    generate_api_password_mock.assert_not_called()
+    change_api_password_mock.assert_has_calls(
+        [
+            call("wazuh", credentials["wazuh"], "token-wazuh"),
+            call("wazuh-wui", credentials["wazuh-wui"], "token-wazuh-wui"),
+            call("prometheus", credentials["prometheus"], "token-wazuh"),
+        ]
+    )
+    create_api_user_mock.assert_called_once_with(
+        "prometheus", credentials["prometheus"], "token-wazuh"
+    )
+    secret = harness.charm.model.get_secret(label=WAZUH_API_CREDENTIAL_SECRET_LABEL)
+    assert dict(secret.get_content(refresh=True)) == credentials
+    assert secret.get_info().revision == revision
+
+
+@patch.object(CertificatesObserver, "get_csr")
+@patch("charm.time.sleep")
+@patch.object(wazuh, "generate_api_password")
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(State, "from_charm")
+def test_reconcile_users_does_not_rotate_when_authentication_fails(
+    state_from_charm_mock,
+    authenticate_user_mock,
+    change_api_password_mock,
+    create_api_user_mock,
+    generate_api_password_mock,
+    _sleep_mock,
+    _get_csr_mock,
+):
+    """
+    arrange: the API rejects both the stored and the default passwords.
+    act: reconcile the API users.
+    assert: WazuhNotReadyError is raised and credentials are not rotated.
+    """
+    credentials = {
+        "wazuh": secrets.token_hex(),
+        "wazuh-wui": secrets.token_hex(),
+        "prometheus": secrets.token_hex(),
+    }
+    state_from_charm_mock.return_value = MagicMock(api_credentials=credentials)
+    authenticate_user_mock.side_effect = wazuh.WazuhAuthenticationError
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+    harness.charm.app.add_secret(credentials, label=WAZUH_API_CREDENTIAL_SECRET_LABEL)
+
+    with pytest.raises(wazuh.WazuhNotReadyError):
+        harness.charm._reconcile_users()
+
+    change_api_password_mock.assert_not_called()
+    create_api_user_mock.assert_not_called()
+    generate_api_password_mock.assert_not_called()
+
+
+@patch.object(CertificatesObserver, "get_csr")
+@patch.object(wazuh, "generate_api_password")
+@patch.object(wazuh, "create_api_user")
+@patch.object(wazuh, "change_api_password")
+@patch.object(wazuh, "authenticate_user")
+@patch.object(State, "from_charm")
+def test_reconcile_users_generates_credentials_when_secret_is_missing(
+    state_from_charm_mock,
+    authenticate_user_mock,
+    change_api_password_mock,
+    create_api_user_mock,
+    generate_api_password_mock,
+    _get_csr_mock,
+):
+    """
+    arrange: no API credentials secret exists yet.
+    act: reconcile the API users.
+    assert: new credentials are generated, applied and stored in a secret.
+    """
+    credentials = {
+        username: details["default_password"] for username, details in WAZUH_USERS.items()
+    }
+    generated_passwords = [secrets.token_hex() for _ in WAZUH_USERS]
+    state_from_charm_mock.return_value = MagicMock(api_credentials=credentials)
+    authenticate_user_mock.return_value = "token"
+    generate_api_password_mock.side_effect = generated_passwords
+    harness = Harness(WazuhServerCharm)
+    harness.begin()
+    harness.set_leader(True)
+
+    harness.charm._reconcile_users()
+
+    assert generate_api_password_mock.call_count == len(WAZUH_USERS)
+    change_api_password_mock.assert_has_calls(
+        [
+            call("wazuh", generated_passwords[0], "token"),
+            call("wazuh-wui", generated_passwords[1], "token"),
+        ]
+    )
+    create_api_user_mock.assert_called_once_with("prometheus", generated_passwords[2], "token")
+    secret = harness.charm.model.get_secret(label=WAZUH_API_CREDENTIAL_SECRET_LABEL)
+    assert dict(secret.get_content(refresh=True)) == {
+        "wazuh": generated_passwords[0],
+        "wazuh-wui": generated_passwords[1],
+        "prometheus": generated_passwords[2],
+    }
 
 
 def test_reconcile_reaches_waiting_status_when_cant_connect():
