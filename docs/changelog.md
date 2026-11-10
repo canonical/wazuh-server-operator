@@ -27,6 +27,9 @@ Each revision is versioned by the date of the revision.
 - Refresh Wazuh API credentials from a single secret-content snapshot on consumer
   reads, and emit data-available events only for usable relation data.
 - Preserve recoverable credential-read failures with safe diagnostics.
+- Avoid rotating the Wazuh API user credentials on every reconcile or restart.
+  When the container's API user database is reset, reapply the passwords stored
+  in the secret instead of generating new ones. Fixes #450.
 
 ## 2026-09-16
 
