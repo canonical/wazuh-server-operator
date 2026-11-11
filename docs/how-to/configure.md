@@ -50,6 +50,15 @@ would expect them to appear on a live server. The following paths are checked:
 - `usr/share/filebeat/` (recursively)
 - `etc/filebeat/` (recursively)
 
+```{important}
+At a minimum, your repository must include `var/ossec/etc/ossec.conf`. This
+file is one of the paths marked "will delete" above: if your repository does
+not include it, the existing `ossec.conf` is deleted from the container, and
+the charm's own reconcile logic - which depends on `ossec.conf` being present
+to apply the indexer, cluster, and other required settings - fails as a
+result.
+```
+
 Files in the repository will be created or will overwrite existing files by the
 same path on the container filesystem.
 
