@@ -68,9 +68,7 @@ overwritten.
 `etc/internal_options.conf` is never deleted, even if your repository does not
 include it: the container always keeps the stock file that matches its Wazuh
 version unless you explicitly provide your own `etc/internal_options.conf` in
-the repository, in which case it overwrites the stock file as usual. To
-override individual internal options without replacing the whole file, use
-`etc/local_internal_options.conf` instead.
+the repository, in which case it overwrites the stock file as usual.
 
 ## Deploy a new configuration
 
