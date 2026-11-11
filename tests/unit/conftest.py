@@ -3,6 +3,8 @@
 
 """Shared fixtures and helpers for wazuh-server-operator unit tests."""
 
+import subprocess  # nosec
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import ops
@@ -126,3 +128,64 @@ def fake_missing_paths(
         missing: the paths that should be reported as absent.
     """
     monkeypatch.setattr(container, "exists", lambda path: path not in missing)
+
+
+def real_rsync(monkeypatch: pytest.MonkeyPatch, container: ops.Container) -> None:
+    """Let container.exec() run the real rsync binary against this container's backing files.
+
+    Scenario-backed containers are rooted at a real, on-disk directory
+    (container._pebble._root); this translates the container paths rsync is
+    invoked with into that directory and runs the actual rsync binary, so tests
+    can seed real files and assert on their real contents/existence afterwards,
+    rather than only inspecting the rsync command-line arguments.
+
+    The `--chown root:wazuh` rsync is invoked with is stripped before running, since
+    the "wazuh" user/group isn't expected to exist on the machine running the tests.
+    chmod/chown/find invocations (the permission fixups that follow the rsync calls
+    in sync_wazuh_config_files) are left as harmless no-ops, same as track_exec.
+
+    Args:
+        monkeypatch: pytest's monkeypatch fixture.
+        container: the container whose exec() should run real rsync commands.
+    """
+    root = Path(str(container._pebble._root))  # type: ignore[attr-defined] # pylint: disable=protected-access
+    real_exec = container.exec
+    mocked_proc = MagicMock()
+    mocked_proc.wait_output.return_value = ("", "")
+
+    def to_host_path(arg: str) -> str:
+        if not arg.startswith("/"):
+            return arg
+        trailing_slash = arg.endswith("/") and arg != "/"
+        host_path = str(root / arg.lstrip("/"))
+        return f"{host_path}/" if trailing_slash else host_path
+
+    def side_effect(cmd, **kwargs):
+        if cmd[0] in ("chmod", "chown", "find"):
+            return mocked_proc
+        if cmd[0] != "rsync":
+            return real_exec(cmd, **kwargs)
+
+        rsync_args = []
+        skip_next = False
+        for arg in cmd:
+            if skip_next:
+                skip_next = False
+                continue
+            if arg == "--chown":
+                skip_next = True
+                continue
+            rsync_args.append(to_host_path(arg))
+
+        completed = subprocess.run(  # nosec
+            rsync_args, capture_output=True, text=True, check=False
+        )
+        if completed.returncode != 0:
+            raise ops.pebble.ExecError(
+                rsync_args, completed.returncode, completed.stdout, completed.stderr
+            )
+        proc = MagicMock()
+        proc.wait_output.return_value = (completed.stdout, completed.stderr)
+        return proc
+
+    monkeypatch.setattr(container, "exec", MagicMock(side_effect=side_effect))

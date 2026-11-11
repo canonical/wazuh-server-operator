@@ -13,45 +13,69 @@ from unittest.mock import ANY
 
 import wazuh
 
-from .conftest import fake_missing_paths, track_exec
+from .conftest import fake_missing_paths, real_rsync, track_exec
+
+INTERNAL_OPTIONS_CONF_PATH = "/var/ossec/etc/internal_options.conf"
+STOCK_INTERNAL_OPTIONS_CONF = "# DO NOT TOUCH THIS FILE\nanalysisd.default_timeframe=360\n"
 
 
-def test_only_excludes_internal_options_conf_in_destructive_pass(
+def test_preserves_stock_internal_options_conf_when_absent_from_repository(
     monkeypatch, synced_wazuh_container
 ):
     """
-    arrange: a container with a pending config sync from its custom repository.
-    act: resync the wazuh config files.
-    assert: internal_options.conf is excluded from the destructive (--delete) rsync pass
-        before the include patterns that would otherwise match it, but is NOT excluded
-        from the non-destructive pass, so a custom repository can still patch it.
+    arrange: a container with a stock internal_options.conf already in place, and a
+        custom repository that does not provide its own var/ossec/etc/internal_options.conf.
+    act: resync the wazuh config files, running the real rsync binary.
+    assert: the stock internal_options.conf is still present in the container, unchanged -
+        it is not deleted just because the repository omits it.
     """
-    container, save_applied_commit_marker_mock = synced_wazuh_container
-    commands = track_exec(monkeypatch, container, "rsync", "chmod", "chown", "find")
+    container, _ = synced_wazuh_container
+    real_rsync(monkeypatch, container)
+    container.push(
+        INTERNAL_OPTIONS_CONF_PATH, STOCK_INTERNAL_OPTIONS_CONF, encoding="utf-8", make_dirs=True
+    )
 
     changed = wazuh.sync_wazuh_config_files(container)
 
     assert changed is True
-    save_applied_commit_marker_mock.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
+    assert container.exists(INTERNAL_OPTIONS_CONF_PATH)
+    assert (
+        container.pull(INTERNAL_OPTIONS_CONF_PATH, encoding="utf-8").read()
+        == STOCK_INTERNAL_OPTIONS_CONF
+    )
 
-    rsync_commands = [cmd for cmd in commands if cmd[0] == "rsync"]
-    assert rsync_commands
-    destructive_commands = [cmd for cmd in rsync_commands if "--delete" in cmd]
-    non_destructive_commands = [cmd for cmd in rsync_commands if "--delete" not in cmd]
-    assert destructive_commands
-    assert non_destructive_commands
 
-    for command in destructive_commands:
-        exclude_index = command.index("--exclude=etc/internal_options.conf")
-        for include in ("--include=etc/*.conf", "--include=etc/***"):
-            if include in command:
-                assert exclude_index < command.index(include)
+def test_applies_repository_provided_internal_options_conf(monkeypatch, synced_wazuh_container):
+    """
+    arrange: a container with a stock internal_options.conf already in place, and a
+        custom repository that provides its own, different
+        var/ossec/etc/internal_options.conf.
+    act: resync the wazuh config files, running the real rsync binary.
+    assert: the repository's internal_options.conf lands in the container, replacing the
+        stock one.
+    """
+    container, _ = synced_wazuh_container
+    real_rsync(monkeypatch, container)
+    container.push(
+        INTERNAL_OPTIONS_CONF_PATH, STOCK_INTERNAL_OPTIONS_CONF, encoding="utf-8", make_dirs=True
+    )
+    custom_internal_options_conf = (
+        "# custom internal_options.conf\nanalysisd.default_timeframe=720\n"
+    )
+    container.push(
+        f"{wazuh.REPO_WAZUH_CONF_PATH}/etc/internal_options.conf",
+        custom_internal_options_conf,
+        encoding="utf-8",
+        make_dirs=True,
+    )
 
-    for command in non_destructive_commands:
-        # the non-destructive pass can never delete the stock file, so it must keep
-        # internal_options.conf in scope in order to still sync a repository-provided one
-        assert "--exclude=etc/internal_options.conf" not in command
-        assert "--include=etc/***" in command
+    changed = wazuh.sync_wazuh_config_files(container)
+
+    assert changed is True
+    assert (
+        container.pull(INTERNAL_OPTIONS_CONF_PATH, encoding="utf-8").read()
+        == custom_internal_options_conf
+    )
 
 
 def test_skips_missing_permission_fixup_paths(monkeypatch, synced_wazuh_container):
