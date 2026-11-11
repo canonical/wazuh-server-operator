@@ -585,9 +585,11 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
     try:
         logger.info("patching files from %s to %s", source, dest)
         # destructive copy
-        # Exclude the stock internal_options.conf from the sync scope: it must
-        # always match the Wazuh version installed in the container. Users can
-        # override settings through local_internal_options.conf instead.
+        # Exclude internal_options.conf from this pass's deletion scope only: the
+        # stock file must always match the Wazuh version installed in the
+        # container, so it must never be deleted just because the repository
+        # doesn't provide one. A repository-provided internal_options.conf is
+        # still synced by the non-destructive pass below, which never excludes it.
         container.exec(
             [
                 "rsync",

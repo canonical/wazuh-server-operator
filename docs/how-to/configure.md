@@ -51,12 +51,10 @@ would expect them to appear on a live server. The following paths are checked:
 - `etc/filebeat/` (recursively)
 
 ```{important}
-At a minimum, your repository must include `var/ossec/etc/ossec.conf`. This
+At a minimum, your custom configuration repository must include `var/ossec/etc/ossec.conf`. This
 file is one of the paths marked "will delete" above: if your repository does
-not include it, the existing `ossec.conf` is deleted from the container, and
-the charm's own reconcile logic - which depends on `ossec.conf` being present
-to apply the indexer, cluster, and other required settings - fails as a
-result.
+not include it, the existing `ossec.conf` is deleted from the container. This is a known gap
+in the current charm code.
 ```
 
 Files in the repository will be created or will overwrite existing files by the
@@ -73,11 +71,6 @@ version unless you explicitly provide your own `etc/internal_options.conf` in
 the repository, in which case it overwrites the stock file as usual. To
 override individual internal options without replacing the whole file, use
 `etc/local_internal_options.conf` instead.
-
-If your repository does not include `integrations/` or `etc/shared/default/`,
-those directories are removed from the container along with their default
-content (for example the built-in Slack/VirusTotal/PagerDuty integration
-scripts); this no longer causes the Wazuh server charm to fail to reconcile.
 
 ## Deploy a new configuration
 
