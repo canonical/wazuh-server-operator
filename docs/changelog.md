@@ -8,6 +8,9 @@ Each revision is versioned by the date of the revision.
 
 ## 2026-11-10
 
+- Qualify `master_fqdn`/`units_fqdns` with the Kubernetes namespace and cluster
+  domain (`<namespace>.svc.cluster.local`), so traefik-route backends resolve
+  correctly when Traefik is related cross-model from a different namespace.
 - Refresh Wazuh API credentials from a single secret-content snapshot on consumer
   reads, and emit data-available events only for usable relation data.
 - Preserve recoverable credential-read failures with safe diagnostics.

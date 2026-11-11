@@ -180,6 +180,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     get_version_mock.return_value = "v4.14.7"
     filebeat_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
+    harness.set_model_name("wazuh-server")
     harness.begin()
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
     container = harness.model.unit.containers.get("wazuh-server")
@@ -212,7 +213,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_sync_ossec_conf_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        "wazuh-server-0.wazuh-server-endpoints",
+        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local",
         "wazuh-server/0",
         cluster_key,
         opencti_url=opencti_url,
@@ -288,6 +289,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     get_version_mock.return_value = "v4.14.7"
     filebeat_csr_mock.return_value = b""
     harness = Harness(WazuhServerCharm)
+    harness.set_model_name("wazuh-server")
     harness.begin()
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name)
     container = harness.model.unit.containers.get("wazuh-server")
@@ -325,7 +327,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_sync_ossec_conf_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        "wazuh-server-0.wazuh-server-endpoints",
+        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local",
         "wazuh-server/0",
         cluster_key,
         opencti_token=None,
@@ -370,3 +372,38 @@ def test_reconcile_reaches_error_status_when_no_state(state_from_charm_mock, *_)
 
     with pytest.raises(InvalidStateError):
         harness.charm.reconcile(None)
+
+
+def test_master_fqdn_is_namespace_qualified():
+    """
+    arrange: instantiate a charm in a model named "wazuh-server".
+    act: read master_fqdn.
+    assert: the FQDN includes the model's namespace and the cluster domain, so it can be
+        resolved by a traefik-route backend running in a different Kubernetes namespace.
+    """
+    harness = Harness(WazuhServerCharm)
+    harness.set_model_name("wazuh-server")
+    harness.begin()
+
+    assert (
+        harness.charm.master_fqdn
+        == "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local"
+    )
+
+
+def test_units_fqdns_are_namespace_qualified():
+    """
+    arrange: instantiate a charm in a model named "wazuh-server", peered with another unit.
+    act: read units_fqdns.
+    assert: the peer unit's FQDN includes the model's namespace and the cluster domain, so it
+        can be resolved by a traefik-route backend running in a different Kubernetes namespace.
+    """
+    harness = Harness(WazuhServerCharm)
+    harness.set_model_name("wazuh-server")
+    harness.begin()
+    harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name, unit_data={})
+
+    assert (
+        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local"
+        in harness.charm.units_fqdns
+    )
