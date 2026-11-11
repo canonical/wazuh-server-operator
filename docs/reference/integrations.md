@@ -2,10 +2,10 @@
 
 ### `ingress`
 
-_Interface_: traefik_route  
+_Interface_: `traefik_route`  
 _Supported charms_: [Traefik Ingress Operator](https://charmhub.io/traefik-k8s)
 
-Ingress manages external http/https access to services in a kubernetes cluster.
+Ingress manages external http/https access to services in a Kubernetes cluster.
 
 Example ingress integrate command: 
 ```
@@ -14,21 +14,21 @@ juju integrate wazuh-server traefik-k8s
 
 ### `logging`
 
-_Interface_: loki_push_api    
+_Interface_: `loki_push_api`    
 _Supported charms_: [loki-k8s](https://charmhub.io/loki-k8s)
 
 Logging relation provides a way to scrape logs produced from the Wazuh Server charm. The Wazuh 
-Server logs are stored at `/var/ossec/logs/`. A promtail worker is spawned and will periodically push logs to
+Server logs are stored at `/var/ossec/logs/`. A `promtail` worker is spawned and will periodically push logs to
 Loki.
 
-Example loki_push_api integrate command: 
+Example `loki_push_api` integrate command: 
 ```bash
 juju integrate wazuh-server loki-k8s
 ```
 
 ### `metrics-endpoint`
 
-_Interface_: [prometheus_scrape](https://charmhub.io/integrations/prometheus_scrape)
+_Interface_: [`prometheus_scrape`](https://charmhub.io/integrations/prometheus_scrape)
 
 _Supported charms_: [prometheus-k8s](https://charmhub.io/prometheus-k8s)
 
@@ -43,7 +43,7 @@ juju integrate wazuh-server prometheus-k8s
 
 ### `opensearch-client`
 
-_Interface_: opensearch_client  
+_Interface_: `opensearch_client`  
 _Supported charms_: [OpenSearch](https://charmhub.io/opensearch), [Wazuh Indexer](https://charmhub.io/wazuh-indexer)
 
 OpenSearch integration is a required relation for the Wazuh Server charm to supply data

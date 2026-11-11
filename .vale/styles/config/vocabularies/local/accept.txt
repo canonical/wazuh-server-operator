@@ -1,7 +1,15 @@
 agentless
+Charmcraft
+Charmhub
+config
 Filebeat
+Grafana
+Multipass
+namespace
 prepended
 Rockcraft
 rsyslog
+subnet
+Traefik
 URIs
 Wazuh
