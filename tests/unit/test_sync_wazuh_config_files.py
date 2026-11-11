@@ -13,7 +13,7 @@ from unittest.mock import ANY
 
 import wazuh
 
-from .conftest import fake_missing_paths, real_rsync, track_exec
+from .conftest import real_rsync
 
 INTERNAL_OPTIONS_CONF_PATH = "/var/ossec/etc/internal_options.conf"
 STOCK_INTERNAL_OPTIONS_CONF = "# DO NOT TOUCH THIS FILE\nanalysisd.default_timeframe=360\n"
@@ -80,24 +80,25 @@ def test_applies_repository_provided_internal_options_conf(monkeypatch, synced_w
 
 def test_skips_missing_permission_fixup_paths(monkeypatch, synced_wazuh_container):
     """
-    arrange: the custom repository does not provide var/ossec/integrations or
-        var/ossec/etc/shared/default, so those paths do not exist after the rsync passes.
-    act: resync the wazuh config files.
-    assert: the sync completes successfully without attempting find/chmod against the
-        missing paths.
+    arrange: var/ossec/integrations and var/ossec/etc/shared/default already contain stock
+        content, but the custom repository provides neither path, so the destructive rsync
+        pass genuinely deletes both directories.
+    act: resync the wazuh config files, running the real rsync binary.
+    assert: both paths are genuinely gone afterwards, and the sync completes successfully
+        without attempting find/chmod against them.
     """
     container, save_applied_commit_marker_mock = synced_wazuh_container
-    commands = track_exec(monkeypatch, container, "rsync", "chmod", "chown", "find")
-    fake_missing_paths(
-        monkeypatch,
-        container,
-        wazuh.WAZUH_INTEGRATIONS_PATH,
-        wazuh.WAZUH_SHARED_DEFAULT_GROUP_PATH,
+    fixup_commands = real_rsync(monkeypatch, container)
+    container.push(f"{wazuh.WAZUH_INTEGRATIONS_PATH}/slack.py", "stock script", make_dirs=True)
+    container.push(
+        f"{wazuh.WAZUH_SHARED_DEFAULT_GROUP_PATH}/agent.conf", "stock agent.conf", make_dirs=True
     )
 
     changed = wazuh.sync_wazuh_config_files(container)
 
     assert changed is True
     save_applied_commit_marker_mock.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
-    assert not any(cmd[0] == "find" for cmd in commands)
-    assert not any(cmd[0] == "chmod" for cmd in commands)
+    assert not container.exists(wazuh.WAZUH_INTEGRATIONS_PATH)
+    assert not container.exists(wazuh.WAZUH_SHARED_DEFAULT_GROUP_PATH)
+    assert not any(cmd[0] == "find" for cmd in fixup_commands)
+    assert not any(cmd[0] == "chmod" for cmd in fixup_commands)

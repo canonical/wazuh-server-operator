@@ -85,73 +85,34 @@ def synced_wazuh_container_fixture(monkeypatch: pytest.MonkeyPatch):
         yield container, save_applied_commit_marker_mock
 
 
-def track_exec(
-    monkeypatch: pytest.MonkeyPatch, container: ops.Container, *names: str
-) -> list[list[str]]:
-    """Record every container.exec() invocation whose argv[0] is one of `names`.
-
-    Tracked commands succeed with empty output and are appended, in call order, to
-    the returned list. Anything else is passed through to the real (Scenario-backed)
-    exec, so commands this test doesn't care about still behave normally.
-
-    Args:
-        monkeypatch: pytest's monkeypatch fixture.
-        container: the container whose exec() calls should be tracked.
-        names: the argv[0] values to intercept (for example "rsync", "chmod").
-
-    Returns:
-        The (initially empty) list that gets populated as tracked commands run.
-    """
-    mocked_proc = MagicMock()
-    mocked_proc.wait_output.return_value = ("", "")
-    real_exec = container.exec
-    commands: list[list[str]] = []
-
-    def side_effect(cmd, **kwargs):
-        if cmd[0] in names:
-            commands.append(cmd)
-            return mocked_proc
-        return real_exec(cmd, **kwargs)
-
-    monkeypatch.setattr(container, "exec", MagicMock(side_effect=side_effect))
-    return commands
-
-
-def fake_missing_paths(
-    monkeypatch: pytest.MonkeyPatch, container: ops.Container, *missing: str
-) -> None:
-    """Make container.exists() report False for the given paths, True for anything else.
-
-    Args:
-        monkeypatch: pytest's monkeypatch fixture.
-        container: the container whose exists() should be faked.
-        missing: the paths that should be reported as absent.
-    """
-    monkeypatch.setattr(container, "exists", lambda path: path not in missing)
-
-
-def real_rsync(monkeypatch: pytest.MonkeyPatch, container: ops.Container) -> None:
+def real_rsync(monkeypatch: pytest.MonkeyPatch, container: ops.Container) -> list[list[str]]:
     """Let container.exec() run the real rsync binary against this container's backing files.
 
     Scenario-backed containers are rooted at a real, on-disk directory
-    (container._pebble._root); this translates the container paths rsync is
-    invoked with into that directory and runs the actual rsync binary, so tests
-    can seed real files and assert on their real contents/existence afterwards,
-    rather than only inspecting the rsync command-line arguments.
+    (container._pebble._root); this translates the container paths rsync is invoked
+    with into that directory and runs the actual rsync binary, so tests can seed
+    real files and assert on their real contents/existence afterwards, rather than
+    only inspecting the rsync command-line arguments.
 
     The `--chown root:wazuh` rsync is invoked with is stripped before running, since
     the "wazuh" user/group isn't expected to exist on the machine running the tests.
-    chmod/chown/find invocations (the permission fixups that follow the rsync calls
-    in sync_wazuh_config_files) are left as harmless no-ops, same as track_exec.
+    chmod/chown/find calls (the permission fixups that follow the rsync calls in
+    sync_wazuh_config_files) are left as harmless no-ops and recorded, in case a test
+    needs to assert whether one ran.
 
     Args:
         monkeypatch: pytest's monkeypatch fixture.
         container: the container whose exec() should run real rsync commands.
+
+    Returns:
+        The (initially empty) list that gets populated with chmod/chown/find
+        invocations, in call order.
     """
     root = Path(str(container._pebble._root))  # type: ignore[attr-defined] # pylint: disable=protected-access
     real_exec = container.exec
     mocked_proc = MagicMock()
     mocked_proc.wait_output.return_value = ("", "")
+    fixup_commands: list[list[str]] = []
 
     def to_host_path(arg: str) -> str:
         if not arg.startswith("/"):
@@ -162,6 +123,7 @@ def real_rsync(monkeypatch: pytest.MonkeyPatch, container: ops.Container) -> Non
 
     def side_effect(cmd, **kwargs):
         if cmd[0] in ("chmod", "chown", "find"):
+            fixup_commands.append(cmd)
             return mocked_proc
         if cmd[0] != "rsync":
             return real_exec(cmd, **kwargs)
@@ -189,3 +151,4 @@ def real_rsync(monkeypatch: pytest.MonkeyPatch, container: ops.Container) -> Non
         return proc
 
     monkeypatch.setattr(container, "exec", MagicMock(side_effect=side_effect))
+    return fixup_commands
