@@ -15,7 +15,7 @@ import ops
 import pytest
 import yaml
 from lxml import etree  # nosec
-from ops.testing import Harness
+from ops.testing import Container, Context, Exec, Harness, Manager, State
 from pydantic import AnyUrl
 
 import wazuh
@@ -406,9 +406,26 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
     wazuh_save_applied_commit_marker.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
 
 
-@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
+def _git_execs() -> set[Exec]:
+    """Build the Exec stubs for the git plumbing commands used by _needs_sync."""
+    return {
+        Exec(
+            ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+            stdout="git+ssh://git@github.com/fake_repo/url.git",
+        ),
+        Exec(
+            ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+            stdout="v5",
+        ),
+        Exec(
+            ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
+            stdout="abc123",
+        ),
+    }
+
+
 def test_sync_wazuh_config_files_only_excludes_internal_options_conf_in_destructive_pass(
-    wazuh_save_applied_commit_marker: unittest.mock.Mock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """
     arrange: when wazuh tries to sync config files.
@@ -417,55 +434,45 @@ def test_sync_wazuh_config_files_only_excludes_internal_options_conf_in_destruct
         before the include patterns that would otherwise match it, but is NOT excluded
         from the non-destructive pass, so a custom repository can still patch it.
     """
-    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
-    harness.handle_exec(
-        "wazuh-server",
-        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
-        result="git+ssh://git@github.com/fake_repo/url.git",
-    )
-    harness.handle_exec(
-        "wazuh-server",
-        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
-        result="v5",
-    )
-    harness.handle_exec(
-        "wazuh-server",
-        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
-        result="abc123",
-    )
+    save_applied_commit_marker_mock = MagicMock()
+    monkeypatch.setattr(wazuh, "save_applied_commit_marker", save_applied_commit_marker_mock)
 
-    harness.begin_with_initial_hooks()
-    container = harness.charm.unit.get_container("wazuh-server")
-
-    # stored head differs
-    container.push(
-        wazuh.WAZUH_APPLIED_COMMIT_PATH,
-        "deadbeef\n",
-        encoding="utf-8",
-        make_dirs=True,
-    )
+    ctx = Context(ops.CharmBase, meta=yaml.safe_load(CHARM_METADATA))
+    state_in = State(containers={Container("wazuh-server", can_connect=True, execs=_git_execs())})
 
     rsync_commands: list[list[str]] = []
     mocked_proc = MagicMock()
     mocked_proc.wait_output.return_value = ("", "")
-    real_exec = container.exec
 
-    def exec_side_effect(cmd, *args, **kwargs):
-        if cmd[0] == "rsync":
-            rsync_commands.append(cmd)
-            return mocked_proc
-        if cmd[0] in ["chmod", "chown", "find"]:
-            return mocked_proc
-        return real_exec(cmd, *args, **kwargs)
+    with Manager(ctx, ctx.on.update_status(), state_in) as manager:
+        container = manager.charm.unit.get_container("wazuh-server")
 
-    with (
-        patch.object(container, "exists", return_value=True),
-        patch.object(container, "exec", side_effect=exec_side_effect),
-    ):
-        changed = wazuh.sync_wazuh_config_files(container)
+        # stored head differs
+        container.push(
+            wazuh.WAZUH_APPLIED_COMMIT_PATH,
+            "deadbeef\n",
+            encoding="utf-8",
+            make_dirs=True,
+        )
+
+        real_exec = container.exec
+
+        def exec_side_effect(cmd, *args, **kwargs):
+            if cmd[0] == "rsync":
+                rsync_commands.append(cmd)
+                return mocked_proc
+            if cmd[0] in ["chmod", "chown", "find"]:
+                return mocked_proc
+            return real_exec(cmd, *args, **kwargs)
+
+        with (
+            patch.object(container, "exists", return_value=True),
+            patch.object(container, "exec", side_effect=exec_side_effect),
+        ):
+            changed = wazuh.sync_wazuh_config_files(container)
 
     assert changed is True
-    wazuh_save_applied_commit_marker.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
+    save_applied_commit_marker_mock.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
     assert rsync_commands
 
     destructive_commands = [cmd for cmd in rsync_commands if "--delete" in cmd]
@@ -486,9 +493,8 @@ def test_sync_wazuh_config_files_only_excludes_internal_options_conf_in_destruct
         assert "--include=etc/***" in command
 
 
-@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
 def test_sync_wazuh_config_files_skips_missing_permission_fixup_paths(
-    wazuh_save_applied_commit_marker: unittest.mock.Mock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """
     arrange: the custom repository does not provide var/ossec/integrations or
@@ -497,55 +503,48 @@ def test_sync_wazuh_config_files_skips_missing_permission_fixup_paths(
     assert: the sync completes successfully without attempting find/chmod against the
         missing paths.
     """
-    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
-    harness.handle_exec(
-        "wazuh-server",
-        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
-        result="git+ssh://git@github.com/fake_repo/url.git",
-    )
-    harness.handle_exec(
-        "wazuh-server",
-        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
-        result="v5",
-    )
-    harness.handle_exec(
-        "wazuh-server",
-        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
-        result="abc123",
-    )
+    save_applied_commit_marker_mock = MagicMock()
+    monkeypatch.setattr(wazuh, "save_applied_commit_marker", save_applied_commit_marker_mock)
 
-    harness.begin_with_initial_hooks()
-    container = harness.charm.unit.get_container("wazuh-server")
-
-    container.push(
-        wazuh.WAZUH_APPLIED_COMMIT_PATH,
-        "deadbeef\n",
-        encoding="utf-8",
-        make_dirs=True,
-    )
+    ctx = Context(ops.CharmBase, meta=yaml.safe_load(CHARM_METADATA))
+    state_in = State(containers={Container("wazuh-server", can_connect=True, execs=_git_execs())})
 
     mocked_proc = MagicMock()
     mocked_proc.wait_output.return_value = ("", "")
     exec_calls: list[list[str]] = []
-    real_exec = container.exec
 
-    def exec_side_effect(cmd, *args, **kwargs):
-        if cmd[0] in ["rsync", "chmod", "find"]:
-            exec_calls.append(cmd)
-            return mocked_proc
-        return real_exec(cmd, *args, **kwargs)
+    with Manager(ctx, ctx.on.update_status(), state_in) as manager:
+        container = manager.charm.unit.get_container("wazuh-server")
 
-    def exists_side_effect(path):
-        return path not in (wazuh.WAZUH_INTEGRATIONS_PATH, wazuh.WAZUH_SHARED_DEFAULT_GROUP_PATH)
+        container.push(
+            wazuh.WAZUH_APPLIED_COMMIT_PATH,
+            "deadbeef\n",
+            encoding="utf-8",
+            make_dirs=True,
+        )
 
-    with (
-        patch.object(container, "exists", side_effect=exists_side_effect),
-        patch.object(container, "exec", side_effect=exec_side_effect),
-    ):
-        changed = wazuh.sync_wazuh_config_files(container)
+        real_exec = container.exec
+
+        def exec_side_effect(cmd, *args, **kwargs):
+            if cmd[0] in ["rsync", "chmod", "find"]:
+                exec_calls.append(cmd)
+                return mocked_proc
+            return real_exec(cmd, *args, **kwargs)
+
+        def exists_side_effect(path):
+            return path not in (
+                wazuh.WAZUH_INTEGRATIONS_PATH,
+                wazuh.WAZUH_SHARED_DEFAULT_GROUP_PATH,
+            )
+
+        with (
+            patch.object(container, "exists", side_effect=exists_side_effect),
+            patch.object(container, "exec", side_effect=exec_side_effect),
+        ):
+            changed = wazuh.sync_wazuh_config_files(container)
 
     assert changed is True
-    wazuh_save_applied_commit_marker.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
+    save_applied_commit_marker_mock.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
     assert not any(cmd[0] == "find" for cmd in exec_calls)
     assert not any(cmd[0] == "chmod" for cmd in exec_calls)
 
