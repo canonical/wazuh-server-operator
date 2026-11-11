@@ -58,9 +58,17 @@ container filesystem will be deleted if they are not in the repository. For all
 other paths, pre-existing files will not be deleted - though they may be
 overwritten.
 
-`etc/internal_options.conf` is never synced from the custom repository, so the
-container always keeps the stock file that matches its Wazuh version. To
-override internal options, use `etc/local_internal_options.conf` instead.
+`etc/internal_options.conf` is never deleted, even if your repository does not
+include it: the container always keeps the stock file that matches its Wazuh
+version unless you explicitly provide your own `etc/internal_options.conf` in
+the repository, in which case it overwrites the stock file as usual. To
+override individual internal options without replacing the whole file, use
+`etc/local_internal_options.conf` instead.
+
+If your repository does not include `integrations/` or `etc/shared/default/`,
+those directories are removed from the container along with their default
+content (for example the built-in Slack/VirusTotal/PagerDuty integration
+scripts); this no longer causes the Wazuh server charm to fail to reconcile.
 
 ## Deploy a new configuration
 

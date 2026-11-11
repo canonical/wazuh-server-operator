@@ -407,13 +407,15 @@ def test_sync_wazuh_config_files_when_head_mismatch_triggers_save_applied_commit
 
 
 @unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
-def test_sync_wazuh_config_files_excludes_internal_options_conf(
+def test_sync_wazuh_config_files_only_excludes_internal_options_conf_in_destructive_pass(
     wazuh_save_applied_commit_marker: unittest.mock.Mock,
 ) -> None:
     """
     arrange: when wazuh tries to sync config files.
     act: wazuh config files resync.
-    assert: internal_options.conf is excluded before the include patterns that would match it.
+    assert: internal_options.conf is excluded from the destructive (--delete) rsync pass
+        before the include patterns that would otherwise match it, but is NOT excluded
+        from the non-destructive pass, so a custom repository can still patch it.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.handle_exec(
@@ -465,11 +467,87 @@ def test_sync_wazuh_config_files_excludes_internal_options_conf(
     assert changed is True
     wazuh_save_applied_commit_marker.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
     assert rsync_commands
-    for command in rsync_commands:
+
+    destructive_commands = [cmd for cmd in rsync_commands if "--delete" in cmd]
+    non_destructive_commands = [cmd for cmd in rsync_commands if "--delete" not in cmd]
+    assert destructive_commands
+    assert non_destructive_commands
+
+    for command in destructive_commands:
         exclude_index = command.index("--exclude=etc/internal_options.conf")
         for include in ("--include=etc/*.conf", "--include=etc/***"):
             if include in command:
                 assert exclude_index < command.index(include)
+
+    for command in non_destructive_commands:
+        # the non-destructive pass can never delete the stock file, so it must keep
+        # internal_options.conf in scope in order to still sync a repository-provided one
+        assert "--exclude=etc/internal_options.conf" not in command
+        assert "--include=etc/***" in command
+
+
+@unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
+def test_sync_wazuh_config_files_skips_missing_permission_fixup_paths(
+    wazuh_save_applied_commit_marker: unittest.mock.Mock,
+) -> None:
+    """
+    arrange: the custom repository does not provide var/ossec/integrations or
+        var/ossec/etc/shared/default, so those paths do not exist after the rsync passes.
+    act: wazuh config files resync.
+    assert: the sync completes successfully without attempting find/chmod against the
+        missing paths.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "config", "--get", "remote.origin.url"],
+        result="git+ssh://git@github.com/fake_repo/url.git",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "describe", "--tags", "--exact-match"],
+        result="v5",
+    )
+    harness.handle_exec(
+        "wazuh-server",
+        ["git", "-C", wazuh.REPOSITORY_PATH, "rev-parse", "HEAD"],
+        result="abc123",
+    )
+
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+
+    container.push(
+        wazuh.WAZUH_APPLIED_COMMIT_PATH,
+        "deadbeef\n",
+        encoding="utf-8",
+        make_dirs=True,
+    )
+
+    mocked_proc = MagicMock()
+    mocked_proc.wait_output.return_value = ("", "")
+    exec_calls: list[list[str]] = []
+    real_exec = container.exec
+
+    def exec_side_effect(cmd, *args, **kwargs):
+        if cmd[0] in ["rsync", "chmod", "find"]:
+            exec_calls.append(cmd)
+            return mocked_proc
+        return real_exec(cmd, *args, **kwargs)
+
+    def exists_side_effect(path):
+        return path not in (wazuh.WAZUH_INTEGRATIONS_PATH, wazuh.WAZUH_SHARED_DEFAULT_GROUP_PATH)
+
+    with (
+        patch.object(container, "exists", side_effect=exists_side_effect),
+        patch.object(container, "exec", side_effect=exec_side_effect),
+    ):
+        changed = wazuh.sync_wazuh_config_files(container)
+
+    assert changed is True
+    wazuh_save_applied_commit_marker.assert_called_once_with(ANY, wazuh.WAZUH_APPLIED_COMMIT_PATH)
+    assert not any(cmd[0] == "find" for cmd in exec_calls)
+    assert not any(cmd[0] == "chmod" for cmd in exec_calls)
 
 
 @unittest.mock.patch.object(wazuh, "save_applied_commit_marker")
