@@ -1,12 +1,12 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Scenario-based unit tests for wazuh.sync_wazuh_config_files.
+"""Unit tests for wazuh.sync_wazuh_config_files.
 
-These tests use ops.testing's Scenario framework (Context/State/Container/Manager)
-rather than the deprecated Harness, and lean on the shared fixtures/helpers in
-conftest.py to keep the test bodies focused on behaviour rather than test
-scaffolding.
+Covers how the custom-config-repository sync handles var/ossec/etc/internal_options.conf
+(preserving the stock file when the repository omits it, applying the repository's own
+copy when it provides one) and how it reacts when var/ossec/integrations/ or
+var/ossec/etc/shared/default/ are removed by the sync.
 """
 
 from unittest.mock import ANY
