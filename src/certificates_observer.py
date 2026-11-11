@@ -20,10 +20,6 @@ SECRET_LABEL = "certificates-secret"  # nosec
 def _subject_alternative_names(subject: str) -> dict[str, list[str]]:
     """Build the subjectAltName CSR arguments matching a certificate's subject.
 
-    Modern TLS clients (for example Go's crypto/tls) reject certificates that
-    rely solely on the legacy Common Name field for hostname verification, so
-    the subject must also be present as a subjectAltName.
-
     Args:
         subject: the CSR's Common Name, either a hostname or an IP address.
 
