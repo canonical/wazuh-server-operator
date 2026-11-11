@@ -1,5 +1,5 @@
 # Configurations
 
-See [Configurations](https://charmhub.io/wazuh-server/configure).
+See [Configurations](https://charmhub.io/wazuh-server/configurations).
 
-> Read more about configurations in the Juju docs: [Configuration](https://documentation.ubuntu.com/juju/3.6/reference/configuration/)
+> Read more about configurations in the Juju docs: [Configuration](https://canonical.com/juju/docs/juju-cli/3.6/reference/configuration/)

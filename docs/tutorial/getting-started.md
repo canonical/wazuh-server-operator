@@ -11,9 +11,9 @@
 
 * A working station, e.g., a laptop, with amd64 architecture.
 * Juju 3 installed and bootstrapped to an LXD controller. You can accomplish
-this process by using a [Multipass](https://multipass.run/) VM as outlined in this guide: [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/). 
+this process by using a [Multipass](https://canonical.com/multipass) VM as outlined in this guide: [How to manage your deployment](https://canonical.com/juju/docs/juju-cli/3.6/howto/manage-your-deployment/).
 [note]
-The [How to manage your deployment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/) tutorial provides documentation for both manual and automatic deployment management. You would have to follow the manual steps only to avoid installing MicroK8s in your setup.
+The [How to manage your deployment](https://canonical.com/juju/docs/juju-cli/3.6/howto/manage-your-deployment/) tutorial provides documentation for both manual and automatic deployment management. You would have to follow the manual steps only to avoid installing MicroK8s in your setup.
 [/note]
 * A deployed Wazuh Indexer. For instructions to deploy the Wazuh Indexer, check [its documentation](https://charmhub.io/wazuh-indexer).
 * A deployed Wazuh Dashboard. For instructions to deploy the Wazuh Dashboard, check [its documentation](https://charmhub.io/wazuh-dashboard).

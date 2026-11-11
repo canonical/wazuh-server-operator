@@ -1,7 +1,7 @@
 # How to integrate with Canonical Observability Stack
 
 ## Deploy COS lite
-Create a Juju model and deploy the Canonical Observability Stack bundle [cos-lite](https://charmhub.io/topics/canonical-observability-stack) to this model:
+Create a Juju model and deploy the Canonical Observability Stack bundle [cos-lite](https://canonical.com/observability/docs/track-3.0/) to this model:
 
 ```bash
 juju add-model cos-lite

@@ -11,6 +11,9 @@ Each revision is versioned by the date of the revision.
 - Include the subject (ingress hostname or IP) as a subjectAltName in the
   rsyslog server certificate's CSR, so TLS clients that require SANs (such as
   Go's crypto/tls) can validate the certificate.
+- Refresh Wazuh API credentials from a single secret-content snapshot on consumer
+  reads, and emit data-available events only for usable relation data.
+- Preserve recoverable credential-read failures with safe diagnostics.
 
 ## 2026-09-16
 
@@ -33,7 +36,7 @@ Each revision is versioned by the date of the revision.
 
 ## 2025-02-27
 
-- Remove logrotate.
+- Remove `logrotate`.
 
 ## 2025-02-18
 
