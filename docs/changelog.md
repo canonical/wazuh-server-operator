@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-11-12
+
+- Rotate the raw rsyslog ingest file (`/var/log/collectors/rsyslog/rsyslog.log`)
+  once it reaches 4GB, keeping a single backup, so it no longer grows unbounded
+  and fills up the "data" storage volume.
+
 ## 2026-11-10
 
 - Refresh Wazuh API credentials from a single secret-content snapshot on consumer
