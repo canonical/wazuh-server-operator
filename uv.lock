@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -623,7 +623,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -729,17 +729,17 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "decorator" },
-    { name = "exceptiongroup" },
-    { name = "jedi" },
-    { name = "matplotlib-inline" },
-    { name = "pexpect", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "prompt-toolkit" },
-    { name = "pygments" },
-    { name = "stack-data" },
-    { name = "traitlets" },
-    { name = "typing-extensions" },
+    { name = "colorama", marker = "python_full_version < '3.11' and sys_platform == 'win32'" },
+    { name = "decorator", marker = "python_full_version < '3.11'" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
+    { name = "jedi", marker = "python_full_version < '3.11'" },
+    { name = "matplotlib-inline", marker = "python_full_version < '3.11'" },
+    { name = "pexpect", marker = "python_full_version < '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "prompt-toolkit", marker = "python_full_version < '3.11'" },
+    { name = "pygments", marker = "python_full_version < '3.11'" },
+    { name = "stack-data", marker = "python_full_version < '3.11'" },
+    { name = "traitlets", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/85/31/10ac88f3357fc276dc8a64e8880c82e80e7459326ae1d0a211b40abf6665/ipython-8.37.0.tar.gz", hash = "sha256:ca815841e1a41a1e6b73a0b08f3038af9b2252564d01fc405356d34033012216", size = 5606088, upload-time = "2025-05-31T16:39:09.613Z" }
 wheels = [
@@ -755,17 +755,17 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "decorator" },
-    { name = "ipython-pygments-lexers" },
-    { name = "jedi" },
-    { name = "matplotlib-inline" },
-    { name = "pexpect", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "prompt-toolkit" },
-    { name = "pygments" },
-    { name = "stack-data" },
-    { name = "traitlets" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+    { name = "colorama", marker = "python_full_version >= '3.11' and sys_platform == 'win32'" },
+    { name = "decorator", marker = "python_full_version >= '3.11'" },
+    { name = "ipython-pygments-lexers", marker = "python_full_version >= '3.11'" },
+    { name = "jedi", marker = "python_full_version >= '3.11'" },
+    { name = "matplotlib-inline", marker = "python_full_version >= '3.11'" },
+    { name = "pexpect", marker = "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "prompt-toolkit", marker = "python_full_version >= '3.11'" },
+    { name = "pygments", marker = "python_full_version >= '3.11'" },
+    { name = "stack-data", marker = "python_full_version >= '3.11'" },
+    { name = "traitlets", marker = "python_full_version >= '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version == '3.11.*'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/e6/48c74d54039241a456add616464ea28c6ebf782e4110d419411b83dae06f/ipython-9.7.0.tar.gz", hash = "sha256:5f6de88c905a566c6a9d6c400a8fed54a638e1f7543d17aae2551133216b1e4e", size = 4422115, upload-time = "2025-11-05T12:18:54.646Z" }
 wheels = [
@@ -777,7 +777,7 @@ name = "ipython-pygments-lexers"
 version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pygments" },
+    { name = "pygments", marker = "python_full_version >= '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/4c/5dd1d8af08107f88c7f741ead7a40854b8ac24ddf9ae850afbcf698aa552/ipython_pygments_lexers-1.1.1.tar.gz", hash = "sha256:09c0138009e56b6854f9535736f4171d855c8c08a563a0dcd8022f78355c7e81", size = 8393, upload-time = "2025-01-17T11:24:34.505Z" }
 wheels = [
@@ -1246,8 +1246,8 @@ name = "opcli"
 version = "1.0.2"
 source = { git = "https://github.com/canonical/charm-ci.git?tag=v1.0.2#14b1cf49d48b9d5b96192d9bca2890c98b7295cf" }
 dependencies = [
-    { name = "pydantic" },
-    { name = "ruamel-yaml" },
+    { name = "pydantic", marker = "python_full_version >= '3.12'" },
+    { name = "ruamel-yaml", marker = "python_full_version >= '3.12'" },
 ]
 
 [[package]]
@@ -1301,6 +1301,25 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0f/03/d87306f7e704a0f75f461d40d6141bfbd1ea38ba329ca0e88f6c3a20cfd5/ops-3.9.0.tar.gz", hash = "sha256:f8fd7fa05359e9fc057663b1a652602f5803db0b37e1bbfe9b63971c54e4b3b3", size = 420379, upload-time = "2026-10-08T05:36:18.184Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/2f/faf83b14fd88c0e5ae26a4f5eb66f06f708fe322223823acfd45f8d32594/ops-3.9.0-py3-none-any.whl", hash = "sha256:2dc7a77edae408886ccd348be590df0e03589dfe5e3e115e238d5746850eed0c", size = 219271, upload-time = "2026-10-08T05:36:14.03Z" },
+]
+
+[package.optional-dependencies]
+testing = [
+    { name = "ops-scenario" },
+]
+
+[[package]]
+name = "ops-scenario"
+version = "8.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ops" },
+    { name = "pyyaml" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2c/c7/51b9878f732ffb5363ec34c9a078db3f8fbb691c1fc3d225d959d1f9c6c0/ops_scenario-8.9.0.tar.gz", hash = "sha256:08e4aae5d6306f0a0b772c806d6f72d8238e106459303d2fb9288b72cbcc348f", size = 132424, upload-time = "2026-10-08T05:36:19.545Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2b/f8/2c2d655af358c708e49f8bffa0f40b4fa81e84ad9c234372543f143bc737/ops_scenario-8.9.0-py3-none-any.whl", hash = "sha256:a6ff1ed5d0f71b419cf9aa36c85094afbd4fb44bae0567a151634f8d0dde2351", size = 75885, upload-time = "2026-10-08T05:36:15.641Z" },
 ]
 
 [[package]]
@@ -2341,6 +2360,7 @@ static = [
 ]
 unit = [
     { name = "coverage", extra = ["toml"] },
+    { name = "ops", extra = ["testing"] },
     { name = "pytest" },
 ]
 
@@ -2394,6 +2414,7 @@ lint = [
 static = [{ name = "bandit", extras = ["toml"] }]
 unit = [
     { name = "coverage", extras = ["toml"] },
+    { name = "ops", extras = ["testing"], specifier = "==3.9.0" },
     { name = "pytest" },
 ]
 
