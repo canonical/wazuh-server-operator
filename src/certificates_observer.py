@@ -3,6 +3,7 @@
 
 """The Certificates relation observer."""
 
+import ipaddress
 import logging
 
 import charms.tls_certificates_interface.v3.tls_certificates as certificates
@@ -14,6 +15,23 @@ from state import CharmBaseWithState, IncompleteStateError
 logger = logging.getLogger(__name__)
 RELATION_NAME = "certificates"
 SECRET_LABEL = "certificates-secret"  # nosec
+
+
+def _subject_alternative_names(subject: str) -> dict[str, list[str]]:
+    """Build the subjectAltName CSR arguments matching a certificate's subject.
+
+    Args:
+        subject: the CSR's Common Name, either a hostname or an IP address.
+
+    Returns:
+        a keyword argument dict for `generate_csr`, using `sans_ip` if the
+        subject is an IP address, `sans_dns` otherwise.
+    """
+    try:
+        ipaddress.ip_address(subject)
+    except ValueError:
+        return {"sans_dns": [subject]}
+    return {"sans_ip": [subject]}
 
 
 class CertificatesObserver(Object):
@@ -124,6 +142,7 @@ class CertificatesObserver(Object):
                 csr = certificates.generate_csr(
                     private_key=self._get_private_key(label=label, renew=False).encode(),
                     subject=subject,
+                    **_subject_alternative_names(subject),
                 )
             else:
                 csr = content.get("csr").encode("utf-8")
@@ -132,6 +151,7 @@ class CertificatesObserver(Object):
             csr = certificates.generate_csr(
                 private_key=self._get_private_key(label=label, renew=False).encode(),
                 subject=subject,
+                **_subject_alternative_names(subject),
             )
         # Private key generation will add the secret when called by the first time
         secret = self._charm.model.get_secret(label=label)

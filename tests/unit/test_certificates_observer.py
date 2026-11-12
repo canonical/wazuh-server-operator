@@ -6,11 +6,13 @@
 
 """Certificates observer unit tests."""
 
+import ipaddress
 import secrets
 from unittest.mock import MagicMock, Mock
 
 import ops
 import pytest
+from cryptography import x509
 from ops.testing import Harness
 
 import state
@@ -233,3 +235,38 @@ def test_get_csr_renewal_does_not_rotate_private_key() -> None:
 
     assert renewed_csr != original_csr
     assert renewed_key == original_key
+
+
+@pytest.mark.parametrize(
+    "subject,expected_san_type,expected_san_value",
+    [
+        ("host1.example", x509.DNSName, "host1.example"),
+        ("10.0.0.5", x509.IPAddress, ipaddress.ip_address("10.0.0.5")),
+    ],
+)
+def test_get_csr_includes_subject_as_san(
+    subject: str,
+    expected_san_type: type,
+    expected_san_value: object,
+) -> None:
+    """
+    arrange: instantiate a charm implementing the certificates relation as leader.
+    act: request a CSR for a hostname subject and for an IP address subject.
+    assert: the subject is also present as a subjectAltName, so TLS clients that require SANs
+        (such as Go's crypto/tls) can validate the resulting certificate.
+    """
+    harness = Harness(ObservedCharm, meta=REQUIRER_METADATA)
+    harness.set_leader(True)
+    harness.begin_with_initial_hooks()
+    harness.add_relation(RELATION_NAME, "certificates-provider")
+
+    observer = harness.charm.certificates
+    csr_bytes = observer._get_certificate_signing_request(
+        subject=subject, label="certificates-secret", renew=False
+    )
+
+    csr = x509.load_pem_x509_csr(csr_bytes)
+    san_extension = csr.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+    san_values = san_extension.value.get_values_for_type(expected_san_type)
+
+    assert san_values == [expected_san_value]

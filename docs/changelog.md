@@ -13,6 +13,9 @@ Each revision is versioned by the date of the revision.
   repository to override it if it does.
 - Stop `sync_wazuh_config_files` from failing when the `custom-config-repository`
   does not provide `var/ossec/integrations/` or `var/ossec/etc/shared/default/`.
+- Include the subject (ingress hostname or IP) as a subjectAltName in the
+  rsyslog server certificate's CSR, so TLS clients that require SANs (such as
+  Go's crypto/tls) can validate the certificate.
 - Refresh Wazuh API credentials from a single secret-content snapshot on consumer
   reads, and emit data-available events only for usable relation data.
 - Preserve recoverable credential-read failures with safe diagnostics.
