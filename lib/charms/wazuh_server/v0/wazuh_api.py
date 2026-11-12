@@ -29,14 +29,14 @@ class WazuhApiRequirerCharm(ops.CharmBase):
 As shown above, the library provides a custom event to handle the scenario in
 which new Wazuh API data has been added or updated.
 
-Credential reads refresh the consumer's tracked secret revision and read both
-fields from one content snapshot. Requirers should also observe `secret-changed`
+Credential reads refresh the consumer's tracked secret revision and read `user`
+and `password` from one content snapshot. Requirers should also observe `secret-changed`
 and call `get_relation_data()` when their credentials secret changes: rotating a
 secret does not necessarily change the relation databag.
 
 `get_relation_data()` returns `None` with a diagnostic when published data is
-incomplete, invalid, or its secret is unavailable. Credential access through the
-custom event raises `SecretError` when the secret cannot be used.
+incomplete, invalid, or its secret is unavailable. Credential access through
+`WazuhApiDataAvailableEvent` (`user` and `password`) raises `SecretError` when the secret cannot be used.
 
 ### Provider Charm
 
@@ -75,17 +75,19 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 5
+LIBPATCH = 6
 
 PYDEPS = ["pydantic>=2"]
 
+# Imports follow PYDEPS (E402) and asserts narrow optional types (S101).
+# ruff: noqa: E402, S101
 # pylint: disable=wrong-import-position
-import logging  # noqa: E402
-import typing  # noqa: E402
-from typing import Dict, Optional  # noqa: E402
+import logging
+import typing
+from typing import Dict, Optional
 
-import ops  # noqa: E402
-from pydantic import AnyHttpUrl, BaseModel, ValidationError  # noqa: E402
+import ops
+from pydantic import AnyHttpUrl, BaseModel, ValidationError
 
 # The wazuh dashboard charm dependencies require pydantic<2
 # Disable used-before-assignment as parse_obj_as will not be recognized pylint
@@ -162,7 +164,7 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     @property
     def endpoint(self) -> AnyHttpUrl:
         """Fetch the endpoint from the relation."""
-        assert self.relation.app  # noqa: S101
+        assert self.relation.app
         url = typing.cast(str, self.relation.data[self.relation.app].get("endpoint"))
         try:
             return TypeAdapter(AnyHttpUrl).validate_python(url)
@@ -172,20 +174,20 @@ class WazuhApiDataAvailableEvent(ops.RelationEvent):
     @property
     def _credentials(self) -> tuple[str, str]:
         """Fetch the API credentials from the relation."""
-        assert self.relation.app  # noqa: S101
+        assert self.relation.app
         relation_data = self.relation.data[self.relation.app]
         return _get_credentials(self.framework.model, relation_data.get("user_credentials_secret"))
 
     @property
     def user(self) -> str:
         """Fetch the user from the relation."""
-        assert self.relation.app  # noqa: S101
+        assert self.relation.app
         return self._credentials[0]
 
     @property
     def password(self) -> str:
         """Fetch the password from the relation."""
-        assert self.relation.app  # noqa: S101
+        assert self.relation.app
         return self._credentials[1]
 
 
