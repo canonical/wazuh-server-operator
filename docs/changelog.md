@@ -11,6 +11,9 @@ Each revision is versioned by the date of the revision.
 - Qualify `master_fqdn`/`units_fqdns` with the Kubernetes namespace and cluster
   domain (`<namespace>.svc.cluster.local`), so traefik-route backends resolve
   correctly when Traefik is related cross-model from a different namespace.
+- Include the subject (ingress hostname or IP) as a subjectAltName in the
+  rsyslog server certificate's CSR, so TLS clients that require SANs (such as
+  Go's crypto/tls) can validate the certificate.
 - Refresh Wazuh API credentials from a single secret-content snapshot on consumer
   reads, and emit data-available events only for usable relation data.
 - Preserve recoverable credential-read failures with safe diagnostics.
