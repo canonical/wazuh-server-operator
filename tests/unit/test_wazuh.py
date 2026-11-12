@@ -84,6 +84,50 @@ def test_update_configuration(
         assert not tree.xpath("/root/ossec_config/vulnerability-detection")
     else:
         assert tree.xpath("/root/ossec_config/vulnerability-detection/enabled")[0].text == "no"
+    localfiles = tree.xpath(f"/root/ossec_config/localfile[location='{wazuh.INGEST_LOG_PATH}']")
+    assert len(localfiles) == 1
+    assert localfiles[0].find("log_format").text == "syslog"
+
+
+def test_sync_ossec_conf_preserves_custom_rsyslog_localfile(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    arrange: an ossec.conf that already contains a <localfile> for the rsyslog ingest
+        path, with a custom log format (as a custom-config-repository could provide).
+    act: run sync_ossec_conf.
+    assert: the existing block is preserved and no duplicate is added.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    exec_process = unittest.mock.MagicMock()
+    exec_process.wait_output = unittest.mock.MagicMock(return_value=(0, 0))
+    monkeypatch.setattr(container, "exec", unittest.mock.MagicMock(return_value=exec_process))
+    ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
+    custom_block = f"""  <localfile>
+    <log_format>json</log_format>
+    <location>{wazuh.INGEST_LOG_PATH}</location>
+  </localfile>
+"""
+    ossec_content = ossec_content.replace(
+        "  <vulnerability-detection>", custom_block + "  <vulnerability-detection>", 1
+    )
+    container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
+
+    wazuh.sync_ossec_conf(
+        container,
+        ["10.0.0.2:9200"],
+        "10.1.0.2",
+        "wazuh-server/0",
+        secrets.token_hex(32),
+    )
+
+    ossec_config = container.pull(wazuh.OSSEC_CONF_PATH, encoding="utf-8").read()
+    tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
+    localfiles = tree.xpath(f"/root/ossec_config/localfile[location='{wazuh.INGEST_LOG_PATH}']")
+    assert len(localfiles) == 1
+    assert localfiles[0].find("log_format").text == "json"
 
 
 def test_install_certificates() -> None:

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-11-12
+
+- Configure `wazuh-logcollector` to read the forwarded rsyslog ingest file
+  (`/var/log/collectors/rsyslog/rsyslog.log`) by default, so mTLS syslog
+  messages received on port 6514 generate alerts and archives without a
+  `custom-config-repository` override.
+
 ## 2026-11-10
 
 - Qualify `master_fqdn`/`units_fqdns` with the Kubernetes namespace and cluster
