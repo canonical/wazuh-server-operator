@@ -98,11 +98,6 @@ class WazuhServerCharm(CharmBaseWithState):
     def _k8s_service_fqdn(self, hostname: str) -> str:
         """Qualify a short Kubernetes headless service hostname with its namespace and domain.
 
-        Short hostnames such as "<app>-0.<app>-endpoints" only resolve from within the same
-        Kubernetes namespace. Traefik (via traefik-route) can be related cross-model, and
-        therefore run in a different namespace, where the short form fails to resolve. Adding
-        the namespace and cluster domain makes the name resolvable from anywhere in the cluster.
-
         Args:
             hostname: the short hostname to qualify, for example "<app>-0.<app>-endpoints".
 
