@@ -9,7 +9,7 @@ Each revision is versioned by the date of the revision.
 ## 2026-11-10
 
 - Qualify `master_fqdn`/`units_fqdns` with the Kubernetes namespace and cluster
-  domain (`<namespace>.svc.cluster.local`), so traefik-route backends resolve
+  domain (`<namespace>.svc.cluster.local`), so `traefik-route` backends resolve
   correctly when Traefik is related cross-model from a different namespace.
 - Include the subject (ingress hostname or IP) as a subjectAltName in the
   rsyslog server certificate's CSR, so TLS clients that require SANs (such as
