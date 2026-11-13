@@ -213,7 +213,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_sync_ossec_conf_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local",
+        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.",
         "wazuh-server/0",
         cluster_key,
         opencti_url=opencti_url,
@@ -327,7 +327,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_not_config
     wazuh_sync_ossec_conf_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local",
+        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc",
         "wazuh-server/0",
         cluster_key,
         opencti_token=None,
@@ -387,7 +387,7 @@ def test_master_fqdn_is_namespace_qualified():
 
     assert (
         harness.charm.master_fqdn
-        == "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local"
+        == "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc"
     )
 
 
@@ -404,6 +404,6 @@ def test_units_fqdns_are_namespace_qualified():
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name, unit_data={})
 
     assert (
-        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc.cluster.local"
+        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc"
         in harness.charm.units_fqdns
     )
