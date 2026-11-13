@@ -104,7 +104,7 @@ class WazuhServerCharm(CharmBaseWithState):
         Returns:
             the namespace- and cluster-domain-qualified hostname.
         """
-        return f"{hostname}.{self.model.name}.svc.cluster.local"
+        return f"{hostname}.{self.model.name}.svc"
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
