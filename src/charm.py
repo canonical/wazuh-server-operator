@@ -91,9 +91,20 @@ class WazuhServerCharm(CharmBaseWithState):
         if not peer_relation:
             return [getfqdn()]
         return [
-            f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints"
+            self._k8s_service_fqdn(f"{unit.name.replace('/', '-')}.{self.app.name}-endpoints")
             for unit in peer_relation.units
         ] + [getfqdn()]
+
+    def _k8s_service_fqdn(self, hostname: str) -> str:
+        """Qualify a short Kubernetes headless service hostname with its namespace and domain.
+
+        Args:
+            hostname: the short hostname to qualify, for example "<app>-0.<app>-endpoints".
+
+        Returns:
+            the namespace- and cluster-domain-qualified hostname.
+        """
+        return f"{hostname}.{self.model.name}.svc"
 
     def _on_install(self, _: ops.InstallEvent) -> None:
         """Install event handler."""
@@ -525,7 +536,7 @@ class WazuhServerCharm(CharmBaseWithState):
         """
         unit_name = f"{self.unit.name.split('/')[0]}-0"
         app_name = self.app.name
-        return f"{unit_name}.{app_name}-endpoints"
+        return self._k8s_service_fqdn(f"{unit_name}.{app_name}-endpoints")
 
 
 if __name__ == "__main__":  # pragma: nocover
