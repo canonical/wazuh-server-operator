@@ -60,7 +60,7 @@ containers:
       - storage: filebeat-data
         location: /var/lib/filebeat
       - storage: api-config
-        location: /var/ossec/api/configuration
+        location: /var/ossec/api/configuration/security
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"
