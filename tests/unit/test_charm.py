@@ -213,7 +213,7 @@ def test_reconcile_reaches_active_status_when_repository_and_password_configured
     wazuh_sync_ossec_conf_mock.assert_called_with(
         container,
         ["10.0.0.1"],
-        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.",
+        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc",
         "wazuh-server/0",
         cluster_key,
         opencti_url=opencti_url,
