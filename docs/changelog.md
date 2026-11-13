@@ -11,6 +11,11 @@ Each revision is versioned by the date of the revision.
 - Qualify `master_fqdn`/`units_fqdns` with the Kubernetes namespace and cluster
   domain (`<namespace>.svc.cluster.local`), so `traefik-route` backends resolve
   correctly when Traefik is related cross-model from a different namespace.
+- Preserve the stock `var/ossec/etc/internal_options.conf` when a
+  `custom-config-repository` does not provide one, while still allowing the
+  repository to override it if it does.
+- Stop `sync_wazuh_config_files` from failing when the `custom-config-repository`
+  does not provide `var/ossec/integrations/` or `var/ossec/etc/shared/default/`.
 - Include the subject (ingress hostname or IP) as a subjectAltName in the
   rsyslog server certificate's CSR, so TLS clients that require SANs (such as
   Go's crypto/tls) can validate the certificate.

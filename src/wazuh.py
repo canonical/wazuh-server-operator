@@ -40,6 +40,8 @@ API_PORT = 55000
 AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
+WAZUH_INTEGRATIONS_PATH = WAZUH_CONF_PATH + "/integrations"
+WAZUH_SHARED_DEFAULT_GROUP_PATH = WAZUH_CONF_PATH + "/etc/shared/default"
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"
 WAZUH_GROUP = "wazuh"
@@ -591,6 +593,7 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
                 "root:wazuh",
                 "--delete",
                 "--include=etc/",
+                "--exclude=etc/internal_options.conf",
                 "--include=etc/*.conf",
                 "--include=etc/decoders/***",
                 "--include=etc/rules/***",
@@ -607,6 +610,10 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
         ).wait_output()
 
         # non-destructive copy / patch
+        # Note: etc/internal_options.conf is deliberately NOT excluded here. This
+        # pass has no --delete, so including it only allows a custom repository
+        # to patch internal_options.conf if it explicitly ships its own copy; it
+        # can never cause the stock file to be deleted.
         container.exec(
             [
                 "rsync",
@@ -622,27 +629,40 @@ def sync_wazuh_config_files(container: ops.Container) -> bool:
             timeout=10,
         ).wait_output()
 
-        # ensure all integration scripts are executable
-        container.exec(
-            [
-                "find",
-                "/var/ossec/integrations",
-                "-type",
-                "f",
-                "-exec",
-                "chmod",
-                "750",
-                "{}",
-                "+",
-            ],
-            timeout=10,
-        ).wait_output()
+        # ensure all integration scripts are executable, if the repository provided any
+        # (the destructive rsync pass above may remove this directory entirely when
+        # the custom repository does not include var/ossec/integrations/)
+        if container.exists(WAZUH_INTEGRATIONS_PATH):
+            container.exec(
+                [
+                    "find",
+                    WAZUH_INTEGRATIONS_PATH,
+                    "-type",
+                    "f",
+                    "-exec",
+                    "chmod",
+                    "750",
+                    "{}",
+                    "+",
+                ],
+                timeout=10,
+            ).wait_output()
+        else:
+            logger.info(
+                "path '%s' does not exist, skipping permission fixup", WAZUH_INTEGRATIONS_PATH
+            )
 
         # 770 required for the manager to create the merged.mg file
-        container.exec(
-            ["chmod", "770", "/var/ossec/etc/shared/default"],
-            timeout=10,
-        ).wait_output()
+        if container.exists(WAZUH_SHARED_DEFAULT_GROUP_PATH):
+            container.exec(
+                ["chmod", "770", WAZUH_SHARED_DEFAULT_GROUP_PATH],
+                timeout=10,
+            ).wait_output()
+        else:
+            logger.info(
+                "path '%s' does not exist, skipping permission fixup",
+                WAZUH_SHARED_DEFAULT_GROUP_PATH,
+            )
         save_applied_commit_marker(container, WAZUH_APPLIED_COMMIT_PATH)
         return True
     except ops.pebble.ExecError as ex:

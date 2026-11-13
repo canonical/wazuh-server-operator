@@ -38,7 +38,7 @@ Your repository should contain configuration files under the same paths you
 would expect them to appear on a live server. The following paths are checked:
 
 - `var/ossec`
-  - `etc/*.conf` (will delete)
+  - `etc/*.conf` (will delete, except `etc/internal_options.conf`)
   - `etc/decoders/` (recursively, will delete)
   - `etc/rules/` (recursively, will delete)
   - `etc/shared/*.conf` (will delete)
@@ -50,6 +50,13 @@ would expect them to appear on a live server. The following paths are checked:
 - `usr/share/filebeat/` (recursively)
 - `etc/filebeat/` (recursively)
 
+```{important}
+At a minimum, your custom configuration repository must include `var/ossec/etc/ossec.conf`. This
+file is one of the paths marked "will delete" above: if your repository does
+not include it, the existing `ossec.conf` is deleted from the container. This is a known gap
+in the current charm code.
+```
+
 Files in the repository will be created or will overwrite existing files by the
 same path on the container filesystem.
 
@@ -57,6 +64,11 @@ For paths marked "will delete" in the list above, pre-existing files on the
 container filesystem will be deleted if they are not in the repository. For all
 other paths, pre-existing files will not be deleted - though they may be
 overwritten.
+
+`etc/internal_options.conf` is never deleted, even if your repository does not
+include it: the container always keeps the stock file that matches its Wazuh
+version unless you explicitly provide your own `etc/internal_options.conf` in
+the repository, in which case it overwrites the stock file as usual.
 
 ## Deploy a new configuration
 

@@ -48,6 +48,7 @@ lint = [
 ]
 unit = [
   "coverage[toml]",
+  "ops[testing]==3.9.0",
   "pytest",
 ]
 coverage-report = [
