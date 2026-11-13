@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-11-13
+
+- Add an integration test that asserts Wazuh API credentials in the Juju secret
+  are not rotated across a pod restart.
+
 ## 2026-11-10
 
 - Preserve the stock `var/ossec/etc/internal_options.conf` when a
