@@ -10,6 +10,10 @@ Each revision is versioned by the date of the revision.
 
 - Add an integration test that asserts Wazuh API credentials in the Juju secret
   are not rotated across a pod restart.
+- Persist the Wazuh API configuration directory (`/var/ossec/api/configuration`)
+  to a new `api-config` storage mount, so the API's RBAC database (and therefore
+  its users' passwords) survives pod restarts instead of being reset to factory
+  defaults.
 
 ## 2026-11-10
 

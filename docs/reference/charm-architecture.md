@@ -57,6 +57,7 @@ Boundary(storage, "Persistent storage") {
   ComponentDb(collector-data, "Collector data", "", "/var/log/collectors")
   ComponentDb(wazuh-logs, "Wazuh logs", "", "/var/ossec/logs")
   ComponentDb(filebeat-data, "Filebeat data", "", "/var/lib/filebeat")
+  ComponentDb(api-config, "Wazuh API config", "", "/var/ossec/api/configuration")
 }
 
 Rel(wazuh-rsyslog, collector-data, "Writes collected logs")
@@ -76,6 +77,7 @@ The Wazuh server charm mounts [filesystem type storage](https://canonical.com/ju
 - `/var/log/collectors` stores incoming rsyslog logs.
 - `/var/ossec/logs` stores logs produced by Wazuh.
 - `/var/lib/filebeat` stores Filebeat checkpoints and other runtime state so log processing can resume after a pod replacement.
+- `/var/ossec/api/configuration` stores the Wazuh API's configuration, including its RBAC database (`security/rbac.db`), so API users and their passwords survive pod restarts.
 
 ## Charm code overview
 

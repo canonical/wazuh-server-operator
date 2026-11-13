@@ -59,6 +59,8 @@ containers:
         location: /var/ossec/logs
       - storage: filebeat-data
         location: /var/lib/filebeat
+      - storage: api-config
+        location: /var/ossec/api/configuration
 charm-libs:
   - lib: data_platform_libs.data_interfaces
     version: "0"
@@ -145,4 +147,6 @@ storage:
   filebeat-data:
     type: filesystem
   logs:
+    type: filesystem
+  api-config:
     type: filesystem
