@@ -385,10 +385,7 @@ def test_master_fqdn_is_namespace_qualified():
     harness.set_model_name("wazuh-server")
     harness.begin()
 
-    assert (
-        harness.charm.master_fqdn
-        == "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc"
-    )
+    assert harness.charm.master_fqdn == "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc"
 
 
 def test_units_fqdns_are_namespace_qualified():
@@ -403,7 +400,4 @@ def test_units_fqdns_are_namespace_qualified():
     harness.begin()
     harness.add_relation(WAZUH_PEER_RELATION_NAME, harness.charm.app.name, unit_data={})
 
-    assert (
-        "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc"
-        in harness.charm.units_fqdns
-    )
+    assert "wazuh-server-0.wazuh-server-endpoints.wazuh-server.svc" in harness.charm.units_fqdns
