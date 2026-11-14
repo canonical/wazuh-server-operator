@@ -30,6 +30,7 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 CONTAINER_NAME = "wazuh-server"
 INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
+INGEST_LOG_PATH = f"{INGEST_LOG_DIR}/rsyslog.log"
 REPOSITORY_PATH = "/root/repository"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
@@ -289,6 +290,18 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
             "</vulnerability-detection>"
         )
         elements[0].append(new_conf)
+
+    # rsyslog writes forwarded logs to INGEST_LOG_PATH, but the stock ossec.conf does not
+    # tell logcollector to read them. Add the <localfile> block unless it is already there
+    # (for example, when a custom-config-repository provides one).
+    if not ossec_config_tree.xpath(f"/root/ossec_config/localfile[location='{INGEST_LOG_PATH}']"):
+        localfile = etree.fromstring(
+            "<localfile>"
+            "<log_format>syslog</log_format>"
+            f"<location>{INGEST_LOG_PATH}</location>"
+            "</localfile>"
+        )
+        elements[0].append(localfile)
 
     new_conf_bytes: bytes = b"".join(
         [etree.tostring(element, pretty_print=True, encoding="utf-8") for element in elements]
