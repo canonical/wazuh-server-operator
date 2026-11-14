@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-11-13
+
+- Add an integration test that asserts Wazuh API credentials in the Juju secret
+  are not rotated across a pod restart.
+- Persist only the Wazuh API's RBAC database directory
+  (`/var/ossec/api/configuration/security`, containing `rbac.db`) to a new
+  `api-config` storage mount, so API users and their passwords survive pod
+  restarts instead of being reset to factory defaults. Other files under
+  `/var/ossec/api/configuration` (the API's `api.yaml`, its self-signed TLS
+  cert/key, etc.) are deliberately not persisted.
+
 ## 2026-11-10
 
 - Qualify `master_fqdn`/`units_fqdns` with the Kubernetes namespace and cluster

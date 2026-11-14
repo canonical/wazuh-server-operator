@@ -413,3 +413,58 @@ async def test_rsyslog_full_chain_written(application: Application):
     await action.wait()
     certificate_count = (action.results.get("stdout") or "").count("-----BEGIN CERTIFICATE-----")
     assert certificate_count >= 3, f"Expected the full chain, found {certificate_count}"
+
+
+@pytest.mark.abort_on_fail
+async def test_api_credentials_survive_pod_restart(model: Model, application: Application):
+    """
+    Arrange: a deployed Wazuh with previously-rotated API credentials in the secret.
+    Act: force-delete the pod and wait for the replacement to become ready.
+    Assert: the credentials in the Juju secret are unchanged and still valid against the API.
+    """
+    leader = None
+    for unit in application.units:
+        if await unit.is_leader_from_status():
+            leader = unit
+            break
+    assert isinstance(leader, Unit), "Could not find Wazuh leader"
+
+    async def get_credentials() -> dict[str, str]:
+        """Fetch the API credentials from the Juju secret."""
+        credentials: dict[str, str] = {}
+        for username in state.WAZUH_USERS:
+            action = await leader.run(
+                f"secret-get --label {state.WAZUH_API_CREDENTIAL_SECRET_LABEL} | "
+                f"grep -oP '{username}: \\K.*'",
+                timeout=10,
+            )
+            await action.wait()
+            if action.results.get("return-code") == 0:
+                credentials[username] = action.results["stdout"].strip()
+        return credentials
+
+    credentials_before = await get_credentials()
+    assert credentials_before, "Expected API credentials secret to be present"
+
+    pod_name = leader.name.replace("/", "-")
+    sh.kubectl.delete.pod(pod_name, namespace=model.name)
+    sh.kubectl.wait(
+        f"pod/{pod_name}",
+        "--for=condition=Ready",
+        namespace=model.name,
+        timeout="10m",
+    )
+    await model.wait_for_idle(
+        apps=[application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1400,
+    )
+
+    credentials_after = await get_credentials()
+    assert credentials_after, "Expected API credentials secret to still be present"
+
+    assert credentials_before == credentials_after, (
+        f"API credentials were rotated across pod restart. "
+        f"Before: {credentials_before}, after: {credentials_after}"
+    )
