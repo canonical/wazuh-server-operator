@@ -18,7 +18,6 @@ import sh
 import yaml
 from juju.application import Application
 from juju.model import Model
-from juju.unit import Unit
 from pytest_operator.plugin import OpsTest
 from tenacity import RetryError
 
@@ -31,6 +30,7 @@ from tests.integration.helpers import (
     filebeat_diagnostics,
     found_in_logs,
     get_k8s_service_address,
+    get_leader,
     get_wazuh_ip,
     provision_rsyslog_certificates,
     refresh_wazuh_indices,
@@ -114,15 +114,7 @@ async def test_cluster_api_credentials(
     """
     await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
 
-    wazuh_leader = None
-    wazuh_followers = []
-    for unit in application.units:
-        if await unit.is_leader_from_status():
-            wazuh_leader = unit
-        else:
-            wazuh_followers.append(unit)
-
-    assert isinstance(wazuh_leader, Unit), "Could not find Wazuh leader"
+    wazuh_leader = await get_leader(application)
 
     # get API password for wazuh
     action = await wazuh_leader.run(
@@ -422,12 +414,7 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
     Act: force-delete the pod and wait for the replacement to become ready.
     Assert: the credentials in the Juju secret are unchanged and still valid against the API.
     """
-    leader = None
-    for unit in application.units:
-        if await unit.is_leader_from_status():
-            leader = unit
-            break
-    assert isinstance(leader, Unit), "Could not find Wazuh leader"
+    leader = await get_leader(application)
 
     async def get_credentials() -> dict[str, str]:
         """Fetch the API credentials from the Juju secret."""

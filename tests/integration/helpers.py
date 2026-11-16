@@ -20,11 +20,30 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+from juju.application import Application
 from juju.model import Model
 from juju.unit import Unit
 from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 
 logger = logging.getLogger(__name__)
+
+
+async def get_leader(application: Application) -> Unit:
+    """Return the leader unit of an application.
+
+    Args:
+        application: the Juju application.
+
+    Returns:
+        the leader unit.
+
+    Raises:
+        AssertionError: if no leader unit can be found.
+    """
+    for unit in application.units:
+        if await unit.is_leader_from_status():
+            return unit
+    raise AssertionError(f"Could not find leader unit for application {application.name}")
 
 
 async def append_wazuh_alert(unit: Unit, event_token: str) -> None:
