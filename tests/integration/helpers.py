@@ -56,6 +56,9 @@ async def get_api_credentials(unit: Unit) -> dict[str, str]:
 
     Returns:
         a map of username to password for each user in the secret.
+
+    Raises:
+        AssertionError: if any user's credential cannot be read from the secret.
     """
     credentials: dict[str, str] = {}
     for username in state.WAZUH_USERS:
@@ -65,9 +68,32 @@ async def get_api_credentials(unit: Unit) -> dict[str, str]:
             timeout=10,
         )
         await action.wait()
-        if action.results.get("return-code") == 0:
-            credentials[username] = action.results["stdout"].strip()
+        if action.results.get("return-code") != 0:
+            raise AssertionError(
+                f"Failed to read credential for user {username} from the secret: "
+                f"{action.results.get('stderr') or action.results.get('stdout')}"
+            )
+        credentials[username] = action.results["stdout"].strip()
     return credentials
+
+
+async def get_api_credentials_revision(model: Model) -> int:
+    """Return the latest revision of the Wazuh API credentials secret.
+
+    Args:
+        model: the Juju model.
+
+    Returns:
+        the latest revision number of the secret.
+
+    Raises:
+        AssertionError: if the secret is not found.
+    """
+    secrets = await model.list_secrets()
+    for secret in secrets:
+        if secret.label == state.WAZUH_API_CREDENTIAL_SECRET_LABEL:
+            return secret.latest_revision
+    raise AssertionError(f"Secret with label {state.WAZUH_API_CREDENTIAL_SECRET_LABEL} not found")
 
 
 async def append_wazuh_alert(unit: Unit, event_token: str) -> None:

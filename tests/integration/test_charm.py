@@ -30,6 +30,7 @@ from tests.integration.helpers import (
     filebeat_diagnostics,
     found_in_logs,
     get_api_credentials,
+    get_api_credentials_revision,
     get_k8s_service_address,
     get_leader,
     get_wazuh_ip,
@@ -413,11 +414,13 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
     """
     Arrange: a deployed Wazuh with previously-rotated API credentials in the secret.
     Act: force-delete the pod and wait for the replacement to become ready.
-    Assert: the credentials in the Juju secret are unchanged and still valid against the API.
+    Assert: the credentials in the Juju secret are unchanged, the secret revision is
+        unchanged, and the credentials still authenticate against the API.
     """
     leader = await get_leader(application)
 
     credentials_before = await get_api_credentials(leader)
+    revision_before = await get_api_credentials_revision(model)
     assert credentials_before, "Expected API credentials secret to be present"
 
     pod_name = leader.name.replace("/", "-")
@@ -436,9 +439,30 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
     )
 
     credentials_after = await get_api_credentials(leader)
+    revision_after = await get_api_credentials_revision(model)
     assert credentials_after, "Expected API credentials secret to still be present"
 
     assert credentials_before == credentials_after, (
         f"API credentials were rotated across pod restart. "
         f"Before: {credentials_before}, after: {credentials_after}"
     )
+    assert revision_before == revision_after, (
+        f"API credentials secret revision changed across pod restart. "
+        f"Before: {revision_before}, after: {revision_after}"
+    )
+
+    action = await leader.run("ip -o -4 addr show dev eth0 | grep -oP 'inet \\K[^/]+'", timeout=10)
+    await action.wait()
+    assert action.results.get("return-code") == 0, action.results
+    api_ip = action.results["stdout"].strip()
+    for username, password in credentials_after.items():
+        response = requests.get(  # nosec
+            f"https://{api_ip}:{wazuh.API_PORT}/security/user/authenticate",
+            auth=(username, password),
+            timeout=10,
+            verify=False,
+        )
+        assert response.status_code == 200, (
+            f"API authentication failed for user {username} after pod restart: "
+            f"status {response.status_code}"
+        )
