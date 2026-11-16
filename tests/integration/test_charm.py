@@ -29,6 +29,7 @@ from tests.integration.helpers import (
     count_indexed_events,
     filebeat_diagnostics,
     found_in_logs,
+    get_api_credentials,
     get_k8s_service_address,
     get_leader,
     get_wazuh_ip,
@@ -416,21 +417,7 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
     """
     leader = await get_leader(application)
 
-    async def get_credentials() -> dict[str, str]:
-        """Fetch the API credentials from the Juju secret."""
-        credentials: dict[str, str] = {}
-        for username in state.WAZUH_USERS:
-            action = await leader.run(
-                f"secret-get --label {state.WAZUH_API_CREDENTIAL_SECRET_LABEL} | "
-                f"grep -oP '{username}: \\K.*'",
-                timeout=10,
-            )
-            await action.wait()
-            if action.results.get("return-code") == 0:
-                credentials[username] = action.results["stdout"].strip()
-        return credentials
-
-    credentials_before = await get_credentials()
+    credentials_before = await get_api_credentials(leader)
     assert credentials_before, "Expected API credentials secret to be present"
 
     pod_name = leader.name.replace("/", "-")
@@ -448,7 +435,7 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
         timeout=1400,
     )
 
-    credentials_after = await get_credentials()
+    credentials_after = await get_api_credentials(leader)
     assert credentials_after, "Expected API credentials secret to still be present"
 
     assert credentials_before == credentials_after, (
