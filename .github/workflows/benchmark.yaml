@@ -60,12 +60,6 @@ jobs:
           juju bootstrap localhost localhost
           sudo microk8s config | juju add-k8s k8s --controller localhost --client
 
-      - name: Refresh LXD image cache
-        # The self-hosted runner caches LXD base images between runs; a stale
-        # image's apt package index causes 404s when charmcraft installs snapd
-        # inside the build container. Refresh the cache before building.
-        run: sudo lxc image list --format=csv --columns=f | tail -n +2 | xargs -r sudo lxc image delete
-
       - name: Build charm
         run: charmcraft pack --verbose
 
