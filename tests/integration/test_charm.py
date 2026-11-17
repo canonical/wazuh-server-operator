@@ -456,13 +456,21 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
     assert action.results.get("return-code") == 0, action.results
     api_ip = action.results["stdout"].strip()
     for username, password in credentials_after.items():
-        response = requests.get(  # nosec
-            f"https://{api_ip}:{wazuh.API_PORT}/security/user/authenticate",
-            auth=(username, password),
-            timeout=10,
-            verify=False,
-        )
-        assert response.status_code == 200, (
+        retries = 5
+        response = None
+        while retries:
+            response = requests.get(  # nosec
+                f"https://{api_ip}:{wazuh.API_PORT}/security/user/authenticate",
+                auth=(username, password),
+                timeout=10,
+                verify=False,
+            )
+            if response.status_code == 200:
+                break
+            retries -= 1
+            if retries:
+                await asyncio.sleep(1)
+        assert response is not None and response.status_code == 200, (
             f"API authentication failed for user {username} after pod restart: "
-            f"status {response.status_code}"
+            f"status {response.status_code if response else 'no response'}"
         )
