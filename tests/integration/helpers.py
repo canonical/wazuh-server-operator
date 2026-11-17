@@ -20,11 +20,105 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+from juju.application import Application
 from juju.model import Model
 from juju.unit import Unit
 from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 
+import state
+import wazuh
+
 logger = logging.getLogger(__name__)
+
+
+async def get_leader(application: Application) -> Unit:
+    """Return the leader unit of an application.
+
+    Args:
+        application: the Juju application.
+
+    Returns:
+        the leader unit.
+
+    Raises:
+        AssertionError: if no leader unit can be found.
+    """
+    for unit in application.units:
+        if await unit.is_leader_from_status():
+            return unit
+    raise AssertionError(f"Could not find leader unit for application {application.name}")
+
+
+async def get_api_credentials(unit: Unit) -> dict[str, str]:
+    """Fetch the Wazuh API credentials from the Juju secret on a unit.
+
+    Args:
+        unit: the unit to run the secret-get command on.
+
+    Returns:
+        a map of username to password for each user in the secret.
+
+    Raises:
+        AssertionError: if any user's credential cannot be read from the secret.
+    """
+    credentials: dict[str, str] = {}
+    for username in state.WAZUH_USERS:
+        action = await unit.run(
+            f"secret-get --label {state.WAZUH_API_CREDENTIAL_SECRET_LABEL} | "
+            f"grep -oP '{username}: \\K.*'",
+            timeout=10,
+        )
+        await action.wait()
+        if action.results.get("return-code") != 0:
+            raise AssertionError(
+                f"Failed to read credential for user {username} from the secret: "
+                f"{action.results.get('stderr') or action.results.get('stdout')}"
+            )
+        credentials[username] = action.results["stdout"].strip()
+    return credentials
+
+
+async def get_api_credentials_revision(model: Model) -> int:
+    """Return the latest revision of the Wazuh API credentials secret.
+
+    Args:
+        model: the Juju model.
+
+    Returns:
+        the latest revision number of the secret.
+
+    Raises:
+        AssertionError: if the secret is not found.
+    """
+    secrets = await model.list_secrets()
+    for secret in secrets:
+        if secret.label == state.WAZUH_API_CREDENTIAL_SECRET_LABEL:
+            return secret.latest_revision
+    raise AssertionError(f"Secret with label {state.WAZUH_API_CREDENTIAL_SECRET_LABEL} not found")
+
+
+@retry(
+    retry=retry_if_result(lambda response: response.status_code != 200),
+    stop=stop_after_delay(10),
+    wait=wait_fixed(1),
+)
+def authenticate_wazuh_api(api_ip: str, username: str, password: str) -> requests.Response:
+    """Authenticate against the Wazuh API, retrying until it succeeds or times out.
+
+    Args:
+        api_ip: the IP address of the Wazuh API.
+        username: the username to authenticate as.
+        password: the password to authenticate with.
+
+    Returns:
+        the HTTP response.
+    """
+    return requests.get(  # nosec
+        f"https://{api_ip}:{wazuh.API_PORT}/security/user/authenticate",
+        auth=(username, password),
+        timeout=10,
+        verify=False,
+    )
 
 
 async def append_wazuh_alert(unit: Unit, event_token: str) -> None:

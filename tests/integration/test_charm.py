@@ -18,7 +18,6 @@ import sh
 import yaml
 from juju.application import Application
 from juju.model import Model
-from juju.unit import Unit
 from pytest_operator.plugin import OpsTest
 from tenacity import RetryError
 
@@ -27,10 +26,14 @@ import wazuh
 from tests.integration.helpers import (
     RsyslogCertificateAuthority,
     append_wazuh_alert,
+    authenticate_wazuh_api,
     count_indexed_events,
     filebeat_diagnostics,
     found_in_logs,
+    get_api_credentials,
+    get_api_credentials_revision,
     get_k8s_service_address,
+    get_leader,
     get_wazuh_ip,
     provision_rsyslog_certificates,
     refresh_wazuh_indices,
@@ -114,15 +117,7 @@ async def test_cluster_api_credentials(
     """
     await model.wait_for_idle(apps=[application.name, traefik.name], status="active", timeout=1400)
 
-    wazuh_leader = None
-    wazuh_followers = []
-    for unit in application.units:
-        if await unit.is_leader_from_status():
-            wazuh_leader = unit
-        else:
-            wazuh_followers.append(unit)
-
-    assert isinstance(wazuh_leader, Unit), "Could not find Wazuh leader"
+    wazuh_leader = await get_leader(application)
 
     # get API password for wazuh
     action = await wazuh_leader.run(
@@ -413,3 +408,63 @@ async def test_rsyslog_full_chain_written(application: Application):
     await action.wait()
     certificate_count = (action.results.get("stdout") or "").count("-----BEGIN CERTIFICATE-----")
     assert certificate_count >= 3, f"Expected the full chain, found {certificate_count}"
+
+
+@pytest.mark.abort_on_fail
+async def test_api_credentials_survive_pod_restart(model: Model, application: Application):
+    """
+    Arrange: a deployed Wazuh with previously-rotated API credentials in the secret.
+    Act: force-delete the pod and wait for the replacement to become ready.
+    Assert: the credentials in the Juju secret are unchanged, the secret revision is
+        unchanged, and the credentials still authenticate against the API.
+    """
+    leader = await get_leader(application)
+
+    credentials_before = await get_api_credentials(leader)
+    revision_before = await get_api_credentials_revision(model)
+    assert credentials_before, "Expected API credentials secret to be present"
+
+    pod_name = leader.name.replace("/", "-")
+    sh.kubectl.delete.pod(pod_name, namespace=model.name)
+    sh.kubectl.wait(
+        f"pod/{pod_name}",
+        "--for=condition=Ready",
+        namespace=model.name,
+        timeout="10m",
+    )
+    await model.wait_for_idle(
+        apps=[application.name],
+        status="active",
+        raise_on_error=True,
+        timeout=1400,
+    )
+
+    credentials_after = await get_api_credentials(leader)
+    revision_after = await get_api_credentials_revision(model)
+    assert credentials_after, "Expected API credentials secret to still be present"
+
+    assert credentials_before == credentials_after, (
+        f"API credentials were rotated across pod restart. "
+        f"Before: {credentials_before}, after: {credentials_after}"
+    )
+    assert revision_before == revision_after, (
+        f"API credentials secret revision changed across pod restart. "
+        f"Before: {revision_before}, after: {revision_after}"
+    )
+
+    api_ip = await leader.get_public_address()
+    if not api_ip:
+        # k8s units don't always have a public address populated; fall back to the pod IP.
+        action = await leader.run(
+            "ip -o -4 addr show dev eth0 | grep -oP 'inet \\K[^/]+'", timeout=10
+        )
+        await action.wait()
+        assert action.results.get("return-code") == 0, action.results
+        api_ip = action.results["stdout"].strip()
+    assert api_ip, "Expected the Wazuh leader to have a reachable IP address"
+    for username, password in credentials_after.items():
+        response = authenticate_wazuh_api(api_ip, username, password)
+        assert response.status_code == 200, (
+            f"API authentication failed for user {username} after pod restart: "
+            f"status {response.status_code}"
+        )
