@@ -453,7 +453,15 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
     )
 
     api_ip = await leader.get_public_address()
-    assert api_ip, "Expected the Wazuh leader to have a public address"
+    if not api_ip:
+        # k8s units don't always have a public address populated; fall back to the pod IP.
+        action = await leader.run(
+            "ip -o -4 addr show dev eth0 | grep -oP 'inet \\K[^/]+'", timeout=10
+        )
+        await action.wait()
+        assert action.results.get("return-code") == 0, action.results
+        api_ip = action.results["stdout"].strip()
+    assert api_ip, "Expected the Wazuh leader to have a reachable IP address"
     for username, password in credentials_after.items():
         response = authenticate_wazuh_api(api_ip, username, password)
         assert response.status_code == 200, (
