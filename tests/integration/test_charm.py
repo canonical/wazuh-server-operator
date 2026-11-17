@@ -26,6 +26,7 @@ import wazuh
 from tests.integration.helpers import (
     RsyslogCertificateAuthority,
     append_wazuh_alert,
+    authenticate_wazuh_api,
     count_indexed_events,
     filebeat_diagnostics,
     found_in_logs,
@@ -456,21 +457,8 @@ async def test_api_credentials_survive_pod_restart(model: Model, application: Ap
     assert action.results.get("return-code") == 0, action.results
     api_ip = action.results["stdout"].strip()
     for username, password in credentials_after.items():
-        retries = 5
-        response = None
-        while retries:
-            response = requests.get(  # nosec
-                f"https://{api_ip}:{wazuh.API_PORT}/security/user/authenticate",
-                auth=(username, password),
-                timeout=10,
-                verify=False,
-            )
-            if response.status_code == 200:
-                break
-            retries -= 1
-            if retries:
-                await asyncio.sleep(1)
-        assert response is not None and response.status_code == 200, (
+        response = authenticate_wazuh_api(api_ip, username, password)
+        assert response.status_code == 200, (
             f"API authentication failed for user {username} after pod restart: "
-            f"status {response.status_code if response else 'no response'}"
+            f"status {response.status_code}"
         )

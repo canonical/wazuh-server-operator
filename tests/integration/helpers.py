@@ -26,6 +26,7 @@ from juju.unit import Unit
 from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 
 import state
+import wazuh
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,30 @@ async def get_api_credentials_revision(model: Model) -> int:
         if secret.label == state.WAZUH_API_CREDENTIAL_SECRET_LABEL:
             return secret.latest_revision
     raise AssertionError(f"Secret with label {state.WAZUH_API_CREDENTIAL_SECRET_LABEL} not found")
+
+
+@retry(
+    retry=retry_if_result(lambda response: response.status_code != 200),
+    stop=stop_after_delay(10),
+    wait=wait_fixed(1),
+)
+def authenticate_wazuh_api(api_ip: str, username: str, password: str) -> requests.Response:
+    """Authenticate against the Wazuh API, retrying until it succeeds or times out.
+
+    Args:
+        api_ip: the IP address of the Wazuh API.
+        username: the username to authenticate as.
+        password: the password to authenticate with.
+
+    Returns:
+        the HTTP response.
+    """
+    return requests.get(  # nosec
+        f"https://{api_ip}:{wazuh.API_PORT}/security/user/authenticate",
+        auth=(username, password),
+        timeout=10,
+        verify=False,
+    )
 
 
 async def append_wazuh_alert(unit: Unit, event_token: str) -> None:
