@@ -305,11 +305,29 @@ class WazuhServerCharm(CharmBaseWithState):
         while retries > 0:
             try:
                 wazuh.authenticate_user(username, password)
+                logger.warning(
+                    "DEBUG: _is_api_password_valid(%s, ...) -> True (authenticated)", username
+                )
                 return True
-            except wazuh.WazuhAuthenticationError:
+            except wazuh.WazuhAuthenticationError as exc:
                 retries -= 1
+                logger.warning(
+                    "DEBUG: _is_api_password_valid(%s, ...) -> 401, %d retries left: %s",
+                    username,
+                    retries,
+                    exc,
+                )
                 if retries:
                     time.sleep(1)
+            except Exception as exc:
+                logger.warning(
+                    "DEBUG: _is_api_password_valid(%s, ...) -> unexpected %s: %s",
+                    username,
+                    type(exc).__name__,
+                    exc,
+                )
+                raise
+        logger.warning("DEBUG: _is_api_password_valid(%s, ...) -> False (all retries 401)", username)
         return False
 
     # Excluding function too complex check from pflake8
@@ -325,6 +343,12 @@ class WazuhServerCharm(CharmBaseWithState):
             default_password = user_details["default_password"]
             current_password = credentials[username]
             password_to_save = None
+            logger.warning(
+                "DEBUG: _reconcile_users: user=%s, current_password=%s, default_password=%s",
+                username,
+                "<set>" if current_password else "<empty>",
+                "<set>" if default_password else "<empty>",
+            )
 
             if not current_password:
                 # create user if it doesn't exist yet
@@ -346,21 +370,33 @@ class WazuhServerCharm(CharmBaseWithState):
                         )
                         time.sleep(1)
             elif current_password == default_password:
+                logger.warning(
+                    "DEBUG: _reconcile_users: user=%s taking 'rotate default' branch", username
+                )
                 # change credentials if they've never been changed
                 new_password = wazuh.generate_api_password()
                 token = wazuh.authenticate_user(username, default_password)
                 wazuh.change_api_password(username, new_password, token)
                 password_to_save = new_password
             elif not self._is_api_password_valid(username, current_password):
+                logger.warning(
+                    "DEBUG: _reconcile_users: user=%s taking 'reapply' branch", username
+                )
                 # The API rejected the password stored in the secret. This
                 # happens when the container's user database is reset to its
                 # defaults, for example after a pod restart. Reapply the stored
                 # password instead of rotating it: clients may still be using
                 # the current secret revision.
                 if default_password and self._is_api_password_valid(username, default_password):
+                    logger.warning(
+                        "DEBUG: _reconcile_users: user=%s reapplying via default password", username
+                    )
                     token = wazuh.authenticate_user(username, default_password)
                     wazuh.change_api_password(username, current_password, token)
                 elif not default_password:
+                    logger.warning(
+                        "DEBUG: _reconcile_users: user=%s recreating charm-created user", username
+                    )
                     # Users created by the charm may be missing after a restart.
                     # Recreate them with the password from the secret.
                     try:
