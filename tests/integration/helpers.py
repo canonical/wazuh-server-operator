@@ -99,11 +99,15 @@ async def get_api_credentials_revision(model: Model) -> int:
 
 @retry(
     retry=retry_if_result(lambda response: response.status_code != 200),
-    stop=stop_after_delay(10),
-    wait=wait_fixed(1),
+    stop=stop_after_delay(120),
+    wait=wait_fixed(5),
 )
 def authenticate_wazuh_api(api_ip: str, username: str, password: str) -> requests.Response:
     """Authenticate against the Wazuh API, retrying until it succeeds or times out.
+
+    The Wazuh API can take a while to fully accept connections after a pod
+    restart even once Juju reports the unit as active, so this retries for
+    up to 2 minutes (matching wait_for_indexed_event) instead of just 10s.
 
     Args:
         api_ip: the IP address of the Wazuh API.
