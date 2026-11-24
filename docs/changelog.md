@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
+## 2026-11-24
+
+- Add a Metrics reference page listing the metrics exposed by the Wazuh exporter.
+- Update Wazuh manager to 4.14.10.
+- Track Wazuh manager patch releases with Renovate.
+- Document that the Wazuh indexer, dashboard and server must be upgraded together.
+
 ## 2026-11-17
 
 - Avoid rotating the Wazuh API user credentials on every reconcile or restart.
