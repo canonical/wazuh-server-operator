@@ -11,15 +11,25 @@ Each revision is versioned by the date of the revision.
 - Stop the raw rsyslog ingest file (`/var/log/collectors/rsyslog/rsyslog.log`)
   from growing unbounded and filling up the "data" storage volume. rsyslog now
   writes one file per hour (`rsyslog-YYYY-MM-DD-HH.log`), which Wazuh reads
-  through a `<localfile>` block added to `ossec.conf` by the charm. A new
-  `rsyslog-ingest-maintenance` service deletes each file once Wazuh has read it
-  completely, and deletes the oldest files, even if unread, when the volume is
-  over 80% full.
+  through a `<localfile>` block added to `ossec.conf` by the charm. rsyslog also
+  runs a maintenance program, configured in `etc/rsyslog.d/wazuh.conf`, that
+  creates each file in advance, deletes it once Wazuh has read it completely, and
+  deletes the oldest files, even if unread, when the ingest files use more than
+  80% of the volume.
 - Set `logcollector.queue_size=220000` in `local_internal_options.conf`, unless
   already set, so that Wazuh does not drop the lines it reads in bulk from the
-  ingest files after a restart.
-- The previous `rsyslog.log` file is no longer written to. It is deleted only if
-  the volume is over 80% full; you can delete it manually after upgrading.
+  ingest files after a restart. This queue can hold up to a few hundred MB of
+  logs in memory while Wazuh catches up.
+- Upgrade notes:
+  - Upgrade the charm and the `wazuh-server-image` resource together: the charm
+    configures Wazuh to read the hourly files that the new image writes and
+    cleans up.
+  - The previous `rsyslog.log` file is no longer written to. It is deleted
+    automatically only when the ingest files use more than 80% of the volume and
+    it has not been written to for an hour; you can delete it manually.
+  - If your `custom-config-repository` overrides `etc/rsyslog.d/wazuh.conf`, the
+    maintenance program only runs if your file configures it. A file that still
+    writes to `rsyslog.log` keeps growing unbounded.
 
 ## 2026-11-10
 

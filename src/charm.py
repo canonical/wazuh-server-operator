@@ -40,7 +40,6 @@ WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 WAZUH_SERVICE_NAME = "wazuh"
 FILEBEAT_SERVICE_NAME = "filebeat"
 RSYSLOG_SERVICE_NAME = "rsyslog"
-RSYSLOG_INGEST_MAINTENANCE_SERVICE_NAME = "rsyslog-ingest-maintenance"
 PROMETHEUS_SERVICE_NAME = "prometheus_exporter"
 
 
@@ -479,13 +478,6 @@ class WazuhServerCharm(CharmBaseWithState):
                     "command": f"/bin/bash -c '{rsyslog_cmd}'",
                     "startup": "enabled",
                     "environment": environment,
-                },
-                RSYSLOG_INGEST_MAINTENANCE_SERVICE_NAME: {
-                    "override": "replace",
-                    "summary": "pre-create and clean up the hourly rsyslog ingest files",
-                    "command": f"/usr/bin/python3 {wazuh.INGEST_MAINTENANCE_CMD}",
-                    "startup": "enabled",
-                    "before": [RSYSLOG_SERVICE_NAME],
                 },
             },
             "checks": {

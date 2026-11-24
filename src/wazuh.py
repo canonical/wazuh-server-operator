@@ -31,7 +31,6 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 CONTAINER_NAME = "wazuh-server"
 INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
 INGEST_LOG_FILES = INGEST_LOG_DIR + "/rsyslog-*.log"  # hourly files written by rsyslog
-INGEST_MAINTENANCE_CMD = "/usr/local/bin/rsyslog-ingest-maintenance"
 REPOSITORY_PATH = "/root/repository"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"

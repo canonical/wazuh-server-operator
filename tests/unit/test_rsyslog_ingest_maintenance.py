@@ -5,6 +5,7 @@
 
 import datetime
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -27,7 +28,7 @@ def directory_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(maintenance, "DIRECTORY", tmp_path)
     monkeypatch.setattr(maintenance, "STATUS_FILE", tmp_path / "status" / "file_status.json")
     monkeypatch.setattr(maintenance, "volume_size", lambda: 10**9)
-    monkeypatch.setattr(maintenance.shutil, "chown", lambda *_: None)
+    monkeypatch.setattr(maintenance.syslog, "syslog", lambda *_: None)
     return tmp_path
 
 
@@ -170,3 +171,20 @@ def test_usage_limit_keeps_legacy_file_still_written(
     maintenance.run_once(NOW)
 
     assert legacy.exists()
+
+
+def test_main_runs_a_pass_per_burst_of_lines(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    arrange: rsyslog sends three lines, the second one shortly after the first.
+    act: run the program.
+    assert: a maintenance pass runs for the first and third lines only.
+    """
+    passes: list[datetime.datetime] = []
+    monkeypatch.setattr(maintenance, "run_once", passes.append)
+    monkeypatch.setattr(maintenance.syslog, "openlog", lambda *_: None)
+    monkeypatch.setattr(maintenance.sys, "stdin", io.StringIO("tick\ntick\ntick\n"))
+    monkeypatch.setattr(maintenance.time, "monotonic", iter([100, 100, 101, 106, 106]).__next__)
+
+    maintenance.main()
+
+    assert len(passes) == 2
