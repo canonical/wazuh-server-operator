@@ -73,9 +73,10 @@ The workload that this container is running is defined in the [Wazuh server rock
 
 The Wazuh server charm mounts [filesystem type storage](https://canonical.com/juju/docs/juju-cli/3.6/reference/storage/#defining-storage) at the following paths:
 
-- `/var/log/collectors` stores incoming rsyslog logs. The raw ingest file
-  (`rsyslog.log`) is rotated by rsyslog itself once it reaches 4 GB, keeping a
-  single backup (`rsyslog.log.1`), so it does not grow unbounded.
+- `/var/log/collectors` stores incoming rsyslog logs, in one file per hour
+  (`rsyslog/rsyslog-YYYY-MM-DD-HH.log`). The `rsyslog-ingest-maintenance` service
+  creates each file in advance, deletes it once Wazuh has read it completely, and
+  deletes the oldest files, even if unread, when the volume is over 80% full.
 - `/var/ossec/logs` stores logs produced by Wazuh.
 - `/var/lib/filebeat` stores Filebeat checkpoints and other runtime state so log processing can resume after a pod replacement.
 

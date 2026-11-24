@@ -30,6 +30,8 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 CONTAINER_NAME = "wazuh-server"
 INGEST_LOG_DIR = "/var/log/collectors/rsyslog"  # logs intended for ingestion
+INGEST_LOG_FILES = INGEST_LOG_DIR + "/rsyslog-*.log"  # hourly files written by rsyslog
+INGEST_MAINTENANCE_CMD = "/usr/local/bin/rsyslog-ingest-maintenance"
 REPOSITORY_PATH = "/root/repository"
 KNOWN_HOSTS_PATH = "/root/.ssh/known_hosts"
 RSA_PATH = "/root/.ssh/id_rsa"
@@ -40,6 +42,12 @@ API_PORT = 55000
 AUTH_ENDPOINT = f"https://localhost:{API_PORT}/security/user/authenticate"
 WAZUH_CONF_PATH = "/var/ossec"
 OSSEC_CONF_PATH = Path(WAZUH_CONF_PATH, "etc/ossec.conf")
+LOCAL_INTERNAL_OPTIONS_PATH = Path(WAZUH_CONF_PATH, "etc/local_internal_options.conf")
+# Internal options set by the charm, unless already set by the custom configuration repository
+DEFAULT_INTERNAL_OPTIONS = {
+    # Buffer the ingest backlog read after a restart instead of dropping lines once full
+    "logcollector.queue_size": "220000",
+}
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"
 WAZUH_GROUP = "wazuh"
@@ -288,6 +296,21 @@ def sync_ossec_conf(  # pylint: disable=too-many-locals, too-many-arguments  # n
         )
         elements[0].append(new_conf)
 
+    for ingest_localfile in ossec_config_tree.xpath(
+        f"/root/ossec_config/localfile[location='{INGEST_LOG_FILES}']"
+    ):
+        ingest_localfile.getparent().remove(ingest_localfile)
+    # Resume from the last read position after a restart, unless over 2GB behind
+    elements[0].append(
+        etree.fromstring(
+            "<localfile>"
+            "<log_format>syslog</log_format>"
+            f"<location>{INGEST_LOG_FILES}</location>"
+            '<only-future-events max-size="2GB">no</only-future-events>'
+            "</localfile>"
+        )
+    )
+
     new_conf_bytes: bytes = b"".join(
         [etree.tostring(element, pretty_print=True, encoding="utf-8") for element in elements]
     )
@@ -399,6 +422,46 @@ def sync_certificates(  # pylint: disable=too-many-arguments,too-many-positional
     if made_change:
         logger.info("installed certificates to %s", path)
     return made_change
+
+
+def sync_local_internal_options(container: ops.Container) -> bool:
+    """Add the charm's default internal options that are not already set.
+
+    Arguments:
+        container: the container for which to update the internal options.
+
+    Returns:
+        bool: True if the internal options were updated, False if already synced
+    """
+    current_value = ""
+    if container.exists(LOCAL_INTERNAL_OPTIONS_PATH):
+        current_value = container.pull(LOCAL_INTERNAL_OPTIONS_PATH, encoding="utf-8").read()
+    configured = {
+        line.split("=", 1)[0].strip()
+        for line in current_value.splitlines()
+        if "=" in line and not line.lstrip().startswith("#")
+    }
+    missing = [
+        f"{key}={value}"
+        for key, value in DEFAULT_INTERNAL_OPTIONS.items()
+        if key not in configured
+    ]
+    if not missing:
+        logger.debug("local internal options already up to date")
+        return False
+    if current_value and not current_value.endswith("\n"):
+        current_value += "\n"
+    logger.info("adding internal options %s", missing)
+    container.push(
+        LOCAL_INTERNAL_OPTIONS_PATH,
+        current_value + "\n".join(missing) + "\n",
+        encoding="utf-8",
+        user="root",
+        group=WAZUH_GROUP,
+        make_dirs=True,
+        permissions=0o640,
+    )
+    return True
 
 
 def sync_agent_password(container: ops.Container, password: str) -> bool:

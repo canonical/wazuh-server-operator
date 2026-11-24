@@ -113,5 +113,10 @@ parts:
     source: .
     organize:
       wazuh.conf: etc/rsyslog.d/wazuh.conf
+      rsyslog_ingest_maintenance.py: usr/local/bin/rsyslog-ingest-maintenance
     prime:
       - etc/rsyslog.d/wazuh.conf
+      - usr/local/bin/rsyslog-ingest-maintenance
+    permissions:
+      - path: usr/local/bin/rsyslog-ingest-maintenance
+        mode: "755"

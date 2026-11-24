@@ -58,6 +58,12 @@ container filesystem will be deleted if they are not in the repository. For all
 other paths, pre-existing files will not be deleted - though they may be
 overwritten.
 
+If you override `etc/rsyslog.d/wazuh.conf`, keep writing incoming logs to
+`/var/log/collectors/rsyslog/rsyslog-YYYY-MM-DD-HH.log` files, one per hour.
+The charm configures Wazuh to read these files and the
+`rsyslog-ingest-maintenance` service cleans them up; logs written to other
+files are neither read nor cleaned up.
+
 ## Deploy a new configuration
 
 The Wazuh server charm is not watching the repository for changes.

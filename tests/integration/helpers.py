@@ -241,7 +241,7 @@ async def found_in_logs(
                 model_name,
                 "--container=wazuh-server",
                 unit_name,
-                f"grep -F -- {pattern} /var/log/collectors/rsyslog/rsyslog.log",
+                f"grep -F -- {pattern} /var/log/collectors/rsyslog/rsyslog-*.log",
             )
             return True
         except sh.ErrorReturnCode_1:  # pylint: disable=no-member

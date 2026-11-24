@@ -84,6 +84,88 @@ def test_update_configuration(
         assert not tree.xpath("/root/ossec_config/vulnerability-detection")
     else:
         assert tree.xpath("/root/ossec_config/vulnerability-detection/enabled")[0].text == "no"
+    ingest_localfiles = tree.xpath(
+        f"/root/ossec_config/localfile[location='{wazuh.INGEST_LOG_FILES}']"
+    )
+    assert len(ingest_localfiles) == 1
+    assert ingest_localfiles[0].find("log_format").text == "syslog"
+    assert ingest_localfiles[0].find("only-future-events").text == "no"
+
+
+def test_sync_ossec_conf_ingest_localfile_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    arrange: a Wazuh configuration that already has a block reading the ingest files.
+    act: sync the Wazuh configuration twice.
+    assert: there is a single block reading the ingest files and the second sync changes nothing.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    monkeypatch.setattr(container, "exec", unittest.mock.MagicMock())
+    ossec_content = Path("tests/unit/resources/ossec.conf").read_text(encoding="utf-8")
+    ossec_content = ossec_content.replace(
+        "<placeholder/>",
+        "<localfile><log_format>syslog</log_format>"
+        f"<location>{wazuh.INGEST_LOG_FILES}</location></localfile>",
+    )
+    container.push(wazuh.OSSEC_CONF_PATH, ossec_content, make_dirs=True)
+    args = (container, ["10.0.0.2:9200"], "10.1.0.2", "wazuh-server/0", secrets.token_hex(32))
+
+    assert wazuh.sync_ossec_conf(*args)
+    assert not wazuh.sync_ossec_conf(*args)
+
+    ossec_config = container.pull(wazuh.OSSEC_CONF_PATH, encoding="utf-8").read()
+    tree = etree.fromstring(f"<root>{ossec_config}</root>")  # nosec
+    assert len(tree.xpath(f"//localfile[location='{wazuh.INGEST_LOG_FILES}']")) == 1
+
+
+@pytest.mark.parametrize(
+    "current, expected",
+    [
+        pytest.param(None, "logcollector.queue_size=220000\n", id="missing file"),
+        pytest.param(
+            "# comment\n# logcollector.queue_size=10",
+            "# comment\n# logcollector.queue_size=10\nlogcollector.queue_size=220000\n",
+            id="commented out",
+        ),
+    ],
+)
+def test_sync_local_internal_options_adds_defaults(current: str | None, expected: str) -> None:
+    """
+    arrange: a local_internal_options.conf without the charm's default options.
+    act: sync the local internal options twice.
+    assert: the default options are appended once, keeping the existing content.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    if current is not None:
+        container.push(wazuh.LOCAL_INTERNAL_OPTIONS_PATH, current, make_dirs=True)
+
+    assert wazuh.sync_local_internal_options(container)
+    assert not wazuh.sync_local_internal_options(container)
+
+    assert container.pull(wazuh.LOCAL_INTERNAL_OPTIONS_PATH).read() == expected
+
+
+def test_sync_local_internal_options_keeps_configured_value() -> None:
+    """
+    arrange: a local_internal_options.conf that already sets the logcollector queue size.
+    act: sync the local internal options.
+    assert: nothing changes.
+    """
+    harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
+    harness.begin_with_initial_hooks()
+    container = harness.charm.unit.get_container("wazuh-server")
+    container.push(
+        wazuh.LOCAL_INTERNAL_OPTIONS_PATH, "logcollector.queue_size = 5000\n", make_dirs=True
+    )
+
+    assert not wazuh.sync_local_internal_options(container)
+
+    assert container.pull(wazuh.LOCAL_INTERNAL_OPTIONS_PATH).read() == (
+        "logcollector.queue_size = 5000\n"
+    )
 
 
 def test_install_certificates() -> None:

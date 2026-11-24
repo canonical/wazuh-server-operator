@@ -59,7 +59,7 @@ First, let's monitor the logs:
 ```
 juju ssh --container wazuh-server wazuh-server/leader
 ```
-- Monitor the logs: `tail -f /var/log/collectors/rsyslog/rsyslog.log`
+- Monitor the logs: `tail -f /var/log/collectors/rsyslog/rsyslog-$(date +%Y-%m-%d-%H).log`
 
 In parallel, open another terminal to send some traffic to Wazuh:
 
@@ -83,7 +83,7 @@ echo "TEST123" | openssl s_client -connect $your_ip:6514 -cert good-client.crt -
 
 You should see `TEST123` in the logs on the server.
 
-After landing in `rsyslog.log`, your log should be processed by Wazuh. To confirm this, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"`.
+After landing in the current hour's `rsyslog-YYYY-MM-DD-HH.log` file, your log should be processed by Wazuh. To confirm this, run `cat /var/ossec/logs/archives/archives.log | grep "TEST123"`.
 
 From there, they should be processed by `filebeat` and `filebeat` will send them to `wazuh-indexer`. To check:
 

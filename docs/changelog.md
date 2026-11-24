@@ -6,11 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Each revision is versioned by the date of the revision.
 
-## 2026-11-12
+## 2026-11-24
 
-- Rotate the raw rsyslog ingest file (`/var/log/collectors/rsyslog/rsyslog.log`)
-  once it reaches 4GB, keeping a single backup, so it no longer grows unbounded
-  and fills up the "data" storage volume.
+- Stop the raw rsyslog ingest file (`/var/log/collectors/rsyslog/rsyslog.log`)
+  from growing unbounded and filling up the "data" storage volume. rsyslog now
+  writes one file per hour (`rsyslog-YYYY-MM-DD-HH.log`), which Wazuh reads
+  through a `<localfile>` block added to `ossec.conf` by the charm. A new
+  `rsyslog-ingest-maintenance` service deletes each file once Wazuh has read it
+  completely, and deletes the oldest files, even if unread, when the volume is
+  over 80% full.
+- Set `logcollector.queue_size=220000` in `local_internal_options.conf`, unless
+  already set, so that Wazuh does not drop the lines it reads in bulk from the
+  ingest files after a restart.
+- The previous `rsyslog.log` file is no longer written to. It is deleted only if
+  the volume is over 80% full; you can delete it manually after upgrading.
 
 ## 2026-11-10
 

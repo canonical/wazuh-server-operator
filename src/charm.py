@@ -40,6 +40,7 @@ WAZUH_PEER_RELATION_NAME = "wazuh-peers"
 WAZUH_SERVICE_NAME = "wazuh"
 FILEBEAT_SERVICE_NAME = "filebeat"
 RSYSLOG_SERVICE_NAME = "rsyslog"
+RSYSLOG_INGEST_MAINTENANCE_SERVICE_NAME = "rsyslog-ingest-maintenance"
 PROMETHEUS_SERVICE_NAME = "prometheus_exporter"
 
 
@@ -260,6 +261,7 @@ class WazuhServerCharm(CharmBaseWithState):
         changed_filesystem = wazuh.ensure_ossec_logs_dir(container)
         if self.state.custom_config_repository is not None:
             updated_config = wazuh.sync_wazuh_config_files(container)
+        changed_internal_options = wazuh.sync_local_internal_options(container)
         changed_password = False
         if self.state.agent_password:
             changed_password = wazuh.sync_agent_password(
@@ -276,7 +278,15 @@ class WazuhServerCharm(CharmBaseWithState):
             opencti_url=self.state.opencti_url,
             enable_vulnerability_detection=self.state.enable_vulnerability_detection,
         )
-        if any((updated_config, changed_password, changed_ossec_conf, changed_filesystem)):
+        if any(
+            (
+                updated_config,
+                changed_internal_options,
+                changed_password,
+                changed_ossec_conf,
+                changed_filesystem,
+            )
+        ):
             self._restart_service(container, WAZUH_SERVICE_NAME, force=True)
 
     # Excluding function too complex check from pflake8
@@ -469,6 +479,13 @@ class WazuhServerCharm(CharmBaseWithState):
                     "command": f"/bin/bash -c '{rsyslog_cmd}'",
                     "startup": "enabled",
                     "environment": environment,
+                },
+                RSYSLOG_INGEST_MAINTENANCE_SERVICE_NAME: {
+                    "override": "replace",
+                    "summary": "pre-create and clean up the hourly rsyslog ingest files",
+                    "command": f"/usr/bin/python3 {wazuh.INGEST_MAINTENANCE_CMD}",
+                    "startup": "enabled",
+                    "before": [RSYSLOG_SERVICE_NAME],
                 },
             },
             "checks": {
