@@ -18,7 +18,7 @@ TLS and integrates with the Wazuh Indexer, the Wazuh Dashboard, and OpenCTI.
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Get started**  | [Deploy the Wazuh Server charm](tutorial/getting-started.md)                                                                                                                                                                                                      |
 | **Deployment**   | [Customize configurations](how-to/configure.md) \| [Deploy to production](how-to/deploy-to-production.md) \| [Test your deployment](how-to/test-your-deployment.md) \| [Redeploy](how-to/redeploy.md)                                                                                                                 |
-| **Operations**   | [Actions](reference/actions.md) \| [Configurations](reference/configurations.md) \| [Integrate with COS](how-to/integrate-with-cos.md) \| [Back up and restore](how-to/backup-restore.md) \| [Upgrade](how-to/upgrade.md) |
+| **Operations**   | [Actions](reference/actions.md) \| [Configurations](reference/configurations.md) \| [Metrics](reference/metrics.md) \| [Integrate with COS](how-to/integrate-with-cos.md) \| [Back up and restore](how-to/backup-restore.md) \| [Upgrade](how-to/upgrade.md) |
 | **Data sources** | [Collect remote logs](how-to/collect-logs.md) \| [Integrate with OpenCTI](how-to/integrate-with-opencti.md)                                                                                                                                                        |
 | **Design**       | [Architecture overview](explanation/architecture-overview.md) \| [Charm architecture](reference/charm-architecture.md) \| [Relation endpoints](reference/integrations.md) \| [External access](reference/external-access.md) \| [Security](explanation/security.md) |
 | **Development**  | [Contribute](how-to/contribute.md) \| [Run integration tests](how-to/run-integration-tests.md) \| [Run manual tests](how-to/run-manual-tests.md)                                                                                                                    |
@@ -75,6 +75,7 @@ Thinking about using the Wazuh Server Operator for your next project? [Get in to
   1. [Configurations](reference/configurations.md)
   1. [External access](reference/external-access.md)
   1. [Integrations](reference/integrations.md)
+  1. [Metrics](reference/metrics.md)
 1. [Explanation](explanation)
   1. [Architecture overview](explanation/architecture-overview.md)
   1. [Security](explanation/security.md)
