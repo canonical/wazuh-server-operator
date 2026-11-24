@@ -96,9 +96,3 @@ values:
 - Events per second, only reported for Wazuh API versions earlier than 4.7.0: `syscheck_edps`,
   `syscollector_edps`, `rootcheck_edps`, `sca_edps`, `hostinfo_edps`, `winevt_edps`,
   `other_events_edps`, `events_edps`, `dbsync_mdps`, `hostinfo_events_decoded`
-
-## Further reading
-
-- [Wazuh Prometheus exporter](https://github.com/pyToshka/wazuh-prometheus-exporter)
-- [Wazuh server API reference](https://documentation.wazuh.com/current/user-manual/api/reference.html)
-- [Prometheus metric types](https://prometheus.io/docs/concepts/metric_types/)
