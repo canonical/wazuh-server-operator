@@ -36,6 +36,19 @@
         "# renovate: depName=\"(?<packageName>[^\"]+)\"\\s*\\n\\s*(?<fieldName>[a-zA-Z0-9_]+)\\s*=\\s*(?<currentValue>\\d+)"
       ],
       "versioningTemplate": "semver-coerced"
+    },
+    {
+      "customType": "regex",
+      "description": "Update the Wazuh manager version pinned in rockcraft.yaml",
+      "managerFilePatterns": [
+        "/(^|/)rockcraft.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: depName=(?<depName>\\S+)\\n[^\\n]*?(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^v(?<version>.+)$",
+      "versioningTemplate": "semver"
     }
   ],
   "extends": [
@@ -67,6 +80,17 @@
         "major",
         "minor",
         "patch"
+      ]
+    },
+    {
+      "description": "Only follow Wazuh 4.14 patch releases; these require a rock build and integration tests, so do not automerge.",
+      "matchPackageNames": [
+        "wazuh/wazuh"
+      ],
+      "allowedVersions": "/^4\\.14\\./",
+      "automerge": false,
+      "prBodyNotes": [
+        "Wazuh indexer, dashboard and server must be kept on the same Wazuh version (including the patch). Make sure the other components are bumped too and upgrade them together: indexer first, then dashboard, then server."
       ]
     },
     {
