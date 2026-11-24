@@ -58,4 +58,4 @@ This integrates your application with Prometheus, Loki, and Grafana.
 
 ## Available metrics
 
-The Prometheus exporter for Wazuh sources that is shipped as part of this charm can be found [here](https://github.com/pyToshka/wazuh-prometheus-exporter).
+For the full list of metrics, see [Metrics](../reference/metrics.md). The Prometheus exporter for Wazuh sources that is shipped as part of this charm can be found [here](https://github.com/pyToshka/wazuh-prometheus-exporter).

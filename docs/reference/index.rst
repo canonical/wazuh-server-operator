@@ -22,6 +22,7 @@ including configurations, actions, and architecture details.
 
     Configurations <configurations>
     Actions <actions>
+    Metrics <metrics>
     Charm architecture <charm-architecture>
 
 Connectivity
