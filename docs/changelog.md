@@ -11,6 +11,7 @@ Each revision is versioned by the date of the revision.
 - Add a Metrics reference page listing the metrics exposed by the Wazuh exporter.
 - Update Wazuh manager to 4.14.10.
 - Track Wazuh manager patch releases with Renovate.
+- Document that the Wazuh indexer, dashboard and server must be upgraded together.
 
 ## 2026-11-17
 

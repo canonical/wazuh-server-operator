@@ -7,6 +7,11 @@ The workload's versions are pinned in the charms.
 No automatic upgrades will happen if they're not triggered at the charm level.
 ```
 
+```{important}
+The Wazuh indexer, dashboard and server must run the same Wazuh version, patch included.
+Upgrade all three together, in this order: indexer, dashboard, then server.
+```
+
 ## Wazuh server
 
 The Wazuh server has a stateless workload. It can safely be upgraded through `juju refresh`.

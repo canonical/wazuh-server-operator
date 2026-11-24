@@ -88,7 +88,10 @@
         "wazuh/wazuh"
       ],
       "allowedVersions": "/^4\\.14\\./",
-      "automerge": false
+      "automerge": false,
+      "prBodyNotes": [
+        "Wazuh indexer, dashboard and server must be kept on the same Wazuh version (including the patch). Make sure the other components are bumped too and upgrade them together: indexer first, then dashboard, then server."
+      ]
     },
     {
       "groupName": "charm-ci",
