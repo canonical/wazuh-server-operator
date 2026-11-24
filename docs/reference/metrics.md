@@ -72,7 +72,7 @@ sample name.
 | `ctrl_msg_count` | Number of control messages received. |
 | `discarded_count` | Number of discarded messages. |
 | `recv_bytes` | Number of bytes received. |
-| `dequeued_after_close` | Number of messages dequeued after the connection closed. |
+| `dequeued_after_close` | Number of messages removed from the queue after the connection closed. |
 | `queued_msgs` | Number of queued messages. Only reported for Wazuh API versions earlier than 4.7.0. |
 
 ### Analysis daemon (`wazuh-analysisd`)
