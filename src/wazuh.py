@@ -46,6 +46,11 @@ LOCAL_INTERNAL_OPTIONS_PATH = Path(WAZUH_CONF_PATH, "etc/local_internal_options.
 DEFAULT_INTERNAL_OPTIONS = {
     # Buffer the ingest backlog read after a restart instead of dropping lines once full
     "logcollector.queue_size": "220000",
+    # Raw events waiting to be decoded: absorb a full logcollector burst instead of dropping
+    "analysisd.decode_event_queue_size": "220000",
+    # Analysed events waiting to be written to the archives; much larger per event than raw
+    # lines, so only double the default
+    "analysisd.archives_queue_size": "32768",
 }
 REPO_WAZUH_CONF_PATH = REPOSITORY_PATH + WAZUH_CONF_PATH
 WAZUH_APPLIED_COMMIT_PATH = REPOSITORY_PATH + "/.wazuh_applied_commit"

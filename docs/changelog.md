@@ -16,10 +16,13 @@ Each revision is versioned by the date of the revision.
   creates each file in advance, deletes it once Wazuh has read it completely, and
   deletes the oldest files, even if unread, when the ingest files use more than
   80% of the volume.
-- Set `logcollector.queue_size=220000` in `local_internal_options.conf`, unless
-  already set, so that Wazuh does not drop the lines it reads in bulk from the
-  ingest files after a restart. This queue can hold up to a few hundred MB of
-  logs in memory while Wazuh catches up.
+- Raise Wazuh's internal queue sizes in `local_internal_options.conf`, unless
+  already set, so that Wazuh drops fewer events during bursts, such as when it
+  reads a backlog from the ingest files after a restart:
+  `logcollector.queue_size=220000` and `analysisd.decode_event_queue_size=220000`
+  (raw log lines; up to a few hundred MB each while full), and
+  `analysisd.archives_queue_size=32768` (analysed events, larger per entry; double
+  the default).
 - Upgrade notes:
   - Upgrade the charm and the `wazuh-server-image` resource together: the charm
     configures Wazuh to read the hourly files that the new image writes and

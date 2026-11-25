@@ -119,13 +119,20 @@ def test_sync_ossec_conf_ingest_localfile_is_idempotent(monkeypatch: pytest.Monk
     assert len(tree.xpath(f"//localfile[location='{wazuh.INGEST_LOG_FILES}']")) == 1
 
 
+DEFAULT_INTERNAL_OPTIONS_LINES = (
+    "logcollector.queue_size=220000\n"
+    "analysisd.decode_event_queue_size=220000\n"
+    "analysisd.archives_queue_size=32768\n"
+)
+
+
 @pytest.mark.parametrize(
     "current, expected",
     [
-        pytest.param(None, "logcollector.queue_size=220000\n", id="missing file"),
+        pytest.param(None, DEFAULT_INTERNAL_OPTIONS_LINES, id="missing file"),
         pytest.param(
             "# comment\n# logcollector.queue_size=10",
-            "# comment\n# logcollector.queue_size=10\nlogcollector.queue_size=220000\n",
+            "# comment\n# logcollector.queue_size=10\n" + DEFAULT_INTERNAL_OPTIONS_LINES,
             id="commented out",
         ),
     ],
@@ -148,23 +155,22 @@ def test_sync_local_internal_options_adds_defaults(current: str | None, expected
     assert container.pull(wazuh.LOCAL_INTERNAL_OPTIONS_PATH).read() == expected
 
 
-def test_sync_local_internal_options_keeps_configured_value() -> None:
+def test_sync_local_internal_options_keeps_configured_values() -> None:
     """
-    arrange: a local_internal_options.conf that already sets the logcollector queue size.
+    arrange: a local_internal_options.conf that already sets two of the charm's default options.
     act: sync the local internal options.
-    assert: nothing changes.
+    assert: the configured values are kept and only the missing option is added.
     """
     harness = Harness(ops.CharmBase, meta=CHARM_METADATA)
     harness.begin_with_initial_hooks()
     container = harness.charm.unit.get_container("wazuh-server")
-    container.push(
-        wazuh.LOCAL_INTERNAL_OPTIONS_PATH, "logcollector.queue_size = 5000\n", make_dirs=True
-    )
+    configured = "logcollector.queue_size = 5000\nanalysisd.archives_queue_size=20000\n"
+    container.push(wazuh.LOCAL_INTERNAL_OPTIONS_PATH, configured, make_dirs=True)
 
-    assert not wazuh.sync_local_internal_options(container)
+    assert wazuh.sync_local_internal_options(container)
 
     assert container.pull(wazuh.LOCAL_INTERNAL_OPTIONS_PATH).read() == (
-        "logcollector.queue_size = 5000\n"
+        configured + "analysisd.decode_event_queue_size=220000\n"
     )
 
 
